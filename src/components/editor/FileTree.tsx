@@ -1,6 +1,6 @@
 'use client';
 import { useEditorStore } from '@/lib/editor-store';
-import type { TreeNode } from '@/shared-types';
+import type { TreeNode } from '@/lib/contracts';
 
 function Node({ node, depth }: { node: TreeNode; depth: number }) {
     const openFile = useEditorStore((s) => s.openFile);
