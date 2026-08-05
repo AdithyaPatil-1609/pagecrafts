@@ -13,6 +13,6 @@ export type {
 } from "./api-contracts";
 export type { ContentSchema, ContentSection, Field, FieldType } from "./content-schema";
 export type { ErrorCode } from "./error-codes";
-export type { Category, FileMap, Template } from "./template";
+export type { Category, FileMap, Template, TemplateTier } from "./template";
 export * from './files';
 export * from "./deploy";

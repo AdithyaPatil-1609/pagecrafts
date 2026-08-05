@@ -8,6 +8,4 @@ export type ErrorCode =
   | "generation_failed"
   | "payment_required"
   | "hosting_error"
-  | "github_not_connected"
-  | "github_error"
   | "internal";
