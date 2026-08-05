@@ -6,6 +6,6 @@ export type ErrorCode =
   | "spend_capped"
   | "validation_failed"
   | "generation_failed"
-  | "github_not_connected"
-  | "github_error"
+  | "payment_required"
+  | "hosting_error"
   | "internal";

@@ -274,7 +274,7 @@ components:
       properties:
         code:
           type: string
-          enum: [unauthorized, forbidden, not_found, rate_limited, spend_capped, validation_failed, generation_failed, github_not_connected, github_error, internal]
+          enum: [unauthorized, forbidden, not_found, rate_limited, spend_capped, validation_failed, generation_failed, payment_required, hosting_error, internal]
         message:
           type: string
         detail:
