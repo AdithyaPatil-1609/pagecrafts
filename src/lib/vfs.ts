@@ -1,4 +1,4 @@
-import type { VFile, FileType, TreeNode } from '@/shared-types';
+import type { VFile, FileType, TreeNode } from '@/lib/contracts';
 
 type Listener = () => void;
 

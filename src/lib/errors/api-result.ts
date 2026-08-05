@@ -9,8 +9,8 @@ const STATUS_BY_CODE: Record<ErrorCode, number> = {
   spend_capped: 429,
   validation_failed: 422,
   generation_failed: 502,
-  github_not_connected: 409,
-  github_error: 502,
+  payment_required: 402,
+  hosting_error: 502,
   internal: 500,
 };
 
