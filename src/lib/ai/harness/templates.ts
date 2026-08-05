@@ -42,7 +42,8 @@ export function listTemplates(): string[] {
 
 export function loadTemplate(name: string): PromptTemplate {
     const file = name.endsWith('.md') ? name : `${name}.md`;
-    return parse(readFileSync(join(DIR, file), 'utf8'), file);
+    const raw = readFileSync(join(DIR, file), 'utf8').replace(/\r\n/g, '\n');
+    return parse(raw, file);
 }
 
 export function render(text: string, vars: Record<string, string>): string {
