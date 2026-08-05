@@ -1,6 +1,6 @@
 import type {
     IntentAttributes, SitePlan, FilledSection, SectionKey, EditProposal, AiResult,
-} from '@/shared-types';
+} from '@/lib/contracts';
 
 export interface LLMProvider {
     classify(text: string): Promise<AiResult<IntentAttributes>>;

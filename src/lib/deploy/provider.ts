@@ -1,4 +1,4 @@
-import type { PublishFile } from '@/shared-types/deploy';
+import type { PublishFile } from '@/lib/contracts/deploy';
 
 export interface ProvisionInput {
   projectId: string;

@@ -1,5 +1,5 @@
 import 'server-only';
-import type { PublishFile } from '@/shared-types/deploy';
+import type { PublishFile } from '@/lib/contracts/deploy';
 
 export interface TreeEntry {
   path: string;
