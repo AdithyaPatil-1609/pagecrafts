@@ -7,7 +7,7 @@ import type {
   FileMap,
   GenerateSiteRequest,
   Template,
-} from "@/shared-types";
+} from "@/lib/contracts";
 
 describe("frozen contracts", () => {
   it("keeps the template, content, file-map, and API boundaries aligned", () => {
