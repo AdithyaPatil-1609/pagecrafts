@@ -1,0 +1,22 @@
+[
+  { "id": "p01", "category": "restaurant",
+    "prompt": "a warm friendly site for my small south indian breakfast place in koramangala, with the menu and timings" },
+  { "id": "p02", "category": "portfolio",
+    "prompt": "dark moody one page site for a photography studio, mostly pictures" },
+  { "id": "p03", "category": "saas",
+    "prompt": "landing page for a tool that helps small shops track stock, clean and professional" },
+  { "id": "p04", "category": "event",
+    "prompt": "a page for our college tech fest in March with the schedule and a register button" },
+  { "id": "p05", "category": "personal",
+    "prompt": "simple personal page about me, i am a final year student looking for internships" },
+  { "id": "p06", "category": "shop",
+    "prompt": "online shop page for handmade candles, soft colours, needs a contact form" },
+  { "id": "p07", "category": "blog",
+    "prompt": "minimal blog homepage where i write about cycling, no clutter" },
+  { "id": "p08", "category": "restaurant",
+    "prompt": "bold loud page for a burger joint, big pictures, open till 2am" },
+  { "id": "p09", "category": "other",
+    "prompt": "a website" },
+  { "id": "p10", "category": "portfolio",
+    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery and enquiries" }
+]
