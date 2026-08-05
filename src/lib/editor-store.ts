@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { VFS } from '@/lib/vfs';
 import { SEED_PROJECT } from '@/lib/seed';
-import type { TreeNode } from '@/shared-types';
+import type { TreeNode } from '@/lib/contracts';
 
 const vfs = new VFS();
 vfs.seed(SEED_PROJECT);
