@@ -1,3 +1,5 @@
+export * from './ai';
+
 export type {
   DeploymentResponse,
   EditProjectRequest,
@@ -12,3 +14,5 @@ export type {
 export type { ContentSchema, ContentSection, Field, FieldType } from "./content-schema";
 export type { ErrorCode } from "./error-codes";
 export type { Category, FileMap, Template } from "./template";
+export * from './files';
+export * from "./deploy";
