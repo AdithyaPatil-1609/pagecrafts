@@ -1,6 +1,8 @@
 import { runPrompt } from './runner';
 import { listTemplates } from './templates';
-import { SECTION_KEYS } from '@/shared-types';
+import { SECTION_KEYS } from '@/lib/contracts';
+import { config } from 'dotenv';
+config({ path: '.env.local' });
 
 const DEFAULTS: Record<string, string> = {
     categories: 'restaurant, portfolio, saas, event, personal, shop, blog, other',

@@ -15,16 +15,16 @@ describe('loadAiConfig', () => {
     });
 
     it('reads limits from the environment as numbers', () => {
-        const cfg = loadAiConfig({ ...base, GEMINI_RPD: '1500' } as NodeJS.ProcessEnv);
+        const cfg = loadAiConfig({ ...base, GEMINI_RPD: '1500' });
         expect(cfg.quota.rpd).toBe(1500);
     });
 
     it('rejects a limit that is not a number', () => {
-        expect(() => loadAiConfig({ ...base, GEMINI_RPM: 'lots' } as NodeJS.ProcessEnv)).toThrow();
+        expect(() => loadAiConfig({ ...base, GEMINI_RPM: 'lots' })).toThrow();
     });
 
     it('splits models into fast and strong tiers', () => {
-        const cfg = loadAiConfig(base as NodeJS.ProcessEnv);
+        const cfg = loadAiConfig(base);
         expect(cfg.models.fast).toContain('lite');
         expect(cfg.models.strong).not.toContain('lite');
     });

@@ -1,4 +1,5 @@
-export type { Category } from './template';
+import type { Category } from '@/lib/contracts/template';
+export type { Category };
 
 export type Tone = 'playful' | 'formal' | 'minimal' | 'bold' | 'warm';
 export type Palette = 'light' | 'dark' | 'colourful' | 'muted';
