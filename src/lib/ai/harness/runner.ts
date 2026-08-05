@@ -1,5 +1,5 @@
 import { GeminiProvider } from '../providers/gemini';
-import { loadTemplate, render } from './templates';
+import { loadTemplate, render } from '../harness/templates';
 
 export interface RunOptions {
     template: string;
