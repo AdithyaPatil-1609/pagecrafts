@@ -16,3 +16,7 @@ export type { ErrorCode } from "./error-codes";
 export type { Category, FileMap, Template, TemplateTier } from "./template";
 export * from './files';
 export * from "./deploy";
+export * from "./projects";
+export * from "./commits";
+export * from "./content";
+export * from "./entitlements";
