@@ -10,8 +10,6 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
     generation_failed: 502,
     payment_required: 402,
     hosting_error: 502,
-    github_not_connected: 409,
-    github_error: 502,
     internal: 500,
 };
 

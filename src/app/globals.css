@@ -1,26 +1,119 @@
 @import "tailwindcss";
 
+/*
+  PageCraft design tokens (R2 · Day 1).
+  Every screen and primitive is built from these semantic tokens, never from
+  ad-hoc hex values or per-screen style forks (FR-001).
+  Documented reference: docs/design-tokens.md
+  Light values live in :root; dark values switch on the OS preference.
+  @theme inline exposes each token to Tailwind so `bg-primary`, `text-muted-foreground`,
+  `border-border`, `ring-ring`, `rounded-lg`, etc. resolve to the values below.
+*/
+
 :root {
+  --radius: 0.625rem;
+
   --background: #ffffff;
   --foreground: #171717;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --card: #ffffff;
+  --card-foreground: #171717;
+
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+
+  --primary: #4f46e5; /* indigo-600 — PageCraft brand */
+  --primary-foreground: #ffffff;
+
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+
+  --muted: #f4f4f5;
+  --muted-foreground: #6b7280;
+
+  --accent: #eef2ff; /* indigo-50 */
+  --accent-foreground: #3730a3; /* indigo-800 */
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #4f46e5;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --card: #131316;
+    --card-foreground: #ededed;
+
+    --popover: #131316;
+    --popover-foreground: #ededed;
+
+    --primary: #818cf8; /* indigo-400 — readable on dark */
+    --primary-foreground: #0a0a0a;
+
+    --secondary: #1f1f23;
+    --secondary-foreground: #ededed;
+
+    --muted: #1f1f23;
+    --muted-foreground: #a1a1aa;
+
+    --accent: #1e1b4b; /* indigo-950 */
+    --accent-foreground: #c7d2fe; /* indigo-200 */
+
+    --destructive: #ef4444;
+    --destructive-foreground: #0a0a0a;
+
+    --border: #27272a;
+    --input: #27272a;
+    --ring: #818cf8;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
