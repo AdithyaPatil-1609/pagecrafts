@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prepare": "node .githooks/install.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
