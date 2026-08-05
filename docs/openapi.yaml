@@ -26,6 +26,87 @@ paths:
                 $ref: '#/components/schemas/GenerateSiteResult'
         default:
           $ref: '#/components/responses/Error'
+  /projects:
+    get:
+      operationId: listProjects
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: The owner's projects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResult'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createProject
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProjectResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: getProject
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Project detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDetailResult'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: patchProject
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchProjectRequest'
+      responses:
+        '200':
+          description: Updated project detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDetailResult'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteProject
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Project removed (our row only).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects/{projectId}/files:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -201,6 +282,137 @@ components:
         generationId:
           type: string
           format: uuid
+    ProjectStatus:
+      type: string
+      enum: [draft, pending, provisioning, pushing, enabling_hosting, verifying, live, failed]
+    SiteMeta:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        faviconAssetId:
+          type: string
+        ogImageAssetId:
+          type: string
+    ProjectSummary:
+      type: object
+      required: [id, name, status, liveUrl, thumbnailUrl, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        liveUrl:
+          type: [string, 'null']
+          format: uri
+        thumbnailUrl:
+          type: [string, 'null']
+        updatedAt:
+          type: string
+          format: date-time
+    ProjectDetail:
+      allOf:
+        - $ref: '#/components/schemas/ProjectSummary'
+        - type: object
+          required: [sourceTemplateId, contentJson, siteMeta, formEndpoint]
+          properties:
+            sourceTemplateId:
+              type: [string, 'null']
+              format: uuid
+            contentJson:
+              type: object
+              additionalProperties: true
+            siteMeta:
+              $ref: '#/components/schemas/SiteMeta'
+            formEndpoint:
+              type: [string, 'null']
+              format: uri
+    CreateProjectRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        sourceTemplateId:
+          type: string
+          format: uuid
+        mode:
+          const: generate
+        prompt:
+          type: string
+          maxLength: 500
+    CreateProjectResponse:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstCommit:
+          type: string
+        jobId:
+          type: string
+    PatchProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        siteMeta:
+          $ref: '#/components/schemas/SiteMeta'
+        formEndpoint:
+          type: [string, 'null']
+          format: uri
+    ProjectListResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProjectSummary'
+    ProjectDetailResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/ProjectDetail'
+    CreateProjectResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/CreateProjectResponse'
+    DeleteResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [deleted]
+          properties:
+            deleted:
+              const: true
     ProjectFilesResponse:
       type: object
       required: [projectId, files, updatedAt]

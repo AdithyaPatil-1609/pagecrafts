@@ -23,12 +23,18 @@ Frozen on 2026-08-04 for Day 1. Changes require agreement from the whole team be
 | API version | New routes live under `/api/v1`; breaking changes use a new version |
 | Ownership | Supabase RLS is the authority for user-owned data; a non-owner sees no row |
 | Deploy status | `pending`, `live`, `failed` |
+| Entitlements | `entitlements` table; kinds `publish`/`edit_unlock`/`pro`, sources `launch_offer`/`paid`/`pro`; server-writes only, clients read their own (A1, Doc 22 §6) |
 
 ## Day 1 route signatures
 
 | Method | Path | Request | Success |
 | --- | --- | --- | --- |
 | POST | `/api/v1/generate` | `GenerateSiteRequest` | `GenerateSiteResponse` |
+| GET | `/api/v1/projects` | None | `{ items: ProjectSummary[] }` |
+| POST | `/api/v1/projects` | `CreateProjectRequest` | `CreateProjectResponse` |
+| GET | `/api/v1/projects/{id}` | None | `ProjectDetail` |
+| PATCH | `/api/v1/projects/{id}` | `PatchProjectRequest` | `ProjectDetail` |
+| DELETE | `/api/v1/projects/{id}` | None | `{ deleted: true }` |
 | GET | `/api/v1/projects/{id}/files` | None | `GetProjectFilesResponse` |
 | PUT | `/api/v1/projects/{id}/files` | `PutProjectFilesRequest` | `GetProjectFilesResponse` |
 | POST | `/api/v1/projects/{id}/edit` | `EditProjectRequest` | `EditProjectResponse` |
