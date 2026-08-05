@@ -1,10 +1,9 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { runPrompt } from '../src/lib/ai/harness/runner';
-import { SECTION_KEYS } from '../src/shared-types';
+import { SECTION_KEYS } from '../src/lib/contracts';
 import { config } from 'dotenv';
 config({ path: '.env.local' });
-
 interface CorpusItem { id: string; category: string; prompt: string }
 interface EvalRow {
     id: string;

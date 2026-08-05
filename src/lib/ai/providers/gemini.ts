@@ -3,7 +3,7 @@ import { aiConfig, type AiConfig } from '../config';
 import type { LLMProvider } from '../LLMProvider';
 import type {
     IntentAttributes, SitePlan, FilledSection, SectionKey, EditProposal, AiResult,
-} from '@/shared-types';
+} from '@/lib/contracts';
 
 export type Tier = 'fast' | 'strong';
 

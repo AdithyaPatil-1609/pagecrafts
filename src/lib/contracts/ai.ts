@@ -1,6 +1,4 @@
-export type Category =
-    | 'restaurant' | 'portfolio' | 'saas' | 'event'
-    | 'personal' | 'shop' | 'blog' | 'other';
+export type { Category } from './template';
 
 export type Tone = 'playful' | 'formal' | 'minimal' | 'bold' | 'warm';
 export type Palette = 'light' | 'dark' | 'colourful' | 'muted';

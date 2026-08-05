@@ -6,7 +6,7 @@ Frozen on 2026-08-04 for Day 1. Changes require agreement from the whole team be
 
 ## Canonical sources
 
-- Type contracts: `src/shared-types/`
+- Type contracts: `src/lib/contracts/`
 - HTTP contract: `docs/openapi.yaml`
 - Database contract: `supabase/migrations/20260804120000_initial_schema.sql`
 

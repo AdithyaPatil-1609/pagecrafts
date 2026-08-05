@@ -17,7 +17,7 @@ export interface AiConfig {
     timeoutMs: number;
 }
 
-export function loadAiConfig(env: NodeJS.ProcessEnv = process.env): AiConfig {
+export function loadAiConfig(env: Record<string, string | undefined> = process.env,): AiConfig {
     const parsed = envSchema.safeParse(env);
 
     if (!parsed.success) {
