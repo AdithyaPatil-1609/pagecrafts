@@ -1,0 +1,329 @@
+openapi: 3.1.0
+info:
+  title: Pagecrafts API
+  version: 1.0.0
+  description: Frozen Day 1 API contract.
+servers:
+  - url: /api/v1
+paths:
+  /generate:
+    post:
+      operationId: generateSite
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSiteRequest'
+      responses:
+        '202':
+          description: Generation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateSiteResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/files:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: getProjectFiles
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Project working tree.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectFilesResult'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: putProjectFiles
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  $ref: '#/components/schemas/FileMap'
+      responses:
+        '200':
+          description: Updated project working tree.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectFilesResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/edit:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: proposeProjectEdit
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditProjectRequest'
+      responses:
+        '200':
+          description: Proposed single-file edit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditProjectResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
+    post:
+      operationId: publishProject
+      security:
+        - sessionCookie: []
+      responses:
+        '202':
+          description: Publish accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishProjectResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /deployments/{deploymentId}:
+    parameters:
+      - name: deploymentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getDeployment
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Publish state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentResult'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Error:
+      description: API failure.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResult'
+  schemas:
+    Category:
+      type: string
+      enum: [portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other]
+    FileMap:
+      type: object
+      additionalProperties:
+        type: string
+    GenerateSiteRequest:
+      type: object
+      required: [projectIntent, prompt]
+      properties:
+        projectIntent:
+          $ref: '#/components/schemas/Category'
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 500
+        attributes:
+          type: object
+          properties:
+            tone:
+              type: array
+              items:
+                type: string
+            paletteHint:
+              type: array
+              items:
+                type: string
+    GenerateSiteResponse:
+      type: object
+      required: [projectId, commitSha, sections, warnings, generationId]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        commitSha:
+          type: string
+        sections:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        generationId:
+          type: string
+          format: uuid
+    ProjectFilesResponse:
+      type: object
+      required: [projectId, files, updatedAt]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        files:
+          $ref: '#/components/schemas/FileMap'
+        updatedAt:
+          type: string
+          format: date-time
+    EditProjectRequest:
+      type: object
+      required: [filePath, instruction, currentContent]
+      properties:
+        filePath:
+          type: string
+          minLength: 1
+        instruction:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        currentContent:
+          type: string
+    EditProjectResponse:
+      type: object
+      required: [diff, requiresAccept, autoCommitSha]
+      properties:
+        diff:
+          type: object
+          required: [before, after]
+          properties:
+            before:
+              type: string
+            after:
+              type: string
+        requiresAccept:
+          const: true
+        autoCommitSha:
+          type: string
+    PublishProjectResponse:
+      type: object
+      required: [deploymentId, status]
+      properties:
+        deploymentId:
+          type: string
+          format: uuid
+        status:
+          const: pending
+    DeploymentResponse:
+      type: object
+      required: [status, repoUrl, liveUrl, commitSha, error]
+      properties:
+        status:
+          type: string
+          enum: [pending, live, failed]
+        repoUrl:
+          type: [string, 'null']
+          format: uri
+        liveUrl:
+          type: [string, 'null']
+          format: uri
+        commitSha:
+          type: [string, 'null']
+        error:
+          type: [string, 'null']
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [unauthorized, forbidden, not_found, rate_limited, spend_capped, validation_failed, generation_failed, github_not_connected, github_error, internal]
+        message:
+          type: string
+        detail:
+          type: string
+    GenerateSiteResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/GenerateSiteResponse'
+    ProjectFilesResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/ProjectFilesResponse'
+    EditProjectResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/EditProjectResponse'
+    PublishProjectResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/PublishProjectResponse'
+    DeploymentResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/DeploymentResponse'
+    ErrorResult:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          const: false
+        error:
+          $ref: '#/components/schemas/Error'
