@@ -5,7 +5,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
     forbidden: 403,
     not_found: 404,
     rate_limited: 429,
-    spend_capped: 402,
+    spend_capped: 429,
     validation_failed: 422,
     generation_failed: 502,
     payment_required: 402,
