@@ -15,10 +15,8 @@ function assemble(files: Record<string, string>): string {
 
 export default function PreviewPane() {
     const vfs = useEditorStore((s) => s.vfs);
-    const dirtyPaths = useEditorStore((s) => s.dirtyPaths);
-    const tree = useEditorStore((s) => s.tree);
 
-    const doc = useMemo(() => assemble(vfs.toMap()), [vfs, dirtyPaths, tree]);
+    const doc = useMemo(() => assemble(vfs.toMap()), [vfs]);
 
     return (
         <iframe

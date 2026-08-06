@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { GoogleGenAI } from '@google/genai';
 import { aiConfig, type AiConfig, type AiOperation } from '../config';
 import type { LLMProvider, FillContext } from '../LLMProvider';
