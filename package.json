@@ -11,6 +11,7 @@
     "test": "vitest run",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
+    "pretypecheck": "node -e \"require('node:fs').rmSync('.next/dev/types',{recursive:true,force:true})\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

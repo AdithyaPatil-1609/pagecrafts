@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 
 export default function CodePane() {
@@ -7,10 +7,12 @@ export default function CodePane() {
     const activeFile = useEditorStore((s) => s.activeFile);
     const writeActive = useEditorStore((s) => s.writeActive);
     const [text, setText] = useState('');
+    const [loadedFile, setLoadedFile] = useState<string | null>(null);
 
-    useEffect(() => {
+    if (activeFile !== loadedFile) {
+        setLoadedFile(activeFile);
         setText(activeFile ? (vfs.read(activeFile) ?? '') : '');
-    }, [activeFile, vfs]);
+    }
 
     if (!activeFile) {
         return <div className="p-3 text-sm text-muted-foreground">No file open</div>;
