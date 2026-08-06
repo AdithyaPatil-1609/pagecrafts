@@ -1,31 +1,31 @@
 [
-  { "id": "p01", "vertical": "dental-clinic", "hasTemplate": false,
+  { "id": "p01", "vertical": "dental-clinic", "expectedCategory": "other", "hasTemplate": false,
     "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment" },
 
-  { "id": "p02", "vertical": "law-firm", "hasTemplate": false,
+  { "id": "p02", "vertical": "law-firm", "expectedCategory": "agency", "hasTemplate": false,
     "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice" },
 
-  { "id": "p03", "vertical": "yoga-studio", "hasTemplate": false,
+  { "id": "p03", "vertical": "yoga-studio", "expectedCategory": "other", "hasTemplate": false,
     "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place" },
 
-  { "id": "p04", "vertical": "ngo", "hasTemplate": false,
+  { "id": "p04", "vertical": "ngo", "expectedCategory": "nonprofit", "hasTemplate": false,
     "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up" },
 
-  { "id": "p05", "vertical": "restaurant", "hasTemplate": true,
+  { "id": "p05", "vertical": "restaurant", "expectedCategory": "restaurant", "hasTemplate": true,
     "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings" },
 
-  { "id": "p06", "vertical": "photography", "hasTemplate": true,
+  { "id": "p06", "vertical": "photography", "expectedCategory": "portfolio", "hasTemplate": true,
     "prompt": "dark moody one page site for a photography studio, mostly pictures" },
 
-  { "id": "p07", "vertical": "saas", "hasTemplate": true,
+  { "id": "p07", "vertical": "saas", "expectedCategory": "saas", "hasTemplate": true,
     "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table" },
 
-  { "id": "p08", "vertical": "gym", "hasTemplate": true,
+  { "id": "p08", "vertical": "gym", "expectedCategory": "other", "hasTemplate": true,
     "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm" },
 
-  { "id": "p09", "vertical": "unknown", "hasTemplate": false,
+  { "id": "p09", "vertical": "unknown", "expectedCategory": "other", "hasTemplate": false,
     "prompt": "a website" },
 
-  { "id": "p10", "vertical": "interior-design", "hasTemplate": false,
+  { "id": "p10", "vertical": "interior-design", "expectedCategory": "portfolio", "hasTemplate": false,
     "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form" }
 ]
