@@ -3,27 +3,27 @@ import type { NextRequest } from "next/server";
 import { supabaseRouteClient } from "@/lib/auth/server";
 import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
-import { ok, fail, unexpected } from "@/lib/errors/api-result";
+import { ok, fail, guard } from "@/lib/errors/respond";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  let body: unknown;
+  return guard(async () => {
+    let body: unknown;
 
-  try {
-    body = await request.json();
-  } catch {
-    return fail("validation_failed", "Send a JSON body with email and password.");
-  }
+    try {
+      body = await request.json();
+    } catch {
+      return fail("validation_failed", "Send a JSON body with email and password.");
+    }
 
-  const credentials = readCredentials(body);
+    const credentials = readCredentials(body);
 
-  if (!credentials.ok) {
-    return fail("validation_failed", credentials.message);
-  }
+    if (!credentials.ok) {
+      return fail("validation_failed", credentials.message);
+    }
 
-  try {
     const supabase = await supabaseRouteClient();
     const { data, error } = await supabase.auth.signUp({
       email: credentials.value.email,
@@ -45,7 +45,5 @@ export async function POST(request: NextRequest) {
     }
 
     return ok({ user: toSessionUser(data.user), pending: false }, 201);
-  } catch (error) {
-    return unexpected(error);
-  }
+  });
 }
