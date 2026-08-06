@@ -17,9 +17,10 @@ export function readDeployCredential(): string {
     const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64'));
     decipher.setAuthTag(Buffer.from(tag, 'base64'));
 
-    cached =
+    cached = (
         decipher.update(Buffer.from(data, 'base64'), undefined, 'utf8') +
-        decipher.final('utf8');
+        decipher.final('utf8')
+    ).trim();
 
     return cached;
 }

@@ -6,10 +6,17 @@ import ContentPanel from './ContentPanel';
 import PreviewPane from './PreviewPane';
 import FileTree from './FileTree';
 import CodePane from './CodePane';
+import { TreeSkeleton, PaneSkeleton } from './Skeletons';
 
 export default function EditorShell({ projectId }: { projectId: string }) {
     const advanced = useEditorStore((s) => s.advanced);
+    const loading = useEditorStore((s) => s.loading);
+    const setLoaded = useEditorStore((s) => s.setLoaded);
     const saveProject = useEditorStore((s) => s.saveProject);
+
+    useEffect(() => {
+        setLoaded();
+    }, [setLoaded]);
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
@@ -29,22 +36,22 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                 {advanced ? (
                     <>
                         <aside className="w-56 shrink-0 overflow-auto border-r border-border">
-                            <FileTree />
+                            {loading ? <TreeSkeleton /> : <FileTree />}
                         </aside>
                         <section className="min-w-0 flex-1 overflow-auto border-r border-border">
-                            <CodePane />
+                            {loading ? <PaneSkeleton /> : <CodePane />}
                         </section>
                         <section className="min-w-0 flex-1">
-                            <PreviewPane />
+                            {loading ? <PaneSkeleton /> : <PreviewPane />}
                         </section>
                     </>
                 ) : (
                     <>
                         <section className="w-[420px] shrink-0 overflow-auto border-r border-border">
-                            <ContentPanel />
+                            {loading ? <PaneSkeleton /> : <ContentPanel />}
                         </section>
                         <section className="min-w-0 flex-1">
-                            <PreviewPane />
+                            {loading ? <PaneSkeleton /> : <PreviewPane />}
                         </section>
                     </>
                 )}

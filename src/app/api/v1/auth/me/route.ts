@@ -1,12 +1,12 @@
 import "server-only";
 import { currentUser } from "@/lib/auth/session";
-import { ok, fail, unexpected } from "@/lib/errors/api-result";
+import { ok, fail, guard } from "@/lib/errors/respond";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  try {
+  return guard(async () => {
     const user = await currentUser();
 
     if (!user) {
@@ -14,7 +14,5 @@ export async function GET() {
     }
 
     return ok({ user });
-  } catch (error) {
-    return unexpected(error);
-  }
+  });
 }

@@ -1,21 +1,32 @@
 import type {
-    IntentAttributes, SitePlan, FilledSection, SectionKey, EditProposal, AiResult,
+    IntentAttributes, VerticalProfile, SectionInstance,
+    SectionProps, EditProposal, AiResult,
 } from '@/lib/contracts';
+
+export interface FillContext {
+    vertical: string;
+    tone: string;
+    prompt: string;
+}
 
 export interface LLMProvider {
     classify(text: string): Promise<AiResult<IntentAttributes>>;
 
-    plan(prompt: string, intent: IntentAttributes): Promise<AiResult<SitePlan>>;
+    profile(vertical: string): Promise<AiResult<VerticalProfile>>;
+
+    plan(
+        prompt: string,
+        intent: IntentAttributes,
+        profile: VerticalProfile,
+    ): Promise<AiResult<SectionInstance[]>>;
 
     fillSection(
-        key: SectionKey,
-        plan: SitePlan,
-        shell: string,
-    ): Promise<AiResult<FilledSection>>;
+        instance: SectionInstance,
+        context: FillContext,
+    ): Promise<AiResult<SectionProps>>;
 
     edit(
-        filePath: string,
-        fileContent: string,
+        section: SectionInstance,
         instruction: string,
     ): Promise<AiResult<EditProposal>>;
 }

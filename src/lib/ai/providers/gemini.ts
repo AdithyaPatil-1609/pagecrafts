@@ -1,14 +1,16 @@
 import { GoogleGenAI } from '@google/genai';
-import { aiConfig, type AiConfig } from '../config';
-import type { LLMProvider } from '../LLMProvider';
+import { aiConfig, type AiConfig, type AiOperation } from '../config';
+import type { LLMProvider, FillContext } from '../LLMProvider';
 import type {
-    IntentAttributes, SitePlan, FilledSection, SectionKey, EditProposal, AiResult,
+    IntentAttributes, VerticalProfile, SectionInstance, SectionProps, EditProposal, AiResult,
 } from '@/lib/contracts';
+
 
 export type Tier = 'fast' | 'strong';
 
 export interface RawRequest {
     tier: Tier;
+    op: AiOperation;
     system?: string;
     user: string;
 }
@@ -21,7 +23,17 @@ export interface RawReply {
     latencyMs: number;
 }
 
-const NOT_YET = (what: string) => new Error(`${what}() lands on D2 — not implemented yet.`);
+export class AiTimeoutError extends Error {
+    constructor(
+        readonly op: AiOperation,
+        readonly timeoutMs: number,
+    ) {
+        super(`${op} exceeded its ${timeoutMs}ms budget.`);
+        this.name = 'AiTimeoutError';
+    }
+}
+
+const NOT_YET = (what: string) => new Error(`${what}() lands later on D2.`);
 
 export class GeminiProvider implements LLMProvider {
     private readonly client: GoogleGenAI;
@@ -36,18 +48,31 @@ export class GeminiProvider implements LLMProvider {
         return tier === 'fast' ? this.cfg.models.fast : this.cfg.models.strong;
     }
 
-    async raw({ tier, system, user }: RawRequest): Promise<RawReply> {
+    timeoutFor(op: AiOperation): number {
+        return this.cfg.timeouts[op];
+    }
+
+    async raw({ tier, op, system, user }: RawRequest): Promise<RawReply> {
         const model = this.modelFor(tier);
+        const timeoutMs = this.timeoutFor(op);
         const startedAt = Date.now();
 
-        const response = await this.client.models.generateContent({
-            model,
-            contents: user,
-            config: {
-                ...(system ? { systemInstruction: system } : {}),
-                abortSignal: AbortSignal.timeout(this.cfg.timeoutMs),
-            },
-        });
+        let response;
+        try {
+            response = await this.client.models.generateContent({
+                model,
+                contents: user,
+                config: {
+                    ...(system ? { systemInstruction: system } : {}),
+                    abortSignal: AbortSignal.timeout(timeoutMs),
+                },
+            });
+        } catch (err) {
+            if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+                throw new AiTimeoutError(op, timeoutMs);
+            }
+            throw err;
+        }
 
         const usage = response.usageMetadata;
 
@@ -64,21 +89,27 @@ export class GeminiProvider implements LLMProvider {
         throw NOT_YET('classify');
     }
 
-    async plan(_prompt: string, _intent: IntentAttributes): Promise<AiResult<SitePlan>> {
+    async profile(_vertical: string): Promise<AiResult<VerticalProfile>> {
+        throw NOT_YET('profile');
+    }
+
+    async plan(
+        _prompt: string,
+        _intent: IntentAttributes,
+        _profile: VerticalProfile,
+    ): Promise<AiResult<SectionInstance[]>> {
         throw NOT_YET('plan');
     }
 
     async fillSection(
-        _key: SectionKey,
-        _plan: SitePlan,
-        _shell: string,
-    ): Promise<AiResult<FilledSection>> {
+        _instance: SectionInstance,
+        _context: FillContext,
+    ): Promise<AiResult<SectionProps>> {
         throw NOT_YET('fillSection');
     }
 
     async edit(
-        _filePath: string,
-        _fileContent: string,
+        _section: SectionInstance,
         _instruction: string,
     ): Promise<AiResult<EditProposal>> {
         throw NOT_YET('edit');
