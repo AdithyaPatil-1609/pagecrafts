@@ -11,8 +11,11 @@
     "test": "vitest run",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
-    "pretypecheck": "node -e \"require('node:fs').rmSync('.next/dev/types',{recursive:true,force:true})\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy:seal": "tsx --env-file=.env.local scripts/seal-credential.ts",
+    "deploy:health": "tsx --env-file=.env.local --conditions=react-server scripts/hosting-health-check.ts",
+    "deploy:spike": "tsx --env-file=.env.local --conditions=react-server scripts/provision-spike.ts",
+    "deploy:publish": "tsx --env-file=.env.local --conditions=react-server scripts/publish-spike.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -49,7 +52,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "tsx": "^4.23.7",
+    "tsx": "^4.23.9",
     "typescript": "^5",
     "vitest": "^4.1.10"
   },
