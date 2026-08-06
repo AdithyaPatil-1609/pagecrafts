@@ -1,0 +1,30 @@
+import "server-only";
+import type { NextRequest } from "next/server";
+import { supabaseRouteClient } from "@/lib/auth/server";
+import { passwordResetRequestSchema } from "@/lib/contracts/auth";
+import { publicEnv } from "@/lib/config/env";
+import { ok, fail, unexpected } from "@/lib/errors/api-result";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function POST(request: NextRequest) {
+    const json = await request.json().catch(() => null);
+    const parsed = passwordResetRequestSchema.safeParse(json);
+
+    if (!parsed.success) {
+        return fail("validation_failed", "Enter a valid email address.");
+    }
+
+    try {
+        const supabase = await supabaseRouteClient();
+        await supabase.auth.resend({
+            type: "signup",
+            email: parsed.data.email,
+            options: { emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm?next=/new` },
+        });
+        return ok({ status: "accepted" as const }, 202);
+    } catch (error) {
+        return unexpected(error);
+    }
+}
