@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "deploy:seal": "tsx --env-file=.env.local scripts/seal-credential.ts",
     "deploy:health": "tsx --env-file=.env.local --conditions=react-server scripts/hosting-health-check.ts",
-    "deploy:spike": "tsx --env-file=.env.local --conditions=react-server scripts/provision-spike.ts"
+    "deploy:spike": "tsx --env-file=.env.local --conditions=react-server scripts/provision-spike.ts",
+    "deploy:publish": "tsx --env-file=.env.local --conditions=react-server scripts/publish-spike.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
