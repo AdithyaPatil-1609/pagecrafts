@@ -4,10 +4,17 @@ import { runPrompt } from '../src/lib/ai/harness/runner';
 import { SECTION_KEYS } from '../src/lib/contracts';
 import { config } from 'dotenv';
 config({ path: '.env.local' });
-interface CorpusItem { id: string; category: string; prompt: string }
+interface CorpusItem {
+    id: string;
+    vertical: string;
+    hasTemplate: boolean;
+    prompt: string;
+}
+
 interface EvalRow {
     id: string;
-    category: string;
+    vertical: string;
+    hasTemplate: boolean;
     prompt: string;
     ok: boolean;
     latencyMs: number;
@@ -71,14 +78,15 @@ async function main() {
     const meanMs = ok.length ? Math.round(ok.reduce((s, r) => s + r.latencyMs, 0) / ok.length) : 0;
 
     console.table(
-        rows.map((r) => ({
-            id: r.id,
-            expected: r.category,
-            ok: r.ok,
-            ms: r.latencyMs,
-            tokens: r.ok ? `${r.inputTokens}/${r.outputTokens}` : '-',
-        })),
-    );
+    rows.map((r) => ({
+        id: r.id,
+        vertical: r.vertical,
+        template: r.hasTemplate ? 'yes' : 'NO',
+        ok: r.ok,
+        ms: r.latencyMs,
+        tokens: r.ok ? `${r.inputTokens}/${r.outputTokens}` : '-',
+    })),
+);
 
     console.log(`\n${ok.length}/${rows.length} completed · mean ${meanMs}ms`);
     console.log(`tokens ${totalIn} in / ${totalOut} out · requests used: ${rows.length}`);

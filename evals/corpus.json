@@ -1,22 +1,31 @@
 [
-  { "id": "p01", "category": "restaurant",
-    "prompt": "a warm friendly site for my small south indian breakfast place in koramangala, with the menu and timings" },
-  { "id": "p02", "category": "portfolio",
+  { "id": "p01", "vertical": "dental-clinic", "hasTemplate": false,
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment" },
+
+  { "id": "p02", "vertical": "law-firm", "hasTemplate": false,
+    "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice" },
+
+  { "id": "p03", "vertical": "yoga-studio", "hasTemplate": false,
+    "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place" },
+
+  { "id": "p04", "vertical": "ngo", "hasTemplate": false,
+    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up" },
+
+  { "id": "p05", "vertical": "restaurant", "hasTemplate": true,
+    "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings" },
+
+  { "id": "p06", "vertical": "photography", "hasTemplate": true,
     "prompt": "dark moody one page site for a photography studio, mostly pictures" },
-  { "id": "p03", "category": "saas",
-    "prompt": "landing page for a tool that helps small shops track stock, clean and professional" },
-  { "id": "p04", "category": "event",
-    "prompt": "a page for our college tech fest in March with the schedule and a register button" },
-  { "id": "p05", "category": "personal",
-    "prompt": "simple personal page about me, i am a final year student looking for internships" },
-  { "id": "p06", "category": "shop",
-    "prompt": "online shop page for handmade candles, soft colours, needs a contact form" },
-  { "id": "p07", "category": "blog",
-    "prompt": "minimal blog homepage where i write about cycling, no clutter" },
-  { "id": "p08", "category": "restaurant",
-    "prompt": "bold loud page for a burger joint, big pictures, open till 2am" },
-  { "id": "p09", "category": "other",
+
+  { "id": "p07", "vertical": "saas", "hasTemplate": true,
+    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table" },
+
+  { "id": "p08", "vertical": "gym", "hasTemplate": true,
+    "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm" },
+
+  { "id": "p09", "vertical": "unknown", "hasTemplate": false,
     "prompt": "a website" },
-  { "id": "p10", "category": "portfolio",
-    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery and enquiries" }
+
+  { "id": "p10", "vertical": "interior-design", "hasTemplate": false,
+    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form" }
 ]
