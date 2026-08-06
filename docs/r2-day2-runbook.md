@@ -66,8 +66,9 @@ These are real, they are in the repo now, and two of them will stop you at 14:00
 
 **1. `src/lib/auth/session.ts` reads an environment variable that does not exist.** Line 10 asks for `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Every other file — `config/env.ts`, `auth/server.ts`, `middleware.ts` — uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. So `supabaseRoute()` is built with `undefined` as its key, and that is the client the `withRoute` kernel uses on **every** persistence route in R3. Fix it:
 
+In `src/lib/auth/session.ts`, the key argument becomes:
+
 ```ts
-// src/lib/auth/session.ts
 process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
 ```
 
@@ -975,8 +976,9 @@ export function ResendVerification({ email }: { email: string }) {
 
 `src/app/(auth)/reset/page.tsx` and `src/components/auth/ResetPasswordForm.tsx` — where the recovery link lands:
 
+**File: `src/app/(auth)/reset/page.tsx`**
+
 ```tsx
-// src/app/(auth)/reset/page.tsx
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 
 export default function ResetPage() {
@@ -988,8 +990,9 @@ export default function ResetPage() {
 }
 ```
 
+**File: `src/components/auth/ResetPasswordForm.tsx`**
+
 ```tsx
-// src/components/auth/ResetPasswordForm.tsx
 "use client";
 
 import { useState } from "react";
@@ -1094,13 +1097,18 @@ Walk all five paths with a real inbox:
 
 Then the automated checks:
 
-```bash
+```powershell
 # no third-party sign-in control anywhere in the funnel (FR-007, A1 still stands)
-grep -ri "github\|oauth\|continue with\|sign in with" "src/app/(auth)" src/components/auth src/components/landing
+Get-ChildItem -Recurse -Include *.ts,*.tsx `
+  -Path "src\app\(auth)","src\components\landing","src\components\auth" `
+  -ErrorAction SilentlyContinue |
+  Select-String -Pattern "github|oauth|continue with|sign in with"
 # → must return nothing
 
 npm run typecheck
 ```
+
+Scope the search to funnel surfaces only. Searching all of `src` would flag `src/lib/github/octokit.ts` and the health route, which legitimately mention GitHub — A1 removed it from the user's view, not from the platform's own infrastructure.
 
 Keyboard only: Tab reaches every field and both toggle links, Enter submits, focus is visible throughout, and the show/hide button announces its state.
 
