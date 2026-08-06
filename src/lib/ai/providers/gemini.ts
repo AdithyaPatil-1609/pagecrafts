@@ -1,9 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
 import { aiConfig, type AiConfig } from '../config';
-import type { LLMProvider } from '../LLMProvider';
+import type { LLMProvider, FillContext } from '../LLMProvider';
 import type {
-    IntentAttributes, SitePlan, FilledSection, SectionKey, EditProposal, AiResult,
+    IntentAttributes, VerticalProfile, SectionInstance, SectionProps, EditProposal, AiResult,
 } from '@/lib/contracts';
+
 
 export type Tier = 'fast' | 'strong';
 
@@ -21,7 +22,7 @@ export interface RawReply {
     latencyMs: number;
 }
 
-const NOT_YET = (what: string) => new Error(`${what}() lands on D2 — not implemented yet.`);
+const NOT_YET = (what: string) => new Error(`${what}() lands later on D2.`);
 
 export class GeminiProvider implements LLMProvider {
     private readonly client: GoogleGenAI;
@@ -64,21 +65,27 @@ export class GeminiProvider implements LLMProvider {
         throw NOT_YET('classify');
     }
 
-    async plan(_prompt: string, _intent: IntentAttributes): Promise<AiResult<SitePlan>> {
+    async profile(_vertical: string): Promise<AiResult<VerticalProfile>> {
+        throw NOT_YET('profile');
+    }
+
+    async plan(
+        _prompt: string,
+        _intent: IntentAttributes,
+        _profile: VerticalProfile,
+    ): Promise<AiResult<SectionInstance[]>> {
         throw NOT_YET('plan');
     }
 
     async fillSection(
-        _key: SectionKey,
-        _plan: SitePlan,
-        _shell: string,
-    ): Promise<AiResult<FilledSection>> {
+        _instance: SectionInstance,
+        _context: FillContext,
+    ): Promise<AiResult<SectionProps>> {
         throw NOT_YET('fillSection');
     }
 
     async edit(
-        _filePath: string,
-        _fileContent: string,
+        _section: SectionInstance,
         _instruction: string,
     ): Promise<AiResult<EditProposal>> {
         throw NOT_YET('edit');
