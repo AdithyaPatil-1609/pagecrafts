@@ -37,7 +37,17 @@ export async function POST(request: NextRequest) {
       if (error.code === "weak_password") {
         return fail("validation_failed", "Choose a stronger password.");
       }
-      return ok({ user: null, pending: true }, 202);
+      if (error.code === "email_address_invalid") {
+        return fail("validation_failed", "Enter a valid email address.");
+      }
+      if (error.code === "signup_disabled") {
+        return fail("forbidden", "New accounts are not being accepted right now.");
+      }
+      if (error.code === "user_already_exists" || error.code === "email_exists") {
+        return ok({ user: null, pending: true }, 202);
+      }
+      console.error("[auth/signup]", error.code ?? error.status, error.message);
+      return fail("internal", "We could not create your account. Try again.");
     }
 
     if (!data.user || !data.session) {
