@@ -20,7 +20,7 @@ Frozen on 2026-08-04 for Day 1. Changes require agreement from the whole team be
 | API envelope | All typed route results use `ApiResult<T>` |
 | API version | New routes live under `/api/v1`; breaking changes use a new version |
 | Ownership | Supabase RLS is the authority for user-owned data; a non-owner sees no row |
-| Deploy status | `pending`, `live`, `failed` |
+| Deploy status | `pending`, `provisioning`, `pushing`, `enabling_hosting`, `verifying`, `live`, `failed` |
 
 ## Day 1 route signatures
 
@@ -39,3 +39,19 @@ Frozen on 2026-08-04 for Day 1. Changes require agreement from the whole team be
 2. Obtain agreement from all five engineers.
 3. Update types, OpenAPI, migration, and tests together.
 4. Increment the API version for every breaking HTTP change.
+## Publish / deploy — frozen D1
+
+Owner: Adhyay (R3 · Publish & Deploy)
+Frozen: 2026-08-05
+Signed off: _pending — Adithya, Pragna, Preethi, Hanish_
+
+| Item | Decision |
+| --- | --- |
+| Deployment states | `pending` → `provisioning` → `pushing` → `enabling_hosting` → `verifying` → `live` \| `failed` |
+| Error codes | `payment_required` and `hosting_error` replace `github_not_connected` and `github_error` (A1, Coding Standard §16.16) |
+| Status mapping | `payment_required` → 402, `hosting_error` → 502 |
+| Publishable file | `PublishFile { path, content, encoding }` — the shape persistence hands to publish |
+| Live URL | Never returned until verified with a 200 response (C-05, FR-086) |
+| Provider access | All hosting calls go through `DeployProvider`; no provider named outside `src/lib/deploy/adapters/` (V-8, NFR-041) |
+
+Superseded: `github_not_connected`, `github_error`, and the 3-state deploy status.
