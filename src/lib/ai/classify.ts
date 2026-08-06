@@ -1,0 +1,52 @@
+import { model } from './gateway';
+import { classifySchema } from './gateway/response-schemas';
+import { loadTemplate, render } from './harness/templates';
+import { stripFences } from './sanitise';
+import { classification, isClassificationShaped } from '@/lib/contracts/schemas/ai';
+import {
+    SECTION_KEYS, MAX_CLASSIFY_CHARS,
+    type IntentAttributes, type AiResult, type Usage,
+} from '@/lib/contracts';
+
+const CATEGORIES =
+    'portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other';
+
+const SAFE: IntentAttributes = {
+    category: 'other',
+    vertical: 'general-business',
+    tone: 'minimal',
+    palette: 'light',
+    sections: ['hero', 'about', 'contact'],
+    fallback: true,
+};
+
+const NO_USAGE: Usage = { model: 'none', inputTokens: 0, outputTokens: 0, latencyMs: 0 };
+
+export async function classify(text: string): Promise<AiResult<IntentAttributes>> {
+    const input = text.trim().slice(0, MAX_CLASSIFY_CHARS);
+    if (!input) return { data: SAFE, usage: NO_USAGE };
+
+    const tpl = loadTemplate('classify.v1');
+
+    try {
+        const reply = await model.fast.complete({
+            job: 'classify',
+            system: render(tpl.system, {
+                categories: CATEGORIES,
+                sectionKeys: SECTION_KEYS.join(', '),
+            }),
+            user: render(tpl.user, { text: input }),
+            schema: classifySchema,
+        });
+
+        const raw: unknown = JSON.parse(stripFences(reply.text));
+        if (!isClassificationShaped(raw)) return { data: SAFE, usage: reply };
+
+        const parsed = classification.safeParse(raw);
+        if (!parsed.success) return { data: SAFE, usage: reply };
+
+        return { data: { ...parsed.data, fallback: false }, usage: reply };
+    } catch {
+        return { data: SAFE, usage: NO_USAGE };
+    }
+}

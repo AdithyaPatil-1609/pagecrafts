@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validatePath } from '@/lib/paths';
+import { extensionOf, languageFor } from '@/lib/languages';
 
 describe('validatePath', () => {
     it('accepts a normal name', () => {
@@ -18,6 +19,10 @@ describe('validatePath', () => {
         const err = validatePath('index.html', ['index.html']);
         expect(err?.code).toBe('duplicate_path');
         expect(err?.message).toContain('already exists');
+    });
+
+    it('rejects a duplicate that differs only by case', () => {
+        expect(validatePath('Index.html', ['index.html'])?.code).toBe('duplicate_path');
     });
 
     it('rejects path traversal', () => {
