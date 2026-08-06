@@ -11,7 +11,10 @@
     "test": "vitest run",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "deploy:seal": "tsx --env-file=.env.local scripts/seal-credential.ts",
+    "deploy:health": "tsx --env-file=.env.local --conditions=react-server scripts/hosting-health-check.ts",
+    "deploy:spike": "tsx --env-file=.env.local --conditions=react-server scripts/provision-spike.ts"
   },
   "dependencies": {
     "@google/genai": "^2.15.0",
@@ -40,7 +43,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "tsx": "^4.23.7",
+    "tsx": "^4.23.9",
     "typescript": "^5",
     "vitest": "^4.1.10"
   },
