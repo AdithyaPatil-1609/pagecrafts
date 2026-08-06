@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { aiConfig, type AiConfig } from '../config';
+import { aiConfig, type AiConfig, type AiOperation } from '../config';
 import type { LLMProvider, FillContext } from '../LLMProvider';
 import type {
     IntentAttributes, VerticalProfile, SectionInstance, SectionProps, EditProposal, AiResult,
@@ -10,6 +10,7 @@ export type Tier = 'fast' | 'strong';
 
 export interface RawRequest {
     tier: Tier;
+    op: AiOperation;
     system?: string;
     user: string;
 }
@@ -20,6 +21,16 @@ export interface RawReply {
     inputTokens: number;
     outputTokens: number;
     latencyMs: number;
+}
+
+export class AiTimeoutError extends Error {
+    constructor(
+        readonly op: AiOperation,
+        readonly timeoutMs: number,
+    ) {
+        super(`${op} exceeded its ${timeoutMs}ms budget.`);
+        this.name = 'AiTimeoutError';
+    }
 }
 
 const NOT_YET = (what: string) => new Error(`${what}() lands later on D2.`);
@@ -37,18 +48,31 @@ export class GeminiProvider implements LLMProvider {
         return tier === 'fast' ? this.cfg.models.fast : this.cfg.models.strong;
     }
 
-    async raw({ tier, system, user }: RawRequest): Promise<RawReply> {
+    timeoutFor(op: AiOperation): number {
+        return this.cfg.timeouts[op];
+    }
+
+    async raw({ tier, op, system, user }: RawRequest): Promise<RawReply> {
         const model = this.modelFor(tier);
+        const timeoutMs = this.timeoutFor(op);
         const startedAt = Date.now();
 
-        const response = await this.client.models.generateContent({
-            model,
-            contents: user,
-            config: {
-                ...(system ? { systemInstruction: system } : {}),
-                abortSignal: AbortSignal.timeout(this.cfg.timeoutMs),
-            },
-        });
+        let response;
+        try {
+            response = await this.client.models.generateContent({
+                model,
+                contents: user,
+                config: {
+                    ...(system ? { systemInstruction: system } : {}),
+                    abortSignal: AbortSignal.timeout(timeoutMs),
+                },
+            });
+        } catch (err) {
+            if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+                throw new AiTimeoutError(op, timeoutMs);
+            }
+            throw err;
+        }
 
         const usage = response.usageMetadata;
 
