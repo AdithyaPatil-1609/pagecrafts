@@ -1,14 +1,28 @@
 import { runPrompt } from './runner';
 import { listTemplates } from './templates';
-import { SECTION_KEYS } from '@/lib/contracts';
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
+import {
+    SECTION_KEYS, THEME_IDS, MOTION_IDS,
+    RADIUS_IDS, SPACING_IDS, IMAGERY_IDS,
+} from '@/lib/contracts';
+import { CATEGORY_LIST } from '../schemas';
+
 const DEFAULTS: Record<string, string> = {
-    categories: 'restaurant, portfolio, saas, event, personal, shop, blog, other',
-    tones: 'playful, formal, minimal, bold, warm',
-    palettes: 'light, dark, colourful, muted',
+    categories: CATEGORY_LIST,
     sectionKeys: SECTION_KEYS.join(', '),
+    themes: THEME_IDS.join(', '),
+    motions: MOTION_IDS.join(', '),
+    radii: RADIUS_IDS.join(', '),
+    spacings: SPACING_IDS.join(', '),
+    imagery: IMAGERY_IDS.join(', '),
+    tone: 'minimal',
+    variant: 'default',
+    customerWord: 'customer',
+    fields: 'heading, sub',
+    recipe: '(none)',
+    brief: '(none)',
 };
 
 function parseArgs(argv: string[]) {
