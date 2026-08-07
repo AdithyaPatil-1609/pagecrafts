@@ -28,3 +28,11 @@ export function readDeployCredential(): string {
 export function redact(text: string): string {
     return cached ? text.split(cached).join('[redacted]') : text;
 }
+
+export function resetCredentialCache(): void {
+    cached = null;
+}
+
+export function credentialKeyId(): string {
+    return process.env.HOSTING_CREDENTIAL_KEY_ID ?? 'unknown';
+}

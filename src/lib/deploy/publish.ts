@@ -4,6 +4,8 @@ import type { DeployProvider } from './provider';
 import { deployConfig } from './config';
 import { deployProvider } from './adapters';
 import { runOnce } from './idempotency';
+import { step } from './log';
+import { toPublishError } from './errors';
 
 export interface PublishInput {
     projectId: string;
@@ -35,47 +37,64 @@ async function run(
     onState: (state: DeploymentState) => void,
     provider: DeployProvider,
 ): Promise<PublishResult> {
+    const ctx = { projectId: input.projectId };
+    let stage = 'provisioning';
+
     onState('pending');
 
     let siteId = input.siteId ?? null;
     const isNew = siteId === null;
 
-    if (!siteId) {
-        onState('provisioning');
-        const site = await provider.provisionSite({
-            projectId: input.projectId,
-            projectName: input.projectName,
-        });
-        siteId = site.siteId;
+    try {
+        if (!siteId) {
+            onState('provisioning');
+            const site = await step('provisioning', ctx, () =>
+                provider.provisionSite({
+                    projectId: input.projectId,
+                    projectName: input.projectName,
+                }),
+            );
+            siteId = site.siteId;
+        }
+
+        const id = siteId;
+        const subdomain = id.split('/')[1];
+        const url = `https://${subdomain}.${deployConfig.rootDomain}`;
+        const siteCtx = { ...ctx, siteId: id };
+
+        stage = 'pushing';
+        onState('pushing');
+        const { commitSha } = await step('pushing', siteCtx, () =>
+            provider.pushBuild(
+                id,
+                input.files,
+                `Publish ${input.projectName} - ${new Date().toISOString()}`,
+            ),
+        );
+
+        if (isNew) {
+            stage = 'enabling_hosting';
+            onState('enabling_hosting');
+            await step('enabling_hosting', siteCtx, () => provider.enableHosting(id));
+        }
+
+        stage = 'verifying';
+        onState('verifying');
+        const live = await step('verifying', siteCtx, () => provider.verifyLive(url));
+
+        const state: DeploymentState = live ? 'live' : 'pending';
+        onState(state);
+
+        return {
+            siteId: id,
+            subdomain,
+            liveUrl: live ? url : null,
+            commitSha,
+            state,
+            error: live ? null : 'verification_timeout',
+        };
+    } catch (error) {
+        onState('failed');
+        throw toPublishError(stage, error);
     }
-
-    const subdomain = siteId.split('/')[1];
-    const url = `https://${subdomain}.${deployConfig.rootDomain}`;
-
-    onState('pushing');
-    const { commitSha } = await provider.pushBuild(
-        siteId,
-        input.files,
-        `Publish ${input.projectName} - ${new Date().toISOString()}`,
-    );
-
-    if (isNew) {
-        onState('enabling_hosting');
-        await provider.enableHosting(siteId);
-    }
-
-    onState('verifying');
-    const live = await provider.verifyLive(url);
-
-    const state: DeploymentState = live ? 'live' : 'pending';
-    onState(state);
-
-    return {
-        siteId,
-        subdomain,
-        liveUrl: live ? url : null,
-        commitSha,
-        state,
-        error: live ? null : 'verification_timeout',
-    };
 }
