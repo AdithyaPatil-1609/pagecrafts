@@ -31,7 +31,8 @@ export async function plan(
     });
 
     const raw = JSON.parse(stripFences(reply.text)) as { sections?: unknown };
-    const parsed = generationPlan.safeParse(raw.sections ?? []);
+    const rawSections = Array.isArray(raw.sections) ? raw.sections.slice(0, 7) : (raw.sections ?? []);
+    const parsed = generationPlan.safeParse(rawSections);
     if (!parsed.success) {
         throw new Error(`plan: model output failed validation — ${parsed.error.message}`);
     }

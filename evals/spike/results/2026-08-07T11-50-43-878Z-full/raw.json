@@ -1,0 +1,22 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "gemini-2.5-flash-lite",
+        "inputTokens": 202,
+        "outputTokens": 60,
+        "latencyMs": 1831
+      }
+    ],
+    "ok": false,
+    "error": "profile(dental-clinic): [\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_big\",\n    \"maximum\": 7,\n    \"inclusive\": true,\n    \"path\": [\n      \"recipe\"\n    ],\n    \"message\": \"Too big: expected array to have <=7 items\"\n  }\n]",
+    "requests": 1,
+    "modelTimeMs": 1831,
+    "wallClockMs": 7456
+  }
+]

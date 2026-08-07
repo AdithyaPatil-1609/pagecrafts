@@ -1,0 +1,2022 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "dental-clinic",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 4
+  },
+  {
+    "vertical": "law-firm",
+    "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice",
+    "hasTemplate": false,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "law-firm",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 0
+  },
+  {
+    "vertical": "yoga-studio",
+    "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place",
+    "hasTemplate": false,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "yoga-studio",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 1
+  },
+  {
+    "vertical": "ngo",
+    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+    "hasTemplate": false,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "ngo",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 1
+  },
+  {
+    "vertical": "restaurant",
+    "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings",
+    "hasTemplate": true,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "restaurant",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 1
+  },
+  {
+    "vertical": "photography",
+    "prompt": "dark moody one page site for a photography studio, mostly pictures",
+    "hasTemplate": true,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "photography",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "dark moody one page site for a photography studio, mostly pictures",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 1
+  },
+  {
+    "vertical": "saas",
+    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
+    "hasTemplate": true,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "saas",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 1
+  },
+  {
+    "vertical": "gym",
+    "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm",
+    "hasTemplate": true,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "gym",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 2
+  },
+  {
+    "vertical": "unknown",
+    "prompt": "a website",
+    "hasTemplate": false,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "unknown",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "a website",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 0
+  },
+  {
+    "vertical": "interior-design",
+    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form",
+    "hasTemplate": false,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "interior-design",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 1
+  }
+]

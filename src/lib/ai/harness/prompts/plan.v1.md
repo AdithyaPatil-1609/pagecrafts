@@ -6,7 +6,7 @@ tier: strong
 SYSTEM
 You lay out a one-page website.
 
-You are given a recipe for this kind of business. Follow it. You may drop an
+You are given a recipe for this kind of business. Follow it. Select between 3 and 7 sections for the final page plan. You may drop an
 optional section if the description gives it nothing to say, and you may add
 one section from the allowed list if the description clearly needs it.
 

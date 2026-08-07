@@ -1,0 +1,122 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "gemini-2.5-flash-lite",
+        "inputTokens": 202,
+        "outputTokens": 60,
+        "latencyMs": 1872
+      }
+    ],
+    "ok": false,
+    "error": "profile(dental-clinic): [\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_big\",\n    \"maximum\": 7,\n    \"inclusive\": true,\n    \"path\": [\n      \"recipe\"\n    ],\n    \"message\": \"Too big: expected array to have <=7 items\"\n  }\n]",
+    "requests": 1,
+    "modelTimeMs": 1872,
+    "wallClockMs": 7637
+  },
+  {
+    "vertical": "law-firm",
+    "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice",
+    "hasTemplate": false,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "none",
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "latencyMs": 0
+      }
+    ],
+    "ok": false,
+    "error": "profile(law-firm): [\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_big\",\n    \"maximum\": 7,\n    \"inclusive\": true,\n    \"path\": [\n      \"recipe\"\n    ],\n    \"message\": \"Too big: expected array to have <=7 items\"\n  }\n]",
+    "requests": 1,
+    "modelTimeMs": 0,
+    "wallClockMs": 6044
+  },
+  {
+    "vertical": "yoga-studio",
+    "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place",
+    "hasTemplate": false,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "gemini-2.5-flash-lite",
+        "inputTokens": 193,
+        "outputTokens": 57,
+        "latencyMs": 1330
+      }
+    ],
+    "ok": false,
+    "error": "profile(yoga-studio): [\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_big\",\n    \"maximum\": 7,\n    \"inclusive\": true,\n    \"path\": [\n      \"recipe\"\n    ],\n    \"message\": \"Too big: expected array to have <=7 items\"\n  }\n]",
+    "requests": 1,
+    "modelTimeMs": 1330,
+    "wallClockMs": 7885
+  },
+  {
+    "vertical": "ngo",
+    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+    "hasTemplate": false,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "none",
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "latencyMs": 0
+      }
+    ],
+    "ok": false,
+    "error": "profile(ngo): [\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_big\",\n    \"maximum\": 7,\n    \"inclusive\": true,\n    \"path\": [\n      \"recipe\"\n    ],\n    \"message\": \"Too big: expected array to have <=7 items\"\n  }\n]",
+    "requests": 1,
+    "modelTimeMs": 0,
+    "wallClockMs": 7786
+  },
+  {
+    "vertical": "restaurant",
+    "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings",
+    "hasTemplate": true,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "gemini-2.5-flash-lite",
+        "inputTokens": 191,
+        "outputTokens": 62,
+        "latencyMs": 1539
+      }
+    ],
+    "ok": false,
+    "error": "profile(restaurant): [\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_big\",\n    \"maximum\": 7,\n    \"inclusive\": true,\n    \"path\": [\n      \"recipe\"\n    ],\n    \"message\": \"Too big: expected array to have <=7 items\"\n  }\n]",
+    "requests": 1,
+    "modelTimeMs": 1539,
+    "wallClockMs": 6556
+  },
+  {
+    "vertical": "photography",
+    "prompt": "dark moody one page site for a photography studio, mostly pictures",
+    "hasTemplate": true,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "model": "gemini-2.5-flash-lite",
+        "inputTokens": 183,
+        "outputTokens": 54,
+        "latencyMs": 1231
+      }
+    ],
+    "ok": false,
+    "error": "profile(photography): [\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_big\",\n    \"maximum\": 7,\n    \"inclusive\": true,\n    \"path\": [\n      \"recipe\"\n    ],\n    \"message\": \"Too big: expected array to have <=7 items\"\n  }\n]",
+    "requests": 1,
+    "modelTimeMs": 1231,
+    "wallClockMs": 8708
+  }
+]
