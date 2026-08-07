@@ -28,6 +28,7 @@
     "@codemirror/view": "^6.43.8",
     "@google/genai": "^2.15.0",
     "@radix-ui/react-dialog": "^1.1.23",
+    "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.0",
     "@upstash/redis": "^1.38.2",
