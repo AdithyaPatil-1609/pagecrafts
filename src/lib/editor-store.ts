@@ -1,12 +1,11 @@
 'use client';
 import { create } from 'zustand';
 import { VFS } from '@/lib/vfs';
-import { SEED_PROJECT } from '@/lib/seed';
-import type { TreeNode } from '@/lib/contracts';
 import { validatePath, type PathError } from '@/lib/paths';
+import { loadProjectFiles, pickEntryFile } from '@/lib/project-source';
+import type { TreeNode } from '@/lib/contracts';
 
 const vfs = new VFS();
-vfs.seed(SEED_PROJECT);
 
 interface EditorState {
     vfs: VFS;
@@ -14,26 +13,47 @@ interface EditorState {
     activeFile: string | null;
     dirtyPaths: string[];
     advanced: boolean;
+    loading: boolean;
+    loadError: string | null;
+    loadProject: (projectId: string) => Promise<void>;
     openFile: (path: string) => void;
     writeActive: (content: string) => void;
     toggleAdvanced: () => void;
     refresh: () => void;
-    saveProject: () => void;
-    loading: boolean;
-    setLoaded: () => void;
     createFile: (path: string) => PathError | null;
     renameFile: (from: string, to: string) => PathError | null;
     deleteFile: (path: string) => void;
-
+    saveProject: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
     vfs,
     tree: vfs.list(),
-    activeFile: 'index.html',
-    dirtyPaths: vfs.dirtyPaths(),
+    activeFile: null,
+    dirtyPaths: [],
     advanced: false,
     loading: true,
+    loadError: null,
+
+    loadProject: async (projectId) => {
+        set({ loading: true, loadError: null });
+
+        const { files, error } = await loadProjectFiles(projectId);
+
+        if (error) {
+            set({ loading: false, loadError: error });
+            return;
+        }
+
+        const { vfs } = get();
+        vfs.reset();
+        vfs.seed(files);
+
+        set({
+            activeFile: pickEntryFile(vfs.paths()),
+            loading: false,
+        });
+    },
 
     openFile: (path) => set({ activeFile: path }),
 
@@ -45,8 +65,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     toggleAdvanced: () => set((s) => ({ advanced: !s.advanced })),
 
     refresh: () => set({ tree: vfs.list(), dirtyPaths: vfs.dirtyPaths() }),
-
-    setLoaded: () => set({ loading: false }),
 
     createFile: (path) => {
         const { vfs } = get();

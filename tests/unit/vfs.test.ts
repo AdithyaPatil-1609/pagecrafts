@@ -23,6 +23,13 @@ describe('VFS', () => {
         expect(tree.children?.find((c) => c.name === 'css')?.children?.[0]?.path).toBe('css/styles.css');
     });
 
+    it('reset empties the engine', () => {
+        const vfs = new VFS();
+        vfs.seed({ 'a.html': 'x' });
+        vfs.reset();
+        expect(vfs.paths()).toEqual([]);
+    });
+
     it('rename moves content and delete removes it', () => {
         const vfs = new VFS();
         vfs.seed({ 'a.html': 'body' });
