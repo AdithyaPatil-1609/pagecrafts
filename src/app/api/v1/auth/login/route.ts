@@ -4,14 +4,35 @@ import { supabaseRouteClient } from "@/lib/auth/server";
 import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
+import { consume, type LimitResult } from "@/lib/limits/rate-limit";
+import { clientIp } from "@/lib/limits/client-ip";
+import { LOGIN_PER_IP, LOGIN_PER_EMAIL } from "@/lib/limits/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const GENERIC_FAILURE = "That email and password combination is not correct.";
+const THROTTLED = "Too many sign-in attempts. Try again in a few minutes.";
+
+function throttled(result: LimitResult, scope: string) {
+  if (result.degraded) {
+    console.error("[login] rate limiter unavailable, refusing sign-in", { scope });
+  }
+
+  const response = fail("rate_limited", THROTTLED);
+  response.headers.set("Retry-After", String(result.retryAfterSeconds));
+  return response;
+}
 
 export async function POST(request: NextRequest) {
   return guard(async () => {
+    const ip = clientIp(request.headers);
+    const byIp = await consume("login:ip", ip, LOGIN_PER_IP);
+
+    if (!byIp.allowed) {
+      return throttled(byIp, "ip");
+    }
+
     let body: unknown;
 
     try {
@@ -26,6 +47,13 @@ export async function POST(request: NextRequest) {
       return fail("unauthorized", GENERIC_FAILURE);
     }
 
+    const email = credentials.value.email.trim().toLowerCase();
+    const byEmail = await consume("login:email", email, LOGIN_PER_EMAIL);
+
+    if (!byEmail.allowed) {
+      return throttled(byEmail, "email");
+    }
+
     const supabase = await supabaseRouteClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.value.email,
@@ -34,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       if (error.status === 429) {
-        return fail("rate_limited", "Too many attempts. Try again shortly.");
+        return fail("rate_limited", THROTTLED);
       }
       if (error.code === "email_not_confirmed") {
         return fail(
