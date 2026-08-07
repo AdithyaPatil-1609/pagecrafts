@@ -20,7 +20,12 @@ export const patchProjectSchema = z.object({
       ogImageAssetId: z.string().optional(),
     })
     .optional(),
-  formEndpoint: z.string().url().nullable().optional(),
+  formEndpoint: z
+    .string()
+    .url()
+    .startsWith("https://", "The form address must start with https://")
+    .nullable()
+    .optional(),
 });
 
 export const putFilesSchema = z.object({

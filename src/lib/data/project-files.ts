@@ -86,3 +86,25 @@ export async function putProjectFiles(
 
     return { projectId, files, updatedAt: touched.updated_at };
 }
+// Single-file read for GET /projects/{id}/files/{path}. A path that is not in this
+// project returns not_found rather than an empty string, so the editor can tell the
+// difference between "empty file" and "no such file" (N-4).
+export async function getProjectFile(
+    supabase: SupabaseClient,
+    projectId: string,
+    path: string,
+): Promise<{ projectId: string; path: string; content: string; updatedAt: string }> {
+    await loadProject(supabase, projectId);
+
+    const { data, error } = await supabase
+        .from('project_files')
+        .select('path, content, updated_at')
+        .eq('project_id', projectId)
+        .eq('path', path)
+        .maybeSingle();
+
+    if (error) throw new ApiError('internal', 'Could not read the file.', error.message);
+    if (!data) throw new ApiError('not_found', 'That file does not exist in this project.');
+
+    return { projectId, path: data.path, content: data.content, updatedAt: data.updated_at };
+}

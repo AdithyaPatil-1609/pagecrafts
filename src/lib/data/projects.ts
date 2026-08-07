@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  DeploymentState,
+  ProjectStatus,
   CreateProjectRequest,
   CreateProjectResponse,
   PatchProjectRequest,
@@ -10,7 +12,34 @@ import type {
 import { ApiError } from "@/lib/errors/respond";
 
 const DETAIL_COLUMNS =
-  "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at";
+  "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at, " +
+  "deployments(status, live_url, created_at)";
+
+const SUMMARY_COLUMNS = "id, name, updated_at, deployments(status, live_url, created_at)";
+
+interface DeploymentRow {
+  status: DeploymentState;
+  live_url: string | null;
+  created_at: string;
+}
+
+// Newest attempt wins. One row per publish attempt, success and failure alike (V-7),
+// so the dashboard shows a failed publish without the user opening the project.
+function latestDeployment(rows: DeploymentRow[] | null | undefined): DeploymentRow | null {
+  if (!rows || rows.length === 0) return null;
+  return rows.reduce((a, b) => (a.created_at >= b.created_at ? a : b));
+}
+
+function statusOf(rows: DeploymentRow[] | null | undefined): ProjectStatus {
+  return latestDeployment(rows)?.status ?? "draft";
+}
+
+// C-05: never surface a URL that has not been confirmed to respond. The database
+// CHECK guarantees live_url is non-null when status is 'live'; anything else shows nothing.
+function liveUrlOf(rows: DeploymentRow[] | null | undefined): string | null {
+  const d = latestDeployment(rows);
+  return d && d.status === "live" ? d.live_url : null;
+}
 
 interface ProjectRow {
   id: string;
@@ -20,14 +49,15 @@ interface ProjectRow {
   site_meta: SiteMeta;
   form_endpoint: string | null;
   updated_at: string;
+  deployments?: DeploymentRow[] | null;
 }
 
 function rowToDetail(row: ProjectRow): ProjectDetail {
   return {
     id: row.id,
     name: row.name,
-    status: "draft", // latest-deployment join lands in D2
-    liveUrl: null,
+    status: statusOf(row.deployments),
+    liveUrl: liveUrlOf(row.deployments),
     thumbnailUrl: null,
     updatedAt: row.updated_at,
     sourceTemplateId: row.source_template_id,
@@ -44,7 +74,7 @@ export async function listProjects(
 ): Promise<ProjectSummary[]> {
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, updated_at")
+    .select(SUMMARY_COLUMNS)
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -52,14 +82,17 @@ export async function listProjects(
     throw new ApiError("internal", "Could not list your sites.", error.message);
   }
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    name: row.name,
-    status: "draft" as const,
-    liveUrl: null,
-    thumbnailUrl: null,
-    updatedAt: row.updated_at,
-  }));
+  return (data ?? []).map((row) => {
+    const r = row as unknown as ProjectRow;
+    return {
+      id: r.id,
+      name: r.name,
+      status: statusOf(r.deployments),
+      liveUrl: liveUrlOf(r.deployments),
+      thumbnailUrl: null,
+      updatedAt: r.updated_at,
+    };
+  });
 }
 
 // A leaked id belonging to another user returns not_found, never the row (SEC-14, RLS).
@@ -78,7 +111,7 @@ export async function getProject(
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
-  return rowToDetail(data as ProjectRow);
+  return rowToDetail(data as unknown as ProjectRow);
 }
 
 // D1 skeleton: create the project row. Copying template files + the initial commit
@@ -131,7 +164,7 @@ export async function patchProject(
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
-  return rowToDetail(data as ProjectRow);
+  return rowToDetail(data as unknown as ProjectRow);
 }
 
 // Removes our row only (RLS owner-scoped). A live site keeps serving until its hosting
