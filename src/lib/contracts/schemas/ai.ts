@@ -15,7 +15,7 @@ export const toneSchema = z.enum(['playful', 'formal', 'minimal', 'bold', 'warm'
 export const paletteSchema = z.enum(['light', 'dark', 'colourful', 'muted']);
 export const sectionKeySchema = z.enum(SECTION_KEYS);
 
-const slug = z.string().regex(/^[a-z][a-z0-9-]{1,40}$/);
+export const slug = z.string().regex(/^[a-z][a-z0-9-]{1,40}$/);
 
 export const classification = z.object({
     category: categorySchema.catch('other'),
@@ -24,6 +24,19 @@ export const classification = z.object({
     palette: paletteSchema.catch('light'),
     sections: z.array(sectionKeySchema).catch([]),
 });
+
+export function coercedFields(raw: Record<string, unknown>): string[] {
+    const checks: Array<[string, z.ZodTypeAny]> = [
+        ['category', categorySchema],
+        ['tone', toneSchema],
+        ['palette', paletteSchema],
+        ['vertical', slug],
+    ];
+
+    return checks
+        .filter(([key, schema]) => !schema.safeParse(raw[key]).success)
+        .map(([key]) => key);
+}
 
 const CLASSIFICATION_KEYS = [
     'category', 'vertical', 'tone', 'palette', 'sections',

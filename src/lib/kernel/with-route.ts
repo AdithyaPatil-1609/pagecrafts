@@ -4,15 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ZodType } from "zod";
 
 import { requireUser, supabaseRoute } from "@/lib/auth/session";
-import { ApiError, fail } from "@/lib/errors/respond";
-
-// Minimal route kernel (M0.4). Every persistence handler runs inside this wrapper so
-// auth, body validation, the RLS-aware Supabase client, and error mapping happen once
-// instead of in every route.
-//
-// NOTE: M0.4 is E1's keystone. This is a minimal stand-in covering what the R3
-// persistence routes need (auth + Zod + RLS client + ApiResult). Rate limiting,
-// structured logging, and the kill-switch gate are E1's to add here later.
+import { ApiError, fail } from "@/lib/errors/respond"
 
 export interface RouteContext<Body, Params> {
   req: NextRequest;
