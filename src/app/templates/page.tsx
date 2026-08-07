@@ -1,5 +1,5 @@
 import { TEMPLATES } from "@/lib/templates";
-import { toCategory } from "@/lib/discovery/categories";
+import { filterByCategory, toCategory } from "@/lib/discovery/categories";
 import { GalleryGrid } from "@/components/discovery/GalleryGrid";
 
 // Screen 04 — the gallery. On stub data (the local template registry) for now; wires to
@@ -12,9 +12,7 @@ export default async function TemplatesPage({
 }) {
   const { category } = await searchParams;
   const active = toCategory(category);
-  const templates = active
-    ? TEMPLATES.filter((t) => t.category === active)
-    : TEMPLATES;
+  const templates = filterByCategory(TEMPLATES, active);
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-16">

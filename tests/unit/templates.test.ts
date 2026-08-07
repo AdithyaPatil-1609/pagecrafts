@@ -12,6 +12,10 @@ describe("template library", () => {
     expect(TEMPLATES.length).toBeGreaterThanOrEqual(3);
   });
 
+  it("meets the D5 milestone floor (10 real templates, week-1 leg of 10/18/25)", () => {
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(10);
+  });
+
   it("has unique ids and spans more than one category", () => {
     const ids = TEMPLATES.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);

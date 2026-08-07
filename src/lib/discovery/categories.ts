@@ -1,4 +1,4 @@
-import type { Category } from "@/lib/contracts";
+import type { Category, Template } from "@/lib/contracts";
 
 // Display labels for every value of the frozen Category enum. Using Record<Category, …>
 // means a new enum value fails to compile until it gets a label here (D-1).
@@ -25,4 +25,13 @@ const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);
 // are ignored rather than raising an error (D-4, FR-035).
 export function toCategory(value: string | undefined | null): Category | undefined {
   return value && CATEGORY_SET.has(value) ? (value as Category) : undefined;
+}
+
+// The gallery filter. No category means the whole library — an absent filter is not an
+// empty one (D-4). Kept here rather than inline in the page so it can be tested directly.
+export function filterByCategory(
+  templates: Template[],
+  category: Category | undefined,
+): Template[] {
+  return category ? templates.filter((t) => t.category === category) : templates;
 }
