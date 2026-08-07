@@ -8,26 +8,29 @@ export interface PlannedSection {
 }
 
 export function normalisePlan(sections: PlannedSection[]): PlannedSection[] {
-    let out = sections.filter((s) => variantsFor(s.type).includes(s.variant));
+    const valid = sections.filter((s) => variantsFor(s.type).includes(s.variant));
 
-    const heroes = out.filter((s) => s.type === 'hero');
-    const footers = out.filter((s) => s.type === 'footer');
-    out = out.filter((s) => s.type !== 'hero' && s.type !== 'footer');
+    const hero = valid.find((s) => s.type === 'hero');
+    const footer = valid.find((s) => s.type === 'footer');
 
-    out = out.filter((s, i, arr) =>
-        i === 0 || !(arr[i - 1].type === s.type && arr[i - 1].variant === s.variant));
+    const middle = valid
+        .filter((s) => s.type !== 'hero' && s.type !== 'footer')
+        .filter((s, i, arr) =>
+            i === 0 || !(arr[i - 1].type === s.type && arr[i - 1].variant === s.variant));
+
+    const reserved = (hero ? 1 : 0) + (footer ? 1 : 0);
+
+    const out = [
+        ...(hero ? [hero] : []),
+        ...middle.slice(0, MAX_SECTIONS - reserved),
+        ...(footer ? [footer] : []),
+    ];
 
     for (let i = 1; i < out.length; i += 1) {
         if (out[i].variant !== out[i - 1].variant) continue;
         const alt = variantsFor(out[i].type).find((v) => v !== out[i - 1].variant);
         if (alt) out[i] = { ...out[i], variant: alt };
     }
-
-    const reserved = (heroes.length ? 1 : 0) + (footers.length ? 1 : 0);
-    out = out.slice(0, MAX_SECTIONS - reserved);
-
-    if (heroes.length) out.unshift(heroes[0]);
-    if (footers.length) out.push(footers[0]);
 
     return out;
 }
