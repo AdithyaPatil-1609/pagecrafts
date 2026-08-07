@@ -9,6 +9,7 @@ import { variantsFor } from '@/lib/ai/sections/contracts';
 export const categorySchema = z.enum([
     'portfolio', 'restaurant', 'saas', 'blog', 'event',
     'resume', 'agency', 'store', 'nonprofit', 'other',
+    'fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business',
 ]) satisfies z.ZodType<Category>;
 
 export const toneSchema = z.enum(['playful', 'formal', 'minimal', 'bold', 'warm']);

@@ -7,6 +7,7 @@ import { SECTION_CONTRACTS } from '../sections/contracts';
 const CATEGORIES = [
     'portfolio', 'restaurant', 'saas', 'blog', 'event',
     'resume', 'agency', 'store', 'nonprofit', 'other',
+    'fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business',
 ];
 const TONES = ['playful', 'formal', 'minimal', 'bold', 'warm'];
 const PALETTES = ['light', 'dark', 'colourful', 'muted'];

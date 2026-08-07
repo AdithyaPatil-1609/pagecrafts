@@ -3,13 +3,15 @@ import { classifySchema } from './gateway/response-schemas';
 import { loadTemplate, render } from './harness/templates';
 import { stripFences } from './sanitise';
 import { classification, coercedFields, isClassificationShaped } from '@/lib/contracts/schemas/ai';
+import { CATEGORY_LIST } from './schemas';
 import {
     SECTION_KEYS, MAX_CLASSIFY_CHARS,
     type IntentAttributes, type AiResult, type Usage,
 } from '@/lib/contracts';
 
-const CATEGORIES =
-    'portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other';
+// The allowed buckets, from the single source of truth so the prompt can never list a
+// category the schema would reject (or miss one the library now ships).
+const CATEGORIES = CATEGORY_LIST;
 
 const SAFE: IntentAttributes = {
     category: 'other',

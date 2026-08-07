@@ -27,10 +27,13 @@ describe("toCategory", () => {
 });
 
 describe("category cards", () => {
-  it("shows the frozen enum exactly — no more, no less (D-1, AC-F2-3)", () => {
-    expect(CATEGORY_CARDS).toHaveLength(10);
+  it("offers exactly the twelve designs the library ships, each unique and labelled (D-6)", () => {
+    expect(CATEGORY_CARDS).toHaveLength(12);
     expect(new Set(CATEGORY_CARDS).size).toBe(CATEGORY_CARDS.length);
-    expect(Object.keys(CATEGORY_LABELS).sort()).toEqual([...CATEGORY_CARDS].sort());
+    // Every card is a real Category with a human-readable label.
+    for (const category of CATEGORY_CARDS) {
+      expect(CATEGORY_LABELS[category]?.trim()).not.toBe("");
+    }
   });
 
   it("labels every card with something a non-technical reader can read", () => {

@@ -15,7 +15,7 @@ function DesignSomethingNewCard({ index }: { index: number }) {
             href="/new"
             className="group flex flex-col overflow-hidden rounded-xl border border-dashed border-primary/40 bg-card transition-colors hover:border-primary hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-            <div className="relative flex aspect-2/1 flex-col items-center justify-center gap-1.5 px-6 text-center">
+            <div className="relative flex aspect-16/10 flex-col items-center justify-center gap-1.5 px-6 text-center">
                 <span
                     aria-hidden
                     className="brand-halo flex size-10 items-center justify-center rounded-full border border-primary/40 bg-accent"
@@ -40,12 +40,6 @@ function DesignSomethingNewCard({ index }: { index: number }) {
         </Link>
     );
 }
-
-const LEGEND = [
-    { label: "Free", dot: "bg-foreground/60" },
-    { label: "Rs 499", dot: "bg-primary" },
-    { label: "Rs 999", dot: "brand-gradient" },
-];
 
 export function GalleryGrid({
     templates,
@@ -103,21 +97,6 @@ export function GalleryGrid({
                 </div>
             </section>
 
-            <footer className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Sparkles className="size-4 text-primary" strokeWidth={1.75} aria-hidden />
-                    Free designs are ready to use. Premium and signature designs are richer,
-                    and charged once.
-                </p>
-                <ul className="flex items-center gap-5">
-                    {LEGEND.map((item) => (
-                        <li key={item.label} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span aria-hidden className={`size-2 rounded-full ${item.dot}`} />
-                            {item.label}
-                        </li>
-                    ))}
-                </ul>
-            </footer>
         </div>
     );
 }
