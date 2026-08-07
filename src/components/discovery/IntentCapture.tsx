@@ -10,9 +10,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Classify the free-text description via Hanish's endpoint. On ANY failure — network,
-// error envelope, bad shape — degrade to "other" and continue (D-2, FR-024): the funnel
-// is never blocked by a classification problem.
-async function classifyText(text: string): Promise<Category> {
+// error envelope (a signed-out 401 included), bad shape, or the route's own safe default
+// (`fallback: true`) — return null and continue (D-2, FR-024): the funnel is never blocked
+// by a classification problem.
+//
+// null means "we learned nothing", which is NOT the same as the model deciding the site is
+// genuinely "other". Filtering on a category we never established would strand the user on
+// an empty grid, so the caller sends them to the unfiltered gallery instead.
+async function classifyText(text: string): Promise<Category | null> {
   try {
     const res = await fetch("/api/v1/intent/classify", {
       method: "POST",
@@ -26,13 +31,13 @@ async function classifyText(text: string): Promise<Category> {
       "ok" in json &&
       (json as { ok: boolean }).ok
     ) {
-      const category = (json as { data?: { category?: string } }).data?.category;
-      if (category) return category as Category;
+      const data = (json as { data?: { category?: string; fallback?: boolean } }).data;
+      if (data?.category && !data.fallback) return data.category as Category;
     }
   } catch {
-    // fall through to the fallback
+    // fall through to the null result
   }
-  return "other";
+  return null;
 }
 
 export function IntentCapture() {
@@ -46,9 +51,9 @@ export function IntentCapture() {
   async function seeTemplates() {
     setBusy(true);
     const text = describe.trim();
-    let category: Category | null = null;
-    if (text) category = await classifyText(text);
-    else if (selected) category = selected;
+    // Text that classified to nothing falls back to the card if there is one, and to the
+    // unfiltered gallery if there is not — never to a filter we did not actually establish.
+    const category = (text ? await classifyText(text) : null) ?? selected;
     setBusy(false);
     router.push(category ? `/templates?category=${category}` : "/templates");
   }
