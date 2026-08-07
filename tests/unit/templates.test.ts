@@ -8,6 +8,16 @@ describe("template library", () => {
     expect(TEMPLATES.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("meets the D2 sourcing floor (3-4 total real templates)", () => {
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("has unique ids and spans more than one category", () => {
+    const ids = TEMPLATES.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(TEMPLATES.map((t) => t.category)).size).toBeGreaterThan(1);
+  });
+
   it("first template validates: non-null provenance and a valid, correctly-priced tier", () => {
     expect(validateTemplate(aurora)).toEqual([]);
     expect(aurora.license.trim()).not.toBe("");

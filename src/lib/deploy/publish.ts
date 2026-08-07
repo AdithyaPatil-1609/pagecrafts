@@ -67,7 +67,7 @@ async function run(
     onState('verifying');
     const live = await provider.verifyLive(url);
 
-    const state: DeploymentState = live ? 'live' : 'failed';
+    const state: DeploymentState = live ? 'live' : 'pending';
     onState(state);
 
     return {
@@ -76,6 +76,6 @@ async function run(
         liveUrl: live ? url : null,
         commitSha,
         state,
-        error: live ? null : 'hosting_timeout',
+        error: live ? null : 'verification_timeout',
     };
 }

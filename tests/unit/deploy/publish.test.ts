@@ -43,16 +43,16 @@ describe('publish', () => {
         expect(result.commitSha).toBe('commit-1');
     });
 
-    it('returns no url when verification fails', async () => {
+    it('stays pending with no url when verification times out', async () => {
         const result = await publish(
             { ...input, idempotencyKey: 'k2' },
             () => { },
             fakeProvider(false),
         );
 
-        expect(result.state).toBe('failed');
+        expect(result.state).toBe('pending');
         expect(result.liveUrl).toBeNull();
-        expect(result.error).toBe('hosting_timeout');
+        expect(result.error).toBe('verification_timeout');
     });
 
     it('skips hosting setup when republishing', async () => {

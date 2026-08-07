@@ -1,8 +1,11 @@
 import type { Template, TemplateTier } from "@/lib/contracts";
 import { aurora } from "./aurora";
+import { ember } from "./ember";
+import { ledger } from "./ledger";
+import { meridian } from "./meridian";
 
 // The template library. Grows on the 10 / 18 / 25 cadence across weeks 1-3.
-export const TEMPLATES: Template[] = [aurora];
+export const TEMPLATES: Template[] = [aurora, ember, ledger, meridian];
 
 const VALID_TIERS: readonly TemplateTier[] = ["free", "premium", "signature"];
 const TIER_PRICE_INR: Record<TemplateTier, number> = {
