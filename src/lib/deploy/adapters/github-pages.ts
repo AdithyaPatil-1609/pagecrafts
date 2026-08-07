@@ -42,9 +42,12 @@ export const githubPagesAdapter: DeployProvider = {
         const [owner, repo] = siteId.split('/');
         const domain = `${repo}.${deployConfig.rootDomain}`;
 
+        const reserved = new Set(['CNAME', '.nojekyll']);
+
         const withDomain: PublishFile[] = [
-            ...files.filter((f) => f.path !== 'CNAME'),
+            ...files.filter((f) => !reserved.has(f.path)),
             { path: 'CNAME', content: `${domain}\n`, encoding: 'utf-8' },
+            { path: '.nojekyll', content: '', encoding: 'utf-8' },
         ];
 
         const { commitSha } = await pushAsSingleCommit(
