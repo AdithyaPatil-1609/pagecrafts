@@ -53,7 +53,10 @@ export class VFS {
     dirtyPaths(): string[] {
         return [...this.files.entries()].filter(([, f]) => f.dirty).map(([p]) => p);
     }
-
+    reset(): void {
+        this.files.clear();
+        this.emit();
+    }
     markClean(): void {
         for (const [path, file] of this.files) {
             this.files.set(path, { ...file, dirty: false });
