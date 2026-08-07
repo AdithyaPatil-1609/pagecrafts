@@ -12,6 +12,7 @@ const SENSITIVE_KEYS = [
     "apikey",
     "api_key",
     "secret",
+    "body",
 ];
 
 type Loose = Record<string, unknown>;
