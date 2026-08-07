@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validatePath } from '@/lib/paths';
+import { extensionOf, languageFor } from '@/lib/languages';
 
 describe('validatePath', () => {
     it('accepts a normal name', () => {
