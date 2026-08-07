@@ -4,6 +4,7 @@ import { supabaseRouteClient } from "@/lib/auth/server";
 import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
+import { publicEnv } from "@/lib/config/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.signUp({
       email: credentials.value.email,
       password: credentials.value.password,
+      options: {
+        emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm?next=/new`,
+      },
     });
 
     if (error) {
