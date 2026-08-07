@@ -1,53 +1,131 @@
-import type { CompleteReply } from './provider';
+import type { CompleteReply, CompleteRequest } from './provider';
+import { SECTION_CONTRACTS } from '../sections/contracts';
+import type { Field, SectionKey } from '@/lib/contracts';
 
-const FIXTURES: Record<string, unknown> = {
+type Mode = 'ok' | 'error' | 'garbage';
+
+// ── classification fixtures ────────────────────────────────────────────────
+
+const CLASSIFICATIONS: Record<string, unknown> = {
     'photography studio': {
-        category: 'portfolio',
-        vertical: 'photography',
-        tone: 'minimal',
-        palette: 'dark',
+        category: 'portfolio', vertical: 'photography',
+        tone: 'minimal', palette: 'dark',
         sections: ['hero', 'gallery', 'about', 'contact'],
     },
     'dental clinic': {
-        category: 'other',
-        vertical: 'dental-clinic',
-        tone: 'formal',
-        palette: 'light',
+        category: 'other', vertical: 'dental-clinic',
+        tone: 'formal', palette: 'light',
         sections: ['hero', 'services', 'team', 'faq', 'contact'],
     },
     bakery: {
-        category: 'restaurant',
-        vertical: 'bakery',
-        tone: 'warm',
-        palette: 'light',
+        category: 'restaurant', vertical: 'bakery',
+        tone: 'warm', palette: 'light',
         sections: ['hero', 'menu', 'gallery', 'contact'],
     },
 };
 
-const DEFAULT = {
-    category: 'other',
-    vertical: 'general-business',
-    tone: 'minimal',
-    palette: 'light',
+const DEFAULT_CLASSIFICATION = {
+    category: 'other', vertical: 'general-business',
+    tone: 'minimal', palette: 'light',
     sections: ['hero', 'about', 'contact'],
 };
 
-function match(text: string): unknown {
+function matchClassification(text: string): unknown {
     const lower = text.toLowerCase();
-    const key = Object.keys(FIXTURES).find((k) => lower.includes(k));
-    return key ? FIXTURES[key] : DEFAULT;
+    const key = Object.keys(CLASSIFICATIONS).find((k) => lower.includes(k));
+    return key ? CLASSIFICATIONS[key] : DEFAULT_CLASSIFICATION;
 }
 
+// ── profile fixture ────────────────────────────────────────────────────────
+
+const PROFILE = {
+    label: 'Mock business',
+    aliases: ['mock'],
+    artDirection: {
+        themeId: 'clinical-blue',
+        motionId: 'whisper',
+        radiusId: 'soft',
+        spacingId: 'default',
+        imageryId: 'bright-clean',
+    },
+    recipe: [
+        { type: 'hero', required: true, note: 'welcome and a clear action' },
+        { type: 'services', required: true, note: 'what this business offers' },
+        { type: 'team', required: false, note: 'who works here' },
+        { type: 'faq', required: false, note: 'common questions' },
+        { type: 'contact', required: true, note: 'how to get in touch' },
+        { type: 'footer', required: true },
+    ],
+    vocabulary: { customer: 'customer', purchase: 'booking' },
+    imageQueries: ['office interior', 'team at work', 'reception desk'],
+};
+
+// ── plan fixture ───────────────────────────────────────────────────────────
+
+const PLAN = {
+    sections: [
+        { type: 'hero', variant: 'split-image', brief: 'welcome the visitor' },
+        { type: 'services', variant: 'cards', brief: 'what we offer' },
+        { type: 'team', variant: 'cards', brief: 'who works here' },
+        { type: 'faq', variant: 'accordion', brief: 'common questions' },
+        { type: 'contact', variant: 'split-map', brief: 'how to reach us' },
+        { type: 'footer', variant: 'simple', brief: 'closing line' },
+    ],
+};
+
+// ── fill fixtures, derived from the section contracts ──────────────────────
+
+function sampleField(f: Field): unknown {
+    switch (f.type) {
+        case 'text':
+            return `Sample ${f.label.toLowerCase()}`.slice(0, f.maxLength ?? 120);
+        case 'richtext':
+            return `Sample ${f.label.toLowerCase()} written by the mock gateway.`;
+        case 'image':
+            return { query: 'office interior', alt: 'Office interior' };
+        case 'select':
+            return f.options?.[0] ?? 'default';
+        case 'list':
+            return [sampleFields(f.itemSchema ?? [])];
+        case 'color':
+            return undefined;
+        default:
+            return undefined;
+    }
+}
+
+function sampleFields(fields: Field[]): Record<string, unknown> {
+    return Object.fromEntries(
+        fields.filter((f) => f.type !== 'color').map((f) => [f.key, sampleField(f)]),
+    );
+}
+
+function fillFixtureFor(prompt: string): unknown {
+    const key = prompt.match(/Section:\s*(\S+)/)?.[1] as SectionKey | undefined;
+    const contract = key ? SECTION_CONTRACTS[key] : undefined;
+    if (!contract) throw new Error(`MockGateway: no contract for section "${key}".`);
+    return sampleFields(contract.fields);
+}
+
+// ── the gateway ────────────────────────────────────────────────────────────
+
 export class MockGateway {
-    constructor(private readonly mode: 'ok' | 'error' | 'garbage' = 'ok') { }
+    constructor(private readonly mode: Mode = 'ok') { }
 
-    async complete({ user }: { user: string }): Promise<CompleteReply> {
-        if (this.mode === 'error') throw new Error('mock provider unreachable');
-
-        const text = this.mode === 'garbage'
-            ? 'sorry, I cannot help with that'
-            : JSON.stringify(match(user));
-
+    private reply(text: string): CompleteReply {
         return { text, model: 'mock', inputTokens: 12, outputTokens: 24, latencyMs: 3 };
+    }
+
+    async complete(req: CompleteRequest): Promise<CompleteReply> {
+        if (this.mode === 'error') throw new Error('mock provider unreachable');
+        if (this.mode === 'garbage') return this.reply('sorry, I cannot help with that');
+
+        const p = req.user;
+
+        if (p.includes('Business type:')) return this.reply(JSON.stringify(PROFILE));
+        if (p.includes('Recipe for this business:')) return this.reply(JSON.stringify(PLAN));
+        if (p.includes('Fields to fill:')) return this.reply(JSON.stringify(fillFixtureFor(p)));
+
+        return this.reply(JSON.stringify(matchClassification(p)));
     }
 }
