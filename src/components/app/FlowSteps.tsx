@@ -11,6 +11,9 @@ export function FlowSteps({ current }: { current: 1 | 2 | 3 }) {
             {STEPS.map((label, index) => {
                 const step = index + 1;
                 const reached = step <= current;
+                // The connector leaving the current step is lit: progress reads as coming
+                // *out* of where you are, not as an edge that only fills once you arrive.
+                const litConnector = index <= current;
 
                 return (
                     <li key={label} className="flex items-center gap-3">
@@ -19,7 +22,7 @@ export function FlowSteps({ current }: { current: 1 | 2 | 3 }) {
                                 aria-hidden
                                 className={cn(
                                     "hidden h-px w-10 sm:block xl:w-14",
-                                    reached ? "bg-primary/60" : "bg-border",
+                                    litConnector ? "bg-primary" : "bg-border",
                                 )}
                             />
                         )}
