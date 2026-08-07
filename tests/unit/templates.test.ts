@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { TEMPLATES, validateTemplate } from "@/lib/templates";
-import { aurora } from "@/lib/templates/aurora";
+
+// A representative free design from the registry, used to exercise the provenance and
+// pricing checks. Portfolio is the free, first-class entry the library has always shipped.
+const portfolio = TEMPLATES.find((t) => t.id === "portfolio")!;
 
 describe("template library", () => {
   it("has at least one real template (D1 floor: the first entry)", () => {
@@ -22,12 +25,12 @@ describe("template library", () => {
     expect(new Set(TEMPLATES.map((t) => t.category)).size).toBeGreaterThan(1);
   });
 
-  it("first template validates: non-null provenance and a valid, correctly-priced tier", () => {
-    expect(validateTemplate(aurora)).toEqual([]);
-    expect(aurora.license.trim()).not.toBe("");
-    expect(aurora.sourceUrl.trim()).not.toBe("");
-    expect(["free", "premium", "signature"]).toContain(aurora.tier);
-    expect(aurora.priceInr).toBe(0);
+  it("a free template validates: non-null provenance and a valid, correctly-priced tier", () => {
+    expect(validateTemplate(portfolio)).toEqual([]);
+    expect(portfolio.license.trim()).not.toBe("");
+    expect(portfolio.sourceUrl.trim()).not.toBe("");
+    expect(["free", "premium", "signature"]).toContain(portfolio.tier);
+    expect(portfolio.priceInr).toBe(0);
   });
 
   it("every template in the registry validates", () => {
@@ -37,7 +40,7 @@ describe("template library", () => {
   });
 
   it("rejects a template with missing provenance", () => {
-    const bad = { ...aurora, license: "" };
+    const bad = { ...portfolio, license: "" };
     expect(validateTemplate(bad)).toContain("license is required (C-06)");
   });
 });

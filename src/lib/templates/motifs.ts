@@ -168,6 +168,16 @@ export const MOTIF_BY_CATEGORY: Record<string, MotifId> = {
     store: "awning",
     nonprofit: "lantern",
     other: "frame",
+    // R2 library-refresh categories. Every design now ships a hero photograph, so a motif
+    // is only the fallback the preview draws when an image is missing — mapped here to the
+    // nearest existing shape rather than adding art no tile will normally show.
+    fitness: "chart",
+    food: "ember",
+    photography: "frame",
+    architecture: "rules",
+    education: "sheet",
+    travel: "arcs",
+    business: "orbit",
 };
 
 export function toMotifId(value: string | undefined | null): MotifId {

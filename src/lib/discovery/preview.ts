@@ -29,6 +29,9 @@ export interface TemplatePreview {
     cta: string;
     layout: PreviewLayout;
     motif: MotifId;
+    // The hero photograph the tile shows, parsed from the template's own markup. Absent for
+    // a design that ships none — the tile draws its motif instead.
+    heroImage?: string;
     palette: PreviewPalette;
 }
 
@@ -117,6 +120,15 @@ function layoutOf(html: string): PreviewLayout {
     return LAYOUTS.find((layout) => layout === declared) ?? "split";
 }
 
+// The hero photograph's URL, taken from the hero.image slot. Only absolute http(s) URLs
+// are accepted — the value lands in an <img src>, so anything else (a data:, a relative
+// path, anything surprising) is dropped and the tile falls back to the motif.
+function heroImageOf(html: string): string | undefined {
+    const frame = html.match(/data-slot="hero\.image"[\s\S]*?<\/div>/i)?.[0] ?? "";
+    const src = frame.match(/<img\b[^>]*\bsrc="([^"]+)"/i)?.[1];
+    return src && /^https:\/\//i.test(src) ? src : undefined;
+}
+
 export function previewOf(template: Template): TemplatePreview {
     const html = template.files["index.html"] ?? "";
     const headingMatch = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
@@ -138,6 +150,7 @@ export function previewOf(template: Template): TemplatePreview {
         cta: textOf(html, /<a\b[^>]*class="cta"[^>]*>([\s\S]*?)<\/a>/i),
         layout: layoutOf(html),
         motif: toMotifId(html.match(/data-motif="([^"]+)"/i)?.[1]),
+        heroImage: heroImageOf(html),
         palette: paletteOf(template.files["styles.css"]),
     };
 }

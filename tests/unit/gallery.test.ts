@@ -127,6 +127,28 @@ describe("previewOf", () => {
     expect(preview.subhead).toBe(template.description);
   });
 
+  it("reads the hero photograph off every design that ships one", () => {
+    for (const template of TEMPLATES) {
+      const preview = previewOf(template);
+      // Every design in the refreshed library leads with a photograph.
+      expect(preview.heroImage, `${template.id} has no hero image`).toMatch(/^https:\/\//);
+      // Whatever the tile shows must be the src in the template's own markup.
+      expect(template.files["index.html"]).toContain(`src="${preview.heroImage}"`);
+    }
+  });
+
+  it("drops a hero image that is not an absolute https URL, rather than passing it to an <img>", () => {
+    for (const src of ["../evil.png", "javascript:alert(1)", "data:image/png;base64,AAAA", "http://x/y.jpg"]) {
+      const preview = previewOf({
+        ...TEMPLATES[0]!,
+        files: {
+          "index.html": `<div class="hero-frame" data-slot="hero.image"><img src="${src}" /></div>`,
+        },
+      });
+      expect(preview.heroImage).toBeUndefined();
+    }
+  });
+
   it("gives every template in the library a palette, a layout and a motif", () => {
     for (const template of TEMPLATES) {
       const preview = previewOf(template);

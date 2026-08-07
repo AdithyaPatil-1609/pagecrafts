@@ -10,7 +10,19 @@ export type Category =
   | "agency"
   | "store"
   | "nonprofit"
-  | "other";
+  | "other"
+  // R2 library-refresh: the gallery grew to the twelve designs the discovery mockup
+  // shows, and each needs its own bucket so its tile reads with the right label and the
+  // classifier can route intent to it. `restaurant` stays for back-compat; new designs
+  // use the finer `food`. These are broad buckets — the specific trade still rides on the
+  // free-form `vertical`.
+  | "fitness"
+  | "food"
+  | "photography"
+  | "architecture"
+  | "education"
+  | "travel"
+  | "business";
 
 export type FileMap = Record<string, string>;
 

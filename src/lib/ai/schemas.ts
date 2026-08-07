@@ -4,6 +4,7 @@ import type { Category } from '@/lib/contracts';
 export const CATEGORIES = [
     'portfolio', 'restaurant', 'saas', 'blog', 'event',
     'resume', 'agency', 'store', 'nonprofit', 'other',
+    'fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business',
 ] as const satisfies readonly Category[];
 
 type MissingFromCategories = Exclude<Category, (typeof CATEGORIES)[number]>;

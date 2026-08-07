@@ -66,10 +66,18 @@ function SearchGlyph({ color }: { color: string }) {
 }
 
 export function TemplatePreview({ template }: { template: Template }) {
-    const { wordmark, nav, headline, subhead, cta, layout, motif, palette } =
+    const { wordmark, nav, headline, subhead, cta, layout, motif, heroImage, palette } =
         previewOf(template);
 
-    const art = <MotifArt motif={motif} palette={palette} className="size-full" />;
+    // The design's own hero photograph where it ships one, drawn edge-to-edge so the tile
+    // reads as the page it advertises; the code-drawn motif is the fallback for designs
+    // that carry none. Decorative here — the tile's name and category sit around it.
+    const art = heroImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={heroImage} alt="" aria-hidden className="size-full object-cover" />
+    ) : (
+        <MotifArt motif={motif} palette={palette} className="size-full" />
+    );
 
     const copy = (
         <>

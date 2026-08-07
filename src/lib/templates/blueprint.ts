@@ -36,6 +36,9 @@ export interface Blueprint {
     layout: Layout;
     nav: string[];
     hero: { headline: string; subhead: string; cta: string };
+    // The photograph that fills the hero. Optional: a design with none falls back to the
+    // code-drawn motif for its category, so the library never renders an empty frame.
+    heroImage?: { src: string; alt: string };
     sections: SectionSpec[];
     footer: string;
 }
@@ -58,10 +61,13 @@ function slug(value: string): string {
 }
 
 function heroMarkup(bp: Blueprint, motif: MotifId): string {
-    const art = motifToSvg(motif, bp.palette);
+    // A photograph where the design ships one; the code-drawn motif where it does not.
+    // Either way it sits in the hero.image slot, so swapping it is a content edit — not a
+    // template change — and the slot/schema parity the editor relies on holds.
+    const art = bp.heroImage
+        ? `<img class="hero-photo" src="${escapeHtml(bp.heroImage.src)}" alt="${escapeHtml(bp.heroImage.alt)}" loading="lazy" decoding="async" />`
+        : motifToSvg(motif, bp.palette);
 
-    // The art sits in the slot a photograph will occupy once the image library lands
-    // (R2 · Unsplash): swapping it out is a content edit, not a template change.
     return `    <section class="hero">
       <div class="hero-copy">
         <h1 data-slot="hero.headline">${escapeHtml(bp.hero.headline)}</h1>
@@ -209,6 +215,7 @@ a { color: inherit; }
 .cta:hover { filter: brightness(1.08); }
 .hero-frame { overflow: hidden; border-radius: 1rem; background: var(--panel); }
 .hero-art { display: block; width: 100%; height: 100%; }
+.hero-photo { display: block; width: 100%; height: 100%; object-fit: cover; }
 ${LAYOUT_CSS[bp.layout]}
 
 .section { max-width: 64rem; margin: 0 auto; padding: 4rem 2rem; }
