@@ -6,6 +6,7 @@ import { generateSpike, Budget, BudgetExceeded } from './pipeline';
 import type { Mode, SpikeResult } from './pipeline';
 import { reportFor, indexFor } from './report';
 import { blankScoresheet, passRate } from './rubric';
+import type { Score } from './rubric';
 import { analyse, analysisReport } from './analysis';
 
 interface CorpusItem {
