@@ -7,9 +7,10 @@ import {
     SECTION_KEYS, THEME_IDS, MOTION_IDS,
     RADIUS_IDS, SPACING_IDS, IMAGERY_IDS,
 } from '@/lib/contracts';
+import { CATEGORY_LIST } from '../schemas';
 
 const DEFAULTS: Record<string, string> = {
-    categories: 'restaurant, portfolio, saas, event, personal, shop, blog, other',
+    categories: CATEGORY_LIST,
     sectionKeys: SECTION_KEYS.join(', '),
     themes: THEME_IDS.join(', '),
     motions: MOTION_IDS.join(', '),

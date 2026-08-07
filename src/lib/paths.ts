@@ -22,7 +22,7 @@ export function validatePath(path: string, existing: string[]): PathError | null
     if (ILLEGAL.test(p))
         return { code: 'invalid_path', message: 'Name contains invalid characters.' };
 
-    if (existing.includes(p))
+    if (existing.some((e) => e.toLowerCase() === p.toLowerCase()))
         return { code: 'duplicate_path', message: 'A file with that name already exists.' };
 
     return null;
