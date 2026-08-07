@@ -8,6 +8,8 @@ import { reportFor, indexFor } from './report';
 import { blankScoresheet, passRate } from './rubric';
 import type { Score } from './rubric';
 import { analyse, analysisReport } from './analysis';
+import { aiConfig } from '@/lib/ai/config';
+console.log(aiConfig().models);
 
 interface CorpusItem {
     id: string;
@@ -29,8 +31,6 @@ function args(): { mode: Mode; budget: number; only: string[] } {
         only: get('only')?.split(',').filter(Boolean) ?? [],
     };
 }
-
-console.log(typeof Budget);
 
 async function main() {
     const { mode, budget: limit, only } = args();

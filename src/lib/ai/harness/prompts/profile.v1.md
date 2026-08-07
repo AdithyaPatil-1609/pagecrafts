@@ -19,6 +19,8 @@ Photography: {{imagery}}
 Return:
 - recipe: the sections this business needs, in the order they should appear,
   each marked required or optional, each with a one-line note on what it holds.
+  Return between 3 and 10 sections in the recipe. Include the optional ones —
+  the planner will choose which to use.
 - artDirection: one choice from each of the five style lists.
 - vocabulary: the words this business uses. For a clinic, a customer is a
   "patient" and a purchase is an "appointment".

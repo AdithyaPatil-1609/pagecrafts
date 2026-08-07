@@ -401,7 +401,7 @@
     },
     "requests": 9,
     "modelTimeMs": 27,
-    "wallClockMs": 0
+    "wallClockMs": 1
   },
   {
     "vertical": "yoga-studio",
@@ -603,7 +603,7 @@
     },
     "requests": 9,
     "modelTimeMs": 27,
-    "wallClockMs": 1
+    "wallClockMs": 0
   },
   {
     "vertical": "ngo",
@@ -1007,7 +1007,7 @@
     },
     "requests": 9,
     "modelTimeMs": 27,
-    "wallClockMs": 1
+    "wallClockMs": 0
   },
   {
     "vertical": "photography",
@@ -1209,7 +1209,7 @@
     },
     "requests": 9,
     "modelTimeMs": 27,
-    "wallClockMs": 0
+    "wallClockMs": 1
   },
   {
     "vertical": "saas",
@@ -1613,7 +1613,7 @@
     },
     "requests": 9,
     "modelTimeMs": 27,
-    "wallClockMs": 1
+    "wallClockMs": 0
   },
   {
     "vertical": "unknown",
@@ -1815,7 +1815,7 @@
     },
     "requests": 9,
     "modelTimeMs": 27,
-    "wallClockMs": 0
+    "wallClockMs": 1
   },
   {
     "vertical": "interior-design",

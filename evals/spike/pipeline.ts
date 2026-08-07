@@ -39,15 +39,24 @@ export class Budget {
     spend(n = 1): void {
         if (this.used + n > this.limit) {
             throw new BudgetExceeded(
-                `Budget exhausted: ${this.used}/${this.limit} used, ${n} more requested.`,
+                `Budget exhausted: ${this.used}/${this.limit} used, ${n} requested.`,
             );
         }
         this.used += n;
     }
 
+    refund(n = 1): void {
+        this.used = Math.max(0, this.used - n);
+    }
+
     get remaining(): number {
         return this.limit - this.used;
     }
+}
+
+function didNotConsumeQuota(err: unknown): boolean {
+    const m = err instanceof Error ? err.message : String(err);
+    return /\b503\b|UNAVAILABLE|ECONNRESET|fetch failed|aborted/i.test(m);
 }
 
 interface SpikeInput {
@@ -74,8 +83,14 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
         });
     };
 
-    const costs = (n: number): void => {
+    const billed = async <T>(n: number, fn: () => Promise<T>): Promise<T> => {
         if (mode !== 'mock') budget.spend(n);
+        try {
+            return await fn();
+        } catch (err) {
+            if (mode !== 'mock' && didNotConsumeQuota(err)) budget.refund(n);
+            throw err;
+        }
     };
 
     const base = {
@@ -84,30 +99,27 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
     };
 
     try {
-        costs(1);
-        const intent = await classify(prompt);
+        const intent = await billed(1, () => classify(prompt));
         record('classify', intent.usage);
 
-        costs(1);
-        const p = await fetchProfile(vertical);
+        const p = await billed(1, () => fetchProfile(vertical));
         record('profile', p.usage);
 
-        costs(1);
-        const planned = await plan(prompt, intent.data, p.data);
+        const planned = await billed(1, () => plan(prompt, intent.data, p.data));
         record('plan', planned.usage);
 
         const props = new Map<string, SectionProps>();
 
         if (mode !== 'plan-only') {
-            costs(planned.data.length);
-
             for (const section of planned.data) {
-                const filled = await fillSection(section, {
-                    vertical,
-                    tone: intent.data.tone,
-                    prompt,
-                    customerWord: p.data.vocabulary.customer,
-                });
+                const filled = await billed(1, () =>
+                    fillSection(section, {
+                        vertical,
+                        tone: intent.data.tone,
+                        prompt,
+                        customerWord: p.data.vocabulary.customer,
+                    }),
+                );
                 props.set(section.id, filled.data);
                 record('fill', filled.usage, `${section.type}/${section.variant}`);
             }

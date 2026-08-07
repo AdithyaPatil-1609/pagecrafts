@@ -65,7 +65,7 @@ export const verticalProfile = z.object({
         type: sectionKeySchema,
         required: z.boolean(),
         note: z.string().max(160).optional(),
-    })).min(3).max(MAX_SECTIONS),
+    })).min(3).max(12),
     artDirection,
     vocabulary: z.object({ customer: z.string().min(1), purchase: z.string().min(1) }),
     imageQueries: z.array(z.string().min(1)).min(1).max(5),

@@ -54,7 +54,8 @@ export async function classify(text: string): Promise<AiResult<IntentAttributes>
             data: { ...parsed.data, fallback: coerced.includes('category') },
             usage: reply,
         };
-    } catch {
+    } catch (err) {
+        console.warn(`classify: fell back — ${err instanceof Error ? err.message : err}`);
         return { data: SAFE, usage: NO_USAGE };
     }
 }
