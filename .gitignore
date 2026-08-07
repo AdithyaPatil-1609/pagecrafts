@@ -43,3 +43,5 @@ next-env.d.ts
 
 evals/results/*
 client_secret_*.json
+
+.claude/

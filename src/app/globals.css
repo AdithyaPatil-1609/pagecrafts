@@ -5,14 +5,57 @@
   Every screen and primitive is built from these semantic tokens, never from
   ad-hoc hex values or per-screen style forks (FR-001).
   Documented reference: docs/design-tokens.md
-  Light values live in :root; dark values switch on the OS preference.
+
+  PageCraft is a dark-first product: the dark palette is the default in :root,
+  and the light palette is opt-in via a `.light` class on <html>.
   @theme inline exposes each token to Tailwind so `bg-primary`, `text-muted-foreground`,
   `border-border`, `ring-ring`, `rounded-lg`, etc. resolve to the values below.
 */
 
 :root {
+  color-scheme: dark; /* native scrollbars and controls follow the surface */
   --radius: 0.625rem;
 
+  --background: #07070b;
+  --foreground: #f5f5f7;
+
+  --card: #101015;
+  --card-foreground: #f5f5f7;
+
+  --popover: #101015;
+  --popover-foreground: #f5f5f7;
+
+  --primary: #dc2626; /* red-600 — PageCraft brand */
+  --primary-foreground: #ffffff;
+
+  --secondary: #17171d;
+  --secondary-foreground: #f5f5f7;
+
+  --muted: #17171d;
+  --muted-foreground: #9b9ba6;
+
+  --accent: #1e0d10; /* deep red tint for hover/highlight */
+  --accent-foreground: #fca5a5;
+
+  --destructive: #f87171;
+  --destructive-foreground: #07070b;
+
+  --border: #262630;
+  --input: #2a2a34;
+  --ring: #ef4444;
+
+  /* Field surface — inputs sit slightly above the card they live on. */
+  --field: #16161c;
+
+  /* Brand gradient and glow. The two stops drive every red gradient in the
+     product: hero headline, primary CTAs, logo mark, icon halos. */
+  --brand-from: #ff3b2f;
+  --brand-to: #c81018;
+  --brand-glow: rgba(220, 38, 38, 0.28);
+}
+
+.light {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
 
@@ -22,56 +65,30 @@
   --popover: #ffffff;
   --popover-foreground: #171717;
 
-  --primary: #4f46e5; /* indigo-600 — PageCraft brand */
+  --primary: #dc2626;
   --primary-foreground: #ffffff;
 
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
 
   --muted: #f4f4f5;
-  --muted-foreground: #6b7280;
+  --muted-foreground: #61616b;
 
-  --accent: #eef2ff; /* indigo-50 */
-  --accent-foreground: #3730a3; /* indigo-800 */
+  --accent: #fef2f2; /* red-50 */
+  --accent-foreground: #991b1b; /* red-800 */
 
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #4f46e5;
-}
+  --ring: #dc2626;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --field: #ffffff;
 
-    --card: #131316;
-    --card-foreground: #ededed;
-
-    --popover: #131316;
-    --popover-foreground: #ededed;
-
-    --primary: #818cf8; /* indigo-400 — readable on dark */
-    --primary-foreground: #0a0a0a;
-
-    --secondary: #1f1f23;
-    --secondary-foreground: #ededed;
-
-    --muted: #1f1f23;
-    --muted-foreground: #a1a1aa;
-
-    --accent: #1e1b4b; /* indigo-950 */
-    --accent-foreground: #c7d2fe; /* indigo-200 */
-
-    --destructive: #ef4444;
-    --destructive-foreground: #0a0a0a;
-
-    --border: #27272a;
-    --input: #27272a;
-    --ring: #818cf8;
-  }
+  --brand-from: #f43f2f;
+  --brand-to: #c81018;
+  --brand-glow: rgba(220, 38, 38, 0.16);
 }
 
 @theme inline {
@@ -103,6 +120,10 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  --color-field: var(--field);
+  --color-brand-from: var(--brand-from);
+  --color-brand-to: var(--brand-to);
+
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
@@ -110,6 +131,28 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* The brand gradient, as utilities, so no component hand-rolls a linear-gradient. */
+@utility brand-gradient {
+  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+}
+
+@utility brand-text {
+  background-image: linear-gradient(100deg, var(--brand-from), var(--brand-to));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Soft red halo behind hero art, icon badges and the sign-up panel. */
+@utility brand-halo {
+  box-shadow: 0 0 60px var(--brand-glow);
+}
+
+/* Ambient light source — the landing backdrop's red bloom. */
+@utility brand-bloom {
+  background-image: radial-gradient(circle at center, var(--brand-glow), transparent 70%);
 }
 
 body {

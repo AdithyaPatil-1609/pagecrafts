@@ -31,6 +31,8 @@ const COLOR_TOKENS = [
   { name: "accent", className: "bg-accent" },
   { name: "destructive", className: "bg-destructive" },
   { name: "border", className: "bg-border" },
+  { name: "field", className: "bg-field border border-input" },
+  { name: "brand gradient", className: "brand-gradient" },
 ] as const;
 
 const RADII = [
@@ -112,19 +114,23 @@ export default function StyleguidePage() {
       <Section title="Buttons">
         <div className="flex flex-wrap items-center gap-3">
           <Button>Default</Button>
+          <Button variant="brand">Brand</Button>
+          <Button variant="outline-brand">Outline brand</Button>
           <Button variant="secondary">Secondary</Button>
           <Button variant="outline">Outline</Button>
           <Button variant="ghost">Ghost</Button>
           <Button variant="destructive">Destructive</Button>
           <Button size="sm">Small</Button>
           <Button size="lg">Large</Button>
+          <Button size="xl">Extra large</Button>
           <Button disabled>Disabled</Button>
         </div>
       </Section>
 
       <Section title="Input">
-        <div className="max-w-sm">
+        <div className="flex max-w-sm flex-col gap-3">
           <Input placeholder="you@example.com" />
+          <Input inputSize="lg" placeholder="you@example.com — large" />
         </div>
       </Section>
 
