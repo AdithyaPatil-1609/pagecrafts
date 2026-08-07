@@ -207,6 +207,29 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
                 {busy ? "Just a moment…" : copy.action}
             </Button>
 
+            {mode !== "forgot" && (
+                <>
+                    <div className="mt-5 flex items-center gap-3" aria-hidden="true">
+                        <span className="h-px flex-1 bg-border" />
+                        <span className="text-xs text-muted-foreground">or</span>
+                        <span className="h-px flex-1 bg-border" />
+                    </div>
+
+                    <a
+                        href="/api/v1/auth/google"
+                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.06 12.25c0-.85-.08-1.67-.22-2.45H12v4.64h6.2a5.3 5.3 0 0 1-2.3 3.48v2.9h3.72c2.18-2 3.44-4.96 3.44-8.57Z" />
+                            <path fill="#34A853" d="M12 23.5c3.1 0 5.71-1.03 7.62-2.78l-3.72-2.9c-1.03.69-2.35 1.1-3.9 1.1-3 0-5.540-2.02-6.45-4.74H1.7v2.99A11.5 11.5 0 0 0 12 23.5Z" />
+                            <path fill="#FBBC05" d="M5.55 14.18a6.9 6.9 0 0 1 0-4.36V6.83H1.7a11.5 11.5 0 0 0 0 10.34l3.85-3Z" />
+                            <path fill="#EA4335" d="M12 4.75c1.69 0 3.2.58 4.4 1.72l3.3-3.29C17.7 1.26 15.1.5 12 .5A11.5 11.5 0 0 0 1.7 6.83l3.85 2.99C6.46 7.1 9 4.75 12 4.75Z" />
+                        </svg>
+                        Continue with Google
+                    </a>
+                </>
+            )}
+
             <div className="mt-4 flex flex-col items-center gap-1 text-xs text-muted-foreground">
                 {mode === "signin" && (
                     <>
