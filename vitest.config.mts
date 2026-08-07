@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
     test: {
         environment: 'node',
-        setupFiles: ['./tests/setup.ts'],
+        env: {
+            HOSTING_API_BASE: 'https://api.github.com',
+            HOSTING_ACCOUNT_ID: 'pagecraft-sites',
+            HOSTING_CREDENTIAL_KEY_ID: 'test-key',
+            PAGECRAFT_ROOT_DOMAIN: 'pagecrafts.in',
+        },
     },
     resolve: {
         alias: {
