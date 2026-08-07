@@ -1,0 +1,36 @@
+import type { Category } from '@/lib/contracts';
+
+export interface RankableTemplate {
+    id: string;
+    category: Category;
+    tags: string[];
+}
+
+export interface RankAttributes {
+    category?: Category;
+    tone?: string;
+    palette?: string;
+    sections?: string[];
+}
+
+const WEIGHT = { category: 30, palette: 10, tone: 10, section: 1 } as const;
+
+export function scoreTemplate(attrs: RankAttributes, tpl: RankableTemplate): number {
+    let score = 0;
+    if (attrs.category && attrs.category === tpl.category) score += WEIGHT.category;
+    if (attrs.palette && tpl.tags.includes(attrs.palette)) score += WEIGHT.palette;
+    if (attrs.tone && tpl.tags.includes(attrs.tone)) score += WEIGHT.tone;
+    for (const s of attrs.sections ?? []) {
+        if (tpl.tags.includes(`has-${s}`)) score += WEIGHT.section;
+    }
+    return score;
+}
+
+export function rankTemplates<T extends RankableTemplate>(
+    attrs: RankAttributes,
+    templates: readonly T[],
+): Array<T & { score: number }> {
+    return templates
+        .map((t) => ({ ...t, score: scoreTemplate(attrs, t) }))
+        .sort((a, b) => (b.score - a.score) || a.id.localeCompare(b.id));
+}
