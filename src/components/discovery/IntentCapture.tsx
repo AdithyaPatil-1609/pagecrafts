@@ -40,10 +40,16 @@ async function classifyText(text: string): Promise<Category | null> {
   return null;
 }
 
-export function IntentCapture() {
+export function IntentCapture({
+  initialDescribe = "",
+  initialCategory = null,
+}: {
+  initialDescribe?: string;
+  initialCategory?: Category | null;
+} = {}) {
   const router = useRouter();
-  const [selected, setSelected] = useState<Category | null>(null);
-  const [describe, setDescribe] = useState("");
+  const [selected, setSelected] = useState<Category | null>(initialCategory);
+  const [describe, setDescribe] = useState(initialDescribe);
   const [busy, setBusy] = useState(false);
 
   // The one main action. Text wins over a card (it is more specific); a card wins over
@@ -55,7 +61,14 @@ export function IntentCapture() {
     // unfiltered gallery if there is not — never to a filter we did not actually establish.
     const category = (text ? await classifyText(text) : null) ?? selected;
     setBusy(false);
-    router.push(category ? `/templates?category=${category}` : "/templates");
+
+    // The description rides along so the gallery can show it back and offer an edit.
+    // It filters nothing — only the category does that.
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (text) params.set("q", text);
+    const query = params.toString();
+    router.push(query ? `/templates?${query}` : "/templates");
   }
 
   const remaining = MAX_CLASSIFY_CHARS - describe.length;

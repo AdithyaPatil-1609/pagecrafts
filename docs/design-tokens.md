@@ -7,23 +7,43 @@ Tailwind via `@theme inline`, so each one is usable as a normal utility.
 
 Live reference: run the app and open **`/styleguide`**.
 
+## Theme
+
+PageCraft is **dark-first**. The dark palette is the default, defined in
+`:root`; the light palette is opt-in via a `.light` class on `<html>`. There is
+no `prefers-color-scheme` switch — the near-black surface with a red brand is
+the product's identity, not a preference.
+
 ## Colour tokens
 
-Semantic, not literal — pick by role, not by hue. Light values are in `:root`;
-dark values switch on `prefers-color-scheme: dark`.
+Semantic, not literal — pick by role, not by hue.
 
 | Token | Utility examples | Role |
 | --- | --- | --- |
 | `background` / `foreground` | `bg-background`, `text-foreground` | Page surface and body text |
 | `card` / `card-foreground` | `bg-card`, `text-card-foreground` | Cards and raised surfaces |
 | `popover` / `popover-foreground` | `bg-popover` | Dialogs, menus, popovers |
-| `primary` / `primary-foreground` | `bg-primary`, `text-primary-foreground` | Brand indigo; the one main action per screen |
+| `primary` / `primary-foreground` | `bg-primary`, `text-primary-foreground` | Brand red; the one main action per screen |
 | `secondary` / `secondary-foreground` | `bg-secondary` | Secondary buttons, quiet fills |
 | `muted` / `muted-foreground` | `text-muted-foreground` | De-emphasised text and fills |
 | `accent` / `accent-foreground` | `bg-accent` | Hover states, subtle highlights |
 | `destructive` / `destructive-foreground` | `bg-destructive` | Errors and destructive actions |
 | `border` / `input` | `border-border`, `border-input` | Hairlines and field borders |
+| `field` | `bg-field` | Input surface — sits one step above its card |
 | `ring` | `ring-ring` | Focus ring — always visible for keyboard use |
+
+## Brand gradient
+
+`--brand-from` → `--brand-to` is the one red gradient in the product, plus
+`--brand-glow` for the light it throws. Components never hand-roll a
+`linear-gradient`; they use these utilities:
+
+| Utility | Use |
+| --- | --- |
+| `brand-gradient` | Filled gradient surface — primary CTAs, the logo tile |
+| `brand-text` | Gradient-filled text — the hero's emphasised word |
+| `brand-halo` | Soft red glow around a panel or icon badge |
+| `brand-bloom` | Radial ambient light for page backdrops |
 
 ## Radius
 
@@ -47,4 +67,5 @@ Fonts come from `next/font` (Geist), exposed as `--font-sans` and `--font-mono`
 - New colour needs? Add or adjust a token here — never a raw hex in a component.
 - New capability on a primitive? Extend the primitive in `src/components/ui/`,
   don't fork a screen.
-- Both light and dark values must be set for every colour token.
+- Both dark (`:root`) and light (`.light`) values must be set for every colour
+  token.
