@@ -1,116 +1,175 @@
 import type { Template } from "@/lib/contracts";
 import { previewOf } from "@/lib/discovery/preview";
 import type { PreviewPalette } from "@/lib/discovery/preview";
+import { MOTIFS } from "@/lib/templates/motifs";
+import type { MotifId, MotifShape } from "@/lib/templates/motifs";
 
-// A miniature of the design, drawn from the template's own hero copy and stylesheet
-// palette (see lib/discovery/preview.ts). Static — never a live iframe (D-3, AC-F3-2) —
-// and hidden from assistive tech: the tile's real name, category, price and description
-// are in the card around it, at a readable size.
+// A miniature of the design, built from what the template itself declares — its
+// navigation, hero copy, button label, layout and palette (see lib/discovery/preview.ts),
+// and the same motif artwork its own index.html embeds (lib/templates/motifs.ts).
+//
+// Static: never a live iframe (D-3, AC-F3-2). Hidden from assistive tech, because the
+// tile's real name, category and description sit around it at a readable size.
 
-function Block({
-    color,
-    opacity,
+function MotifArt({
+    motif,
+    palette,
     className,
 }: {
-    color: string;
-    opacity?: number;
+    motif: MotifId;
+    palette: PreviewPalette;
     className?: string;
 }) {
-    return <span className={className} style={{ backgroundColor: color, opacity }} />;
+    const { viewBox, shapes } = MOTIFS[motif];
+
+    const paint = (shape: MotifShape) => ({
+        fill: shape.fill ? palette[shape.fill] : "none",
+        stroke: shape.stroke ? palette[shape.stroke] : undefined,
+        strokeWidth: shape.stroke ? (shape.strokeWidth ?? 1.5) : undefined,
+        strokeLinecap: "round" as const,
+        strokeLinejoin: "round" as const,
+        opacity: shape.opacity,
+    });
+
+    return (
+        <svg viewBox={viewBox} preserveAspectRatio="none" className={className}>
+            {shapes.map((shape, index) => {
+                if (shape.kind === "circle") {
+                    return <circle key={index} cx={shape.cx} cy={shape.cy} r={shape.r} {...paint(shape)} />;
+                }
+                if (shape.kind === "rect") {
+                    return (
+                        <rect
+                            key={index}
+                            x={shape.x}
+                            y={shape.y}
+                            width={shape.width}
+                            height={shape.height}
+                            rx={shape.rx ?? 0}
+                            {...paint(shape)}
+                        />
+                    );
+                }
+                return <path key={index} d={shape.d} {...paint(shape)} />;
+            })}
+        </svg>
+    );
 }
 
-function MiniNav({ palette }: { palette: PreviewPalette }) {
+function SearchGlyph({ color }: { color: string }) {
     return (
-        <div className="flex items-center justify-between px-3 pt-2.5">
-            <Block color={palette.ink} opacity={0.85} className="h-1 w-6 rounded-full" />
-            <div className="flex gap-1.5">
-                {[0, 1, 2, 3].map((i) => (
-                    <Block key={i} color={palette.muted} opacity={0.55} className="h-1 w-4 rounded-full" />
-                ))}
-            </div>
-        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" className="size-2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+        </svg>
     );
 }
 
 export function TemplatePreview({ template }: { template: Template }) {
-    const { headline, subhead, palette, shape } = previewOf(template);
+    const { wordmark, nav, headline, subhead, cta, layout, motif, palette } =
+        previewOf(template);
 
-    const headlineStyle = { color: palette.ink };
-    const subheadStyle = { color: palette.muted };
+    const art = <MotifArt motif={motif} palette={palette} className="size-full" />;
+
+    const copy = (
+        <>
+            <p
+                className="line-clamp-3 text-[13px] font-semibold leading-[1.12] tracking-tight"
+                style={{ color: palette.ink }}
+            >
+                {headline}
+            </p>
+            <p
+                className="mt-1 line-clamp-2 text-[7px] leading-[1.4]"
+                style={{ color: palette.muted }}
+            >
+                {subhead}
+            </p>
+            {cta && (
+                <span
+                    className="mt-2 inline-block self-start rounded-[3px] px-1.5 py-[3px] text-[6px] font-semibold"
+                    style={{ backgroundColor: palette.accent, color: palette.bg }}
+                >
+                    {cta}
+                </span>
+            )}
+        </>
+    );
 
     return (
         <div
             aria-hidden
-            className="flex aspect-2/1 w-full flex-col overflow-hidden"
+            className="relative flex aspect-16/10 w-full flex-col overflow-hidden"
             style={{ backgroundColor: palette.bg }}
         >
-            <MiniNav palette={palette} />
+            {/* The template's own top bar: wordmark, its real navigation, search. */}
+            <div className="relative z-10 flex items-center gap-2 px-3 pt-2.5">
+                <span
+                    className="truncate text-[8px] font-bold tracking-tight"
+                    style={{ color: palette.ink }}
+                >
+                    {wordmark}
+                </span>
+                <span className="ml-auto flex items-center gap-2 overflow-hidden">
+                    {nav.map((label) => (
+                        <span key={label} className="whitespace-nowrap text-[6px]" style={{ color: palette.muted }}>
+                            {label}
+                        </span>
+                    ))}
+                </span>
+                <SearchGlyph color={palette.muted} />
+            </div>
 
-            {shape === "split" && (
+            {layout === "split" && (
                 <div className="flex flex-1 items-center gap-3 px-3 pb-3 pt-2">
-                    <div className="flex min-w-0 flex-1 flex-col">
-                        <p
-                            className="line-clamp-3 text-[13px] font-semibold leading-[1.15] tracking-tight"
-                            style={headlineStyle}
-                        >
-                            {headline}
-                        </p>
-                        <p className="mt-1 line-clamp-2 text-[8px] leading-[1.3]" style={subheadStyle}>
-                            {subhead}
-                        </p>
-                        <Block color={palette.accent} className="mt-2 h-2.5 w-11 rounded-[3px]" />
-                    </div>
-                    <div className="flex h-full w-2/5 shrink-0 flex-col gap-1.5 py-1">
-                        <Block color={palette.accent} opacity={0.75} className="flex-1 rounded-md" />
-                        <Block color={palette.muted} opacity={0.3} className="h-1/3 rounded-md" />
+                    <div className="flex min-w-0 flex-1 flex-col">{copy}</div>
+                    <div
+                        className="h-full w-[42%] shrink-0 overflow-hidden rounded-md"
+                        style={{ backgroundColor: palette.panel }}
+                    >
+                        {art}
                     </div>
                 </div>
             )}
 
-            {shape === "gallery" && (
-                <div className="flex flex-1 flex-col px-3 pb-3 pt-2">
-                    <p
-                        className="line-clamp-1 text-[12px] font-semibold leading-tight tracking-tight"
-                        style={headlineStyle}
+            {layout === "showcase" && (
+                <div className="flex flex-1 items-center gap-3 px-3 pb-3 pt-2">
+                    <div
+                        className="h-full w-[42%] shrink-0 overflow-hidden rounded-md"
+                        style={{ backgroundColor: palette.panel }}
                     >
-                        {headline}
-                    </p>
-                    <div className="mt-2 grid flex-1 grid-cols-4 gap-1.5">
-                        {[0.8, 0.45, 0.65, 0.3].map((opacity, i) => (
-                            <Block
-                                key={i}
-                                color={i % 2 === 0 ? palette.accent : palette.muted}
-                                opacity={opacity}
-                                className="rounded-md"
-                            />
-                        ))}
+                        {art}
                     </div>
+                    <div className="flex min-w-0 flex-1 flex-col">{copy}</div>
                 </div>
             )}
 
-            {shape === "editorial" && (
-                <div className="flex flex-1 flex-col items-center px-5 pb-3 pt-3 text-center">
-                    <p
-                        className="line-clamp-2 text-[13px] font-semibold leading-[1.15] tracking-tight"
-                        style={headlineStyle}
+            {layout === "full-bleed" && (
+                <>
+                    <div className="absolute inset-0" style={{ backgroundColor: palette.panel }}>
+                        {art}
+                    </div>
+                    {/* The same scrim the template uses, so the copy stays readable. */}
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            backgroundImage: `linear-gradient(90deg, ${palette.bg} 12%, transparent 85%)`,
+                        }}
+                    />
+                    <div className="relative z-10 flex flex-1 flex-col justify-center px-3 pb-3">
+                        <div className="flex w-[68%] flex-col">{copy}</div>
+                    </div>
+                </>
+            )}
+
+            {layout === "centered" && (
+                <div className="flex flex-1 flex-col items-center px-3 pb-0 pt-2 text-center">
+                    <div className="flex w-[82%] flex-col items-center [&>span]:self-center">{copy}</div>
+                    <div
+                        className="mt-2 h-[38%] w-full overflow-hidden rounded-t-md"
+                        style={{ backgroundColor: palette.panel }}
                     >
-                        {headline}
-                    </p>
-                    <Block color={palette.muted} opacity={0.4} className="mt-2 h-px w-full" />
-                    <div className="mt-2.5 flex w-full flex-1 gap-4">
-                        {[0, 1].map((column) => (
-                            <div key={column} className="flex flex-1 flex-col gap-1">
-                                {["w-full", "w-11/12", "w-3/4"].map((width) => (
-                                    <Block
-                                        key={width}
-                                        color={palette.muted}
-                                        opacity={0.45}
-                                        className={`h-1 rounded-full ${width}`}
-                                    />
-                                ))}
-                                <Block color={palette.accent} opacity={0.7} className="mt-1 h-1 w-1/2 rounded-full" />
-                            </div>
-                        ))}
+                        {art}
                     </div>
                 </div>
             )}

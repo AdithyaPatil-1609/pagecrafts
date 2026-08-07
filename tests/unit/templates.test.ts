@@ -41,3 +41,55 @@ describe("template library", () => {
     expect(validateTemplate(bad)).toContain("license is required (C-06)");
   });
 });
+
+// The content panel is generated from `content_schema` and nothing else (FR-001, zero
+// per-template UI). That only works while the markup's slots and the schema describe the
+// same set of editable things — a slot with no field is uneditable, a field with no slot
+// edits nothing. Both failures are silent in the browser, so they are caught here.
+describe("slot / schema parity", () => {
+  function slotsOf(template: (typeof TEMPLATES)[number]): string[] {
+    const html = template.files["index.html"] ?? "";
+    return [...html.matchAll(/data-slot="([^"]+)"/g)].map((match) => match[1]!);
+  }
+
+  function fieldPaths(template: (typeof TEMPLATES)[number]): Set<string> {
+    const paths = new Set<string>();
+
+    for (const section of template.contentSchema.sections) {
+      for (const field of section.fields) {
+        if (field.type === "list") {
+          // Lists are addressed per item: `<section>.<field>.<index>.<key>`.
+          for (const item of field.itemSchema ?? []) {
+            paths.add(`${section.key}.${field.key}.*.${item.key}`);
+          }
+          continue;
+        }
+        paths.add(`${section.key}.${field.key}`);
+      }
+    }
+
+    return paths;
+  }
+
+  it("every slot in every template resolves to a field in its schema", () => {
+    for (const template of TEMPLATES) {
+      const paths = fieldPaths(template);
+
+      for (const slot of slotsOf(template)) {
+        // Collapse the list index so `work.items.2.title` matches `work.items.*.title`.
+        const generalised = slot.replace(/\.\d+\./, ".*.");
+        expect(paths, `${template.id}: slot "${slot}" has no field`).toContain(generalised);
+      }
+    }
+  });
+
+  it("every field in every schema is reachable from the markup", () => {
+    for (const template of TEMPLATES) {
+      const slots = new Set(slotsOf(template).map((s) => s.replace(/\.\d+\./, ".*.")));
+
+      for (const path of fieldPaths(template)) {
+        expect(slots, `${template.id}: field "${path}" has no slot`).toContain(path);
+      }
+    }
+  });
+});

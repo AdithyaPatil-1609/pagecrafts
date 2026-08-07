@@ -1,26 +1,35 @@
 import type { Template } from "@/lib/contracts";
+import { toMotifId } from "@/lib/templates/motifs";
+import type { MotifId } from "@/lib/templates/motifs";
 
 // A gallery tile shows a miniature of the design, not a generic placeholder. Rather than
 // ship a screenshot per template (D16-D18) or run a live iframe (forbidden — D-3, AC-F3-2),
-// the miniature is drawn from the template's own source: the real hero copy and the real
-// palette from its stylesheet. A template can never look like something it is not.
+// the miniature is parsed out of the template's own source: its real navigation, hero copy,
+// button label, layout and palette. A template can never look like something it is not.
+//
+// Parsing rather than reading the blueprint is deliberate — templates move to the API in
+// week 2 (GET /templates), where all we will have is the files themselves.
 
 export interface PreviewPalette {
     bg: string;
     ink: string;
     muted: string;
     accent: string;
+    panel: string;
 }
 
-// How the miniature arranges itself. Derived from the template's tags so a gallery
-// template reads as a gallery at thumbnail size, and an editorial one reads as editorial.
-export type PreviewShape = "split" | "gallery" | "editorial";
+// Mirrors the template layouts in lib/templates/blueprint.ts.
+export type PreviewLayout = "split" | "full-bleed" | "centered" | "showcase";
 
 export interface TemplatePreview {
+    wordmark: string;
+    nav: string[];
     headline: string;
     subhead: string;
+    cta: string;
+    layout: PreviewLayout;
+    motif: MotifId;
     palette: PreviewPalette;
-    shape: PreviewShape;
 }
 
 // The palette lands in an inline style, so only literal hex is accepted. Anything else
@@ -32,7 +41,10 @@ const FALLBACK: PreviewPalette = {
     ink: "#171717",
     muted: "#6b7280",
     accent: "#4f46e5",
+    panel: "#f4f4f5",
 };
+
+const LAYOUTS: PreviewLayout[] = ["split", "full-bleed", "centered", "showcase"];
 
 const ENTITIES: Record<string, string> = {
     "&amp;": "&",
@@ -84,16 +96,25 @@ export function paletteOf(css: string | undefined): PreviewPalette {
         ink,
         muted: hex(vars["--muted"], vars["--rule"]) ?? ink,
         accent: hex(vars["--accent"]) ?? ink,
+        panel: hex(vars["--panel"], vars["--rule"]) ?? bg,
     };
 }
 
-function shapeOf(tags: string[]): PreviewShape {
-    const set = new Set(tags);
-    if (set.has("grid") || set.has("products")) return "gallery";
-    if (set.has("editorial") || set.has("reading") || set.has("print-friendly")) {
-        return "editorial";
-    }
-    return "split";
+function textOf(html: string, pattern: RegExp): string {
+    return plainText(html.match(pattern)?.[1] ?? "");
+}
+
+function navLabels(html: string): string[] {
+    const nav = html.match(/<nav\b[^>]*>([\s\S]*?)<\/nav>/i)?.[1] ?? "";
+    return [...nav.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)]
+        .map((match) => plainText(match[1] ?? ""))
+        .filter(Boolean)
+        .slice(0, 5);
+}
+
+function layoutOf(html: string): PreviewLayout {
+    const declared = html.match(/<body\b[^>]*\bdata-layout="([^"]+)"/i)?.[1];
+    return LAYOUTS.find((layout) => layout === declared) ?? "split";
 }
 
 export function previewOf(template: Template): TemplatePreview {
@@ -102,16 +123,21 @@ export function previewOf(template: Template): TemplatePreview {
     const afterHeading = headingMatch
         ? html.slice((headingMatch.index ?? 0) + headingMatch[0].length)
         : "";
-    const subheadMatch = afterHeading.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i);
 
     // The template's own words where it has them; its catalogue entry where it does not.
     const headline = plainText(headingMatch?.[1] ?? "") || template.name;
-    const subhead = plainText(subheadMatch?.[1] ?? "") || template.description;
+    const subhead =
+        plainText(afterHeading.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? "") ||
+        template.description;
 
     return {
+        wordmark: textOf(html, /<[^>]*class="wordmark"[^>]*>([\s\S]*?)<\//i) || template.name,
+        nav: navLabels(html),
         headline,
         subhead,
+        cta: textOf(html, /<a\b[^>]*class="cta"[^>]*>([\s\S]*?)<\/a>/i),
+        layout: layoutOf(html),
+        motif: toMotifId(html.match(/data-motif="([^"]+)"/i)?.[1]),
         palette: paletteOf(template.files["styles.css"]),
-        shape: shapeOf(template.tags),
     };
 }

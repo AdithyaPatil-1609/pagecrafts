@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { paletteOf, previewOf } from "@/lib/discovery/preview";
+import { MOTIF_BY_CATEGORY, MOTIFS, motifToSvg } from "@/lib/templates/motifs";
 import {
   DEFAULT_SORT,
   SORT_KEYS,
@@ -126,11 +127,71 @@ describe("previewOf", () => {
     expect(preview.subhead).toBe(template.description);
   });
 
-  it("gives every template in the library a palette and a shape", () => {
+  it("gives every template in the library a palette, a layout and a motif", () => {
     for (const template of TEMPLATES) {
       const preview = previewOf(template);
       expect(preview.palette.bg).toMatch(/^#[0-9a-f]{3,8}$/i);
-      expect(["split", "gallery", "editorial"]).toContain(preview.shape);
+      expect(["split", "full-bleed", "centered", "showcase"]).toContain(preview.layout);
+      expect(MOTIFS[preview.motif]).toBeDefined();
+    }
+  });
+
+  it("reads the real navigation and button label off every template", () => {
+    for (const template of TEMPLATES) {
+      const preview = previewOf(template);
+
+      expect(preview.nav.length).toBeGreaterThan(0);
+      expect(preview.cta.trim()).not.toBe("");
+      expect(preview.wordmark).toBe(template.name);
+      // Whatever the tile shows must be in the template's own markup.
+      for (const label of preview.nav) {
+        expect(template.files["index.html"]).toContain(`>${label}</a>`);
+      }
+    }
+  });
+
+  it("falls back to a safe layout and motif for markup that declares neither", () => {
+    const preview = previewOf({
+      ...TEMPLATES[0]!,
+      files: { "index.html": "<h1>Bare</h1>" },
+    });
+
+    expect(preview.layout).toBe("split");
+    expect(preview.motif).toBe("frame");
+    expect(preview.nav).toEqual([]);
+    expect(preview.cta).toBe("");
+  });
+});
+
+describe("motifs", () => {
+  const palette = {
+    bg: "#000000",
+    ink: "#ffffff",
+    muted: "#888888",
+    accent: "#ff0000",
+    panel: "#111111",
+  };
+
+  it("draws the same shape count in both renderers, so tile and template cannot drift", () => {
+    for (const id of Object.keys(MOTIFS) as (keyof typeof MOTIFS)[]) {
+      const svg = motifToSvg(id, palette);
+      const drawn = (svg.match(/<(circle|rect|path)\b/g) ?? []).length;
+      expect(drawn).toBe(MOTIFS[id].shapes.length);
+      expect(svg).toContain(`data-motif="${id}"`);
+    }
+  });
+
+  it("only ever paints with the palette it was given", () => {
+    const svg = motifToSvg("arcs", palette);
+    const colours = [...svg.matchAll(/(?:fill|stroke)="(#[0-9a-f]{6})"/gi)].map((m) => m[1]);
+    for (const colour of colours) {
+      expect(Object.values(palette)).toContain(colour);
+    }
+  });
+
+  it("every category in the library maps to a motif that exists", () => {
+    for (const template of TEMPLATES) {
+      expect(MOTIFS[MOTIF_BY_CATEGORY[template.category]!]).toBeDefined();
     }
   });
 });
