@@ -1,8 +1,29 @@
 import type { Template, TemplateTier } from "@/lib/contracts";
 import { aurora } from "./aurora";
+import { canvas } from "./canvas";
+import { ember } from "./ember";
+import { lantern } from "./lantern";
+import { ledger } from "./ledger";
+import { marquee } from "./marquee";
+import { meridian } from "./meridian";
+import { quill } from "./quill";
+import { stall } from "./stall";
+import { vellum } from "./vellum";
 
 // The template library. Grows on the 10 / 18 / 25 cadence across weeks 1-3.
-export const TEMPLATES: Template[] = [aurora];
+// At 10 as of D3: every Category has at least one entry, so no filter renders an empty grid.
+export const TEMPLATES: Template[] = [
+  aurora,
+  ember,
+  ledger,
+  meridian,
+  quill,
+  marquee,
+  vellum,
+  stall,
+  lantern,
+  canvas,
+];
 
 const VALID_TIERS: readonly TemplateTier[] = ["free", "premium", "signature"];
 const TIER_PRICE_INR: Record<TemplateTier, number> = {

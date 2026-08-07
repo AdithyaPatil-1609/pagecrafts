@@ -11,12 +11,13 @@ import { TreeSkeleton, PaneSkeleton } from './Skeletons';
 export default function EditorShell({ projectId }: { projectId: string }) {
     const advanced = useEditorStore((s) => s.advanced);
     const loading = useEditorStore((s) => s.loading);
-    const setLoaded = useEditorStore((s) => s.setLoaded);
+    const loadError = useEditorStore((s) => s.loadError);
+    const loadProject = useEditorStore((s) => s.loadProject);
     const saveProject = useEditorStore((s) => s.saveProject);
 
     useEffect(() => {
-        setLoaded();
-    }, [setLoaded]);
+        loadProject(projectId);
+    }, [projectId, loadProject]);
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
@@ -32,30 +33,45 @@ export default function EditorShell({ projectId }: { projectId: string }) {
     return (
         <div className="flex h-screen flex-col bg-background">
             <TopBar projectId={projectId} />
-            <main className="flex min-h-0 flex-1">
-                {advanced ? (
-                    <>
-                        <aside className="w-56 shrink-0 overflow-auto border-r border-border">
-                            {loading ? <TreeSkeleton /> : <FileTree />}
-                        </aside>
-                        <section className="min-w-0 flex-1 overflow-auto border-r border-border">
-                            {loading ? <PaneSkeleton /> : <CodePane />}
-                        </section>
-                        <section className="min-w-0 flex-1">
-                            {loading ? <PaneSkeleton /> : <PreviewPane />}
-                        </section>
-                    </>
-                ) : (
-                    <>
-                        <section className="w-[420px] shrink-0 overflow-auto border-r border-border">
-                            {loading ? <PaneSkeleton /> : <ContentPanel />}
-                        </section>
-                        <section className="min-w-0 flex-1">
-                            {loading ? <PaneSkeleton /> : <PreviewPane />}
-                        </section>
-                    </>
-                )}
-            </main>
+            {loadError ? (
+                <div className="flex flex-1 items-center justify-center p-8">
+                    <div className="max-w-sm text-center">
+                        <p className="text-sm font-medium">This project could not be opened.</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{loadError}</p>
+                        <button
+                            onClick={() => loadProject(projectId)}
+                            className="mt-4 rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
+                        >
+                            Try again
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <main className="flex min-h-0 flex-1">
+                    {advanced ? (
+                        <>
+                            <aside className="w-56 shrink-0 overflow-auto border-r border-border">
+                                {loading ? <TreeSkeleton /> : <FileTree />}
+                            </aside>
+                            <section className="min-w-0 flex-1 overflow-auto border-r border-border">
+                                {loading ? <PaneSkeleton /> : <CodePane />}
+                            </section>
+                            <section className="min-w-0 flex-1">
+                                {loading ? <PaneSkeleton /> : <PreviewPane />}
+                            </section>
+                        </>
+                    ) : (
+                        <>
+                            <section className="w-[420px] shrink-0 overflow-auto border-r border-border">
+                                {loading ? <PaneSkeleton /> : <ContentPanel />}
+                            </section>
+                            <section className="min-w-0 flex-1">
+                                {loading ? <PaneSkeleton /> : <PreviewPane />}
+                            </section>
+                        </>
+                    )}
+                </main>
+            )}
         </div>
     );
 }

@@ -9,9 +9,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:opacity-90",
+        // The headline action: brand gradient with a soft red halo (landing CTAs,
+        // "Create My Site", "Get started"). One per screen at most.
+        brand:
+          "brand-gradient text-primary-foreground shadow-[0_8px_30px_var(--brand-glow)] hover:brightness-110",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         outline:
           "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
+        // Quiet twin of `brand` — sits next to it as the second choice.
+        "outline-brand":
+          "border border-primary/40 bg-transparent text-foreground hover:border-primary hover:bg-accent",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         destructive:
           "bg-destructive text-destructive-foreground hover:opacity-90",
@@ -20,6 +27,7 @@ const buttonVariants = cva(
         sm: "h-8 px-3",
         default: "h-9 px-4 py-2",
         lg: "h-10 px-6",
+        xl: "h-14 px-7 text-base",
         icon: "size-9",
       },
     },

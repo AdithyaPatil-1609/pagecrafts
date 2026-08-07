@@ -22,7 +22,7 @@ export interface RouteOptions<Body, Params> {
 
 export function withRoute<
   Body = undefined,
-  Params extends Record<string, string> = Record<string, never>,
+  Params extends Record<string, string | string[]> = Record<string, never>,
 >(opts: RouteOptions<Body, Params>) {
   return async (
     req: NextRequest,

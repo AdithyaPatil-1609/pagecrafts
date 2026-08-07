@@ -33,7 +33,7 @@ export async function requireUser() {
 }
 import "server-only";
 import type { User } from "@supabase/supabase-js";
-import { supabaseRouteClient } from "@/lib/auth/server";
+import { supabaseRouteClient, supabaseViewerClient } from "@/lib/auth/server";
 
 export type SessionUser = {
   id: string;
@@ -58,4 +58,28 @@ export async function currentUser(): Promise<SessionUser | null> {
   if (error || !data.user) return null;
 
   return toSessionUser(data.user);
+}
+
+// What the app shell needs: the session user plus the name to greet them by.
+export type Viewer = SessionUser & { name: string };
+
+// The name the sign-up panel collected, falling back to the local part of the email
+// so the shell always has something human to show.
+export function toViewer(user: User): Viewer {
+  const session = toSessionUser(user);
+  const fullName = user.user_metadata?.full_name;
+  const name = typeof fullName === "string" ? fullName.trim() : "";
+
+  return { ...session, name: name || session.email.split("@")[0] || "Your account" };
+}
+
+// The signed-in user as seen from a Server Component — who to show in the app shell.
+// Signed out is an ordinary answer here, not an error: /templates is public.
+export async function viewer(): Promise<Viewer | null> {
+  const supabase = await supabaseViewerClient();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) return null;
+
+  return toViewer(data.user);
 }

@@ -1,12 +1,24 @@
 import "server-only";
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 import { supabaseRouteClient } from "@/lib/auth/server";
 import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
+import { publicEnv } from "@/lib/config/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// The sign-up panel asks for a name so we can greet people by it later. It is
+// optional and never blocks the account: anything unusable is simply dropped.
+const nameSchema = z.string().trim().min(1).max(80);
+
+function readName(body: unknown): string | undefined {
+  const raw = (body as { name?: unknown } | null)?.name;
+  const parsed = nameSchema.safeParse(raw);
+  return parsed.success ? parsed.data : undefined;
+}
 
 export async function POST(request: NextRequest) {
   return guard(async () => {
@@ -24,10 +36,15 @@ export async function POST(request: NextRequest) {
       return fail("validation_failed", credentials.message);
     }
 
+    const name = readName(body);
     const supabase = await supabaseRouteClient();
     const { data, error } = await supabase.auth.signUp({
       email: credentials.value.email,
       password: credentials.value.password,
+      options: {
+        emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm?next=/new`,
+        ...(name ? { data: { full_name: name } } : {}),
+      },
     });
 
     if (error) {

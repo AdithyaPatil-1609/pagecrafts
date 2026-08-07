@@ -1,25 +1,52 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { HeroArtwork } from "@/components/landing/HeroArtwork";
+import { buttonVariants } from "@/components/ui/button";
+
 export function Hero() {
     return (
-        <section className="w-full px-6 pt-20 pb-14 sm:pt-28 sm:pb-20">
-            <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
-                <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-                    Describe it. Publish it. It&apos;s yours.
-                </h1>
-                <p className="max-w-xl text-lg leading-8 text-muted-foreground">
-                    Tell us what you want and we build the website. Change anything just by
-                    asking. When you like it, one tap puts it online at your own address.
-                </p>
+        <section className="flex flex-col">
+            <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+                Build your business{" "}
+                {/* The reference break, but only where the line actually fits. */}
+                <br className="hidden lg:inline" />
+                website in <span className="brand-text">minutes</span>
+            </h1>
+
+            <p className="mt-7 max-w-xl text-lg leading-8 text-muted-foreground">
+                Pick a ready-made design, make it yours with a few clicks, and go live.
+                Your site, your name — no developer required.
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center gap-4">
                 <a
                     href="#sign-in"
-                    className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className={buttonVariants({
+                        variant: "brand",
+                        size: "xl",
+                        className: "rounded-xl font-semibold",
+                    })}
                 >
-                    Start building — free
+                    Start building — it&apos;s free
+                    <ArrowRight aria-hidden />
                 </a>
-                <p className="text-sm text-muted-foreground">
-                    Building and editing are free. You pay Rs 249 only when you are ready to
-                    go live.
-                </p>
+                <Link
+                    href="/templates"
+                    className={buttonVariants({
+                        variant: "outline-brand",
+                        size: "xl",
+                        className: "rounded-xl font-semibold",
+                    })}
+                >
+                    Browse templates
+                </Link>
             </div>
+
+            <p className="mt-6 text-sm text-muted-foreground">
+                Building and editing are free. You pay Rs 249 only when you go live.
+            </p>
+
+            <HeroArtwork />
         </section>
     );
 }

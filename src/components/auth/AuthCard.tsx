@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordField } from "@/components/auth/PasswordField";
@@ -34,25 +35,45 @@ const FIELD_MESSAGES: Record<string, string> = {
 };
 const COPY: Record<Mode, { title: string; blurb: string; action: string }> = {
     signup: {
-        title: "Create your account",
-        blurb: "Building and editing are free. You only pay when you go live.",
-        action: "Create account",
+        title: "Get Started Today",
+        blurb: "Free to build and edit. You only pay when you go live.",
+        action: "Create My Site",
     },
     signin: {
-        title: "Welcome back",
+        title: "Welcome Back",
         blurb: "Sign in to pick up where you left off.",
-        action: "Sign in",
+        action: "Sign In",
     },
     forgot: {
-        title: "Reset your password",
+        title: "Reset Your Password",
         blurb: "Tell us your email and we will send you a link to set a new password.",
-        action: "Send reset link",
+        action: "Send Reset Link",
     },
 };
+
+const PANEL =
+    "w-full max-w-md scroll-mt-8 rounded-3xl border border-border bg-card/70 p-8 backdrop-blur-xl brand-halo sm:p-10";
+const LABEL = "block text-sm font-medium text-foreground";
+
+function PanelHeader({ title, blurb }: { title: string; blurb: string }) {
+    return (
+        <div className="flex flex-col items-center text-center">
+            <span
+                aria-hidden
+                className="brand-halo flex size-16 items-center justify-center rounded-full border border-primary/40 bg-accent"
+            >
+                <Rocket className="size-7 text-primary" strokeWidth={1.75} />
+            </span>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-card-foreground">{title}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{blurb}</p>
+        </div>
+    );
+}
 
 export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
     const router = useRouter();
     const [mode, setMode] = useState<Mode>(initialMode);
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -106,6 +127,8 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
             const result = await post<SignUpData>("/api/v1/auth/signup", {
                 email: parsed.data.email,
                 password: parsed.data.password,
+                // Optional: stored on the account so we can greet people by name.
+                name: name.trim() || undefined,
             }).catch(() => null);
             setBusy(false);
 
@@ -135,13 +158,21 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
 
     if (mode === "forgot" && sent) {
         return (
-            <div id="sign-in" className="w-full max-w-sm rounded-lg border border-border bg-card p-6 text-center" aria-live="polite">
-                <h2 className="text-lg font-semibold text-card-foreground">Check your email</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    If there is an account for <span className="font-medium text-foreground">{email}</span>,
-                    we have sent a link to set a new password. It lasts one hour.
+            <div id="sign-in" className={`${PANEL} text-center`} aria-live="polite">
+                <PanelHeader
+                    title="Check your email"
+                    blurb="The link lasts one hour."
+                />
+                <p className="mt-5 text-sm leading-6 text-muted-foreground">
+                    If there is an account for{" "}
+                    <span className="font-medium text-foreground">{email}</span>, we have sent a
+                    link to set a new password.
                 </p>
-                <button type="button" onClick={() => switchTo("signin")} className="mt-4 text-sm font-medium text-primary underline underline-offset-4">
+                <button
+                    type="button"
+                    onClick={() => switchTo("signin")}
+                    className="mt-6 rounded-md text-sm font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                     Back to sign in
                 </button>
             </div>
@@ -151,25 +182,69 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
     const copy = COPY[mode];
 
     return (
-        <form id="sign-in" onSubmit={handleSubmit} noValidate className="w-full max-w-sm rounded-lg border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-card-foreground">{copy.title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{copy.blurb}</p>
+        <form id="sign-in" onSubmit={handleSubmit} noValidate className={PANEL}>
+            <PanelHeader title={copy.title} blurb={copy.blurb} />
 
-            <label htmlFor="email" className="mt-5 block text-sm font-medium text-foreground">Email</label>
-            <Input
-                id="email"
-                name="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-invalid={error ? true : undefined}
-                aria-describedby={error ? "auth-error" : undefined}
-                className="mt-1.5"
-                required
-            />
+            {mode !== "forgot" && (
+                <>
+                    <a
+                        href="/api/v1/auth/google"
+                        className="mt-7 flex h-13 w-full items-center justify-center gap-3 rounded-lg border border-primary/40 bg-transparent px-4 text-base font-semibold text-foreground transition-colors hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                        <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.06 12.25c0-.85-.08-1.67-.22-2.45H12v4.64h6.2a5.3 5.3 0 0 1-2.3 3.48v2.9h3.72c2.18-2 3.44-4.96 3.44-8.57Z" />
+                            <path fill="#34A853" d="M12 23.5c3.1 0 5.71-1.03 7.62-2.78l-3.72-2.9c-1.03.69-2.35 1.1-3.9 1.1-3 0-5.540-2.02-6.45-4.74H1.7v2.99A11.5 11.5 0 0 0 12 23.5Z" />
+                            <path fill="#FBBC05" d="M5.55 14.18a6.9 6.9 0 0 1 0-4.36V6.83H1.7a11.5 11.5 0 0 0 0 10.34l3.85-3Z" />
+                            <path fill="#EA4335" d="M12 4.75c1.69 0 3.2.58 4.4 1.72l3.3-3.29C17.7 1.26 15.1.5 12 .5A11.5 11.5 0 0 0 1.7 6.83l3.85 2.99C6.46 7.1 9 4.75 12 4.75Z" />
+                        </svg>
+                        Continue with Google
+                    </a>
+
+                    <div className="mt-7 flex items-center gap-4" aria-hidden="true">
+                        <span className="h-px flex-1 bg-border" />
+                        <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                            or continue with email
+                        </span>
+                        <span className="h-px flex-1 bg-border" />
+                    </div>
+                </>
+            )}
+
+            {mode === "signup" && (
+                <div className="mt-7">
+                    <label htmlFor="name" className={LABEL}>Full name</label>
+                    <Input
+                        id="name"
+                        name="name"
+                        type="text"
+                        autoComplete="name"
+                        inputSize="lg"
+                        placeholder="Jane Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="mt-2"
+                    />
+                </div>
+            )}
+
+            <div className={mode === "signup" ? "mt-5" : "mt-7"}>
+                <label htmlFor="email" className={LABEL}>Email</label>
+                <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    inputSize="lg"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? "auth-error" : undefined}
+                    className="mt-2"
+                    required
+                />
+            </div>
 
             {mode !== "forgot" && (
                 <PasswordField
@@ -180,12 +255,13 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
                     autoComplete={mode === "signup" ? "new-password" : "current-password"}
                     describedBy={mode === "signup" ? "password-hint" : undefined}
                     invalid={Boolean(error)}
+                    inputSize="lg"
                 />
             )}
 
             {mode === "signup" && (
                 <>
-                    <p id="password-hint" className="mt-1.5 text-xs text-muted-foreground">
+                    <p id="password-hint" className="mt-2 text-xs text-muted-foreground">
                         At least {MIN_PASSWORD_LENGTH} characters. A short phrase you will remember works well.
                     </p>
                     <PasswordField
@@ -195,19 +271,33 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
                         onChange={setConfirmPassword}
                         autoComplete="new-password"
                         invalid={Boolean(error)}
+                        inputSize="lg"
                     />
                 </>
             )}
 
             <div aria-live="polite">
-                {error && <p id="auth-error" className="mt-3 text-sm text-destructive">{error}</p>}
+                {error && <p id="auth-error" className="mt-4 text-sm text-destructive">{error}</p>}
             </div>
 
-            <Button type="submit" className="mt-5 w-full" disabled={busy}>
+            <Button
+                type="submit"
+                variant="brand"
+                size="xl"
+                className="mt-7 w-full rounded-lg text-base font-semibold"
+                disabled={busy}
+            >
                 {busy ? "Just a moment…" : copy.action}
+                {!busy && <ArrowRight aria-hidden />}
             </Button>
 
-            <div className="mt-4 flex flex-col items-center gap-1 text-xs text-muted-foreground">
+            {mode === "signup" && (
+                <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
+                    By signing up, you agree to our Terms of Service and Privacy Policy.
+                </p>
+            )}
+
+            <div className="mt-5 flex flex-col items-center gap-1.5 text-sm text-muted-foreground">
                 {mode === "signin" && (
                     <>
                         <button type="button" onClick={() => switchTo("forgot")} className="font-medium text-primary underline underline-offset-4">
