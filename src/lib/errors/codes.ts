@@ -7,6 +7,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
     rate_limited: 429,
     spend_capped: 429,
     validation_failed: 422,
+    payload_too_large: 413,
     generation_failed: 502,
     payment_required: 402,
     hosting_error: 502,

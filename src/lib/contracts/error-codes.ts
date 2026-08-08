@@ -5,6 +5,7 @@ export type ErrorCode =
   | "rate_limited"
   | "spend_capped"
   | "validation_failed"
+  | "payload_too_large"
   | "generation_failed"
   | "payment_required"
   | "hosting_error"

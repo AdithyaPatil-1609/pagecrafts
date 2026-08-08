@@ -7,6 +7,9 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   UPSTASH_REDIS_REST_URL: z.string().min(1),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+  // Server-side only (S-1): the key never reaches the browser. Optional — without it the
+  // Unsplash path returns a clear error and direct upload keeps working.
+  UNSPLASH_ACCESS_KEY: z.string().min(1).optional(),
 });
 
 type ServerEnv = z.infer<typeof serverSchema>;
