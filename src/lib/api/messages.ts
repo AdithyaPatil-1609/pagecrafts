@@ -11,6 +11,7 @@ const FRIENDLY: Record<ErrorCode, string> = {
     rate_limited: 'That was a lot of saves at once. Wait a moment and try again.',
     spend_capped: 'The daily limit has been reached. Please try again tomorrow.',
     validation_failed: 'Some of your files were rejected.',
+    payload_too_large: 'That file is too large to save.',
     generation_failed: 'The site could not be generated.',
     payment_required: 'This needs an upgrade before it can run.',
     hosting_error: 'The hosting service did not respond.',

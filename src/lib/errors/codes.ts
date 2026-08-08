@@ -11,6 +11,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
     payment_required: 402,
     hosting_error: 502,
     internal: 500,
+    payload_too_large: 413,
 };
 
 export function statusFor(code: ErrorCode): number {
