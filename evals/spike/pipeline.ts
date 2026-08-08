@@ -3,7 +3,7 @@ import { profile as fetchProfile } from '@/lib/ai/profile';
 import { plan } from '@/lib/ai/generate/plan';
 import { fillSection } from '@/lib/ai/generate/fill';
 import { assemble } from '@/lib/ai/generate/assemble';
-import type { Composition, SectionProps, Usage } from '@/lib/contracts';
+import type { Composition, SectionInstance, SectionProps, Usage, VerticalProfile } from '@/lib/contracts';
 
 export type Mode = 'mock' | 'plan-only' | 'full';
 
@@ -24,6 +24,10 @@ export interface SpikeResult {
     ok: boolean;
     error?: string;
     composition?: Composition;
+    partial?: {
+        profile?: VerticalProfile;
+        sections?: SectionInstance[];
+    };
     calls: CallRecord[];
     requests: number;
     modelTimeMs: number;
@@ -72,6 +76,9 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
     const calls: CallRecord[] = [];
     const startedAt = Date.now();
 
+    let profileData: VerticalProfile | undefined;
+    let plannedSections: SectionInstance[] | undefined;
+
     const record = (stage: CallRecord['stage'], usage: Usage, section?: string): void => {
         calls.push({
             stage,
@@ -104,9 +111,11 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
 
         const p = await billed(1, () => fetchProfile(vertical));
         record('profile', p.usage);
+        profileData = p.data;
 
         const planned = await billed(1, () => plan(prompt, intent.data, p.data));
         record('plan', planned.usage);
+        plannedSections = planned.data;
 
         const props = new Map<string, SectionProps>();
 
@@ -151,6 +160,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             ...base,
             ok: false,
             error: err instanceof Error ? err.message : String(err),
+            partial: { profile: profileData, sections: plannedSections },
             calls,
             requests: calls.length,
             modelTimeMs: calls.reduce((t, c) => t + c.latencyMs, 0),

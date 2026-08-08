@@ -58,17 +58,58 @@ export function reportFor(r: SpikeResult): string {
         '',
     ].join('\n');
 
-    if (!r.ok) return `${header}\n## FAILED\n\n\`\`\`\n${r.error}\n\`\`\`\n`;
-    if (!r.composition) return `${header}\n_(no composition)_\n`;
+    if (r.ok && r.composition) {
+        return `${header}${renderComposition(r.composition)}`;
+    }
 
-    return `${header}${renderComposition(r.composition)}`;
+    const parts: string[] = [header];
+
+    if (!r.ok) {
+        parts.push(`## FAILED\n\n\`\`\`\n${r.error}\n\`\`\`\n`);
+    } else {
+        parts.push(`_(no composition)_\n`);
+    }
+
+    if (r.partial?.profile) {
+        const recipe = r.partial.profile.recipe;
+        if (recipe && recipe.length > 0) {
+            parts.push(
+                `### Recipe\n\n`
+                + recipe
+                    .map((entry) => `${entry.type}${entry.required ? ' (required)' : ''}${entry.note ? ` — ${entry.note}` : ''}`)
+                    .join('\n')
+                + '\n',
+            );
+        }
+
+        const ad = r.partial.profile.artDirection;
+        if (ad) {
+            parts.push(
+                `### Art direction\n\n`
+                + `theme **${ad.themeId}** · motion **${ad.motionId}** · corners **${ad.radiusId}** · `
+                + `spacing **${ad.spacingId}** · imagery **${ad.imageryId}**\n`,
+            );
+        }
+    }
+
+    if (r.partial?.sections && r.partial.sections.length > 0) {
+        parts.push(
+            `### Sections (${r.partial.sections.length})\n\n`
+            + r.partial.sections
+                .map((s, i) => `${i + 1}. \`${s.type}\` / \`${s.variant}\` — ${s.brief}`)
+                .join('\n')
+            + '\n',
+        );
+    }
+
+    return parts.join('\n');
 }
 
 export function indexFor(results: SpikeResult[]): string {
     const rows = results.map((r) => {
-        const sections = r.composition?.sections.length ?? 0;
-        const theme = r.composition?.artDirection.themeId ?? '—';
-        const motion = r.composition?.artDirection.motionId ?? '—';
+        const sections = r.composition?.sections.length ?? r.partial?.sections?.length ?? 0;
+        const theme = r.composition?.artDirection.themeId ?? r.partial?.profile?.artDirection.themeId ?? '—';
+        const motion = r.composition?.artDirection.motionId ?? r.partial?.profile?.artDirection.motionId ?? '—';
         return `| ${r.vertical} | ${r.hasTemplate ? 'yes' : '**no**'} | ${r.ok ? 'ok' : 'FAILED'} `
             + `| ${sections} | ${theme} | ${motion} | ${r.requests} `
             + `| ${(r.modelTimeMs / 1000).toFixed(1)}s |`;
