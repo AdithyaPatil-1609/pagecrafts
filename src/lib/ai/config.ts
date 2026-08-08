@@ -2,29 +2,138 @@ import { z } from 'zod';
 
 export type AiOperation = 'classify' | 'generate' | 'edit';
 
+/** Every provider we know how to talk to. Order in the fallback chain is separate (see `order`). */
+export type Provider = 'gemini' | 'groq' | 'cerebras';
+
+const KNOWN_PROVIDERS: readonly Provider[] = ['gemini', 'groq', 'cerebras'] as const;
+
 const envSchema = z.object({
-    AI_PROVIDER: z.enum(['gemini']).default('gemini'),
-    GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY is missing from .env.local'),
-    GEMINI_MODEL_FAST: z.string().default('gemini-2.5-flash-lite'),
-    GEMINI_MODEL_STRONG: z.string().default('gemini-2.5-flash'),
-    GEMINI_RPM: z.coerce.number().int().positive().default(5),
-    GEMINI_RPD: z.coerce.number().int().positive().default(20),
-    GEMINI_RPD_HEADROOM_PCT: z.coerce.number().min(0).max(100).default(15),
-    GEMINI_MAX_REQUEST_TOKENS: z.coerce.number().int().positive().default(8000),
+    // Priority chain, tried left to right. Providers without an API key are skipped.
+    AI_PROVIDER_ORDER: z.string().default('groq,cerebras,gemini'),
+
+    // Per-operation output ceilings (FR-103). Shared across providers; sent as max_tokens.
+    AI_OUTPUT_CLASSIFY_TOKENS: z.coerce.number().int().positive().default(1_024),
+    AI_OUTPUT_GENERATE_TOKENS: z.coerce.number().int().positive().default(4_000),
+    AI_OUTPUT_EDIT_TOKENS: z.coerce.number().int().positive().default(2_000),
+
+    // Per-operation timeouts. Shared across providers.
     GEMINI_TIMEOUT_CLASSIFY_MS: z.coerce.number().int().positive().default(5_000),
     GEMINI_TIMEOUT_GENERATE_MS: z.coerce.number().int().positive().default(45_000),
     GEMINI_TIMEOUT_EDIT_MS: z.coerce.number().int().positive().default(30_000),
+
+    // ── Gemini (final fallback) ──────────────────────────────────────────────
+    // Optional: the chain skips a provider with no key. The "at least one key"
+    // rule lives in the gateway builder, so it is stated in exactly one place.
+    GEMINI_API_KEY: z.string().default(''),
+    GEMINI_MODEL_FAST: z.string().default('gemini-3.5-flash-lite'),
+    GEMINI_MODEL_STRONG: z.string().default('gemini-3.5-flash'),
+    GEMINI_RPM: z.coerce.number().int().positive().default(5),
+    GEMINI_RPD: z.coerce.number().int().positive().default(20),
+    GEMINI_RPD_HEADROOM_PCT: z.coerce.number().min(0).max(100).default(15),
+    GEMINI_MAX_REQUEST_TOKENS: z.coerce.number().int().positive().default(8_000),
     GEMINI_PRICE_IN_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
     GEMINI_PRICE_OUT_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
+
+    // ── Groq (first priority) ────────────────────────────────────────────────
+    GROQ_API_KEY: z.string().default(''),
+    GROQ_MODEL_FAST: z.string().default('llama-3.1-8b-instant'),
+    GROQ_MODEL_STRONG: z.string().default('llama-3.3-70b-versatile'),
+    GROQ_BASE_URL: z.string().default('https://api.groq.com/openai/v1'),
+    GROQ_RPM: z.coerce.number().int().positive().default(30),
+    GROQ_RPD: z.coerce.number().int().positive().default(1_000),
+    GROQ_RPD_HEADROOM_PCT: z.coerce.number().min(0).max(100).default(15),
+    GROQ_MAX_REQUEST_TOKENS: z.coerce.number().int().positive().default(8_000),
+    GROQ_PRICE_IN_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
+    GROQ_PRICE_OUT_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
+
+    // ── Cerebras (second priority) ───────────────────────────────────────────
+    CEREBRAS_API_KEY: z.string().default(''),
+    CEREBRAS_MODEL_FAST: z.string().default('llama3.1-8b'),
+    CEREBRAS_MODEL_STRONG: z.string().default('llama-3.3-70b'),
+    CEREBRAS_BASE_URL: z.string().default('https://api.cerebras.ai/v1'),
+    CEREBRAS_RPM: z.coerce.number().int().positive().default(30),
+    CEREBRAS_RPD: z.coerce.number().int().positive().default(1_000),
+    CEREBRAS_RPD_HEADROOM_PCT: z.coerce.number().min(0).max(100).default(15),
+    CEREBRAS_MAX_REQUEST_TOKENS: z.coerce.number().int().positive().default(8_000),
+    CEREBRAS_PRICE_IN_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
+    CEREBRAS_PRICE_OUT_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
 });
 
-export interface AiConfig {
-    provider: 'gemini';
+export interface ProviderQuota {
+    rpm: number;
+    rpd: number;
+    rpdHeadroomPct: number;
+    maxRequestTokens: number;
+}
+
+export interface ProviderPricing {
+    inPerMTokCents: number;
+    outPerMTokCents: number;
+}
+
+export interface ProviderConfig {
     apiKey: string;
     models: { fast: string; strong: string };
-    quota: { rpm: number; rpd: number; rpdHeadroomPct: number; maxRequestTokens: number };
+    /** OpenAI-compatible base URL. Empty for Gemini (it uses the native SDK). */
+    baseUrl: string;
+    /** Rate/size limits are per provider — Groq's ceiling is not Gemini's. */
+    quota: ProviderQuota;
+    /** Prices are per provider — a Groq cost must never be priced at Gemini's rate (NFR-142). */
+    pricing: ProviderPricing;
+}
+
+export interface AiConfig {
+    /** The head of the fallback chain (informational; derived from `order`). */
+    provider: Provider;
+    /** Fallback priority, already trimmed to known providers; never empty. */
+    order: Provider[];
+    /** Per-provider credentials, model names, quota and pricing. */
+    providers: Record<Provider, ProviderConfig>;
+
+    // Back-compat: these mirror the Gemini provider so existing callers keep working.
+    apiKey: string;
+    models: { fast: string; strong: string };
+    quota: ProviderQuota;
+    pricing: ProviderPricing;
+
+    /** Per-operation timeouts, shared across providers. */
     timeouts: Record<AiOperation, number>;
-    pricing: { inPerMTokCents: number; outPerMTokCents: number };
+    /** Per-operation output-token ceilings, shared across providers. */
+    maxOutputTokens: Record<AiOperation, number>;
+}
+
+/**
+ * Parse the comma-separated priority list into known providers, de-duped.
+ * Warns on every unrecognised token; throws if nothing valid survives — a typo
+ * like `grok,cerbras` must fail loudly, not silently collapse to a default.
+ */
+function parseOrder(raw: string): Provider[] {
+    const seen = new Set<Provider>();
+    const dropped: string[] = [];
+
+    for (const token of raw.split(',').map((s) => s.trim()).filter(Boolean)) {
+        if ((KNOWN_PROVIDERS as readonly string[]).includes(token)) {
+            seen.add(token as Provider);
+        } else {
+            dropped.push(token);
+        }
+    }
+
+    if (dropped.length) {
+        console.warn(
+            `[ai config] AI_PROVIDER_ORDER: ignoring unknown provider(s) ${dropped.join(', ')}. ` +
+                `Known providers: ${KNOWN_PROVIDERS.join(', ')}.`,
+        );
+    }
+
+    if (seen.size === 0) {
+        throw new Error(
+            `AI_PROVIDER_ORDER lists no known provider (got "${raw}"). ` +
+                `Set it to a comma-separated subset of: ${KNOWN_PROVIDERS.join(', ')}.`,
+        );
+    }
+
+    return [...seen];
 }
 
 export function loadAiConfig(env: Record<string, string | undefined> = process.env,): AiConfig {
@@ -36,25 +145,73 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
     }
 
     const v = parsed.data;
+    const order = parseOrder(v.AI_PROVIDER_ORDER);
+
+    const providers: Record<Provider, ProviderConfig> = {
+        gemini: {
+            apiKey: v.GEMINI_API_KEY,
+            models: { fast: v.GEMINI_MODEL_FAST, strong: v.GEMINI_MODEL_STRONG },
+            baseUrl: '',
+            quota: {
+                rpm: v.GEMINI_RPM,
+                rpd: v.GEMINI_RPD,
+                rpdHeadroomPct: v.GEMINI_RPD_HEADROOM_PCT,
+                maxRequestTokens: v.GEMINI_MAX_REQUEST_TOKENS,
+            },
+            pricing: {
+                inPerMTokCents: v.GEMINI_PRICE_IN_PER_MTOK_CENTS,
+                outPerMTokCents: v.GEMINI_PRICE_OUT_PER_MTOK_CENTS,
+            },
+        },
+        groq: {
+            apiKey: v.GROQ_API_KEY,
+            models: { fast: v.GROQ_MODEL_FAST, strong: v.GROQ_MODEL_STRONG },
+            baseUrl: v.GROQ_BASE_URL,
+            quota: {
+                rpm: v.GROQ_RPM,
+                rpd: v.GROQ_RPD,
+                rpdHeadroomPct: v.GROQ_RPD_HEADROOM_PCT,
+                maxRequestTokens: v.GROQ_MAX_REQUEST_TOKENS,
+            },
+            pricing: {
+                inPerMTokCents: v.GROQ_PRICE_IN_PER_MTOK_CENTS,
+                outPerMTokCents: v.GROQ_PRICE_OUT_PER_MTOK_CENTS,
+            },
+        },
+        cerebras: {
+            apiKey: v.CEREBRAS_API_KEY,
+            models: { fast: v.CEREBRAS_MODEL_FAST, strong: v.CEREBRAS_MODEL_STRONG },
+            baseUrl: v.CEREBRAS_BASE_URL,
+            quota: {
+                rpm: v.CEREBRAS_RPM,
+                rpd: v.CEREBRAS_RPD,
+                rpdHeadroomPct: v.CEREBRAS_RPD_HEADROOM_PCT,
+                maxRequestTokens: v.CEREBRAS_MAX_REQUEST_TOKENS,
+            },
+            pricing: {
+                inPerMTokCents: v.CEREBRAS_PRICE_IN_PER_MTOK_CENTS,
+                outPerMTokCents: v.CEREBRAS_PRICE_OUT_PER_MTOK_CENTS,
+            },
+        },
+    };
 
     return {
-        provider: v.AI_PROVIDER,
-        apiKey: v.GEMINI_API_KEY,
-        models: { fast: v.GEMINI_MODEL_FAST, strong: v.GEMINI_MODEL_STRONG },
-        quota: {
-            rpm: v.GEMINI_RPM,
-            rpd: v.GEMINI_RPD,
-            rpdHeadroomPct: v.GEMINI_RPD_HEADROOM_PCT,
-            maxRequestTokens: v.GEMINI_MAX_REQUEST_TOKENS,
-        },
+        provider: order[0],
+        order,
+        providers,
+        apiKey: providers.gemini.apiKey,
+        models: providers.gemini.models,
+        quota: providers.gemini.quota,
+        pricing: providers.gemini.pricing,
         timeouts: {
             classify: v.GEMINI_TIMEOUT_CLASSIFY_MS,
             generate: v.GEMINI_TIMEOUT_GENERATE_MS,
             edit: v.GEMINI_TIMEOUT_EDIT_MS,
         },
-        pricing: {
-            inPerMTokCents: v.GEMINI_PRICE_IN_PER_MTOK_CENTS,
-            outPerMTokCents: v.GEMINI_PRICE_OUT_PER_MTOK_CENTS,
+        maxOutputTokens: {
+            classify: v.AI_OUTPUT_CLASSIFY_TOKENS,
+            generate: v.AI_OUTPUT_GENERATE_TOKENS,
+            edit: v.AI_OUTPUT_EDIT_TOKENS,
         },
     };
 }

@@ -11,6 +11,7 @@ function fake(reply: string | Error): Gateway {
         async complete() {
             if (reply instanceof Error) throw reply;
             return {
+                provider: 'gemini',
                 text: reply,
                 model: 'fake',
                 inputTokens: 10,
@@ -123,6 +124,7 @@ describe('classify (M3.2)', () => {
             async complete(req) {
                 sent = req.user;
                 return {
+                    provider: 'gemini',
                     text: JSON.stringify({
                         category: 'other', vertical: 'general-business',
                         tone: 'minimal', palette: 'light', sections: [],
@@ -155,17 +157,29 @@ describe('plan (M3.3 stage one)', () => {
         expect(data.every((s) => Object.keys(s.props).length === 0)).toBe(true);
     });
 
-    it('throws when the model invents a variant', async () => {
+    it('repairs an invented variant to a registered one', async () => {
         setGateway(fake(JSON.stringify({
             sections: [{ type: 'hero', variant: 'spectacular', brief: 'x' }],
         })));
-        await expect(plan('x', intent, profile))
-            .rejects.toThrow(/plan: model output failed validation/);
+        const { data } = await plan('x', intent, profile);
+        expect(data[0].type).toBe('hero');
+        expect(data[0].variant).toBe('centred');
     });
 
     it('throws when the reply is not JSON', async () => {
         setGateway(fake('not json'));
         await expect(plan('x', intent, profile)).rejects.toThrow();
+    });
+
+    // B6 — a call that dispatched but failed validation still cost tokens; its usage
+    // rides on the error so the ledger can bill it rather than lose the request.
+    it('attaches usage to a validation failure', async () => {
+        setGateway(fake(JSON.stringify({ sections: [] })));
+        await expect(plan('x', intent, profile)).rejects.toMatchObject({
+            detail: expect.objectContaining({
+                usage: expect.objectContaining({ provider: 'gemini' }),
+            }),
+        });
     });
 });
 

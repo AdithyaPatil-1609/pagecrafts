@@ -4,7 +4,6 @@ import {
     SECTION_KEYS, THEME_IDS, MOTION_IDS, RADIUS_IDS,
     SPACING_IDS, IMAGERY_IDS, MAX_SECTIONS,
 } from '@/lib/contracts';
-import { variantsFor } from '@/lib/ai/sections/contracts';
 
 export const categorySchema = z.enum([
     'portfolio', 'restaurant', 'saas', 'blog', 'event',
@@ -51,12 +50,16 @@ export function isClassificationShaped(value: unknown): value is Record<string, 
     );
 }
 
+// On the OpenAI-compatible path the provider does not enforce enums (json_object
+// mode, not responseSchema), so an invented id would otherwise fail the whole
+// profile. Each id falls back to the first registered value instead — the model
+// picking a bad theme degrades the art direction, it does not sink generation.
 export const artDirection = z.object({
-    themeId: z.enum(THEME_IDS),
-    motionId: z.enum(MOTION_IDS),
-    radiusId: z.enum(RADIUS_IDS),
-    spacingId: z.enum(SPACING_IDS),
-    imageryId: z.enum(IMAGERY_IDS),
+    themeId: z.enum(THEME_IDS).catch(THEME_IDS[0]),
+    motionId: z.enum(MOTION_IDS).catch(MOTION_IDS[0]),
+    radiusId: z.enum(RADIUS_IDS).catch(RADIUS_IDS[0]),
+    spacingId: z.enum(SPACING_IDS).catch(SPACING_IDS[0]),
+    imageryId: z.enum(IMAGERY_IDS).catch(IMAGERY_IDS[0]),
 });
 
 export const verticalProfile = z.object({
@@ -72,16 +75,15 @@ export const verticalProfile = z.object({
     imageQueries: z.array(z.string().min(1)).min(1).max(5),
 });
 
-export const plannedSection = z
-    .object({
-        type: sectionKeySchema,
-        variant: z.string().min(1),
-        brief: z.string().min(1).max(300),
-    })
-    .refine((s) => variantsFor(s.type).includes(s.variant), {
-        message: 'variant is not registered for this section type',
-        path: ['variant'],
-    });
+// `type` is intentionally lenient (not `sectionKeySchema`): on the compat path an
+// unknown section type must reach normalisePlan to be dropped-and-reported, not
+// fail the whole plan array. Legality of both `type` and `variant` is enforced in
+// normalisePlan (composition/rules.ts).
+export const plannedSection = z.object({
+    type: z.string().min(1),
+    variant: z.string().min(1),
+    brief: z.string().min(1).max(300),
+});
 
 export const generationPlan = z.array(plannedSection).min(1).max(MAX_SECTIONS);
 

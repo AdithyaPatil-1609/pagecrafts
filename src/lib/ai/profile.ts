@@ -1,4 +1,4 @@
-import { model } from './gateway';
+import { model, GatewayError } from './gateway';
 import { profileSchema as profileResponseSchema } from './gateway/response-schemas';
 import { loadTemplate, render } from './harness/templates';
 import { stripFences } from './sanitise';
@@ -39,7 +39,11 @@ export async function profile(vertical: string): Promise<AiResult<VerticalProfil
 
     const parsed = verticalProfile.safeParse(JSON.parse(stripFences(reply.text)));
     if (!parsed.success) {
-        throw new Error(`profile(${slug}): ${parsed.error.message}`);
+        throw new GatewayError('generation_failed', `profile(${slug}): model output failed validation`, false, {
+            raw: reply.text,
+            issues: parsed.error.issues,
+            usage: reply,
+        });
     }
 
     return { data: { slug, ...parsed.data }, usage: reply };

@@ -61,9 +61,9 @@ async function main() {
 
             results.push(result);
             console.log(
-                result.ok
+                    result.ok
                     ? `ok   ${result.requests} req  ${(result.modelTimeMs / 1000).toFixed(1)}s`
-                    : `FAIL ${result.error?.slice(0, 60)}`,
+                    : `FAIL ${result.error?.slice(0, 60)}${result.detail ? ' [detail in results]' : ''}`,
             );
         } catch (err) {
             if (err instanceof BudgetExceeded) {

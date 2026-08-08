@@ -3,6 +3,7 @@ import { profile as fetchProfile } from '@/lib/ai/profile';
 import { plan } from '@/lib/ai/generate/plan';
 import { fillSection } from '@/lib/ai/generate/fill';
 import { assemble } from '@/lib/ai/generate/assemble';
+import { GatewayError } from '@/lib/ai/gateway';
 import type { Composition, SectionInstance, SectionProps, Usage, VerticalProfile } from '@/lib/contracts';
 
 export type Mode = 'mock' | 'plan-only' | 'full';
@@ -10,6 +11,7 @@ export type Mode = 'mock' | 'plan-only' | 'full';
 export interface CallRecord {
     stage: 'classify' | 'profile' | 'plan' | 'fill';
     section?: string;
+    provider?: string;
     model: string;
     inputTokens: number;
     outputTokens: number;
@@ -23,6 +25,7 @@ export interface SpikeResult {
     mode: Mode;
     ok: boolean;
     error?: string;
+    detail?: unknown;
     composition?: Composition;
     partial?: {
         profile?: VerticalProfile;
@@ -63,6 +66,14 @@ function didNotConsumeQuota(err: unknown): boolean {
     return /\b503\b|UNAVAILABLE|ECONNRESET|fetch failed|aborted/i.test(m);
 }
 
+/** A validation failure still costs tokens — the service attaches the reply's usage. */
+function usageFromError(err: unknown): Usage | undefined {
+    if (err instanceof GatewayError && err.detail && typeof err.detail === 'object') {
+        return (err.detail as { usage?: Usage }).usage;
+    }
+    return undefined;
+}
+
 interface SpikeInput {
     vertical: string;
     prompt: string;
@@ -83,6 +94,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
         calls.push({
             stage,
             ...(section ? { section } : {}),
+            provider: usage.provider,
             model: usage.model,
             inputTokens: usage.inputTokens,
             outputTokens: usage.outputTokens,
@@ -90,12 +102,28 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
         });
     };
 
-    const billed = async <T>(n: number, fn: () => Promise<T>): Promise<T> => {
+    // Spend, run, and record the call. A call that dispatched but then failed
+    // validation still cost tokens (B6) — record its usage rather than refund it,
+    // so `requests` and the ledger never undercount a paid call. Only a call that
+    // never reached the provider is refunded.
+    const runStage = async <T extends { usage: Usage }>(
+        stage: CallRecord['stage'],
+        n: number,
+        fn: () => Promise<T>,
+        section?: string,
+    ): Promise<T> => {
         if (mode !== 'mock') budget.spend(n);
         try {
-            return await fn();
+            const result = await fn();
+            record(stage, result.usage, section);
+            return result;
         } catch (err) {
-            if (mode !== 'mock' && didNotConsumeQuota(err)) budget.refund(n);
+            const usage = usageFromError(err);
+            if (usage) {
+                record(stage, usage, section);
+            } else if (mode !== 'mock' && didNotConsumeQuota(err)) {
+                budget.refund(n);
+            }
             throw err;
         }
     };
@@ -106,31 +134,31 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
     };
 
     try {
-        const intent = await billed(1, () => classify(prompt));
-        record('classify', intent.usage);
+        const intent = await runStage('classify', 1, () => classify(prompt));
 
-        const p = await billed(1, () => fetchProfile(vertical));
-        record('profile', p.usage);
+        const p = await runStage('profile', 1, () => fetchProfile(vertical));
         profileData = p.data;
 
-        const planned = await billed(1, () => plan(prompt, intent.data, p.data));
-        record('plan', planned.usage);
+        const planned = await runStage('plan', 1, () => plan(prompt, intent.data, p.data));
         plannedSections = planned.data;
 
         const props = new Map<string, SectionProps>();
 
         if (mode !== 'plan-only') {
             for (const section of planned.data) {
-                const filled = await billed(1, () =>
-                    fillSection(section, {
-                        vertical,
-                        tone: intent.data.tone,
-                        prompt,
-                        customerWord: p.data.vocabulary.customer,
-                    }),
+                const filled = await runStage(
+                    'fill',
+                    1,
+                    () =>
+                        fillSection(section, {
+                            vertical,
+                            tone: intent.data.tone,
+                            prompt,
+                            customerWord: p.data.vocabulary.customer,
+                        }),
+                    `${section.type}/${section.variant}`,
                 );
                 props.set(section.id, filled.data);
-                record('fill', filled.usage, `${section.type}/${section.variant}`);
             }
         } else {
             for (const section of planned.data) props.set(section.id, {});
@@ -160,6 +188,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             ...base,
             ok: false,
             error: err instanceof Error ? err.message : String(err),
+            detail: err instanceof GatewayError ? err.detail : undefined,
             partial: { profile: profileData, sections: plannedSections },
             calls,
             requests: calls.length,

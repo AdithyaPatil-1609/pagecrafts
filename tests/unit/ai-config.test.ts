@@ -1,11 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { loadAiConfig } from '@/lib/ai/config';
 
 const base = { GEMINI_API_KEY: 'test-key' };
 
+afterEach(() => vi.restoreAllMocks());
+
 describe('loadAiConfig', () => {
-    it('throws a named error when the key is missing', () => {
-        expect(() => loadAiConfig({})).toThrow(/GEMINI_API_KEY/);
+    it('loads with no keys at all — the "at least one key" rule lives in the builder', () => {
+        expect(() => loadAiConfig({})).not.toThrow();
+        expect(loadAiConfig({}).providers.gemini.apiKey).toBe('');
     });
 
     it('falls back to the measured free-tier limits', () => {
@@ -27,5 +30,56 @@ describe('loadAiConfig', () => {
         const cfg = loadAiConfig(base);
         expect(cfg.models.fast).toContain('lite');
         expect(cfg.models.strong).not.toContain('lite');
+    });
+
+    it('defaults the Gemini models to the 3.5 family', () => {
+        const cfg = loadAiConfig(base);
+        expect(cfg.providers.gemini.models.fast).toBe('gemini-3.5-flash-lite');
+        expect(cfg.providers.gemini.models.strong).toBe('gemini-3.5-flash');
+    });
+
+    it('defaults the provider order to groq, cerebras, gemini', () => {
+        expect(loadAiConfig(base).order).toEqual(['groq', 'cerebras', 'gemini']);
+        expect(loadAiConfig(base).provider).toBe('groq');
+    });
+
+    it('parses a custom order, warning on unknown tokens and de-duping', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const cfg = loadAiConfig({ ...base, AI_PROVIDER_ORDER: 'gemini, nonsense, groq, groq' });
+        expect(cfg.order).toEqual(['gemini', 'groq']);
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('nonsense'));
+    });
+
+    // C4 — a typo like `grok,cerbras` must fail loudly, not silently become gemini-only.
+    it('throws when the order lists nothing known', () => {
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(() => loadAiConfig({ ...base, AI_PROVIDER_ORDER: 'grok,cerbras' })).toThrow(/no known provider/);
+    });
+
+    it('leaves groq and cerebras keys empty until provided', () => {
+        const cfg = loadAiConfig(base);
+        expect(cfg.providers.groq.apiKey).toBe('');
+        expect(cfg.providers.cerebras.apiKey).toBe('');
+        expect(cfg.providers.gemini.apiKey).toBe('test-key');
+    });
+
+    it('reads per-provider models and base urls', () => {
+        const cfg = loadAiConfig({
+            ...base,
+            GROQ_API_KEY: 'g',
+            GROQ_MODEL_STRONG: 'custom-groq-70b',
+            CEREBRAS_BASE_URL: 'https://example.test/v1',
+        });
+        expect(cfg.providers.groq.models.strong).toBe('custom-groq-70b');
+        expect(cfg.providers.cerebras.baseUrl).toBe('https://example.test/v1');
+    });
+
+    // B4 — quota and pricing are per provider, not one shared Gemini block.
+    it('keeps quota and pricing per provider', () => {
+        const cfg = loadAiConfig({ ...base, GROQ_PRICE_IN_PER_MTOK_CENTS: '7', GROQ_MAX_REQUEST_TOKENS: '5000' });
+        expect(cfg.providers.groq.pricing.inPerMTokCents).toBe(7);
+        expect(cfg.providers.groq.quota.maxRequestTokens).toBe(5000);
+        // Gemini's own numbers are untouched by Groq's.
+        expect(cfg.providers.gemini.pricing.inPerMTokCents).toBe(0);
     });
 });

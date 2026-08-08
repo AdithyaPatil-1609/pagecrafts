@@ -11,3 +11,8 @@ export function modelFor(tier: Tier): string {
 export function timeoutFor(job: Job): number {
     return aiConfig().timeouts[job];
 }
+
+/** The output-token ceiling for a job (FR-103), sent as max_tokens on each request. */
+export function maxOutputFor(job: Job): number {
+    return aiConfig().maxOutputTokens[job];
+}

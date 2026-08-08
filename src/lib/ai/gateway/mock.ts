@@ -1,4 +1,5 @@
 import type { CompleteReply, CompleteRequest } from './provider';
+import { aiConfig } from '../config';
 import { SECTION_CONTRACTS } from '../sections/contracts';
 import type { Field, SectionKey } from '@/lib/contracts';
 
@@ -113,7 +114,11 @@ export class MockGateway {
     constructor(private readonly mode: Mode = 'ok') { }
 
     private reply(text: string): CompleteReply {
-        return { text, model: 'mock', inputTokens: 12, outputTokens: 24, latencyMs: 3 };
+        // The mock stands in for the whole chain; label it as the configured primary.
+        return {
+            provider: aiConfig().provider,
+            text, model: 'mock', inputTokens: 12, outputTokens: 24, latencyMs: 3,
+        };
     }
 
     async complete(req: CompleteRequest): Promise<CompleteReply> {

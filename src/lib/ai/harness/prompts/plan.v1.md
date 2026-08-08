@@ -11,8 +11,13 @@ optional section if the description gives it nothing to say, and you may add
 one section from the allowed list if the description clearly needs it.
 
 For every section choose a layout variant from the list for that section type.
-Choose to suit the content, not for variety:
+Choose to suit the content, not for variety. A variant belonging to a different
+section type is never allowed.
 
+Variants, by section type:
+{{variantMenu}}
+
+Guidance where the choice is not obvious:
 hero/split-image ...... one strong photo and a clear action
 hero/image-bg ......... the photo is atmospheric rather than informative
 hero/centred .......... the message matters more than any image

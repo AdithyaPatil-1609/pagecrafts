@@ -6,7 +6,7 @@ import {
     generationPlan,
     verticalProfile,
 } from '@/lib/contracts/schemas/ai';
-import { MAX_SECTIONS } from '@/lib/contracts';
+import { MAX_SECTIONS, THEME_IDS } from '@/lib/contracts';
 
 describe('categorySchema — the original ten plus the R2 refresh buckets', () => {
     it('keeps the original ten and adds the seven refresh categories', () => {
@@ -101,23 +101,35 @@ describe('classification — never rejects on values (FR-024, BR-04)', () => {
     });
 });
 
-describe('generationPlan — strict (FR-043)', () => {
+describe('generationPlan — shape is strict, variant legality is repaired downstream', () => {
     const s = { type: 'hero', variant: 'split-image', brief: 'welcome the visitor' };
 
     it('accepts a registered variant', () => {
         expect(generationPlan.safeParse([s]).success).toBe(true);
     });
 
-    it('rejects a variant registered to a different type', () => {
-        expect(generationPlan.safeParse([{ ...s, variant: 'masonry' }]).success).toBe(false);
+    // Variant legality is no longer enforced by the schema — normalisePlan repairs
+    // an unregistered (or mismatched) variant to a valid one and reports the repair.
+    it('accepts a variant registered to a different type (repaired downstream)', () => {
+        expect(generationPlan.safeParse([{ ...s, variant: 'masonry' }]).success).toBe(true);
     });
 
-    it('rejects an unregistered variant', () => {
-        expect(generationPlan.safeParse([{ ...s, variant: 'spectacular' }]).success).toBe(false);
+    it('accepts an unregistered variant (repaired downstream)', () => {
+        expect(generationPlan.safeParse([{ ...s, variant: 'spectacular' }]).success).toBe(true);
     });
 
-    it('rejects an unknown section type', () => {
-        expect(generationPlan.safeParse([{ ...s, type: 'vibes' }]).success).toBe(false);
+    it('rejects an empty variant', () => {
+        expect(generationPlan.safeParse([{ ...s, variant: '' }]).success).toBe(false);
+    });
+
+    // Section-type legality moved to normalisePlan too: an unknown type must reach
+    // it to be dropped-and-reported (B1a), not fail the whole plan on the compat path.
+    it('accepts an unknown section type (dropped downstream)', () => {
+        expect(generationPlan.safeParse([{ ...s, type: 'vibes' }]).success).toBe(true);
+    });
+
+    it('rejects an empty section type', () => {
+        expect(generationPlan.safeParse([{ ...s, type: '' }]).success).toBe(false);
     });
 
     it('rejects an empty plan', () => {
@@ -153,9 +165,13 @@ describe('verticalProfile — strict', () => {
         expect(verticalProfile.safeParse(valid).success).toBe(true);
     });
 
-    it('rejects an unknown theme', () => {
+    // Art-direction ids fall back rather than fail (B1a): the compat path can't
+    // enforce enums, so an invented themeId degrades to the first registered theme.
+    it('coerces an unknown theme to the first registered theme', () => {
         const bad = { ...valid, artDirection: { ...valid.artDirection, themeId: 'neon-chaos' } };
-        expect(verticalProfile.safeParse(bad).success).toBe(false);
+        const out = verticalProfile.safeParse(bad);
+        expect(out.success).toBe(true);
+        expect(out.success && out.data.artDirection.themeId).toBe(THEME_IDS[0]);
     });
 
     it('rejects a recipe shorter than three sections', () => {

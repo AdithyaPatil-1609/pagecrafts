@@ -106,6 +106,8 @@ export interface FilledSection {
 }
 
 export interface Usage {
+    /** Which provider served the call — Groq and Cerebras host near-identical model names. */
+    provider?: string;
     model: string;
     inputTokens: number;
     outputTokens: number;

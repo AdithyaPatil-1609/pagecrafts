@@ -66,6 +66,9 @@ export function reportFor(r: SpikeResult): string {
 
     if (!r.ok) {
         parts.push(`## FAILED\n\n\`\`\`\n${r.error}\n\`\`\`\n`);
+        if (r.detail != null) {
+            parts.push(`### Detail\n\n\`\`\`json\n${JSON.stringify(r.detail, null, 2)}\n\`\`\`\n`);
+        }
     } else {
         parts.push(`_(no composition)_\n`);
     }

@@ -1,4 +1,4 @@
-import { model } from '../gateway';
+import { model, GatewayError } from '../gateway';
 import { loadTemplate, render } from '../harness/templates';
 import { stripFences, sanitiseDeep } from '../sanitise';
 import { contractFor } from '../sections/contracts';
@@ -39,7 +39,11 @@ export async function fillSection(
     const clean = sanitiseDeep(raw);
     const parsed = contract.fill.safeParse(clean);
     if (!parsed.success) {
-        throw new Error(`fillSection(${instance.type}): ${parsed.error.message}`);
+        throw new GatewayError('generation_failed', `fillSection(${instance.type}): model output failed validation`, false, {
+            raw: reply.text,
+            issues: parsed.error.issues,
+            usage: reply,
+        });
     }
 
     return { data: parsed.data as SectionProps, usage: reply };
