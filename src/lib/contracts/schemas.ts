@@ -31,3 +31,32 @@ export const patchProjectSchema = z.object({
 export const putFilesSchema = z.object({
   files: z.record(z.string(), z.string()),
 });
+
+// PUT /projects/{id}/files/{path} — a single file write. The path itself arrives in the
+// URL and is validated separately (isValidFilePath -> 422).
+export const putFileSchema = z.object({
+  content: z.string(),
+});
+
+// PATCH /projects/{id}/content — ops against content_json. Semantic validation (does the
+// slot exist, does the value fit its FieldType) happens against the template's
+// content_schema after parse; this only guards the transport shape.
+export const patchContentSchema = z.object({
+  ops: z
+    .array(
+      z.object({
+        path: z.string().min(1).max(200),
+        value: z.unknown(),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
+
+// POST /projects/{id}/assets — the JSON (Unsplash) body. Uploads arrive as multipart
+// form-data and never hit this schema.
+export const createUnsplashAssetSchema = z.object({
+  source: z.literal("unsplash"),
+  unsplashId: z.string().min(1).max(80),
+  kind: z.enum(["image", "favicon", "og_image"]).optional(),
+});

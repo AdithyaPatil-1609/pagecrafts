@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FileMap, GetProjectFilesResponse } from '@/lib/contracts';
 import { ApiError } from '@/lib/errors/respond';
-import { validateFileMap } from './validate-file-map';
+import { isValidFilePath, validateFileMap } from './validate-file-map';
 
 async function loadProject(supabase: SupabaseClient, projectId: string) {
     const { data, error } = await supabase
@@ -86,6 +86,89 @@ export async function putProjectFiles(
 
     return { projectId, files, updatedAt: touched.updated_at };
 }
+// Bump projects.updated_at so the dashboard orders by real activity. The empty update
+// still fires the set_updated_at trigger (same pattern as putProjectFiles above).
+async function touchProject(supabase: SupabaseClient, projectId: string): Promise<string> {
+    const { data, error } = await supabase
+        .from('projects')
+        .update({ name: undefined })
+        .eq('id', projectId)
+        .select('updated_at')
+        .single();
+
+    if (error) throw new ApiError('internal', 'Could not update the project.', error.message);
+    return data.updated_at;
+}
+
+// The database triggers cap files per project and total text bytes; their raised
+// exceptions arrive as plain Postgres errors, so translate them into the 422 the
+// contract promises instead of a bare 500.
+function fileLimitError(message: string): ApiError | null {
+    if (/file limit exceeded/i.test(message)) {
+        return new ApiError('validation_failed', 'This project has too many files.', message);
+    }
+    if (/text size limit exceeded/i.test(message)) {
+        return new ApiError('validation_failed', 'This project has run out of text space.', message);
+    }
+    return null;
+}
+
+// PUT /projects/{id}/files/{path} — upsert one file. Marks the working tree dirty by
+// touching the project; never creates a commit (committing is an explicit act, V-4).
+export async function putProjectFile(
+    supabase: SupabaseClient,
+    projectId: string,
+    path: string,
+    content: string,
+): Promise<{ projectId: string; path: string; dirty: boolean; updatedAt: string }> {
+    if (!isValidFilePath(path)) {
+        throw new ApiError('validation_failed', 'That file path is not valid.', path);
+    }
+
+    await loadProject(supabase, projectId);
+
+    const { error } = await supabase
+        .from('project_files')
+        .upsert({ project_id: projectId, path, content }, { onConflict: 'project_id,path' });
+
+    if (error) {
+        throw fileLimitError(error.message)
+            ?? new ApiError('internal', 'Could not save the file.', error.message);
+    }
+
+    const updatedAt = await touchProject(supabase, projectId);
+    return { projectId, path, dirty: true, updatedAt };
+}
+
+// DELETE /projects/{id}/files/{path}. Deleting a path that does not exist is not_found,
+// so the editor can tell a stale tree from a successful delete.
+export async function deleteProjectFile(
+    supabase: SupabaseClient,
+    projectId: string,
+    path: string,
+): Promise<{ projectId: string; path: string; dirty: boolean; updatedAt: string }> {
+    if (!isValidFilePath(path)) {
+        throw new ApiError('validation_failed', 'That file path is not valid.', path);
+    }
+
+    await loadProject(supabase, projectId);
+
+    const { data, error } = await supabase
+        .from('project_files')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('path', path)
+        .select('path');
+
+    if (error) throw new ApiError('internal', 'Could not delete the file.', error.message);
+    if (!data || data.length === 0) {
+        throw new ApiError('not_found', 'That file does not exist in this project.');
+    }
+
+    const updatedAt = await touchProject(supabase, projectId);
+    return { projectId, path, dirty: true, updatedAt };
+}
+
 // Single-file read for GET /projects/{id}/files/{path}. A path that is not in this
 // project returns not_found rather than an empty string, so the editor can tell the
 // difference between "empty file" and "no such file" (N-4).
