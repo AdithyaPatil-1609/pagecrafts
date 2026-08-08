@@ -9,5 +9,4 @@ export type ErrorCode =
   | "generation_failed"
   | "payment_required"
   | "hosting_error"
-  | "internal"
-  | "payload_too_large";
+  | "internal";
