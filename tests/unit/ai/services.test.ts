@@ -89,6 +89,26 @@ describe('classify (M3.2)', () => {
         expect(data.fallback).toBe(true);
     });
 
+    it('marks fallback true when the category had to be coerced', async () => {
+        setGateway(fake(JSON.stringify({
+            category: 'bakery', vertical: 'photography',
+            tone: 'minimal', palette: 'dark', sections: ['hero'],
+        })));
+        const { data } = await classify('a bakery site');
+        expect(data.category).toBe('other');
+        expect(data.fallback).toBe(true);
+    });
+
+    it('keeps fallback false when only the tone was coerced', async () => {
+        setGateway(fake(JSON.stringify({
+            category: 'portfolio', vertical: 'photography',
+            tone: 'moody', palette: 'dark', sections: ['hero'],
+        })));
+        const { data } = await classify('a photography site');
+        expect(data.tone).toBe('minimal');
+        expect(data.fallback).toBe(false);
+    });
+
     it('never calls the provider for empty input', async () => {
         const complete = vi.fn();
         setGateway({ complete } as unknown as Gateway);

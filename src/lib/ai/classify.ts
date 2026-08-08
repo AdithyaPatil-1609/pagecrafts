@@ -2,14 +2,16 @@ import { model } from './gateway';
 import { classifySchema } from './gateway/response-schemas';
 import { loadTemplate, render } from './harness/templates';
 import { stripFences } from './sanitise';
-import { classification, isClassificationShaped } from '@/lib/contracts/schemas/ai';
+import { classification, coercedFields, isClassificationShaped } from '@/lib/contracts/schemas/ai';
+import { CATEGORY_LIST } from './schemas';
 import {
     SECTION_KEYS, MAX_CLASSIFY_CHARS,
     type IntentAttributes, type AiResult, type Usage,
 } from '@/lib/contracts';
 
-const CATEGORIES =
-    'portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other';
+// The allowed buckets, from the single source of truth so the prompt can never list a
+// category the schema would reject (or miss one the library now ships).
+const CATEGORIES = CATEGORY_LIST;
 
 const SAFE: IntentAttributes = {
     category: 'other',
@@ -42,11 +44,20 @@ export async function classify(text: string): Promise<AiResult<IntentAttributes>
         const raw: unknown = JSON.parse(stripFences(reply.text));
         if (!isClassificationShaped(raw)) return { data: SAFE, usage: reply };
 
+        const coerced = coercedFields(raw);
         const parsed = classification.safeParse(raw);
         if (!parsed.success) return { data: SAFE, usage: reply };
 
-        return { data: { ...parsed.data, fallback: false }, usage: reply };
-    } catch {
+        if (coerced.length > 0) {
+            console.warn(`classify: coerced ${coerced.join(', ')}`);
+        }
+
+        return {
+            data: { ...parsed.data, fallback: coerced.includes('category') },
+            usage: reply,
+        };
+    } catch (err) {
+        console.warn(`classify: fell back — ${err instanceof Error ? err.message : err}`);
         return { data: SAFE, usage: NO_USAGE };
     }
 }

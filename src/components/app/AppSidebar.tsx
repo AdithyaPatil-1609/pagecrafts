@@ -16,19 +16,20 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// The product shell's navigation. Destinations that do not exist yet are shown as
-// disabled rows with a "Soon" chip rather than links that would 404 — the shape of the
-// product is honest about what you can reach today.
+// The product shell's navigation. Destinations that do not exist yet are rendered as
+// inert rows rather than links that would 404 — muted, not focusable, and never a
+// navigation that dead-ends. Only a row with something to say carries a chip.
 interface NavItem {
     label: string;
     icon: LucideIcon;
     href?: string;
+    badge?: string;
 }
 
 const NAV: NavItem[] = [
     { label: "Your sites", icon: LayoutGrid },
     { label: "Templates", icon: LayoutTemplate, href: "/templates" },
-    { label: "AI Assistant", icon: Sparkles },
+    { label: "AI Assistant", icon: Sparkles, badge: "Beta" },
     { label: "Domains", icon: Globe },
     { label: "Team", icon: Users },
     { label: "Settings", icon: Settings },
@@ -45,13 +46,17 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
         </>
     );
 
+    const badge = item.badge ? (
+        <Badge variant="secondary" className="px-2 py-0 text-[10px] font-medium">
+            {item.badge}
+        </Badge>
+    ) : null;
+
     if (!item.href) {
         return (
-            <span className={cn(ROW, "cursor-default text-muted-foreground/70")}>
+            <span aria-disabled className={cn(ROW, "cursor-default text-muted-foreground/70")}>
                 {content}
-                <Badge variant="secondary" className="px-2 py-0 text-[10px] font-medium">
-                    Soon
-                </Badge>
+                {badge}
             </span>
         );
     }
@@ -69,6 +74,7 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }) {
             )}
         >
             {content}
+            {badge}
         </Link>
     );
 }
@@ -124,14 +130,15 @@ export function AppSidebar({
                     <Sparkles className="size-5 text-primary" strokeWidth={1.75} aria-hidden />
                     <p className="mt-3 text-base font-semibold text-foreground">Upgrade to Pro</p>
                     <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                        Custom domains, more AI generations and priority support.
+                        Unlock custom domains, more AI generations, and priority support.
                     </p>
                     <button
                         type="button"
                         disabled
+                        title="Billing is not live yet"
                         className="mt-4 w-full rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        Coming soon
+                        Upgrade now
                     </button>
                 </div>
 

@@ -66,7 +66,7 @@ const PLAN = {
     sections: [
         { type: 'hero', variant: 'split-image', brief: 'welcome the visitor' },
         { type: 'services', variant: 'cards', brief: 'what we offer' },
-        { type: 'team', variant: 'cards', brief: 'who works here' },
+        { type: 'team', variant: 'grid', brief: 'who works here' },
         { type: 'faq', variant: 'accordion', brief: 'common questions' },
         { type: 'contact', variant: 'split-map', brief: 'how to reach us' },
         { type: 'footer', variant: 'simple', brief: 'closing line' },

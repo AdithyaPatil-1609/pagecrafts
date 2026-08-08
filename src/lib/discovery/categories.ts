@@ -13,16 +13,42 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   store: "Store",
   nonprofit: "Non-profit",
   other: "Other",
+  fitness: "Fitness",
+  food: "Food",
+  photography: "Photography",
+  architecture: "Architecture",
+  education: "Education",
+  travel: "Travel",
+  business: "Business",
 };
 
-// The fixed cards on the intent screen (screen 03), in display order — exactly the
-// frozen enum, no more and no less (D-1, AC-F2-3).
-export const CATEGORY_CARDS: Category[] = Object.keys(CATEGORY_LABELS) as Category[];
+// The cards on the intent screen (screen 03), in display order. This is the set of
+// categories the library actually ships a design for — the twelve of the R2 refresh — so
+// every card a user can pick lands them on at least one template and never an empty grid
+// (D-6). It is deliberately narrower than the full Category enum: the classifier may still
+// emit a broader bucket (e.g. `saas`), which routes to the unfiltered gallery rather than
+// stranding the user, with `other` as the catch-all.
+export const CATEGORY_CARDS: Category[] = [
+  "fitness",
+  "portfolio",
+  "food",
+  "blog",
+  "resume",
+  "photography",
+  "architecture",
+  "education",
+  "travel",
+  "agency",
+  "business",
+  "event",
+];
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);
 
-// Narrow an untrusted URL/query value to a Category, or undefined. Unrecognised values
-// are ignored rather than raising an error (D-4, FR-035).
+// Narrow an untrusted URL/query value to a category the gallery can filter on, or
+// undefined. Only the categories the library covers are accepted; anything else — an
+// unknown value, or an enum bucket with no design — is ignored and shows the whole library
+// rather than raising an error or an empty grid (D-4, FR-035).
 export function toCategory(value: string | undefined | null): Category | undefined {
   return value && CATEGORY_SET.has(value) ? (value as Category) : undefined;
 }

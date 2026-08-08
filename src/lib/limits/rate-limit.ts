@@ -71,7 +71,12 @@ export async function consume(
     }
 
     return denied(Math.max(1, Math.ceil(Number(resetInMs) / 1000)), false);
-  } catch {
+  } catch (error) {
+    console.error("[rate-limit] redis call failed, denying", {
+      bucket,
+      reason: error instanceof Error ? error.message : String(error),
+    });
+
     return denied(Math.ceil(rule.windowMs / 1000), true);
   }
 }

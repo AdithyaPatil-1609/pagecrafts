@@ -8,17 +8,26 @@ import {
 } from '@/lib/contracts/schemas/ai';
 import { MAX_SECTIONS } from '@/lib/contracts';
 
-describe('categorySchema — the frozen ten (M0.1)', () => {
-    it('has exactly the ten frozen values', () => {
+describe('categorySchema — the original ten plus the R2 refresh buckets', () => {
+    it('keeps the original ten and adds the seven refresh categories', () => {
         expect([...categorySchema.options].sort()).toEqual([
+            // The original frozen ten (kept for back-compat; `other` is the catch-all).
             'agency', 'blog', 'event', 'nonprofit', 'other',
             'portfolio', 'restaurant', 'resume', 'saas', 'store',
-        ]);
+            // The seven added when the gallery grew to the mockup's twelve designs.
+            'architecture', 'business', 'education', 'fitness', 'food', 'photography', 'travel',
+        ].sort());
     });
 
     it('accepts resume and store', () => {
         expect(categorySchema.safeParse('resume').success).toBe(true);
         expect(categorySchema.safeParse('store').success).toBe(true);
+    });
+
+    it('accepts the new refresh categories', () => {
+        for (const c of ['fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business']) {
+            expect(categorySchema.safeParse(c).success).toBe(true);
+        }
     });
 
     it('rejects personal and shop', () => {
