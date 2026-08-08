@@ -112,6 +112,8 @@ export interface Usage {
     inputTokens: number;
     outputTokens: number;
     latencyMs: number;
+    /** Which prompt version produced this output, e.g. `classify.v1`. */
+    promptVersion?: string;
 }
 
 export interface AiResult<T> {

@@ -33,6 +33,14 @@ You never write HTML. You never mention colour, spacing or layout.
 
 Sections available: {{sectionKeys}}
 
+Return valid JSON with exactly this shape:
+
+{
+  "sections": [
+    { "type": "<section key>", "variant": "<variant from the list above>", "brief": "<one line>" }
+  ]
+}
+
 USER
 Business: {{vertical}} · Tone: {{tone}}
 

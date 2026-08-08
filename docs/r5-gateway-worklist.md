@@ -70,14 +70,48 @@ On Gemini those were enforced by the provider and could not be violated. On Groq
 | `plannedSection.type` | `sectionKeySchema`, hard enum | **whole plan fails** |
 | `artDirection.themeId` + 4 others | `z.enum(...)`, hard enum | **whole profile fails** |
 
-**Fix B1a — today, cheap.** In `src/lib/contracts/schemas/ai.ts`:
+**CONFIRMED D5, live against Groq. The failure is worse than predicted and the cheap fix does not work.**
 
-- give each `artDirection` id a `.catch()` with the first registered id as default
-- make an unrecognised section `type` drop that section rather than fail the array — same pattern as the variant repair, and report it in `repairs`
+Groq returned, for every one of 10 verticals:
 
-**Fix B1b — after Friday, proper.** Groq and Cerebras both support `response_format: { type: 'json_schema', … }`. Write a converter from the Gemini `Schema` type to JSON Schema and pass the real schema. That restores the provider-side guarantee for all three providers and makes B1a a safety net rather than the only defence.
+```json
+"artDirection": {
+    "theme": "clinical-blue", "motion": "calm", "cornerStyle": "sharp",
+    "spacing": "default", "photography": "bright-clean"
+}
+```
 
-Do **not** attempt B1b before the go/no-go — it changes what the model receives, which invalidates any evidence gathered before it.
+Every **value** is correct — identical to Gemini's answers. Every **key** is invented:
+
+| Schema expects | Groq sent |
+|---|---|
+| `label` | *missing* |
+| `recipe[].type` | `section` |
+| `recipe[].required: false` | `optional: true` |
+| `artDirection.themeId` | `theme` |
+| `artDirection.motionId` | `motion` |
+| `artDirection.radiusId` | `cornerStyle` |
+| `artDirection.spacingId` | `spacing` |
+| `artDirection.imageryId` | `photography` |
+
+`.catch()` rescues a wrong **value** in a key that exists. It cannot rescue a key that is absent. **B1a as originally written is void.**
+
+**Fix B1a (revised) — prompt states the shape.** Every prompt that expects structured output must state the literal key names, generated from the registry the same way `variantMenu()` is. On Gemini the `responseSchema` supplied them; nothing supplies them now.
+
+**Fix B1b — PROMOTED TO FIRST. Not a post-Friday item.** Groq and Cerebras both support `response_format: { type: 'json_schema', json_schema: { name, schema, strict: true } }`. Convert the Gemini `Schema` type to JSON Schema and send the real thing. This restores the guarantee lost in the provider move. Prompting alone is not sufficient — the failure was total and reproducible across all 10 verticals.
+
+### B1c · Classification is failing silently on every call
+
+```
+classify: coerced tone, palette
+classify: coerced category, tone, palette
+```
+
+Same root cause at the fast tier. The `.catch()` calls absorb it, so nothing throws — which means classification returns **default values on every request** (`tone: 'minimal'`, `palette: 'light'`) no matter what the user wrote.
+
+The classifier is not working on Groq. It only looks like it is.
+
+**Fix** — same as B1a/B1b. And keep the spike's "coerced" line: `.catch()` is right for users and dangerous for evidence, and that one printed line is what exposed this.
 
 ### B2 · No output ceiling
 
@@ -104,7 +138,13 @@ NFR-142 requires cost reconciliation within 5% of the provider invoice. That can
 
 **Fix** — move `quota`, `pricing` and `maxRequestTokens` into `ProviderConfig`, per provider. Keep the top-level fields as Gemini mirrors for back-compat only if something still reads them; otherwise delete.
 
-### B5 · The reply does not say who served it
+### B5 · The reply does not say who served it — **DONE, verify only**
+
+Saved records now carry `usage.provider: "groq"`. Confirm all three gateways set it, then close.
+
+**Still open, same family:** `evals/spike/run.ts` line 12 prints `aiConfig().models` — the Gemini back-compat mirror. Every spike log is headed `{ fast: 'gemini-3.5-flash-lite', strong: 'gemini-3.5-flash' }` while Groq serves every call. Replace with the resolved chain and the provider that answered.
+
+### B5-old · original text
 
 `CompleteReply` carries `model` but not the provider. Groq and Cerebras both host `llama-3.3-70b` under near-identical names, so the model string is not a reliable discriminator.
 
@@ -191,20 +231,14 @@ The compat gateway builds `messages` straight from `req.system` and `req.user`. 
 
 ## Suggested order of execution
 
-1. **A1, A2** — ten minutes, unblocks a Groq-only setup
-2. **B2, B5, B6** — small, safe, and B5 is a prerequisite for labelling evidence
-3. **C1, C3, C4** — small
-4. **B1a** — the cheap half of the schema fix
-5. **Commit** (two commits, per E6)
-6. **B3, B4** — need a little design thought
-7. **D1–D10**
-8. Add keys, one live smoke call per provider, record which model answered
-9. **After Friday only:** B1b, the JSON Schema converter
+Superseded by `docs/r5-d6-d7-schedule.md`, which sequences these items across two days.
+
+Summary of the change after the D5 live run: **B1b is first, not last.** Generation does not work on Groq at all until the schema reaches the provider, so everything downstream of it is blocked.
 
 ## Verify
 
 ```bash
-npm run typecheck && npx vitest run
+npm run typecheck && npx vitest run && npm run spike -- --mode=mock
 ```
 
-**Do not run a live spike until B5 lands.** Evidence that does not name its provider cannot be used in the go/no-go.
+**Do not spend live budget on a shape that is known broken.** Three spikes were run against it on D5; all three were always going to fail.

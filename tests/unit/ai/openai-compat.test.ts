@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { OpenAICompatGateway } from '@/lib/ai/gateway/openai-compat';
 import type { ProviderConfig } from '@/lib/ai/config';
 import type { CompleteRequest } from '@/lib/ai/gateway/provider';
+import { classifySchema } from '@/lib/ai/gateway/response-schemas';
 
 function cfg(overrides: Partial<ProviderConfig> = {}): ProviderConfig {
     return {
@@ -68,6 +69,48 @@ describe('OpenAICompatGateway', () => {
             { role: 'system', content: 'SYS' },
             { role: 'user', content: 'USR' },
         ]);
+    });
+
+    it('B1b: sends strict json_schema, not json_object, when a schema is given', async () => {
+        const fetchMock = okFetch();
+        vi.stubGlobal('fetch', fetchMock);
+        await new OpenAICompatGateway('groq', cfg()).complete(req({ schema: classifySchema }));
+
+        const rf = bodyOf(fetchMock).response_format as {
+            type: string;
+            json_schema: { strict: boolean; schema: { properties: Record<string, { enum?: string[] }> } };
+        };
+        expect(rf.type).toBe('json_schema');
+        expect(rf.json_schema.strict).toBe(true);
+        expect(rf.json_schema.schema.properties.tone.enum).toContain('minimal');
+    });
+
+    it('sends no response_format when the caller gives no schema', async () => {
+        const fetchMock = okFetch();
+        vi.stubGlobal('fetch', fetchMock);
+        await new OpenAICompatGateway('groq', cfg()).complete(req());
+        expect(bodyOf(fetchMock)).not.toHaveProperty('response_format');
+    });
+
+    it('falls back to json_object when the model rejects json_schema', async () => {
+        const unsupported = new Response(
+            JSON.stringify({ error: { message: 'This model does not support response format `json_schema`.' } }),
+            { status: 400 },
+        );
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(unsupported)
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const models = { fast: 'legacy-fast', strong: 'legacy-strong' };
+        const reply = await new OpenAICompatGateway('groq', cfg({ models }))
+            .complete(req({ schema: classifySchema }));
+
+        expect(reply.provider).toBe('groq');
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const second = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
+        expect(second.response_format).toEqual({ type: 'json_object' });
     });
 
     it('maps HTTP 429 to a retryable rate_limited error', async () => {

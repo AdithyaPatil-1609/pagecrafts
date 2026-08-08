@@ -65,6 +65,39 @@ describe('FallbackGateway', () => {
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('GROQ_API_KEY'));
     });
 
+    // An unfunded account (402) or a missing model (404) is provider-specific —
+    // the next provider may well serve, so the chain must advance, not halt.
+    it.each([
+        ['payment_required' as const, 'cerebras: HTTP 402'],
+        ['not_found' as const, 'cerebras: HTTP 404'],
+        ['forbidden' as const, 'cerebras: HTTP 403'],
+    ])('advances past a provider-specific %s fault', async (code, msg) => {
+        const cerebras = stub('cerebras', new GatewayError(code, msg, false));
+        const gemini = stub('gemini', reply('gemini'));
+        const out = await new FallbackGateway([cerebras, gemini]).complete(req);
+        expect(out.provider).toBe('gemini');
+        expect(gemini.complete).toHaveBeenCalledOnce();
+    });
+
+    it('stops re-attempting a provider that is unfunded, after the first call', async () => {
+        const cerebras = stub('cerebras', new GatewayError('payment_required', 'HTTP 402', false));
+        const gemini = stub('gemini', reply('gemini'));
+        const gw = new FallbackGateway([cerebras, gemini]);
+
+        for (let i = 0; i < 3; i++) expect((await gw.complete(req)).provider).toBe('gemini');
+
+        expect(cerebras.complete).toHaveBeenCalledOnce();
+        expect(gemini.complete).toHaveBeenCalledTimes(3);
+    });
+
+    it('still tries a disabled provider when it is the only one left', async () => {
+        const solo = stub('cerebras', new GatewayError('payment_required', 'HTTP 402', false));
+        const gw = new FallbackGateway([solo]);
+        await expect(gw.complete(req)).rejects.toThrow(/402/);
+        await expect(gw.complete(req)).rejects.toThrow(/402/);
+        expect(solo.complete).toHaveBeenCalledTimes(2);
+    });
+
     // C2 / D7 — a stop-the-chain fault does not attempt provider two.
     it('D7: stops immediately on a validation_failed fault', async () => {
         const groq = stub('groq', new GatewayError('validation_failed', 'too big', false));

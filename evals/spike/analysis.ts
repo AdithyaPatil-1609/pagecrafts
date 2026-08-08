@@ -43,7 +43,7 @@ export function analyse(results: SpikeResult[], rpd: number, headroom = 0.15): A
     };
 }
 
-export function analysisReport(a: Analysis, rpd: number): string {
+export function analysisReport(a: Analysis, rpd: number, provider = 'project'): string {
     return [
         '# Capacity and latency',
         '',
@@ -59,7 +59,7 @@ export function analysisReport(a: Analysis, rpd: number): string {
         `| Input tokens (all runs) | ${a.totalInputTokens.toLocaleString()} |`,
         `| Output tokens (all runs) | ${a.totalOutputTokens.toLocaleString()} |`,
         '',
-        `Project RPD **${rpd}**, minus 15% headroom, divided by `
+        `${provider} RPD **${rpd}**, minus 15% headroom, divided by `
         + `${a.meanRequests.toFixed(1)} requests per generation:`,
         '',
         `## ~${a.projectedGenerationsPerDay} full generations per day`,

@@ -36,8 +36,9 @@ function parse(raw: string, file: string): PromptTemplate {
     };
 }
 
+/** Templates are named `<id>.<version>.md`; other docs in the folder are not templates. */
 export function listTemplates(): string[] {
-    return readdirSync(DIR).filter((f) => f.endsWith('.md'));
+    return readdirSync(DIR).filter((f) => /^[a-z-]+\.v\d+\.md$/.test(f));
 }
 
 export function loadTemplate(name: string): PromptTemplate {

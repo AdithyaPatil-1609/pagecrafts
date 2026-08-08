@@ -9,7 +9,15 @@ import { blankScoresheet, passRate } from './rubric';
 import type { Score } from './rubric';
 import { analyse, analysisReport } from './analysis';
 import { aiConfig } from '@/lib/ai/config';
-console.log(aiConfig().models);
+import { chainFor } from '@/lib/ai/gateway';
+
+const cfg = aiConfig();
+const chain = chainFor(cfg);
+const chainSummary = chain.map((gw) => {
+    const p = cfg.providers[gw.name];
+    return `${gw.name}(${p.models.fast} / ${p.models.strong})`;
+}).join(' → ');
+console.log(`chain: ${chainSummary}`);
 
 interface CorpusItem {
     id: string;
@@ -89,8 +97,14 @@ async function main() {
     writeFileSync(join(dir, 'scores.json'), JSON.stringify(blankScoresheet(results), null, 2));
 
     if (mode !== 'mock') {
-        const rpd = Number(process.env.GEMINI_RPD ?? 20);
-        writeFileSync(join(dir, 'capacity.md'), analysisReport(analyse(results, rpd), rpd));
+        // Project against the quota of the provider that actually served, not Gemini's.
+        const served = results.flatMap((r) => r.calls).find((c) => c.provider)?.provider;
+        const provider = (served ?? cfg.provider) as keyof typeof cfg.providers;
+        const rpd = cfg.providers[provider].quota.rpd;
+        writeFileSync(
+            join(dir, 'capacity.md'),
+            analysisReport(analyse(results, rpd), rpd, provider),
+        );
     }
 
     const { auto } = passRate(blankScoresheet(results));

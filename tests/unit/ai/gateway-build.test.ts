@@ -23,7 +23,12 @@ describe('buildGateway / chainFor', () => {
     });
 
     it('skips a provider that has no key even if it is listed in the order', () => {
-        const cfg = loadAiConfig({ CEREBRAS_API_KEY: 'c' });
+        const cfg = loadAiConfig({ AI_PROVIDER_ORDER: 'groq,cerebras', CEREBRAS_API_KEY: 'c' });
         expect(chainFor(cfg).map((g) => g.name)).toEqual(['cerebras']);
+    });
+
+    it('leaves cerebras out of the chain unless the order names it', () => {
+        const cfg = loadAiConfig({ GROQ_API_KEY: 'g', CEREBRAS_API_KEY: 'c', GEMINI_API_KEY: 'x' });
+        expect(chainFor(cfg).map((g) => g.name)).toEqual(['groq', 'gemini']);
     });
 });

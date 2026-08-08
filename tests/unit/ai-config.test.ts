@@ -13,13 +13,20 @@ describe('loadAiConfig', () => {
 
     it('falls back to the measured free-tier limits', () => {
         const cfg = loadAiConfig(base);
-        expect(cfg.quota.rpd).toBe(20);
-        expect(cfg.quota.rpm).toBe(5);
+        // Back-compat quota mirrors the active provider (groq by default).
+        expect(cfg.quota.rpd).toBe(1_000);
+        expect(cfg.quota.rpm).toBe(30);
+        // Gemini's own limits are still accessible via providers.
+        expect(cfg.providers.gemini.quota.rpd).toBe(20);
+        expect(cfg.providers.gemini.quota.rpm).toBe(5);
     });
 
     it('reads limits from the environment as numbers', () => {
         const cfg = loadAiConfig({ ...base, GEMINI_RPD: '1500' });
-        expect(cfg.quota.rpd).toBe(1500);
+        expect(cfg.providers.gemini.quota.rpd).toBe(1500);
+        // Back-compat mirrors active provider (groq), not Gemini.
+        const cfg2 = loadAiConfig({ ...base, GROQ_RPD: '2000' });
+        expect(cfg2.quota.rpd).toBe(2000);
     });
 
     it('rejects a limit that is not a number', () => {
@@ -28,8 +35,10 @@ describe('loadAiConfig', () => {
 
     it('splits models into fast and strong tiers', () => {
         const cfg = loadAiConfig(base);
-        expect(cfg.models.fast).toContain('lite');
-        expect(cfg.models.strong).not.toContain('lite');
+        // Back-compat mirrors the active provider (groq by default).
+        expect(cfg.models.fast).toBe(cfg.providers[cfg.provider].models.fast);
+        expect(cfg.models.strong).toBe(cfg.providers[cfg.provider].models.strong);
+        expect(cfg.models.fast).not.toBe(cfg.models.strong);
     });
 
     it('defaults the Gemini models to the 3.5 family', () => {
@@ -38,9 +47,15 @@ describe('loadAiConfig', () => {
         expect(cfg.providers.gemini.models.strong).toBe('gemini-3.5-flash');
     });
 
-    it('defaults the provider order to groq, cerebras, gemini', () => {
-        expect(loadAiConfig(base).order).toEqual(['groq', 'cerebras', 'gemini']);
+    it('defaults the provider order to groq, gemini', () => {
+        expect(loadAiConfig(base).order).toEqual(['groq', 'gemini']);
         expect(loadAiConfig(base).provider).toBe('groq');
+    });
+
+    // Cerebras stays configurable — it is out of the default chain, not removed.
+    it('still supports cerebras when it is named in the order', () => {
+        const cfg = loadAiConfig({ ...base, AI_PROVIDER_ORDER: 'groq,cerebras,gemini' });
+        expect(cfg.order).toEqual(['groq', 'cerebras', 'gemini']);
     });
 
     it('parses a custom order, warning on unknown tokens and de-duping', () => {

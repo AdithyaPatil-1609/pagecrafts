@@ -1,0 +1,119 @@
+[
+  {
+    "vertical": "gym",
+    "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm",
+    "hasTemplate": true,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "promptVersion": "classify.v1",
+        "inputTokens": 207,
+        "outputTokens": 82,
+        "latencyMs": 1123
+      },
+      {
+        "stage": "profile",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "profile.v1",
+        "inputTokens": 465,
+        "outputTokens": 560,
+        "latencyMs": 5165
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "inputTokens": 640,
+        "outputTokens": 294,
+        "latencyMs": 5783
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "gym",
+      "artDirection": {
+        "themeId": "vivid-energy",
+        "motionId": "kinetic",
+        "radiusId": "sharp",
+        "spacingId": "default",
+        "imageryId": "bold-contrast"
+      },
+      "meta": {
+        "title": "Gym & Fitness Center",
+        "description": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "image-bg",
+          "brief": "Unleash your potential with high-energy workouts and claim your free trial pass today.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Discover our gritty, results-driven philosophy and state-of-the-art training community.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Explore our bold class packages, flexible membership pricing, and elite training options.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "team",
+          "variant": "grid",
+          "brief": "Meet the certified coaches and personal trainers who will push you to smash your fitness goals.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Find our location, view our late-night hours open until 11 PM, and get in touch.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "Stay connected via our social channels, download our workout app, and access quick links.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 3,
+    "modelTimeMs": 12071,
+    "wallClockMs": 12573
+  }
+]

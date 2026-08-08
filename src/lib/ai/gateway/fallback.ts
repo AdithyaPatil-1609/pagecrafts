@@ -11,17 +11,27 @@ import {
  * Decide whether a failure should advance the chain or stop it.
  *
  * The chain covers **availability, not quality**. It advances when a provider is
- * rate-limited, unreachable, or misconfigured (a wrong key — try the others so
- * the user is still served). It stops immediately on a request-shape fault
- * (`validation_failed`, a non-retryable 4xx), because that fault will reproduce
- * identically at every provider — advancing would burn the whole chain to learn
+ * rate-limited, unreachable, unfunded or misconfigured — all provider-specific,
+ * so the next one may well serve. It stops immediately on a request-shape fault
+ * (`validation_failed`, a non-retryable 400), because that fault reproduces
+ * identically at every provider and advancing would burn the chain to learn
  * nothing. Downstream Zod validation throws *outside* the gateway, so it never
  * reaches here: quality failures were never the chain's job.
  */
+const ADVANCE_ON: ReadonlySet<string> = new Set([
+    'rate_limited', 'unauthorized', 'forbidden', 'payment_required',
+    'spend_capped', 'not_found', 'hosting_error',
+]);
+
+/** Faults that will not fix themselves mid-run, so the provider is dropped. */
+const TERMINAL: ReadonlySet<string> = new Set([
+    'unauthorized', 'forbidden', 'payment_required',
+]);
+
 function shouldAdvance(err: unknown): boolean {
     if (err instanceof GatewayError) {
         if (err.code === 'validation_failed') return false;
-        return err.retryable || err.code === 'rate_limited' || err.code === 'unauthorized';
+        return err.retryable || ADVANCE_ON.has(err.code);
     }
     // Unknown / network-shaped errors — try the next provider.
     return true;
@@ -36,6 +46,16 @@ function shouldAdvance(err: unknown): boolean {
  * three timeouts — each attempt runs against the remaining time.
  */
 export class FallbackGateway implements Gateway {
+    /** Repeating conditions already reported, so a dead provider logs once. */
+    private readonly warned = new Set<string>();
+
+    /**
+     * Providers dropped for this gateway's lifetime. A missing key or an unfunded
+     * account will not recover mid-run, and re-attempting it buys only a wasted
+     * round-trip on every later call before the working provider serves.
+     */
+    private readonly disabled = new Set<string>();
+
     constructor(
         private readonly chain: NamedGateway[],
         /** Overall budget in ms; defaults to the per-job timeout. Injectable for tests. */
@@ -46,6 +66,12 @@ export class FallbackGateway implements Gateway {
         }
     }
 
+    private warnOnce(key: string, message: string): void {
+        if (this.warned.has(key)) return;
+        this.warned.add(key);
+        console.warn(message);
+    }
+
     async complete(req: CompleteRequest): Promise<CompleteReply> {
         const budget = AbortSignal.timeout(this.deadlineMs ?? timeoutFor(req.job));
         const signal = req.signal ? AbortSignal.any([req.signal, budget]) : budget;
@@ -53,28 +79,53 @@ export class FallbackGateway implements Gateway {
 
         const failures: string[] = [];
 
-        for (let i = 0; i < this.chain.length; i++) {
-            const gw = this.chain[i];
+        // Never disable the last provider standing — a bad chain should surface
+        // its real error, not an empty-chain one.
+        const usable = this.chain.filter((gw) => !this.disabled.has(gw.name));
+        const chain = usable.length ? usable : this.chain;
+
+        for (let i = 0; i < chain.length; i++) {
+            const gw = chain[i];
             try {
                 const reply = await gw.complete(attempt);
                 if (failures.length) {
-                    console.warn(`[gateway] ${gw.name} served after fallback — ${failures.join(' | ')}`);
+                    this.warnOnce(
+                        `served:${gw.name}:${failures[0]}`,
+                        `[gateway] ${gw.name} served after fallback — ${failures.join(' | ')}`,
+                    );
                 }
                 return reply;
             } catch (err) {
                 const message = err instanceof Error ? err.message : String(err);
                 failures.push(`${gw.name}: ${message}`);
 
-                // A wrong key is a config mistake, not an outage — say so loudly, once.
-                if (err instanceof GatewayError && err.code === 'unauthorized') {
-                    console.warn(`[gateway] ${gw.name} rejected the API key — check ${gw.name.toUpperCase()}_API_KEY.`);
+                // A wrong key or an unfunded account is a config mistake, not an
+                // outage — say so once, and name the thing to go and fix.
+                if (err instanceof GatewayError) {
+                    if (err.code === 'unauthorized' || err.code === 'forbidden') {
+                        this.warnOnce(
+                            `key:${gw.name}`,
+                            `[gateway] ${gw.name} rejected the API key — check ${gw.name.toUpperCase()}_API_KEY.`,
+                        );
+                    } else if (err.code === 'payment_required' || err.code === 'spend_capped') {
+                        this.warnOnce(
+                            `billing:${gw.name}`,
+                            `[gateway] ${gw.name} has no quota left — check billing for ${gw.name}.`,
+                        );
+                    }
+                    if (TERMINAL.has(err.code) && chain.length > 1) {
+                        this.disabled.add(gw.name);
+                    }
                 }
 
                 if (!shouldAdvance(err)) throw err;
 
-                const next = this.chain[i + 1];
+                const next = chain[i + 1];
                 if (next) {
-                    console.warn(`[gateway] ${gw.name} failed (${message}); falling back to ${next.name}`);
+                    this.warnOnce(
+                        `fallback:${gw.name}:${next.name}:${err instanceof GatewayError ? err.code : 'error'}`,
+                        `[gateway] ${gw.name} failed (${message}); falling back to ${next.name}`,
+                    );
                 }
             }
         }

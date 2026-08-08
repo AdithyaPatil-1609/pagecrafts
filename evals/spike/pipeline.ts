@@ -13,6 +13,7 @@ export interface CallRecord {
     section?: string;
     provider?: string;
     model: string;
+    promptVersion?: string;
     inputTokens: number;
     outputTokens: number;
     latencyMs: number;
@@ -96,6 +97,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             ...(section ? { section } : {}),
             provider: usage.provider,
             model: usage.model,
+            promptVersion: usage.promptVersion,
             inputTokens: usage.inputTokens,
             outputTokens: usage.outputTokens,
             latencyMs: usage.latencyMs,

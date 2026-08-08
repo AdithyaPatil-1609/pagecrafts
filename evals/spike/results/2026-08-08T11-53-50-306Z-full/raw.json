@@ -1,0 +1,266 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 262,
+        "outputTokens": 62,
+        "latencyMs": 325
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 488,
+        "outputTokens": 305,
+        "latencyMs": 827
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 570,
+        "outputTokens": 192,
+        "latencyMs": 610
+      },
+      {
+        "stage": "fill",
+        "section": "hero/minimal",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 263,
+        "outputTokens": 86,
+        "latencyMs": 466
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 251,
+        "outputTokens": 69,
+        "latencyMs": 442
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 260,
+        "outputTokens": 72,
+        "latencyMs": 278
+      }
+    ],
+    "ok": false,
+    "error": "fillSection(services): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"heading\": \"Dental Services\",\n   \"items\": [\n      {\"name\": \"Check-ups\", \"description\": \"Regular dental check-ups\"},\n      {\"name\": \"Root Canals\", \"description\": \"Treatment for infected teeth\"},\n      {\"name\": \"Braces\", \"description\": \"Teeth straightening and alignment\"}\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "items",
+            0,
+            "title"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "items",
+            0,
+            "body"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "items",
+            1,
+            "title"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "items",
+            1,
+            "body"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "items",
+            2,
+            "title"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "items",
+            2,
+            "body"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"heading\": \"Dental Services\",\n   \"items\": [\n      {\"name\": \"Check-ups\", \"description\": \"Regular dental check-ups\"},\n      {\"name\": \"Root Canals\", \"description\": \"Treatment for infected teeth\"},\n      {\"name\": \"Braces\", \"description\": \"Teeth straightening and alignment\"}\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 260,
+        "outputTokens": 72,
+        "latencyMs": 278
+      }
+    },
+    "partial": {
+      "profile": {
+        "slug": "dental-clinic",
+        "label": "Dental Clinic",
+        "aliases": [
+          "Dentist Office",
+          "Orthodontic Clinic",
+          "Dental Care",
+          "Dentistry"
+        ],
+        "recipe": [
+          {
+            "type": "hero",
+            "required": true,
+            "note": "Introduction to the clinic"
+          },
+          {
+            "type": "about",
+            "required": true,
+            "note": "Clinic history and mission"
+          },
+          {
+            "type": "services",
+            "required": true,
+            "note": "List of dental services offered"
+          },
+          {
+            "type": "team",
+            "required": true,
+            "note": "Meet the dentists and staff"
+          },
+          {
+            "type": "testimonials",
+            "required": false,
+            "note": "Patient reviews and testimonials"
+          },
+          {
+            "type": "faq",
+            "required": false,
+            "note": "Frequently asked questions"
+          },
+          {
+            "type": "contact",
+            "required": true,
+            "note": "Get in touch with the clinic"
+          }
+        ],
+        "artDirection": {
+          "themeId": "clinical-blue",
+          "motionId": "calm",
+          "radiusId": "soft",
+          "spacingId": "default",
+          "imageryId": "bright-clean"
+        },
+        "vocabulary": {
+          "customer": "patient",
+          "purchase": "appointment"
+        },
+        "imageQueries": [
+          "dental chair",
+          "smiling dentist",
+          "healthy teeth"
+        ]
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "minimal",
+          "brief": "Introduction to the family dental clinic in Koramangala",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Clinic history and mission statement",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List of dental services offered, including check-ups, root canals, and braces",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "team",
+          "variant": "grid",
+          "brief": "Meet the dentists and staff at the clinic",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "simple",
+          "brief": "Get in touch with the clinic to book an appointment",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_06",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Patient reviews and testimonials about their experience at the clinic",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 6,
+    "modelTimeMs": 2948,
+    "wallClockMs": 2961
+  }
+]

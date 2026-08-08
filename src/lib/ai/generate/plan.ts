@@ -34,14 +34,33 @@ export async function plan(
         schema: planSchema,
     });
 
-    const raw = JSON.parse(stripFences(reply.text)) as { sections?: unknown };
-    const rawSections = Array.isArray(raw.sections) ? raw.sections.slice(0, 7) : (raw.sections ?? []);
+    const raw = JSON.parse(stripFences(reply.text));
+
+    // The model should return { "sections": [...] }, but some providers return
+    // an object keyed by section type: { "hero": { variant, brief }, ... }.
+    // Normalise both shapes into the array the schema expects.
+    let rawSections: unknown[];
+    if (Array.isArray(raw.sections)) {
+        rawSections = raw.sections.slice(0, 7);
+    } else if (Array.isArray(raw)) {
+        rawSections = raw.slice(0, 7);
+    } else if (raw && typeof raw === 'object' && !raw.sections) {
+        // Object-keyed format: convert { "hero": { variant, brief } } → [{ type: "hero", variant, brief }]
+        rawSections = Object.entries(raw)
+            .filter(([, v]) => v && typeof v === 'object')
+            .map(([type, props]) => ({ type, ...(props as object) }));
+    } else {
+        rawSections = [];
+    }
+
+    const usage = { ...reply, promptVersion: `${tpl.id}.${tpl.version}` };
+
     const parsed = generationPlan.safeParse(rawSections);
     if (!parsed.success) {
         throw new GatewayError('generation_failed', 'plan: model output failed validation', false, {
             raw: reply.text,
             issues: parsed.error.issues,
-            usage: reply,
+            usage,
         });
     }
 
@@ -59,5 +78,5 @@ export async function plan(
         props: {},
     }));
 
-    return { data: sections, usage: reply };
+    return { data: sections, usage };
 }

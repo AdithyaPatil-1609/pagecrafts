@@ -171,6 +171,14 @@ describe('plan (M3.3 stage one)', () => {
         await expect(plan('x', intent, profile)).rejects.toThrow();
     });
 
+    it('records the prompt version that produced the output', async () => {
+        setGateway(fake(JSON.stringify({
+            sections: [{ type: 'hero', variant: 'centred', brief: 'x' }],
+        })));
+        const { usage } = await plan('x', intent, profile);
+        expect(usage.promptVersion).toBe('plan.v1');
+    });
+
     // B6 — a call that dispatched but failed validation still cost tokens; its usage
     // rides on the error so the ledger can bill it rather than lose the request.
     it('attaches usage to a validation failure', async () => {

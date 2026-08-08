@@ -41,6 +41,6 @@ export async function proposeEdit(
             explanation: parsed.data.explanation,
             applied: false,
         },
-        usage: reply,
+        usage: { ...reply, promptVersion: `${tpl.id}.${tpl.version}` },
     };
 }

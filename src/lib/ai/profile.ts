@@ -37,14 +37,16 @@ export async function profile(vertical: string): Promise<AiResult<VerticalProfil
         schema: profileResponseSchema,
     });
 
+    const usage = { ...reply, promptVersion: `${tpl.id}.${tpl.version}` };
+
     const parsed = verticalProfile.safeParse(JSON.parse(stripFences(reply.text)));
     if (!parsed.success) {
         throw new GatewayError('generation_failed', `profile(${slug}): model output failed validation`, false, {
             raw: reply.text,
             issues: parsed.error.issues,
-            usage: reply,
+            usage,
         });
     }
 
-    return { data: { slug, ...parsed.data }, usage: reply };
+    return { data: { slug, ...parsed.data }, usage };
 }

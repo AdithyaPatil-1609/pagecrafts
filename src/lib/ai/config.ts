@@ -9,7 +9,10 @@ const KNOWN_PROVIDERS: readonly Provider[] = ['gemini', 'groq', 'cerebras'] as c
 
 const envSchema = z.object({
     // Priority chain, tried left to right. Providers without an API key are skipped.
-    AI_PROVIDER_ORDER: z.string().default('groq,cerebras,gemini'),
+    // Cerebras is supported but out of the default chain — the account is unfunded
+    // and returns 402, so including it only buys a wasted round-trip per call.
+    // Add it back to this list once billing is sorted; no code change needed.
+    AI_PROVIDER_ORDER: z.string().default('groq,gemini'),
 
     // Per-operation output ceilings (FR-103). Shared across providers; sent as max_tokens.
     AI_OUTPUT_CLASSIFY_TOKENS: z.coerce.number().int().positive().default(1_024),
@@ -36,8 +39,9 @@ const envSchema = z.object({
 
     // ── Groq (first priority) ────────────────────────────────────────────────
     GROQ_API_KEY: z.string().default(''),
-    GROQ_MODEL_FAST: z.string().default('llama-3.1-8b-instant'),
-    GROQ_MODEL_STRONG: z.string().default('llama-3.3-70b-versatile'),
+    // gpt-oss-* support strict json_schema on Groq; the llama-3.x models do not.
+    GROQ_MODEL_FAST: z.string().default('openai/gpt-oss-20b'),
+    GROQ_MODEL_STRONG: z.string().default('openai/gpt-oss-120b'),
     GROQ_BASE_URL: z.string().default('https://api.groq.com/openai/v1'),
     GROQ_RPM: z.coerce.number().int().positive().default(30),
     GROQ_RPD: z.coerce.number().int().positive().default(1_000),
@@ -48,8 +52,8 @@ const envSchema = z.object({
 
     // ── Cerebras (second priority) ───────────────────────────────────────────
     CEREBRAS_API_KEY: z.string().default(''),
-    CEREBRAS_MODEL_FAST: z.string().default('llama3.1-8b'),
-    CEREBRAS_MODEL_STRONG: z.string().default('llama-3.3-70b'),
+    CEREBRAS_MODEL_FAST: z.string().default('gpt-oss-120b'),
+    CEREBRAS_MODEL_STRONG: z.string().default('gpt-oss-120b'),
     CEREBRAS_BASE_URL: z.string().default('https://api.cerebras.ai/v1'),
     CEREBRAS_RPM: z.coerce.number().int().positive().default(30),
     CEREBRAS_RPD: z.coerce.number().int().positive().default(1_000),
@@ -195,14 +199,16 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
         },
     };
 
+    const active = providers[order[0]];
+
     return {
         provider: order[0],
         order,
         providers,
-        apiKey: providers.gemini.apiKey,
-        models: providers.gemini.models,
-        quota: providers.gemini.quota,
-        pricing: providers.gemini.pricing,
+        apiKey: active.apiKey,
+        models: active.models,
+        quota: active.quota,
+        pricing: active.pricing,
         timeouts: {
             classify: v.GEMINI_TIMEOUT_CLASSIFY_MS,
             generate: v.GEMINI_TIMEOUT_GENERATE_MS,

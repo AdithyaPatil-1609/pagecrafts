@@ -1,0 +1,196 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 502,
+        "outputTokens": 258,
+        "latencyMs": 744
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 924,
+        "outputTokens": 626,
+        "latencyMs": 1790
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 843,
+        "outputTokens": 1145,
+        "latencyMs": 2884
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 449,
+        "outputTokens": 288,
+        "latencyMs": 1047
+      }
+    ],
+    "ok": false,
+    "error": "cerebras: HTTP 402",
+    "detail": "{\"message\":\"Payment required to access this resource. Visit your billing tab.\",\"type\":\"payment_required_error\",\"param\":\"quota\",\"code\":\"payment_required\"}",
+    "partial": {
+      "profile": {
+        "slug": "dental-clinic",
+        "label": "Dental Clinic",
+        "aliases": [
+          "dental office",
+          "tooth clinic",
+          "oral health center",
+          "dentist practice",
+          "family dentistry"
+        ],
+        "recipe": [
+          {
+            "type": "hero",
+            "required": true,
+            "note": "First impression with tagline, call‑to‑action and welcoming image"
+          },
+          {
+            "type": "about",
+            "required": true,
+            "note": "Practice history, philosophy and accreditation"
+          },
+          {
+            "type": "services",
+            "required": true,
+            "note": "Overview of treatments like cleanings, orthodontics, implants"
+          },
+          {
+            "type": "team",
+            "required": true,
+            "note": "Profiles of dentists and staff with credentials"
+          },
+          {
+            "type": "testimonials",
+            "required": true,
+            "note": "Patient reviews and before‑after stories"
+          },
+          {
+            "type": "faq",
+            "required": true,
+            "note": "Common questions about procedures and insurance"
+          },
+          {
+            "type": "contact",
+            "required": true,
+            "note": "Address, map, phone, email and appointment form"
+          },
+          {
+            "type": "footer",
+            "required": true,
+            "note": "Legal links, privacy policy, social icons"
+          }
+        ],
+        "artDirection": {
+          "themeId": "clinical-blue",
+          "motionId": "calm",
+          "radiusId": "soft",
+          "spacingId": "airy",
+          "imageryId": "bright-clean"
+        },
+        "vocabulary": {
+          "customer": "patient",
+          "purchase": "appointment"
+        },
+        "imageQueries": [
+          "bright dental office interior",
+          "smiling patient dentist",
+          "modern dental equipment"
+        ]
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Welcome to our family dental clinic in Koramangala with a warm tagline and a button to book an appointment.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Share the clinic’s history, caring philosophy, and accreditations that build trust.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Highlight key treatments like check‑ups, root canals, braces, and other dental services.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "team",
+          "variant": "grid",
+          "brief": "Introduce the dentists and staff with their credentials and friendly personalities.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_05",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Show patient reviews and before‑after stories that showcase successful outcomes.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_06",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Answer common questions about procedures, insurance, and appointment scheduling.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_07",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Provide the clinic’s address, map, phone, email, and a simple appointment booking form.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 4,
+    "modelTimeMs": 6465,
+    "wallClockMs": 7002
+  }
+]
