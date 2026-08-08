@@ -2,19 +2,23 @@
 import { create } from 'zustand';
 import { VFS } from '@/lib/vfs';
 import { validatePath, type PathError } from '@/lib/paths';
-import { loadProjectFiles, pickEntryFile } from '@/lib/project-source';
+import { loadProjectFiles, saveProjectFiles, pickEntryFile } from '@/lib/project-source';
 import type { TreeNode } from '@/lib/contracts';
 
 const vfs = new VFS();
 
 interface EditorState {
     vfs: VFS;
+    projectId: string | null;
     tree: TreeNode | null;
     activeFile: string | null;
     dirtyPaths: string[];
     advanced: boolean;
     loading: boolean;
     loadError: string | null;
+    saving: boolean;
+    saveError: string | null;
+    lastSavedAt: string | null;
     loadProject: (projectId: string) => Promise<void>;
     openFile: (path: string) => void;
     writeActive: (content: string) => void;
@@ -23,22 +27,26 @@ interface EditorState {
     createFile: (path: string) => PathError | null;
     renameFile: (from: string, to: string) => PathError | null;
     deleteFile: (path: string) => void;
-    saveProject: () => void;
+    saveProject: () => Promise<void>;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
     vfs,
+    projectId: null,
     tree: vfs.list(),
     activeFile: null,
     dirtyPaths: [],
     advanced: false,
     loading: true,
     loadError: null,
+    saving: false,
+    saveError: null,
+    lastSavedAt: null,
 
     loadProject: async (projectId) => {
-        set({ loading: true, loadError: null });
+        set({ loading: true, loadError: null, saveError: null, projectId });
 
-        const { files, error } = await loadProjectFiles(projectId);
+        const { files, updatedAt, error } = await loadProjectFiles(projectId);
 
         if (error) {
             set({ loading: false, loadError: error });
@@ -51,6 +59,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
         set({
             activeFile: pickEntryFile(vfs.paths()),
+            lastSavedAt: updatedAt,
             loading: false,
         });
     },
@@ -92,10 +101,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (activeFile === path) set({ activeFile: vfs.paths()[0] ?? null });
     },
 
-    saveProject: () => {
-        const { dirtyPaths } = get();
-        if (dirtyPaths.length === 0) return;
-        console.log('save', dirtyPaths);
+    saveProject: async () => {
+        const { vfs, projectId, saving, dirtyPaths } = get();
+
+        if (saving || !projectId || dirtyPaths.length === 0) return;
+
+        set({ saving: true, saveError: null });
+
+        const { updatedAt, error } = await saveProjectFiles(projectId, vfs.toMap());
+
+        if (error) {
+            set({ saving: false, saveError: error });
+            return;
+        }
+
+        vfs.markClean();
+        set({ saving: false, lastSavedAt: updatedAt });
     },
 }));
 

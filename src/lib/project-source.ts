@@ -1,20 +1,52 @@
-import { SEED_PROJECT } from '@/lib/seed';
+import { apiGet, apiPut } from '@/lib/api/client';
+import type { FileMap, GetProjectFilesResponse } from '@/lib/contracts';
 
 export interface ProjectLoadResult {
-    files: Record<string, string>;
+    files: FileMap;
+    updatedAt: string | null;
     error: string | null;
 }
 
-const FAKE_LATENCY_MS = 250;
+export interface ProjectSaveResult {
+    updatedAt: string | null;
+    error: string | null;
+}
+
+const EMPTY_REPLY = 'The server replied with nothing at all.';
+
+function filesUrl(projectId: string): string {
+    return `/api/v1/projects/${encodeURIComponent(projectId)}/files`;
+}
 
 export async function loadProjectFiles(projectId: string): Promise<ProjectLoadResult> {
     if (!projectId.trim()) {
-        return { files: {}, error: 'No project was requested.' };
+        return { files: {}, updatedAt: null, error: 'No project was requested.' };
     }
 
-    await new Promise((resolve) => setTimeout(resolve, FAKE_LATENCY_MS));
+    const { data, error } = await apiGet<GetProjectFilesResponse>(filesUrl(projectId));
 
-    return { files: SEED_PROJECT, error: null };
+    if (error || !data) {
+        return { files: {}, updatedAt: null, error: error ?? EMPTY_REPLY };
+    }
+
+    return { files: data.files, updatedAt: data.updatedAt, error: null };
+}
+
+export async function saveProjectFiles(
+    projectId: string,
+    files: FileMap,
+): Promise<ProjectSaveResult> {
+    if (Object.keys(files).length === 0) {
+        return { updatedAt: null, error: 'A project must have at least one file.' };
+    }
+
+    const { data, error } = await apiPut<GetProjectFilesResponse>(filesUrl(projectId), { files });
+
+    if (error || !data) {
+        return { updatedAt: null, error: error ?? EMPTY_REPLY };
+    }
+
+    return { updatedAt: data.updatedAt, error: null };
 }
 
 export function pickEntryFile(paths: string[]): string | null {
