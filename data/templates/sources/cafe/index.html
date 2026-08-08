@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cafe</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <!--
+    A sourced design, written the way a template found in the wild is written: its own class
+    names, its own structure, nothing generated. The only thing it shares with the rest of
+    the library is the slot vocabulary — data-slot="<section>.<field>" — which is what the
+    normaliser reads to draft the content schema. Nothing else about this file is special,
+    which is the point: any permissively-licensed page can be brought in this way.
+  -->
+  <body data-layout="split">
+    <header class="masthead">
+      <a class="masthead__mark" href="#" data-slot="site.name">Kettle &amp; Co.</a>
+      <nav class="masthead__nav">
+        <a href="#menu">Menu</a>
+        <a href="#hours">Hours</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="lede">
+        <div class="lede__copy">
+          <h1 data-slot="hero.headline">Coffee worth walking for.</h1>
+          <p data-slot="hero.subhead">
+            Slow-roasted beans, bread baked at dawn, and a corner table with your name on it.
+          </p>
+          <a class="button" href="#menu" data-slot="hero.cta">See the menu</a>
+        </div>
+        <img
+          class="lede__photo"
+          src="hero.jpg"
+          alt="A flat white on a wooden counter"
+          loading="lazy"
+          data-slot="hero.image"
+        />
+      </section>
+
+      <section class="board" id="menu">
+        <h2 data-slot="menu.heading">On the board today</h2>
+        <p data-slot="menu.body">
+          Everything is made here, in small batches. The board changes when the season does.
+        </p>
+        <ul class="board__list">
+          <li class="board__item">
+            <h3 data-slot="menu.items.0.title">Flat white</h3>
+            <p data-slot="menu.items.0.body">A double shot of our house roast, poured over silk-steamed milk.</p>
+          </li>
+          <li class="board__item">
+            <h3 data-slot="menu.items.1.title">Cardamom bun</h3>
+            <p data-slot="menu.items.1.body">Laminated at midnight, baked at six, gone by ten if you are slow.</p>
+          </li>
+          <li class="board__item">
+            <h3 data-slot="menu.items.2.title">Breakfast plate</h3>
+            <p data-slot="menu.items.2.body">Eggs, sourdough and whatever the market had that looked good.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="hours" id="hours">
+        <h2 data-slot="hours.heading">When we are open</h2>
+        <p data-slot="hours.body">
+          Every day from 7am. The kitchen closes at 3pm, the coffee machine an hour after that.
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p data-slot="site.footer">Built with PageCraft.</p>
+    </footer>
+  </body>
+</html>

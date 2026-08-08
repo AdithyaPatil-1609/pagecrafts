@@ -1,0 +1,8 @@
+{
+  "id": "cafe",
+  "name": "Cafe",
+  "description": "A warm neighbourhood cafe page — a photo-led hero, the day's menu and opening hours.",
+  "tier": "free",
+  "license": "MIT",
+  "sourceUrl": "https://github.com/AdithyaPatil-1609/pagecrafts/tree/main/data/templates/sources/cafe"
+}
