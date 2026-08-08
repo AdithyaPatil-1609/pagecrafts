@@ -17,7 +17,7 @@ Frozen on 2026-08-04 for Day 1. Changes require agreement from the whole team be
 | Categories | `portfolio`, `restaurant`, `saas`, `blog`, `event`, `resume`, `agency`, `store`, `nonprofit`, `other` |
 | Content editing | Six field types: `text`, `richtext`, `image`, `color`, `select`, `list` |
 | Template pricing | `tier`: `free` (Rs 0), `premium` (Rs 499), `signature` (Rs 999); shown on tile + detail modal (Doc 22 P1-P3, A1) |
-| Error codes | `unauthorized`, `forbidden`, `not_found`, `rate_limited`, `spend_capped`, `validation_failed`, `generation_failed`, `payment_required`, `hosting_error`, `internal` (A1 replaced the GitHub codes with `payment_required`/`hosting_error`) |
+| Error codes | `unauthorized`, `forbidden`, `not_found`, `rate_limited`, `spend_capped`, `validation_failed`, `payload_too_large`, `generation_failed`, `payment_required`, `hosting_error`, `internal` (A1 replaced the GitHub codes with `payment_required`/`hosting_error`; `payload_too_large` is the 413 an oversized asset upload returns, E-4) |
 | Project working tree | `FileMap` is `Record<string, string>`; file paths are relative text paths only |
 | API envelope | All typed route results use `ApiResult<T>` |
 | API version | New routes live under `/api/v1`; breaking changes use a new version |
