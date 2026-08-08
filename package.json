@@ -11,7 +11,7 @@
     "test": "vitest run",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
-    "pretypecheck": "node -e \"require('node:fs').rmSync('.next/dev/types',{recursive:true,force:true})\"",
+    "pretypecheck": "node -e \"const fs=require('node:fs');for(const p of ['.next/types','.next/dev/types'])fs.rmSync(p,{recursive:true,force:true})\"",
     "typecheck": "tsc --noEmit",
     "deploy:seal": "tsx --env-file=.env.local scripts/seal-credential.ts",
     "deploy:health": "tsx --env-file=.env.local --conditions=react-server scripts/hosting-health-check.ts",

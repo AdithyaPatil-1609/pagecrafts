@@ -5,7 +5,7 @@ import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
 import { consume, type LimitResult } from "@/lib/limits/rate-limit";
-import { clientIp } from "@/lib/limits/client-ip";
+import { clientIp, UNKNOWN_IP } from "@/lib/limits/client-ip";
 import { LOGIN_PER_IP, LOGIN_PER_EMAIL } from "@/lib/limits/config";
 
 export const runtime = "nodejs";
@@ -27,10 +27,13 @@ function throttled(result: LimitResult, scope: string) {
 export async function POST(request: NextRequest) {
   return guard(async () => {
     const ip = clientIp(request.headers);
-    const byIp = await consume("login:ip", ip, LOGIN_PER_IP);
 
-    if (!byIp.allowed) {
-      return throttled(byIp, "ip");
+    if (ip !== UNKNOWN_IP) {
+      const byIp = await consume("login:ip", ip, LOGIN_PER_IP);
+
+      if (!byIp.allowed) {
+        return throttled(byIp, "ip");
+      }
     }
 
     let body: unknown;
