@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
+    "templates:normalise": "tsx scripts/normalise-template.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
     "pretypecheck": "node -e \"const fs=require('node:fs');for(const p of ['.next/types','.next/dev/types'])fs.rmSync(p,{recursive:true,force:true})\"",
     "typecheck": "tsc --noEmit",

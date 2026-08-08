@@ -1,6 +1,4 @@
-import type { Template } from "@/lib/contracts";
-import { previewOf } from "@/lib/discovery/preview";
-import type { PreviewPalette } from "@/lib/discovery/preview";
+import type { PreviewPalette, TemplatePreview as PreviewSpec } from "@/lib/discovery/preview";
 import { MOTIFS } from "@/lib/templates/motifs";
 import type { MotifId, MotifShape } from "@/lib/templates/motifs";
 
@@ -10,6 +8,10 @@ import type { MotifId, MotifShape } from "@/lib/templates/motifs";
 //
 // Static: never a live iframe (D-3, AC-F3-2). Hidden from assistive tech, because the
 // tile's real name, category and description sit around it at a readable size.
+//
+// It takes the parsed spec rather than the template, so the miniature can also be drawn
+// from what GET /templates/{id} returns (the detail modal, D4) without the file bodies
+// having to cross the wire to do it.
 
 function MotifArt({
     motif,
@@ -65,9 +67,8 @@ function SearchGlyph({ color }: { color: string }) {
     );
 }
 
-export function TemplatePreview({ template }: { template: Template }) {
-    const { wordmark, nav, headline, subhead, cta, layout, motif, heroImage, palette } =
-        previewOf(template);
+export function TemplatePreview({ preview }: { preview: PreviewSpec }) {
+    const { wordmark, nav, headline, subhead, cta, layout, motif, heroImage, palette } = preview;
 
     // The design's own hero photograph where it ships one, drawn edge-to-edge so the tile
     // reads as the page it advertises; the code-drawn motif is the fallback for designs

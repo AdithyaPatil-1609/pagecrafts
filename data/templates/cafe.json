@@ -1,0 +1,127 @@
+{
+  "id": "cafe",
+  "name": "Cafe",
+  "description": "A warm neighbourhood cafe page — a photo-led hero, the day's menu and opening hours.",
+  "category": "food",
+  "tags": [
+    "food",
+    "light",
+    "split",
+    "menu",
+    "cafe",
+    "coffee"
+  ],
+  "thumbnailUrl": "/templates/cafe/thumbnail.png",
+  "files": {
+    "index.html": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <title>Cafe</title>\n    <link rel=\"stylesheet\" href=\"styles.css\" />\n  </head>\n  <!--\n    A sourced design, written the way a template found in the wild is written: its own class\n    names, its own structure, nothing generated. The only thing it shares with the rest of\n    the library is the slot vocabulary — data-slot=\"<section>.<field>\" — which is what the\n    normaliser reads to draft the content schema. Nothing else about this file is special,\n    which is the point: any permissively-licensed page can be brought in this way.\n  -->\n  <body data-layout=\"split\">\n    <header class=\"masthead\">\n      <a class=\"masthead__mark\" href=\"#\" data-slot=\"site.name\">Kettle &amp; Co.</a>\n      <nav class=\"masthead__nav\">\n        <a href=\"#menu\">Menu</a>\n        <a href=\"#hours\">Hours</a>\n      </nav>\n    </header>\n\n    <main>\n      <section class=\"lede\">\n        <div class=\"lede__copy\">\n          <h1 data-slot=\"hero.headline\">Coffee worth walking for.</h1>\n          <p data-slot=\"hero.subhead\">\n            Slow-roasted beans, bread baked at dawn, and a corner table with your name on it.\n          </p>\n          <a class=\"button\" href=\"#menu\" data-slot=\"hero.cta\">See the menu</a>\n        </div>\n        <img\n          class=\"lede__photo\"\n          src=\"hero.jpg\"\n          alt=\"A flat white on a wooden counter\"\n          loading=\"lazy\"\n          data-slot=\"hero.image\"\n        />\n      </section>\n\n      <section class=\"board\" id=\"menu\">\n        <h2 data-slot=\"menu.heading\">On the board today</h2>\n        <p data-slot=\"menu.body\">\n          Everything is made here, in small batches. The board changes when the season does.\n        </p>\n        <ul class=\"board__list\">\n          <li class=\"board__item\">\n            <h3 data-slot=\"menu.items.0.title\">Flat white</h3>\n            <p data-slot=\"menu.items.0.body\">A double shot of our house roast, poured over silk-steamed milk.</p>\n          </li>\n          <li class=\"board__item\">\n            <h3 data-slot=\"menu.items.1.title\">Cardamom bun</h3>\n            <p data-slot=\"menu.items.1.body\">Laminated at midnight, baked at six, gone by ten if you are slow.</p>\n          </li>\n          <li class=\"board__item\">\n            <h3 data-slot=\"menu.items.2.title\">Breakfast plate</h3>\n            <p data-slot=\"menu.items.2.body\">Eggs, sourdough and whatever the market had that looked good.</p>\n          </li>\n        </ul>\n      </section>\n\n      <section class=\"hours\" id=\"hours\">\n        <h2 data-slot=\"hours.heading\">When we are open</h2>\n        <p data-slot=\"hours.body\">\n          Every day from 7am. The kitchen closes at 3pm, the coffee machine an hour after that.\n        </p>\n      </section>\n    </main>\n\n    <footer class=\"footer\">\n      <p data-slot=\"site.footer\">Built with PageCraft.</p>\n    </footer>\n  </body>\n</html>\n",
+    "styles.css": ":root {\n  --bg: #fdfaf5;\n  --ink: #1c1917;\n  --muted: #78716c;\n  --accent: #b45309;\n  --panel: #f5efe6;\n  --rule: #e7ded1;\n}\n\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\nbody {\n  margin: 0;\n  background: var(--bg);\n  color: var(--ink);\n  font-family: ui-serif, Georgia, \"Times New Roman\", serif;\n  line-height: 1.6;\n}\n\na {\n  color: inherit;\n}\n\n.masthead {\n  display: flex;\n  align-items: center;\n  gap: 2rem;\n  padding: 1.5rem 2rem;\n}\n\n.masthead__mark {\n  font-size: 1.125rem;\n  font-weight: 700;\n  letter-spacing: 0.02em;\n  text-decoration: none;\n}\n\n.masthead__nav {\n  margin-left: auto;\n  display: flex;\n  gap: 1.5rem;\n}\n\n.masthead__nav a {\n  color: var(--muted);\n  font-size: 0.9375rem;\n  text-decoration: none;\n}\n\n.lede {\n  display: grid;\n  grid-template-columns: 1.05fr 0.95fr;\n  gap: 3rem;\n  align-items: center;\n  padding: 3.5rem 2rem;\n}\n\n.lede h1 {\n  margin: 0;\n  font-size: clamp(2.25rem, 5vw, 3.5rem);\n  line-height: 1.05;\n}\n\n.lede p {\n  margin: 1rem 0 0;\n  max-width: 32rem;\n  color: var(--muted);\n  font-size: 1.0625rem;\n}\n\n.lede__photo {\n  width: 100%;\n  aspect-ratio: 4 / 3;\n  object-fit: cover;\n  border-radius: 1rem;\n  background: var(--panel);\n}\n\n.button {\n  display: inline-block;\n  margin-top: 1.75rem;\n  padding: 0.75rem 1.5rem;\n  border-radius: 999px;\n  background: var(--accent);\n  color: var(--bg);\n  font-family: ui-sans-serif, system-ui, sans-serif;\n  font-size: 0.9375rem;\n  font-weight: 600;\n  text-decoration: none;\n}\n\n.board,\n.hours {\n  max-width: 60rem;\n  margin: 0 auto;\n  padding: 3.5rem 2rem;\n}\n\n.board h2,\n.hours h2 {\n  margin: 0 0 0.75rem;\n  font-size: 1.625rem;\n}\n\n.board > p,\n.hours p {\n  margin: 0;\n  max-width: 40rem;\n  color: var(--muted);\n}\n\n.board__list {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 1.25rem;\n  margin: 2rem 0 0;\n  padding: 0;\n  list-style: none;\n}\n\n.board__item {\n  padding: 1.5rem;\n  border: 1px solid var(--rule);\n  border-radius: 0.75rem;\n  background: var(--panel);\n}\n\n.board__item h3 {\n  margin: 0 0 0.5rem;\n  font-size: 1rem;\n}\n\n.board__item p {\n  margin: 0;\n  color: var(--muted);\n  font-size: 0.9375rem;\n}\n\n.footer {\n  border-top: 1px solid var(--rule);\n  margin-top: 2rem;\n  padding: 2rem;\n  text-align: center;\n  color: var(--muted);\n  font-size: 0.875rem;\n}\n\n@media (max-width: 48rem) {\n  .lede {\n    grid-template-columns: 1fr;\n    padding-top: 2rem;\n  }\n\n  .masthead__nav {\n    display: none;\n  }\n\n  .board__list {\n    grid-template-columns: 1fr;\n  }\n}\n"
+  },
+  "contentSchema": {
+    "sections": [
+      {
+        "key": "hero",
+        "label": "Hero",
+        "fields": [
+          {
+            "key": "headline",
+            "label": "Headline",
+            "type": "text",
+            "maxLength": 60
+          },
+          {
+            "key": "subhead",
+            "label": "Subheading",
+            "type": "text",
+            "maxLength": 140
+          },
+          {
+            "key": "cta",
+            "label": "Button label",
+            "type": "text",
+            "maxLength": 24
+          },
+          {
+            "key": "image",
+            "label": "Image",
+            "type": "image"
+          }
+        ]
+      },
+      {
+        "key": "menu",
+        "label": "Menu",
+        "fields": [
+          {
+            "key": "heading",
+            "label": "Heading",
+            "type": "text",
+            "maxLength": 60
+          },
+          {
+            "key": "body",
+            "label": "Body",
+            "type": "richtext"
+          },
+          {
+            "key": "items",
+            "label": "Items",
+            "type": "list",
+            "itemSchema": [
+              {
+                "key": "title",
+                "label": "Title",
+                "type": "text",
+                "maxLength": 40
+              },
+              {
+                "key": "body",
+                "label": "Body",
+                "type": "text",
+                "maxLength": 160
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "hours",
+        "label": "Hours",
+        "fields": [
+          {
+            "key": "heading",
+            "label": "Heading",
+            "type": "text",
+            "maxLength": 60
+          },
+          {
+            "key": "body",
+            "label": "Body",
+            "type": "richtext"
+          }
+        ]
+      },
+      {
+        "key": "site",
+        "label": "Site",
+        "fields": [
+          {
+            "key": "name",
+            "label": "Name",
+            "type": "text",
+            "maxLength": 40
+          },
+          {
+            "key": "footer",
+            "label": "Footer note",
+            "type": "text",
+            "maxLength": 120
+          }
+        ]
+      }
+    ]
+  },
+  "license": "MIT",
+  "sourceUrl": "https://github.com/AdithyaPatil-1609/pagecrafts/tree/main/data/templates/sources/cafe",
+  "tier": "free",
+  "priceInr": 0
+}
