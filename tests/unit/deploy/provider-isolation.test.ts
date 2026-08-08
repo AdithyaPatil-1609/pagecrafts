@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ADAPTERS = join('src', 'lib', 'deploy', 'adapters');
-const PROVIDER = /octokit|api\.github\.com|github-pages|githubPages/i;
+const PROVIDER = /octokit|api\.github\.com|github-pages|githubPages|cloudflare|wrangler/i;
 
 function files(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir)) {
