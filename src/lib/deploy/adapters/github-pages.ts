@@ -8,11 +8,11 @@ import { pollUntilLive } from '../verify';
 import { gh, HostingError } from './github-client';
 import { gitDataFor } from './github-git-data';
 
-const org = deployConfig.accountId;
+const org = () => process.env.GITHUB_ORG ?? deployConfig.accountId;
 
 async function repoExists(name: string): Promise<boolean> {
     try {
-        await gh('GET', `/repos/${org}/${name}`);
+        await gh('GET', `/repos/${org()}/${name}`);
         return true;
     } catch (error) {
         if (error instanceof HostingError && error.status === 404) return false;
@@ -24,7 +24,7 @@ export const githubPagesAdapter: DeployProvider = {
     async provisionSite({ projectId, projectName }: ProvisionInput): Promise<ProvisionResult> {
         const subdomain = await uniqueSlug(projectName, repoExists);
 
-        await gh('POST', `/orgs/${org}/repos`, {
+        await gh('POST', `/orgs/${org()}/repos`, {
             name: subdomain,
             description: `PageCraft site ${projectId}`,
             auto_init: true,
@@ -32,7 +32,7 @@ export const githubPagesAdapter: DeployProvider = {
         });
 
         return {
-            siteId: `${org}/${subdomain}`,
+            siteId: `${org()}/${subdomain}`,
             subdomain,
             predictedUrl: `https://${subdomain}.${deployConfig.rootDomain}`,
         };
@@ -41,7 +41,6 @@ export const githubPagesAdapter: DeployProvider = {
     async pushBuild(siteId: string, files: PublishFile[], message: string) {
         const [owner, repo] = siteId.split('/');
         const domain = `${repo}.${deployConfig.rootDomain}`;
-
         const reserved = new Set(['CNAME', '.nojekyll']);
 
         const withDomain: PublishFile[] = [
