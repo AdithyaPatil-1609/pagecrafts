@@ -10,6 +10,15 @@ vi.mock('@/lib/auth/session', () => ({
     supabaseRoute: async () => ({}),
 }));
 
+const limits = vi.hoisted(() => ({
+    evalMock: vi.fn(),
+    zremMock: vi.fn(),
+}));
+
+vi.mock('@/lib/limits/redis', () => ({
+    redis: () => ({ eval: limits.evalMock, zrem: limits.zremMock }),
+}));
+
 import { setGateway } from '@/lib/ai/gateway';
 import { MockGateway } from '@/lib/ai/gateway/mock';
 import { POST } from '@/app/api/v1/intent/classify/route';
@@ -23,6 +32,11 @@ const post = (body: unknown) =>
 
 beforeEach(() => {
     auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
+    limits.evalMock.mockReset();
+    limits.zremMock.mockReset();
+    limits.evalMock.mockImplementation(async (_script: string, keys: string[]) =>
+        keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0],
+    );
 });
 
 afterEach(() => {
