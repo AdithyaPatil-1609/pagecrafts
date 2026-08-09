@@ -122,11 +122,31 @@ the acceptance number.**
 **13.3s against the 45s NFR-003 budget**, with no pacing overhead — Groq's limits
 do not require the 13s inter-call pacing Gemini's free tier did.
 
-Capacity is now projected against the quota of the provider that actually served
-(Groq, RPD 1,000), not Gemini's 20: **~85 full generations per day**, versus the
-~1/day the D5 Capacity Errata measured on Gemini. This is the throughput argument
-for Amendment A3 in one number, and it is why Gemini billing is no longer the
-blocking route to the quality plan.
+### Capacity is token-bound, not request-bound
+
+Groq's published free-tier limits for the `gpt-oss` models are **30 RPM · 1,000
+RPD · 8,000 TPM · 200,000 TPD**. The measured generation costs **9,426 tokens**
+across 10 calls, which makes tokens — not requests — the binding constraint:
+
+| Limit | Full generations/day | Binding? |
+|---|---|---|
+| RPD 1,000 | 100 | no |
+| **TPD 200,000** | **~18** (with 15% headroom) | **yes** |
+
+**~18 full generations per day, not the ~85 a request-only model predicts.**
+Still an order of magnitude above Gemini's ~1/day, so the A3 throughput argument
+holds — but the honest figure is 18, and an earlier draft of this memo said 85.
+
+**One generation exceeds the per-minute token budget.** At 9,426 tokens against
+8,000 TPM, a single generation cannot complete inside one minute's allowance.
+That is the cause of the HTTP 429s seen on four separate runs under light
+single-vertical load — it is a structural consequence of the limits, not
+intermittent flakiness, and it will not improve under the corpus run.
+
+**Before the D7 corpus run**, pacing must become token-aware: the spike's fixed
+13s `PACE_MS` was sized for Gemini's 5 RPM and does nothing about a token ceiling.
+A 10-vertical full corpus is ~94k tokens — inside TPD, but it will hit the TPM
+wall repeatedly without it.
 
 ---
 
@@ -199,6 +219,25 @@ The 30-vertical corpus at D11 is where a rate becomes meaningful. Do not quote
 One further limit: the quality numbers above all come from Groq's `gpt-oss`
 models. Gemini is proven to *serve* (see below) but has not produced a scored
 generation, and Cerebras has produced nothing at all.
+
+### Per-provider matrix (D6 Block 5)
+
+| Provider | Model | Full generation | Requests | Model time | Structured output | Coercion |
+|---|---|---|---|---|---|---|
+| Groq | `gpt-oss-120b` / `gpt-oss-20b` | ✅ complete | 10 | 13.3s | `json_schema` | none |
+| Gemini | `gemini-3.5-flash` / `-lite` | plan-only only | 3 | ~9–13s | `response_schema` | none |
+| Cerebras | — | ✗ cannot run | — | — | — | — |
+
+Two gaps, stated rather than papered over:
+
+- **Gemini has not completed a full generation.** Its 20 RPD was largely spent on
+  the fall-through tests, and a full run needs 10 more. Worth doing on D7 before
+  the corpus, since Gemini is now the only backstop.
+- **Cerebras cannot be measured at all** while the account is unfunded.
+
+**Groq returned HTTP 429 on four separate runs today** under light single-vertical
+load. The cause is now known and is not request volume: at 9,426 tokens a single
+generation is 1.2× the 8,000 TPM budget. See *Capacity* above.
 
 ### Provider chain — verified end to end
 

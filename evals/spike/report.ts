@@ -55,6 +55,11 @@ export function reportFor(r: SpikeResult): string {
         + `**Mode:** ${r.mode} · **Requests:** ${r.requests} · `
         + `**Model time:** ${(r.modelTimeMs / 1000).toFixed(1)}s · `
         + `**Wall clock:** ${(r.wallClockMs / 1000).toFixed(1)}s`,
+        ...(r.spend
+            ? ['', `**Spend:** ${r.spend.inputTokens + r.spend.outputTokens} tokens · `
+                + `${r.spend.costCents.toFixed(4)}c · ${r.spend.calls} calls`
+                + `${r.spend.failed ? ` · **${r.spend.failed} failed**` : ''}`]
+            : []),
         '',
     ].join('\n');
 

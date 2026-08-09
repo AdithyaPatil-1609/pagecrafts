@@ -35,7 +35,7 @@ The per-request token ceiling is already enforced pre-dispatch in the gateway
 the provider chain rather than burning it — an oversized prompt fails identically
 at every provider.
 
-**D7 — repair and fallback**
+**D7 — repair and fallback** *(landed: `generate/repair.ts`, `generate/fallback.ts`)*
 One repair attempt on validation failure, scoped to the failing section's fields,
 with the error as context. On second failure: nearest template via
 `rankTemplates`, SSE `fallback` event, user still leaves with a site. 429 backoff
@@ -56,6 +56,11 @@ One `generations` row per model call. The row must carry `provider`, `model` and
 `promptVersion` — all three are already on `Usage` as of D5. Pricing is per
 provider (`ProviderConfig.pricing`); a Groq call must never be costed at Gemini's
 rate, or NFR-142's 5% reconciliation cannot hold across three invoices.
+
+The row shape and costing landed on D7 (`src/lib/ai/cost/ledger.ts`) with an
+in-memory sink; D9 is persistence only. **Blocker:** `public.generations` has
+`model` but no `provider` column, so the value the ledger produces cannot be
+stored. Needs a migration from E1 before this can land.
 
 Token rollups per user per day. Counter reconciliation against Upstash. PostHog
 funnel events with category and latency bucket only — never prompt text or tokens.

@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { registryVars } from './registry-vars';
 
 export interface PromptTemplate {
     id: string;
@@ -47,9 +48,15 @@ export function loadTemplate(name: string): PromptTemplate {
     return parse(raw, file);
 }
 
-export function render(text: string, vars: Record<string, string>): string {
+/**
+ * Fill `{{placeholders}}`. Registry lists (categories, themes, variants …) are
+ * merged in automatically, so a template may name one without its caller
+ * knowing; caller-supplied values win on a name clash.
+ */
+export function render(text: string, vars: Record<string, string> = {}): string {
+    const all = { ...registryVars(), ...vars };
     return text.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
-        if (!(key in vars)) throw new Error(`Prompt variable "${key}" was not supplied.`);
-        return vars[key];
+        if (!(key in all)) throw new Error(`Prompt variable "${key}" was not supplied.`);
+        return all[key];
     });
 }

@@ -1,0 +1,112 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 649,
+        "outputTokens": 667,
+        "latencyMs": 1260
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 924,
+        "outputTokens": 615,
+        "latencyMs": 1822
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 572,
+        "outputTokens": 168,
+        "latencyMs": 5962
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "dental-clinic",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "calm",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Dental Clinic",
+        "description": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "A warm welcome to families in Koramangala featuring a friendly smile and an invitation to book a stress-free appointment.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Our story of bringing gentle, compassionate dental care to our local community with a focus on patient comfort.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Essential dental treatments we offer, including routine check-ups, root canals, and braces for all ages.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Book your visit via our simple appointment form and find our easily accessible clinic in Koramangala.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_05",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "Clinic hours, contact details, and links to our social media profiles for staying in touch.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 3,
+    "modelTimeMs": 9044,
+    "wallClockMs": 9129
+  }
+]

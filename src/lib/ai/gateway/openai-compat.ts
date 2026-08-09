@@ -2,6 +2,7 @@ import type { ErrorCode } from '@/lib/contracts';
 import type { Provider, ProviderConfig } from '../config';
 import { maxOutputFor, type Tier } from './tiers';
 import { toJsonSchema } from './json-schema';
+import { limiterFor } from './rate-limit';
 import {
     GatewayError,
     attemptSignal,
@@ -18,6 +19,21 @@ interface ChatCompletionResponse {
 
 /** `provider:model` pairs found not to support json_schema, so we ask only once. */
 const schemaSupport = new Set<string>();
+
+/** Longest Retry-After we will wait out rather than advancing the chain. */
+const MAX_RETRY_AFTER_MS = 30_000;
+
+/**
+ * Retry-After is either seconds or an HTTP date. Returns -1 when the header is
+ * absent or unusable — distinct from `0`, which means "retry immediately".
+ */
+export function retryAfterMs(header: string | null): number {
+    if (!header) return -1;
+    const seconds = Number(header);
+    if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+    const at = Date.parse(header);
+    return Number.isNaN(at) ? -1 : Math.max(0, at - Date.now());
+}
 
 /** Rough token estimate for pre-dispatch ceiling checks (~4 chars per token). */
 function estimateTokens(text: string): number {
@@ -119,6 +135,11 @@ export class OpenAICompatGateway implements NamedGateway {
             }
         };
 
+        // Pace against the provider's per-minute budget before spending it. A
+        // 429 here is not flakiness — one generation can exceed a minute's tokens.
+        const limiter = limiterFor(this.name, this.cfg.quota);
+        await limiter.acquire(estimatedInput);
+
         let res = await send();
 
         if (res.status === 400 && body.response_format) {
@@ -130,6 +151,17 @@ export class OpenAICompatGateway implements NamedGateway {
                         'falling back to json_object; enums are no longer provider-enforced.',
                 );
                 body.response_format = { type: 'json_object' };
+                res = await send();
+            }
+        }
+
+        // A 429 is transient. Advancing the chain would spend a scarcer provider's
+        // quota on it, so wait out a short Retry-After and try this one again first.
+        if (res.status === 429) {
+            const waitMs = retryAfterMs(res.headers.get('retry-after'));
+            if (waitMs >= 0 && waitMs <= MAX_RETRY_AFTER_MS) {
+                console.warn(`[gateway] ${this.name} rate-limited; waiting ${Math.round(waitMs / 1000)}s before retrying.`);
+                if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs));
                 res = await send();
             }
         }
@@ -155,9 +187,13 @@ export class OpenAICompatGateway implements NamedGateway {
 
         const data = (await res.json()) as ChatCompletionResponse;
         const text = data.choices?.[0]?.message?.content ?? '';
+        limiter.record(data.usage?.prompt_tokens ?? 0, data.usage?.completion_tokens ?? 0);
+
+        const mode = body.response_format as { type?: string } | undefined;
 
         return {
             provider: this.name,
+            structuredOutput: (mode?.type as CompleteReply['structuredOutput']) ?? 'none',
             text,
             model,
             inputTokens: data.usage?.prompt_tokens ?? 0,

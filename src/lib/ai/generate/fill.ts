@@ -14,9 +14,19 @@ export interface FillContext {
 export async function fillSection(
     instance: SectionInstance,
     context: FillContext,
+    repairContext?: string,
 ): Promise<AiResult<SectionProps>> {
     const contract = contractFor(instance.type);
     const tpl = loadTemplate('fill-section.v1');
+
+    const user = render(tpl.user, {
+        sectionKey: instance.type,
+        variant: instance.variant,
+        brief: instance.brief,
+        tone: context.tone,
+        fields: contract.fieldList,
+        prompt: context.prompt,
+    });
 
     const reply = await model.strong.complete({
         job: 'generate',
@@ -24,14 +34,7 @@ export async function fillSection(
             vertical: context.vertical,
             customerWord: context.customerWord,
         }),
-        user: render(tpl.user, {
-            sectionKey: instance.type,
-            variant: instance.variant,
-            brief: instance.brief,
-            tone: context.tone,
-            fields: contract.fieldList,
-            prompt: context.prompt,
-        }),
+        user: repairContext ? `${user}\n\n${repairContext}` : user,
         schema: contract.json,
     });
 

@@ -25,14 +25,7 @@ export async function profile(vertical: string): Promise<AiResult<VerticalProfil
 
     const reply = await model.strong.complete({
         job: 'generate',
-        system: render(tpl.system, {
-            sectionKeys: SECTION_KEYS.join(', '),
-            themes: THEME_IDS.join(', '),
-            motions: MOTION_IDS.join(', '),
-            radii: RADIUS_IDS.join(', '),
-            spacings: SPACING_IDS.join(', '),
-            imagery: IMAGERY_IDS.join(', '),
-        }),
+        system: render(tpl.system),
         user: render(tpl.user, { vertical: slug }),
         schema: profileResponseSchema,
     });

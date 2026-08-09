@@ -4,6 +4,8 @@ import { plan } from '@/lib/ai/generate/plan';
 import { fillSection } from '@/lib/ai/generate/fill';
 import { assemble } from '@/lib/ai/generate/assemble';
 import { GatewayError } from '@/lib/ai/gateway';
+import { CostLedger, type GenerationStatus, type LedgerRow } from '@/lib/ai/cost/ledger';
+import { withOneRepair } from '@/lib/ai/generate/repair';
 import type { Composition, SectionInstance, SectionProps, Usage, VerticalProfile } from '@/lib/contracts';
 
 export type Mode = 'mock' | 'plan-only' | 'full';
@@ -14,6 +16,7 @@ export interface CallRecord {
     provider?: string;
     model: string;
     promptVersion?: string;
+    structuredOutput?: string;
     inputTokens: number;
     outputTokens: number;
     latencyMs: number;
@@ -36,6 +39,13 @@ export interface SpikeResult {
     requests: number;
     modelTimeMs: number;
     wallClockMs: number;
+    ledger?: readonly LedgerRow[];
+    spend?: {
+        calls: number; inputTokens: number; outputTokens: number;
+        costCents: number; failed: number;
+    };
+    /** Sections that needed their one permitted repair attempt (BR-09). */
+    repairs?: string[];
 }
 
 export class BudgetExceeded extends Error { }
@@ -86,18 +96,27 @@ interface SpikeInput {
 export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
     const { vertical, prompt, hasTemplate, mode, budget } = input;
     const calls: CallRecord[] = [];
+    const ledger = new CostLedger();
+    const repairs: string[] = [];
     const startedAt = Date.now();
 
     let profileData: VerticalProfile | undefined;
     let plannedSections: SectionInstance[] | undefined;
 
-    const record = (stage: CallRecord['stage'], usage: Usage, section?: string): void => {
+    const record = (
+        stage: CallRecord['stage'],
+        usage: Usage,
+        section?: string,
+        status: GenerationStatus = 'completed',
+    ): void => {
+        ledger.add(section ? `${stage}:${section}` : stage, usage, status);
         calls.push({
             stage,
             ...(section ? { section } : {}),
             provider: usage.provider,
             model: usage.model,
             promptVersion: usage.promptVersion,
+            structuredOutput: usage.structuredOutput,
             inputTokens: usage.inputTokens,
             outputTokens: usage.outputTokens,
             latencyMs: usage.latencyMs,
@@ -122,7 +141,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
         } catch (err) {
             const usage = usageFromError(err);
             if (usage) {
-                record(stage, usage, section);
+                record(stage, usage, section, 'failed');
             } else if (mode !== 'mock' && didNotConsumeQuota(err)) {
                 budget.refund(n);
             }
@@ -148,19 +167,24 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
 
         if (mode !== 'plan-only') {
             for (const section of planned.data) {
-                const filled = await runStage(
-                    'fill',
-                    1,
-                    () =>
-                        fillSection(section, {
-                            vertical,
-                            tone: intent.data.tone,
-                            prompt,
-                            customerWord: p.data.vocabulary.customer,
-                        }),
-                    `${section.type}/${section.variant}`,
-                );
-                props.set(section.id, filled.data);
+                const ctx = {
+                    vertical,
+                    tone: intent.data.tone,
+                    prompt,
+                    customerWord: p.data.vocabulary.customer,
+                };
+
+                // BR-09: one repair attempt, never two. Each attempt is billed.
+                const outcome = await withOneRepair((repairContext) =>
+                    runStage(
+                        'fill',
+                        1,
+                        () => fillSection(section, ctx, repairContext),
+                        `${section.type}/${section.variant}`,
+                    ));
+
+                if (outcome.repaired) repairs.push(`${section.type}: ${outcome.firstError}`);
+                props.set(section.id, outcome.data.data);
             }
         } else {
             for (const section of planned.data) props.set(section.id, {});
@@ -183,6 +207,9 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             requests: calls.length,
             modelTimeMs: calls.reduce((t, c) => t + c.latencyMs, 0),
             wallClockMs: Date.now() - startedAt,
+            ledger: ledger.all(),
+            spend: ledger.totals,
+            repairs,
         };
     } catch (err) {
         if (err instanceof BudgetExceeded) throw err;
@@ -196,6 +223,9 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             requests: calls.length,
             modelTimeMs: calls.reduce((t, c) => t + c.latencyMs, 0),
             wallClockMs: Date.now() - startedAt,
+            ledger: ledger.all(),
+            spend: ledger.totals,
+            repairs,
         };
     }
 }

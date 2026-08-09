@@ -134,7 +134,10 @@ export class FallbackGateway implements Gateway {
             'generation_failed',
             `all AI providers failed — ${failures.join(' | ')}`,
             false,
-            { failures },
+            // `chainExhausted` marks this as an availability failure, not a bad
+            // reply. The repair path must not retry it: every provider has already
+            // been tried, so another attempt only spends quota that is not there.
+            { failures, chainExhausted: true },
         );
     }
 }

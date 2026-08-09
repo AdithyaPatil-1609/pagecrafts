@@ -33,10 +33,7 @@ export async function classify(text: string): Promise<AiResult<IntentAttributes>
     try {
         const reply = await model.fast.complete({
             job: 'classify',
-            system: render(tpl.system, {
-                categories: CATEGORIES,
-                sectionKeys: SECTION_KEYS.join(', '),
-            }),
+            system: render(tpl.system),
             user: render(tpl.user, { text: input }),
             schema: classifySchema,
         });

@@ -1,21 +1,18 @@
 import { Type, type Schema } from '@google/genai';
 import {
     SECTION_KEYS, THEME_IDS, MOTION_IDS, RADIUS_IDS, SPACING_IDS, IMAGERY_IDS,
+    TONE_IDS, PALETTE_IDS,
 } from '@/lib/contracts';
 import { SECTION_CONTRACTS } from '../sections/contracts';
+import { CATEGORIES } from '../schemas';
 
-const CATEGORIES = [
-    'portfolio', 'restaurant', 'saas', 'blog', 'event',
-    'resume', 'agency', 'store', 'nonprofit', 'other',
-    'fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business',
-];
-const TONES = ['playful', 'formal', 'minimal', 'bold', 'warm'];
-const PALETTES = ['light', 'dark', 'colourful', 'muted'];
+const TONES = [...TONE_IDS];
+const PALETTES = [...PALETTE_IDS];
 
 export const classifySchema: Schema = {
     type: Type.OBJECT,
     properties: {
-        category: { type: Type.STRING, enum: CATEGORIES },
+        category: { type: Type.STRING, enum: [...CATEGORIES] },
         vertical: { type: Type.STRING },
         tone: { type: Type.STRING, enum: TONES },
         palette: { type: Type.STRING, enum: PALETTES },

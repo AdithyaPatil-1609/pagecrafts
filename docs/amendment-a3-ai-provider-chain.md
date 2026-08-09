@@ -99,9 +99,17 @@ The PRD promises the user's site content is *never used for training*. The free-
 
 **Gate 2 — the go/no-go must name the provider. Owner: Hanish, D5.**
 
-"Generation quality is good enough" is a claim about a specific model. The dental-clinic evidence in `evals/spike/results/` was gathered on Gemini 3.5 Flash. Any Friday go/no-go must state, in one line, which provider and which model produced the number, and the eval record must carry the provider on every call.
+"Generation quality is good enough" is a claim about a specific model. Any go/no-go must state, in one line, which provider and which model produced the number, and the eval record must carry the provider on every call.
 
 Without that line, someone changes `AI_PROVIDER_ORDER` in Week 3 and the go/no-go silently stops being true.
+
+**Closed on D6.** Every call in `raw.json` now carries `provider`, `model`, `promptVersion` and `structuredOutput`. The D5 evidence in `docs/ai/D5_GO_NO_GO.md` is labelled:
+
+> Groq · `openai/gpt-oss-120b` (strong) / `openai/gpt-oss-20b` (fast) · prompts `v1` · `json_schema`
+
+The attribution is per call rather than per run, which matters more than expected: a Groq 429 mid-generation moved the `plan` stage to Gemini, and the record shows the switch rather than averaging over it.
+
+**Operational note (D6):** the chain in force is **Groq → Gemini**. Cerebras is supported in code and configured, but its account returns HTTP 402 (`param: "quota"`) on every model and it is out of `AI_PROVIDER_ORDER` until funded. This is a config change of the kind §5.1 already provides for, not a change to the decision — but it means the redundancy this amendment was written to buy is currently two legs deep, not three.
 
 ## 7 · Sign-off
 

@@ -26,8 +26,9 @@ interface CorpusItem {
     prompt: string;
 }
 
-const PACE_MS = 13_000;
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// Pacing lives in the gateway now (gateway/rate-limit.ts), which meters tokens per
+// minute rather than sleeping between verticals — a single generation can exceed a
+// minute's token budget on its own, so a gap between runs never helped.
 
 function args(): { mode: Mode; budget: number; only: string[] } {
     const argv = process.argv.slice(2);
@@ -81,7 +82,6 @@ async function main() {
             throw err;
         }
 
-        if (mode !== 'mock') await sleep(PACE_MS);
     }
 
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -100,10 +100,10 @@ async function main() {
         // Project against the quota of the provider that actually served, not Gemini's.
         const served = results.flatMap((r) => r.calls).find((c) => c.provider)?.provider;
         const provider = (served ?? cfg.provider) as keyof typeof cfg.providers;
-        const rpd = cfg.providers[provider].quota.rpd;
+        const { rpd, tpm, tpd } = cfg.providers[provider].quota;
         writeFileSync(
             join(dir, 'capacity.md'),
-            analysisReport(analyse(results, rpd), rpd, provider),
+            analysisReport(analyse(results, { rpd, tpm, tpd }), rpd, provider),
         );
     }
 

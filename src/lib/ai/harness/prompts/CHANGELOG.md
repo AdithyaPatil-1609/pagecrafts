@@ -68,6 +68,20 @@ outputs were in front of us:
 
 ---
 
+### Changes made under v1 (not a version bump)
+
+These changed how a prompt is assembled, not what it asks for, so v1 still names
+the same evaluated set:
+
+- Allowed-value lists are now generated from the registries (`registryVars()`) and
+  merged by `render()`. A prompt can name `{{tones}}` without its caller knowing,
+  and no list is hand-copied into a second place.
+- `classify.v1` now states the allowed `tone`, `palette` and `sections` values and
+  the literal JSON shape. It previously named only categories, which is why those
+  two fields were the ones silently coercing.
+
+---
+
 ## v2 — planned D12
 
 Tuning against the 30-vertical corpus. Do not edit v1 in place; copy to `.v2`

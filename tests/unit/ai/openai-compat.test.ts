@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { OpenAICompatGateway } from '@/lib/ai/gateway/openai-compat';
+import { OpenAICompatGateway, retryAfterMs } from '@/lib/ai/gateway/openai-compat';
 import type { ProviderConfig } from '@/lib/ai/config';
 import type { CompleteRequest } from '@/lib/ai/gateway/provider';
 import { classifySchema } from '@/lib/ai/gateway/response-schemas';
@@ -9,7 +9,7 @@ function cfg(overrides: Partial<ProviderConfig> = {}): ProviderConfig {
         apiKey: 'k',
         models: { fast: 'fast-model', strong: 'strong-model' },
         baseUrl: 'https://api.example.test/v1',
-        quota: { rpm: 30, rpd: 1000, rpdHeadroomPct: 15, maxRequestTokens: 8000 },
+        quota: { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000, rpdHeadroomPct: 15, maxRequestTokens: 8000 },
         pricing: { inPerMTokCents: 0, outPerMTokCents: 0 },
         ...overrides,
     };
@@ -54,7 +54,7 @@ describe('OpenAICompatGateway', () => {
         const fetchMock = okFetch();
         vi.stubGlobal('fetch', fetchMock);
         const gw = new OpenAICompatGateway('groq', cfg({
-            quota: { rpm: 30, rpd: 1000, rpdHeadroomPct: 15, maxRequestTokens: 5 },
+            quota: { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000, rpdHeadroomPct: 15, maxRequestTokens: 5 },
         }));
         await expect(gw.complete(req({ user: 'x'.repeat(1000) })))
             .rejects.toMatchObject({ code: 'validation_failed' });
@@ -111,6 +111,33 @@ describe('OpenAICompatGateway', () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
         const second = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
         expect(second.response_format).toEqual({ type: 'json_object' });
+    });
+
+    it('parses Retry-After as seconds or an HTTP date', () => {
+        expect(retryAfterMs('2')).toBe(2000);
+        expect(retryAfterMs('0')).toBe(0);
+        expect(retryAfterMs(null)).toBe(-1);
+        expect(retryAfterMs('nonsense')).toBe(-1);
+        expect(retryAfterMs(new Date(Date.now() + 5000).toUTCString())).toBeGreaterThan(3000);
+    });
+
+    // A 429 is transient; advancing would spend a scarcer provider's quota on it.
+    it('waits out a short Retry-After and retries the same provider', async () => {
+        const limited = new Response('slow down', {
+            status: 429, headers: { 'retry-after': '0' },
+        });
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(limited)
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const reply = await new OpenAICompatGateway('groq', cfg({
+            models: { fast: 'retry-fast', strong: 'retry-strong' },
+        })).complete(req());
+
+        expect(reply.provider).toBe('groq');
+        expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it('maps HTTP 429 to a retryable rate_limited error', async () => {

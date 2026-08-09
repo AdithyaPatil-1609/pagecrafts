@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Category } from '@/lib/contracts';
 import {
     SECTION_KEYS, THEME_IDS, MOTION_IDS, RADIUS_IDS,
-    SPACING_IDS, IMAGERY_IDS, MAX_SECTIONS,
+    SPACING_IDS, IMAGERY_IDS, MAX_SECTIONS, TONE_IDS, PALETTE_IDS,
 } from '@/lib/contracts';
 
 export const categorySchema = z.enum([
@@ -11,8 +11,8 @@ export const categorySchema = z.enum([
     'fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business',
 ]) satisfies z.ZodType<Category>;
 
-export const toneSchema = z.enum(['playful', 'formal', 'minimal', 'bold', 'warm']);
-export const paletteSchema = z.enum(['light', 'dark', 'colourful', 'muted']);
+export const toneSchema = z.enum(TONE_IDS);
+export const paletteSchema = z.enum(PALETTE_IDS);
 export const sectionKeySchema = z.enum(SECTION_KEYS);
 
 export const slug = z.string().regex(/^[a-z][a-z0-9-]{1,40}$/);

@@ -10,6 +10,38 @@ So D6 is a repair day, not a feature day. D7 is the feature day.
 
 ---
 
+## Outcome — what actually happened
+
+**D6 and D7 are complete**, with four deviations from the plan as written:
+
+1. **B1b needed a model change, not just a converter.** Groq's `llama-3.3-70b-versatile`
+   and `llama-3.1-8b-instant` reject `response_format: json_schema` with HTTP 400.
+   The `openai/gpt-oss-*` models accept it. Switching to `gpt-oss-120b` / `-20b` is
+   what turned the 10-of-10 failure into success. The gateway also degrades to
+   `json_object` automatically if a model rejects the schema, so a future model swap
+   cannot hard-fail — it loses the guarantee loudly instead.
+
+2. **Cerebras is out of the chain.** The key is valid (`GET /models` → 200; a fake
+   key gives 401) but the account has no inference quota — HTTP 402 `param: "quota"`
+   on every model. The chain is **Groq → Gemini**. Re-adding it is one line in
+   `AI_PROVIDER_ORDER` once funded, so the D6 exit condition's "each of the three
+   providers" cannot be met and was not.
+
+3. **The 429s were structural, not flaky.** Groq's published free-tier limits are
+   30 RPM · 1,000 RPD · **8,000 TPM · 200,000 TPD**. A full generation is ~9,426
+   tokens — 1.2× the per-minute budget on its own. Capacity is therefore **~18 full
+   generations/day** (token-bound), not the ~85 a request-only model predicts.
+   Pacing moved into the gateway (`gateway/rate-limit.ts`) and is token-aware; the
+   old fixed 13s `PACE_MS` between verticals could never have helped, because the
+   budget is exceeded *within* a single generation.
+
+4. **B4 and B6 landed on D6, not D7** — they were prerequisites for trustworthy
+   evidence rather than follow-on work.
+
+The per-provider matrix in Block 5 is two rows, not three, for reason 2 above.
+
+---
+
 # D6 — make the chain trustworthy
 
 **One sentence goal:** a full generation completes on Groq for one vertical, and the saved evidence names the provider that produced it.

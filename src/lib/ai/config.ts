@@ -32,6 +32,8 @@ const envSchema = z.object({
     GEMINI_MODEL_STRONG: z.string().default('gemini-3.5-flash'),
     GEMINI_RPM: z.coerce.number().int().positive().default(5),
     GEMINI_RPD: z.coerce.number().int().positive().default(20),
+    GEMINI_TPM: z.coerce.number().int().min(0).default(0),
+    GEMINI_TPD: z.coerce.number().int().min(0).default(0),
     GEMINI_RPD_HEADROOM_PCT: z.coerce.number().min(0).max(100).default(15),
     GEMINI_MAX_REQUEST_TOKENS: z.coerce.number().int().positive().default(8_000),
     GEMINI_PRICE_IN_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
@@ -43,8 +45,12 @@ const envSchema = z.object({
     GROQ_MODEL_FAST: z.string().default('openai/gpt-oss-20b'),
     GROQ_MODEL_STRONG: z.string().default('openai/gpt-oss-120b'),
     GROQ_BASE_URL: z.string().default('https://api.groq.com/openai/v1'),
+    // Published free-tier limits for the gpt-oss models (console.groq.com/docs/rate-limits).
+    // TPD is the binding constraint, not RPD: one full generation is ~9.4k tokens.
     GROQ_RPM: z.coerce.number().int().positive().default(30),
     GROQ_RPD: z.coerce.number().int().positive().default(1_000),
+    GROQ_TPM: z.coerce.number().int().min(0).default(8_000),
+    GROQ_TPD: z.coerce.number().int().min(0).default(200_000),
     GROQ_RPD_HEADROOM_PCT: z.coerce.number().min(0).max(100).default(15),
     GROQ_MAX_REQUEST_TOKENS: z.coerce.number().int().positive().default(8_000),
     GROQ_PRICE_IN_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
@@ -57,6 +63,8 @@ const envSchema = z.object({
     CEREBRAS_BASE_URL: z.string().default('https://api.cerebras.ai/v1'),
     CEREBRAS_RPM: z.coerce.number().int().positive().default(30),
     CEREBRAS_RPD: z.coerce.number().int().positive().default(1_000),
+    CEREBRAS_TPM: z.coerce.number().int().min(0).default(0),
+    CEREBRAS_TPD: z.coerce.number().int().min(0).default(0),
     CEREBRAS_RPD_HEADROOM_PCT: z.coerce.number().min(0).max(100).default(15),
     CEREBRAS_MAX_REQUEST_TOKENS: z.coerce.number().int().positive().default(8_000),
     CEREBRAS_PRICE_IN_PER_MTOK_CENTS: z.coerce.number().min(0).default(0),
@@ -66,6 +74,9 @@ const envSchema = z.object({
 export interface ProviderQuota {
     rpm: number;
     rpd: number;
+    /** Tokens per minute / per day. 0 means "not published", so it is not enforced. */
+    tpm: number;
+    tpd: number;
     rpdHeadroomPct: number;
     maxRequestTokens: number;
 }
@@ -159,6 +170,8 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
             quota: {
                 rpm: v.GEMINI_RPM,
                 rpd: v.GEMINI_RPD,
+                tpm: v.GEMINI_TPM,
+                tpd: v.GEMINI_TPD,
                 rpdHeadroomPct: v.GEMINI_RPD_HEADROOM_PCT,
                 maxRequestTokens: v.GEMINI_MAX_REQUEST_TOKENS,
             },
@@ -174,6 +187,8 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
             quota: {
                 rpm: v.GROQ_RPM,
                 rpd: v.GROQ_RPD,
+                tpm: v.GROQ_TPM,
+                tpd: v.GROQ_TPD,
                 rpdHeadroomPct: v.GROQ_RPD_HEADROOM_PCT,
                 maxRequestTokens: v.GROQ_MAX_REQUEST_TOKENS,
             },
@@ -189,6 +204,8 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
             quota: {
                 rpm: v.CEREBRAS_RPM,
                 rpd: v.CEREBRAS_RPD,
+                tpm: v.CEREBRAS_TPM,
+                tpd: v.CEREBRAS_TPD,
                 rpdHeadroomPct: v.CEREBRAS_RPD_HEADROOM_PCT,
                 maxRequestTokens: v.CEREBRAS_MAX_REQUEST_TOKENS,
             },

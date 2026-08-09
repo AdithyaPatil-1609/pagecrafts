@@ -24,10 +24,7 @@ export async function plan(
 
     const reply = await model.strong.complete({
         job: 'generate',
-        system: render(tpl.system, {
-            sectionKeys: SECTION_KEYS.join(', '),
-            variantMenu: variantMenu(),
-        }),
+        system: render(tpl.system),
         user: render(tpl.user, {
             prompt, recipe, vertical: intent.vertical, tone: intent.tone,
         }),

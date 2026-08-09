@@ -1,6 +1,6 @@
 import { model } from '../gateway';
 import { loadTemplate, render } from '../harness/templates';
-import { stripFences, sanitiseDeep } from '../sanitise';
+import { stripFences, sanitise, sanitiseDeep } from '../sanitise';
 import { editProposal } from '@/lib/contracts/schemas/ai';
 import type {
     SectionInstance, EditProposal, PatchOp, AiResult,
@@ -38,7 +38,9 @@ export async function proposeEdit(
         data: {
             targetSectionId: section.id,
             patch,
-            explanation: parsed.data.explanation,
+            // FR-066: sanitise before it is *rendered*, not only before it is
+            // applied — a proposal the user rejects is still shown to them.
+            explanation: sanitise(parsed.data.explanation).clean,
             applied: false,
         },
         usage: { ...reply, promptVersion: `${tpl.id}.${tpl.version}` },

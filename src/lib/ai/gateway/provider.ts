@@ -16,6 +16,8 @@ export interface CompleteRequest {
 export interface CompleteReply {
     /** The provider that served this reply. */
     provider: Provider;
+    /** How the shape was constrained — a quality difference between the two is traceable. */
+    structuredOutput?: 'json_schema' | 'json_object' | 'response_schema' | 'none';
     text: string;
     model: string;
     inputTokens: number;
@@ -92,6 +94,7 @@ export class GeminiGateway implements NamedGateway {
 
         return {
             provider: this.name,
+            structuredOutput: req.schema ? 'response_schema' : 'none',
             text: response.text ?? '',
             model,
             inputTokens: usage?.promptTokenCount ?? 0,
