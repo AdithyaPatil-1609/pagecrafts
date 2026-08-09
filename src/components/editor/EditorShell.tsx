@@ -8,6 +8,7 @@ import PreviewPane from './PreviewPane';
 import FileTree from './FileTree';
 import CodePane from './CodePane';
 import { TreeSkeleton, PaneSkeleton } from './Skeletons';
+import ChangeSummary from './ChangeSummary';
 
 export default function EditorShell({ projectId }: { projectId: string }) {
     useUnsavedGuard();
@@ -74,6 +75,7 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                             </section>
                         </>
                     )}
+                    <ChangeSummary />
                 </main>
             )}
         </div>
