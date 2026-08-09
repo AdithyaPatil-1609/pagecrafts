@@ -33,6 +33,18 @@ export function secondsUntilUtcMidnight(now = new Date()): number {
   return Math.max(1, Math.ceil((midnight - now.getTime()) / 1000));
 }
 
+export function pricing(): { inPerMTokCents: number; outPerMTokCents: number } {
+  const read = (name: string) => {
+    const value = Number(process.env[name]);
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  };
+
+  return {
+    inPerMTokCents: read("GEMINI_PRICE_IN_PER_MTOK_CENTS"),
+    outPerMTokCents: read("GEMINI_PRICE_OUT_PER_MTOK_CENTS"),
+  };
+}
+
 export function costInCents(
   usage: Pick<Usage, "inputTokens" | "outputTokens">,
   inPerMTokCents: number,

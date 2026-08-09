@@ -5,8 +5,7 @@ import { clientIp, UNKNOWN_IP } from "@/lib/limits/client-ip";
 import { AI_PER_USER_HOUR, AI_PER_IP_HOUR } from "@/lib/limits/config";
 import { fail } from "@/lib/errors/respond";
 import { killSwitch } from "@/lib/limits/kill-switch";
-import { checkSpend, recordSpend, costInCents } from "@/lib/limits/spend";
-import { aiConfig } from "@/lib/ai/config";
+import { checkSpend, recordSpend, costInCents, pricing } from "@/lib/limits/spend";
 import type { Usage } from "@/lib/contracts";
 
 const THROTTLED = "You have made a lot of requests. Try again in a little while.";
@@ -93,7 +92,7 @@ export async function guardAiRequest(
     ok: true,
     release: slot.release,
     recordUsage: async (usage: UsageReport) => {
-      const { inPerMTokCents, outPerMTokCents } = aiConfig().pricing;
+      const { inPerMTokCents, outPerMTokCents } = pricing();
       await recordSpend(userId, costInCents(usage, inPerMTokCents, outPerMTokCents));
     },
   };

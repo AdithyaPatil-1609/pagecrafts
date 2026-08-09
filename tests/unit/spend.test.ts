@@ -24,6 +24,7 @@ import {
   recordSpend,
   costInCents,
   utcDay,
+  pricing,
   secondsUntilUtcMidnight,
 } from "@/lib/limits/spend";
 import { AI_DAILY_PER_USER, AI_DAILY_GLOBAL } from "@/lib/limits/config";
@@ -154,5 +155,33 @@ describe("the daily window", () => {
   it("expires at the next UTC midnight", () => {
     expect(secondsUntilUtcMidnight(new Date("2026-08-09T23:59:00Z"))).toBe(60);
     expect(secondsUntilUtcMidnight(new Date("2026-08-09T00:00:00Z"))).toBe(86_400);
+  });
+});
+
+describe("pricing", () => {
+  it("is zero when the price vars are absent, so a missing config cannot break a request", () => {
+    vi.stubEnv("GEMINI_PRICE_IN_PER_MTOK_CENTS", "");
+    vi.stubEnv("GEMINI_PRICE_OUT_PER_MTOK_CENTS", "");
+
+    expect(pricing()).toEqual({ inPerMTokCents: 0, outPerMTokCents: 0 });
+
+    vi.unstubAllEnvs();
+  });
+
+  it("reads the configured prices", () => {
+    vi.stubEnv("GEMINI_PRICE_IN_PER_MTOK_CENTS", "30");
+    vi.stubEnv("GEMINI_PRICE_OUT_PER_MTOK_CENTS", "250");
+
+    expect(pricing()).toEqual({ inPerMTokCents: 30, outPerMTokCents: 250 });
+
+    vi.unstubAllEnvs();
+  });
+
+  it("treats a garbage value as free rather than throwing", () => {
+    vi.stubEnv("GEMINI_PRICE_IN_PER_MTOK_CENTS", "not-a-number");
+
+    expect(pricing().inPerMTokCents).toBe(0);
+
+    vi.unstubAllEnvs();
   });
 });
