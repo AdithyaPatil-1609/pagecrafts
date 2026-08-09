@@ -2,8 +2,11 @@ import type { Category } from '@/lib/contracts/template';
 
 export type { Category };
 
-export type Tone = 'playful' | 'formal' | 'minimal' | 'bold' | 'warm';
-export type Palette = 'light' | 'dark' | 'colourful' | 'muted';
+export const TONE_IDS = ['playful', 'formal', 'minimal', 'bold', 'warm'] as const;
+export const PALETTE_IDS = ['light', 'dark', 'colourful', 'muted'] as const;
+
+export type Tone = (typeof TONE_IDS)[number];
+export type Palette = (typeof PALETTE_IDS)[number];
 
 export const SECTION_KEYS = [
     'hero', 'about', 'services', 'menu', 'gallery',
@@ -106,10 +109,16 @@ export interface FilledSection {
 }
 
 export interface Usage {
+    /** Which provider served the call — Groq and Cerebras host near-identical model names. */
+    provider?: string;
     model: string;
     inputTokens: number;
     outputTokens: number;
     latencyMs: number;
+    /** Which prompt version produced this output, e.g. `classify.v1`. */
+    promptVersion?: string;
+    /** How the reply's shape was constrained (json_schema, json_object, …). */
+    structuredOutput?: string;
 }
 
 export interface AiResult<T> {

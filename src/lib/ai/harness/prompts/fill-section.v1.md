@@ -14,6 +14,8 @@ No filler. Never write "Welcome to our website" or "We are passionate about".
 Use the words this business actually uses.
 If you do not know a fact, leave the field short rather than inventing it.
 
+For image fields, return an object: {"query": "short search keywords", "alt": "description"}.
+
 Business: {{vertical}}
 This business calls its customers: {{customerWord}}
 

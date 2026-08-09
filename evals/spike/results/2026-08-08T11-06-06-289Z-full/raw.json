@@ -1,0 +1,2246 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 262,
+        "outputTokens": 68,
+        "latencyMs": 266
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 385,
+        "outputTokens": 311,
+        "latencyMs": 930
+      }
+    ],
+    "ok": false,
+    "error": "profile(dental-clinic): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the clinic\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Clinic history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"List of dental services offered\"},\n      {\"section\": \"team\", \"optional\": true, \"note\": \"Meet the dentists and staff\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Patient reviews and feedback\"},\n      {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and appointment scheduling\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and footer links\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"clinical-blue\",\n      \"motion\": \"calm\",\n      \"cornerStyle\": \"sharp\",\n      \"spacing\": \"default\",\n      \"photography\": \"bright-clean\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"patient\",\n      \"purchase\": \"appointment\"\n   },\n   \"imageQueries\": [\n      \"dentist examining a patient\",\n      \"dental clinic waiting room\",\n      \"smiling patient with healthy teeth\"\n   ],\n   \"aliases\": [\n      \"dental office\",\n      \"dentist office\",\n      \"oral health clinic\"\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            3,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the clinic\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Clinic history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"List of dental services offered\"},\n      {\"section\": \"team\", \"optional\": true, \"note\": \"Meet the dentists and staff\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Patient reviews and feedback\"},\n      {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and appointment scheduling\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and footer links\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"clinical-blue\",\n      \"motion\": \"calm\",\n      \"cornerStyle\": \"sharp\",\n      \"spacing\": \"default\",\n      \"photography\": \"bright-clean\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"patient\",\n      \"purchase\": \"appointment\"\n   },\n   \"imageQueries\": [\n      \"dentist examining a patient\",\n      \"dental clinic waiting room\",\n      \"smiling patient with healthy teeth\"\n   ],\n   \"aliases\": [\n      \"dental office\",\n      \"dentist office\",\n      \"oral health clinic\"\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 385,
+        "outputTokens": 311,
+        "latencyMs": 930
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1196,
+    "wallClockMs": 1200
+  },
+  {
+    "vertical": "law-firm",
+    "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 252,
+        "outputTokens": 61,
+        "latencyMs": 235
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 385,
+        "outputTokens": 303,
+        "latencyMs": 889
+      }
+    ],
+    "ok": false,
+    "error": "profile(law-firm): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the law firm\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Firm history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"List of practice areas\"},\n      {\"section\": \"team\", \"required\": true, \"note\": \"Attorney profiles\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Client reviews\"},\n      {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and form\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and disclaimer\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"mono-precision\",\n      \"motion\": \"none\",\n      \"cornerStyle\": \"sharp\",\n      \"spacing\": \"default\",\n      \"photography\": \"bold-contrast\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"client\",\n      \"purchase\": \"engagement\"\n   },\n   \"imageQueries\": [\n      \"professional law office interior\",\n      \"lawyers in a meeting\",\n      \"courtroom with a judge\"\n   ],\n   \"aliases\": [\n      \"legal practice\",\n      \"attorney's office\",\n      \"law office\"\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the law firm\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Firm history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"List of practice areas\"},\n      {\"section\": \"team\", \"required\": true, \"note\": \"Attorney profiles\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Client reviews\"},\n      {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and form\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and disclaimer\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"mono-precision\",\n      \"motion\": \"none\",\n      \"cornerStyle\": \"sharp\",\n      \"spacing\": \"default\",\n      \"photography\": \"bold-contrast\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"client\",\n      \"purchase\": \"engagement\"\n   },\n   \"imageQueries\": [\n      \"professional law office interior\",\n      \"lawyers in a meeting\",\n      \"courtroom with a judge\"\n   ],\n   \"aliases\": [\n      \"legal practice\",\n      \"attorney's office\",\n      \"law office\"\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 385,
+        "outputTokens": 303,
+        "latencyMs": 889
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1124,
+    "wallClockMs": 1126
+  },
+  {
+    "vertical": "yoga-studio",
+    "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 253,
+        "outputTokens": 55,
+        "latencyMs": 252
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 385,
+        "outputTokens": 365,
+        "latencyMs": 1182
+      }
+    ],
+    "ok": false,
+    "error": "profile(yoga-studio): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the studio and its offerings\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"Studio history, mission, and philosophy\"},\n       {\"section\": \"services\", \"required\": true, \"note\": \"Class schedules, workshops, and private sessions\"},\n       {\"section\": \"gallery\", \"optional\": true, \"note\": \"Photos of the studio, classes, and events\"},\n       {\"section\": \"team\", \"optional\": true, \"note\": \"Instructor profiles and bios\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Student reviews and testimonials\"},\n       {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions about the studio and classes\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information, including address, phone number, and email\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright information, social media links, and other secondary content\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"calm-sage\",\n       \"motion\": \"calm\",\n       \"cornerStyle\": \"soft\",\n       \"spacing\": \"airy\",\n       \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"student\",\n       \"purchase\": \"class\"\n   },\n   \"imageQueries\": [\n       \"yoga class in a serene outdoor setting\",\n       \"students practicing yoga in a studio with natural light\",\n       \"yoga instructor assisting a student in a tranquil atmosphere\"\n   ],\n   \"aliases\": [\"yoga center\", \"yoga school\"]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            3,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            6,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            8,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the studio and its offerings\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"Studio history, mission, and philosophy\"},\n       {\"section\": \"services\", \"required\": true, \"note\": \"Class schedules, workshops, and private sessions\"},\n       {\"section\": \"gallery\", \"optional\": true, \"note\": \"Photos of the studio, classes, and events\"},\n       {\"section\": \"team\", \"optional\": true, \"note\": \"Instructor profiles and bios\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Student reviews and testimonials\"},\n       {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions about the studio and classes\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information, including address, phone number, and email\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright information, social media links, and other secondary content\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"calm-sage\",\n       \"motion\": \"calm\",\n       \"cornerStyle\": \"soft\",\n       \"spacing\": \"airy\",\n       \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"student\",\n       \"purchase\": \"class\"\n   },\n   \"imageQueries\": [\n       \"yoga class in a serene outdoor setting\",\n       \"students practicing yoga in a studio with natural light\",\n       \"yoga instructor assisting a student in a tranquil atmosphere\"\n   ],\n   \"aliases\": [\"yoga center\", \"yoga school\"]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 385,
+        "outputTokens": 365,
+        "latencyMs": 1182
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1434,
+    "wallClockMs": 1437
+  },
+  {
+    "vertical": "ngo",
+    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 251,
+        "outputTokens": 65,
+        "latencyMs": 344
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 384,
+        "outputTokens": 304,
+        "latencyMs": 987
+      }
+    ],
+    "ok": false,
+    "error": "profile(ngo): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\":[\n      {\"section\":\"hero\", \"required\":true, \"note\":\"Introduction to the NGO's mission\"},\n      {\"section\":\"about\", \"required\":true, \"note\":\"NGO's history, values, and goals\"},\n      {\"section\":\"services\", \"required\":true, \"note\":\"Description of services and programs offered\"},\n      {\"section\":\"gallery\", \"optional\":true, \"note\":\"Photos and videos of NGO's work and events\"},\n      {\"section\":\"testimonials\", \"optional\":true, \"note\":\"Quotes from beneficiaries, donors, or partners\"},\n      {\"section\":\"faq\", \"optional\":true, \"note\":\"Frequently asked questions about the NGO\"},\n      {\"section\":\"contact\", \"required\":true, \"note\":\"Contact information and donation details\"},\n      {\"section\":\"footer\", \"required\":true, \"note\":\"Copyright, social media links, and other secondary information\"}\n   ],\n   \"artDirection\":{\n      \"theme\":\"warm-editorial\",\n      \"motion\":\"calm\",\n      \"cornerStyle\":\"soft\",\n      \"spacing\":\"default\",\n      \"photography\":\"warm-natural\"\n   },\n   \"vocabulary\":{\n      \"customer\":\"beneficiary\",\n      \"purchase\":\"donation\"\n   },\n   \"imageQueries\":[\n      \"people helping people\",\n      \"volunteers in action\",\n      \"community development projects\"\n   ],\n   \"aliases\":[\n      \"non-profit\",\n      \"charity\",\n      \"community organization\"\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            3,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\":[\n      {\"section\":\"hero\", \"required\":true, \"note\":\"Introduction to the NGO's mission\"},\n      {\"section\":\"about\", \"required\":true, \"note\":\"NGO's history, values, and goals\"},\n      {\"section\":\"services\", \"required\":true, \"note\":\"Description of services and programs offered\"},\n      {\"section\":\"gallery\", \"optional\":true, \"note\":\"Photos and videos of NGO's work and events\"},\n      {\"section\":\"testimonials\", \"optional\":true, \"note\":\"Quotes from beneficiaries, donors, or partners\"},\n      {\"section\":\"faq\", \"optional\":true, \"note\":\"Frequently asked questions about the NGO\"},\n      {\"section\":\"contact\", \"required\":true, \"note\":\"Contact information and donation details\"},\n      {\"section\":\"footer\", \"required\":true, \"note\":\"Copyright, social media links, and other secondary information\"}\n   ],\n   \"artDirection\":{\n      \"theme\":\"warm-editorial\",\n      \"motion\":\"calm\",\n      \"cornerStyle\":\"soft\",\n      \"spacing\":\"default\",\n      \"photography\":\"warm-natural\"\n   },\n   \"vocabulary\":{\n      \"customer\":\"beneficiary\",\n      \"purchase\":\"donation\"\n   },\n   \"imageQueries\":[\n      \"people helping people\",\n      \"volunteers in action\",\n      \"community development projects\"\n   ],\n   \"aliases\":[\n      \"non-profit\",\n      \"charity\",\n      \"community organization\"\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 384,
+        "outputTokens": 304,
+        "latencyMs": 987
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1331,
+    "wallClockMs": 1332
+  },
+  {
+    "vertical": "restaurant",
+    "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 251,
+        "outputTokens": 50,
+        "latencyMs": 224
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 383,
+        "outputTokens": 310,
+        "latencyMs": 890
+      }
+    ],
+    "ok": false,
+    "error": "profile(restaurant): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"introduction to the restaurant\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"story of the restaurant and its mission\"},\n       {\"section\": \"menu\", \"required\": true, \"note\": \"list of dishes and prices\"},\n       {\"section\": \"gallery\", \"optional\": true, \"note\": \"photos of dishes and restaurant atmosphere\"},\n       {\"section\": \"team\", \"optional\": true, \"note\": \"introduction to the chefs and staff\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"customer reviews and ratings\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"contact information and reservation details\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"copyright and social media links\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"warm-editorial\",\n       \"motion\": \"calm\",\n       \"cornerStyle\": \"soft\",\n       \"spacing\": \"default\",\n       \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"diner\",\n       \"purchase\": \"order\"\n   },\n   \"imageQueries\": [\n       \"food photography\",\n       \"restaurant interior design\",\n       \"chef preparing dishes\"\n   ],\n   \"aliases\": [\n       \"bistro\",\n       \"cafe\",\n       \"eatery\"\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            3,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"introduction to the restaurant\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"story of the restaurant and its mission\"},\n       {\"section\": \"menu\", \"required\": true, \"note\": \"list of dishes and prices\"},\n       {\"section\": \"gallery\", \"optional\": true, \"note\": \"photos of dishes and restaurant atmosphere\"},\n       {\"section\": \"team\", \"optional\": true, \"note\": \"introduction to the chefs and staff\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"customer reviews and ratings\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"contact information and reservation details\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"copyright and social media links\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"warm-editorial\",\n       \"motion\": \"calm\",\n       \"cornerStyle\": \"soft\",\n       \"spacing\": \"default\",\n       \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"diner\",\n       \"purchase\": \"order\"\n   },\n   \"imageQueries\": [\n       \"food photography\",\n       \"restaurant interior design\",\n       \"chef preparing dishes\"\n   ],\n   \"aliases\": [\n       \"bistro\",\n       \"cafe\",\n       \"eatery\"\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 383,
+        "outputTokens": 310,
+        "latencyMs": 890
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1114,
+    "wallClockMs": 1116
+  },
+  {
+    "vertical": "photography",
+    "prompt": "dark moody one page site for a photography studio, mostly pictures",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 244,
+        "outputTokens": 53,
+        "latencyMs": 321
+      }
+    ],
+    "ok": false,
+    "error": "groq: HTTP 400",
+    "detail": "{\"error\":{\"message\":\"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\",\"type\":\"invalid_request_error\",\"code\":\"json_validate_failed\",\"failed_generation\":\"{\\n  \\\"recipe\\\": [\\n      {\\\"section\\\": \\\"hero\\\", \\\"required\\\": true, \\\"note\\\": \\\"High-quality photo showcase'},\\\\n      {\\\"section\\\": \\\"about\\\", \\\"required\\\": true, \\\"note\\\": \\\"Photographer biography and philosophy\\\"},\\\\n      {\\\"section\\\": \\\"gallery\\\", \\\"required\\\": true, \\\"note\\\": \\\"Photo portfolio\\\"},\\\\n      {\\\"section\\\": \\\"services\\\", \\\"required\\\": true, \\\"note\\\": \\\"List of photography services offered\\\"},\\\\n      {\\\"section\\\": \\\"testimonials\\\", \\\"optional\\\": true, \\\"note\\\": \\\"Customer reviews and feedback\\\"},\\\\n      {\\\"section\\\": \\\"contact\\\", \\\"required\\\": true, \\\"note\\\": \\\"Contact information and booking form\\\"},\\\\n      {\\\"section\\\": \\\"footer\\\", \\\"required\\\": true, \\\"note\\\": \\\"Copyright and social media links\\\"}\\\\n   ],\\\\n   \\\"artDirection\\\": {\\\\n      \\\"theme\\\": \\\"warm-editorial\\\",\\n      \\\"motion\\\": \\\"calm\\\",\\n      \\\"cornerStyle\\\": \\\"soft\\\",\\n      \\\"spacing\\\": \\\"airy\\\",\\n      \\\"photography\\\": \\\"warm-natural\\\"\\n   },\\n   \\\"vocabulary\\\": {\\n      \\\"customer\\\": \\\"client\\\",\\n      \\\"purchase\\\": \\\"booking\\\"\\n   },\\n   \\\"imageQueries\\\": [\\n      \\\"photographer in studio\\\",\\n      \\\"camera equipment closeup\\\",\\n      \\\"photography portfolio examples\\\"\\n   ],\\n   \\\"aliases\\\": [\\n      \\\"photo studio\\\",\\n      \\\"photography services\\\",\\n      \\\"portrait photographer\\\"\\n   ]\\n}\"}}\n",
+    "partial": {},
+    "requests": 1,
+    "modelTimeMs": 321,
+    "wallClockMs": 1219
+  },
+  {
+    "vertical": "saas",
+    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 249,
+        "outputTokens": 59,
+        "latencyMs": 441
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 384,
+        "outputTokens": 287,
+        "latencyMs": 916
+      }
+    ],
+    "ok": false,
+    "error": "profile(saas): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the SaaS product\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Company history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"Product features and benefits\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Customer reviews and success stories\"},\n      {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions about the product\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and support\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and terms of use\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"tech-slate\",\n      \"motion\": \"calm\",\n      \"cornerStyle\": \"sharp\",\n      \"spacing\": \"default\",\n      \"photography\": \"bright-clean\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"user\",\n      \"purchase\": \"subscription\"\n   },\n   \"imageQueries\": [\n      \"people working on laptops\",\n      \"cloud computing infrastructure\",\n      \"software development team\"\n   ],\n   \"aliases\": [\n      \"cloud service\",\n      \"software as a service provider\",\n      \"online platform\"\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            3,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the SaaS product\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Company history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"Product features and benefits\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Customer reviews and success stories\"},\n      {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions about the product\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and support\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and terms of use\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"tech-slate\",\n      \"motion\": \"calm\",\n      \"cornerStyle\": \"sharp\",\n      \"spacing\": \"default\",\n      \"photography\": \"bright-clean\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"user\",\n      \"purchase\": \"subscription\"\n   },\n   \"imageQueries\": [\n      \"people working on laptops\",\n      \"cloud computing infrastructure\",\n      \"software development team\"\n   ],\n   \"aliases\": [\n      \"cloud service\",\n      \"software as a service provider\",\n      \"online platform\"\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 384,
+        "outputTokens": 287,
+        "latencyMs": 916
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1357,
+    "wallClockMs": 1360
+  },
+  {
+    "vertical": "gym",
+    "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 252,
+        "outputTokens": 57,
+        "latencyMs": 223
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 383,
+        "outputTokens": 304,
+        "latencyMs": 1111
+      }
+    ],
+    "ok": false,
+    "error": "profile(gym): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"introduction to the gym\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"gym history and mission\"},\n       {\"section\": \"services\", \"required\": true, \"note\": \"types of workouts and training\"},\n       {\"section\": \"team\", \"optional\": true, \"note\": \"personal trainer profiles\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"member success stories\"},\n       {\"section\": \"faq\", \"optional\": true, \"note\": \"common questions about the gym\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"membership and visit information\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"copyright and social media links\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"vivid-energy\",\n       \"motion\": \"kinetic\",\n       \"cornerStyle\": \"sharp\",\n       \"spacing\": \"default\",\n       \"photography\": \"bold-contrast\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"member\",\n       \"purchase\": \"membership\"\n   },\n   \"imageQueries\": [\n       \"people lifting weights in a gym\",\n       \"group fitness class in action\",\n       \"person running on a treadmill\"\n   ],\n   \"aliases\": [\"fitness center\", \"workout studio\", \"athletic club\"]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            3,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"introduction to the gym\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"gym history and mission\"},\n       {\"section\": \"services\", \"required\": true, \"note\": \"types of workouts and training\"},\n       {\"section\": \"team\", \"optional\": true, \"note\": \"personal trainer profiles\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"member success stories\"},\n       {\"section\": \"faq\", \"optional\": true, \"note\": \"common questions about the gym\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"membership and visit information\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"copyright and social media links\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"vivid-energy\",\n       \"motion\": \"kinetic\",\n       \"cornerStyle\": \"sharp\",\n       \"spacing\": \"default\",\n       \"photography\": \"bold-contrast\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"member\",\n       \"purchase\": \"membership\"\n   },\n   \"imageQueries\": [\n       \"people lifting weights in a gym\",\n       \"group fitness class in action\",\n       \"person running on a treadmill\"\n   ],\n   \"aliases\": [\"fitness center\", \"workout studio\", \"athletic club\"]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 383,
+        "outputTokens": 304,
+        "latencyMs": 1111
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1334,
+    "wallClockMs": 1338
+  },
+  {
+    "vertical": "unknown",
+    "prompt": "a website",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 233,
+        "outputTokens": 102,
+        "latencyMs": 306
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 383,
+        "outputTokens": 297,
+        "latencyMs": 859
+      }
+    ],
+    "ok": false,
+    "error": "profile(unknown): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the business\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"Business description and mission\"},\n       {\"section\": \"services\", \"required\": true, \"note\": \"List of offered services\"},\n       {\"section\": \"gallery\", \"optional\": true, \"note\": \"Portfolio of previous work\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Customer reviews and feedback\"},\n       {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and form\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and secondary links\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"calm-sage\",\n       \"motion\": \"calm\",\n       \"cornerStyle\": \"soft\",\n       \"spacing\": \"default\",\n       \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"client\",\n       \"purchase\": \"service\"\n   },\n   \"imageQueries\": [\n       \"professional team meeting\",\n       \"modern office interior\",\n       \"happy client testimonial\"\n   ],\n   \"aliases\": [\n       \"company\",\n       \"firm\",\n       \"organization\"\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            3,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n       {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the business\"},\n       {\"section\": \"about\", \"required\": true, \"note\": \"Business description and mission\"},\n       {\"section\": \"services\", \"required\": true, \"note\": \"List of offered services\"},\n       {\"section\": \"gallery\", \"optional\": true, \"note\": \"Portfolio of previous work\"},\n       {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Customer reviews and feedback\"},\n       {\"section\": \"faq\", \"optional\": true, \"note\": \"Frequently asked questions\"},\n       {\"section\": \"contact\", \"required\": true, \"note\": \"Contact information and form\"},\n       {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and secondary links\"}\n   ],\n   \"artDirection\": {\n       \"theme\": \"calm-sage\",\n       \"motion\": \"calm\",\n       \"cornerStyle\": \"soft\",\n       \"spacing\": \"default\",\n       \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n       \"customer\": \"client\",\n       \"purchase\": \"service\"\n   },\n   \"imageQueries\": [\n       \"professional team meeting\",\n       \"modern office interior\",\n       \"happy client testimonial\"\n   ],\n   \"aliases\": [\n       \"company\",\n       \"firm\",\n       \"organization\"\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 383,
+        "outputTokens": 297,
+        "latencyMs": 859
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1165,
+    "wallClockMs": 1167
+  },
+  {
+    "vertical": "interior-design",
+    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 254,
+        "outputTokens": 56,
+        "latencyMs": 240
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 384,
+        "outputTokens": 312,
+        "latencyMs": 884
+      }
+    ],
+    "ok": false,
+    "error": "profile(interior-design): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the design firm\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Company history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"List of design services offered\"},\n      {\"section\": \"gallery\", \"required\": true, \"note\": \"Portfolio of completed projects\"},\n      {\"section\": \"team\", \"optional\": true, \"note\": \"Meet the designers and staff\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Client reviews and feedback\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Get in touch with the firm\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and social media links\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"warm-editorial\",\n      \"motion\": \"calm\",\n      \"cornerStyle\": \"soft\",\n      \"spacing\": \"airy\",\n      \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"client\",\n      \"purchase\": \"project\"\n   },\n   \"imageQueries\": [\n      \"luxury living room interior\",\n      \"modern kitchen design ideas\",\n      \"cozy bedroom decor inspiration\"\n   ],\n   \"aliases\": [\n      \"design studio\",\n      \"interior decorating firm\",\n      \"home staging company\"\n   ]\n}",
+      "issues": [
+        {
+          "expected": "string",
+          "code": "invalid_type",
+          "path": [
+            "label"
+          ],
+          "message": "Invalid input: expected string, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            0,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            1,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            2,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            3,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            4,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            4,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            5,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "expected": "boolean",
+          "code": "invalid_type",
+          "path": [
+            "recipe",
+            5,
+            "required"
+          ],
+          "message": "Invalid input: expected boolean, received undefined"
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            6,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        },
+        {
+          "code": "invalid_value",
+          "values": [
+            "hero",
+            "about",
+            "services",
+            "menu",
+            "gallery",
+            "team",
+            "testimonials",
+            "faq",
+            "contact",
+            "footer"
+          ],
+          "path": [
+            "recipe",
+            7,
+            "type"
+          ],
+          "message": "Invalid option: expected one of \"hero\"|\"about\"|\"services\"|\"menu\"|\"gallery\"|\"team\"|\"testimonials\"|\"faq\"|\"contact\"|\"footer\""
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"recipe\": [\n      {\"section\": \"hero\", \"required\": true, \"note\": \"Introduction to the design firm\"},\n      {\"section\": \"about\", \"required\": true, \"note\": \"Company history and mission\"},\n      {\"section\": \"services\", \"required\": true, \"note\": \"List of design services offered\"},\n      {\"section\": \"gallery\", \"required\": true, \"note\": \"Portfolio of completed projects\"},\n      {\"section\": \"team\", \"optional\": true, \"note\": \"Meet the designers and staff\"},\n      {\"section\": \"testimonials\", \"optional\": true, \"note\": \"Client reviews and feedback\"},\n      {\"section\": \"contact\", \"required\": true, \"note\": \"Get in touch with the firm\"},\n      {\"section\": \"footer\", \"required\": true, \"note\": \"Copyright and social media links\"}\n   ],\n   \"artDirection\": {\n      \"theme\": \"warm-editorial\",\n      \"motion\": \"calm\",\n      \"cornerStyle\": \"soft\",\n      \"spacing\": \"airy\",\n      \"photography\": \"warm-natural\"\n   },\n   \"vocabulary\": {\n      \"customer\": \"client\",\n      \"purchase\": \"project\"\n   },\n   \"imageQueries\": [\n      \"luxury living room interior\",\n      \"modern kitchen design ideas\",\n      \"cozy bedroom decor inspiration\"\n   ],\n   \"aliases\": [\n      \"design studio\",\n      \"interior decorating firm\",\n      \"home staging company\"\n   ]\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 384,
+        "outputTokens": 312,
+        "latencyMs": 884
+      }
+    },
+    "partial": {},
+    "requests": 2,
+    "modelTimeMs": 1124,
+    "wallClockMs": 1126
+  }
+]

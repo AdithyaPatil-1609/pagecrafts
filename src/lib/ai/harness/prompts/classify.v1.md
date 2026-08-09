@@ -14,7 +14,25 @@ Return two things:
 
 Also return tone, palette, and the sections the page will probably need.
 
+Choose ONLY from the lists below. You may not invent values.
+
 Allowed categories: {{categories}}
+Allowed tone: {{tones}}
+Allowed palette: {{palettes}}
+Allowed sections: {{sectionKeys}}
+
+Return valid JSON with exactly these key names:
+
+{
+  "category": "<from allowed categories>",
+  "vertical": "<lowercase-hyphenated slug>",
+  "tone": "<from allowed tone>",
+  "palette": "<from allowed palette>",
+  "sections": ["<from allowed sections>"]
+}
+
+Read the description for tone and palette — do not default them. A yoga studio
+described as calm is not the same as a nightclub described as bold.
 
 If the description is unclear, use category "other" and vertical
 "general-business" rather than guessing.

@@ -1,0 +1,213 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "mock",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "provider": "groq",
+        "model": "mock",
+        "inputTokens": 12,
+        "outputTokens": 24,
+        "latencyMs": 3
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "dental-clinic",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Mock business",
+        "description": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "welcome the visitor",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Sample eyebrow",
+            "heading": "Sample heading",
+            "sub": "Sample subheading written by the mock gateway.",
+            "ctaLabel": "Sample button label",
+            "image": {
+              "query": "office interior",
+              "alt": "Office interior"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "what we offer",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "title": "Sample title",
+                "body": "Sample description written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "team",
+          "variant": "grid",
+          "brief": "who works here",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "members": [
+              {
+                "name": "Sample name",
+                "role": "Sample role",
+                "bio": "Sample bio written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "common questions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "items": [
+              {
+                "question": "Sample question",
+                "answer": "Sample answer written by the mock gateway."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "how to reach us",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Sample heading",
+            "blurb": "Sample intro written by the mock gateway.",
+            "address": "Sample address",
+            "phone": "Sample phone",
+            "email": "Sample email",
+            "hours": "Sample opening hours"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "closing line",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Sample tagline"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27,
+    "wallClockMs": 4
+  }
+]

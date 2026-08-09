@@ -1,0 +1,186 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 262,
+        "outputTokens": 54,
+        "latencyMs": 260
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 488,
+        "outputTokens": 304,
+        "latencyMs": 776
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 569,
+        "outputTokens": 153,
+        "latencyMs": 518
+      },
+      {
+        "stage": "fill",
+        "section": "hero/minimal",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 240,
+        "outputTokens": 67,
+        "latencyMs": 277
+      }
+    ],
+    "ok": false,
+    "error": "fillSection(hero): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"eyebrow\": \"Koramangala Dental Clinic\",\n   \"heading\": \"Dental Care for Your Family\",\n   \"sub\": \"Check-ups, root canals, and braces for a healthy smile\",\n   \"ctaLabel\": \"Book an Appointment\",\n   \"image\": \"dentist-at-work\"\n}",
+      "issues": [
+        {
+          "expected": "object",
+          "code": "invalid_type",
+          "path": [
+            "image"
+          ],
+          "message": "Invalid input: expected object, received string"
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"eyebrow\": \"Koramangala Dental Clinic\",\n   \"heading\": \"Dental Care for Your Family\",\n   \"sub\": \"Check-ups, root canals, and braces for a healthy smile\",\n   \"ctaLabel\": \"Book an Appointment\",\n   \"image\": \"dentist-at-work\"\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 240,
+        "outputTokens": 67,
+        "latencyMs": 277
+      }
+    },
+    "partial": {
+      "profile": {
+        "slug": "dental-clinic",
+        "label": "Dental Clinic",
+        "aliases": [
+          "Dentist Office",
+          "Dental Practice",
+          "Orthodontic Clinic",
+          "Dental Care"
+        ],
+        "recipe": [
+          {
+            "type": "hero",
+            "required": true,
+            "note": "Introduction to the clinic"
+          },
+          {
+            "type": "about",
+            "required": true,
+            "note": "Clinic history and mission"
+          },
+          {
+            "type": "services",
+            "required": true,
+            "note": "List of dental services offered"
+          },
+          {
+            "type": "team",
+            "required": true,
+            "note": "Meet the dentists and staff"
+          },
+          {
+            "type": "testimonials",
+            "required": false,
+            "note": "Patient reviews"
+          },
+          {
+            "type": "faq",
+            "required": false,
+            "note": "Frequently asked questions"
+          },
+          {
+            "type": "contact",
+            "required": true,
+            "note": "Get in touch and make an appointment"
+          }
+        ],
+        "artDirection": {
+          "themeId": "clinical-blue",
+          "motionId": "calm",
+          "radiusId": "soft",
+          "spacingId": "default",
+          "imageryId": "bright-clean"
+        },
+        "vocabulary": {
+          "customer": "patient",
+          "purchase": "appointment"
+        },
+        "imageQueries": [
+          "dentist chair",
+          "smiling dentist",
+          "healthy teeth"
+        ]
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "minimal",
+          "brief": "Introduction to the family dental clinic in Koramangala",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Clinic history and mission",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List of dental services offered including check-ups, root canals, and braces",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "team",
+          "variant": "grid",
+          "brief": "Meet the dentists and staff",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "simple",
+          "brief": "Get in touch and make an appointment",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 4,
+    "modelTimeMs": 1831,
+    "wallClockMs": 1843
+  }
+]
