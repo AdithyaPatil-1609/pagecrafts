@@ -58,9 +58,9 @@ provider (`ProviderConfig.pricing`); a Groq call must never be costed at Gemini'
 rate, or NFR-142's 5% reconciliation cannot hold across three invoices.
 
 The row shape and costing landed on D7 (`src/lib/ai/cost/ledger.ts`) with an
-in-memory sink; D9 is persistence only. **Blocker:** `public.generations` has
-`model` but no `provider` column, so the value the ledger produces cannot be
-stored. Needs a migration from E1 before this can land.
+in-memory sink; D9 is persistence only. **Blocker:** `public.generations` exists
+but lacks `provider`, `prompt_version`, `latency_ms` and `stage`. An `ALTER TABLE`
+from E1 unblocks it.
 
 Token rollups per user per day. Counter reconciliation against Upstash. PostHog
 funnel events with category and latency bucket only — never prompt text or tokens.

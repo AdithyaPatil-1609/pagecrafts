@@ -1,0 +1,155 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+const auth = vi.hoisted(() => ({ requireUser: vi.fn() }));
+vi.mock('@/lib/auth/session', () => ({
+    requireUser: auth.requireUser,
+    supabaseRoute: async () => ({}),
+}));
+
+const limits = vi.hoisted(() => ({ evalMock: vi.fn(), zremMock: vi.fn() }));
+vi.mock('@/lib/limits/redis', () => ({
+    redis: () => ({ eval: limits.evalMock, zrem: limits.zremMock }),
+}));
+
+import { setGateway, type Gateway } from '@/lib/ai/gateway';
+import { MockGateway } from '@/lib/ai/gateway/mock';
+import { jobStore, setJobStore } from '@/lib/ai/jobs/store';
+import { setGenerationCounters } from '@/lib/ai/jobs/budget';
+import { POST as GENERATE } from '@/app/api/v1/projects/[id]/generate/route';
+import { GET as STREAM } from '@/app/api/v1/jobs/[id]/stream/route';
+import { POST as EDITS } from '@/app/api/v1/projects/[id]/edits/route';
+
+const generate = (prompt: string) =>
+    GENERATE(
+        new Request('http://x/g', {
+            method: 'POST', body: JSON.stringify({ prompt }),
+            headers: { 'content-type': 'application/json' },
+        }) as never,
+        { params: Promise.resolve({ id: 'p_1' }) } as never,
+    );
+
+const stream = (id: string) =>
+    STREAM(
+        new Request(`http://x/api/v1/jobs/${id}/stream`) as never,
+        { params: Promise.resolve({ id }) } as never,
+    );
+
+const edit = (body: unknown) =>
+    EDITS(
+        new Request('http://x/e', {
+            method: 'POST', body: JSON.stringify(body),
+            headers: { 'content-type': 'application/json' },
+        }) as never,
+        { params: Promise.resolve({ id: 'p_1' }) } as never,
+    );
+
+async function settled(id: string) {
+    for (let i = 0; i < 200; i++) {
+        const job = await jobStore().get(id);
+        if (job && (job.status === 'done' || job.status === 'failed')) return job;
+        await new Promise((r) => setTimeout(r, 10));
+    }
+    throw new Error('job did not settle');
+}
+
+beforeEach(() => {
+    auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
+    limits.evalMock.mockReset();
+    limits.evalMock.mockImplementation(async (_s: string, keys: string[]) =>
+        keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0]);
+    setJobStore(null);
+    setGenerationCounters(null);
+    setGateway(new MockGateway());
+});
+
+afterEach(() => {
+    setGateway(null);
+    vi.clearAllMocks();
+});
+
+describe('GET /api/v1/jobs/{id}/stream', () => {
+    it('R10: emits plan, section, validate and done in order', async () => {
+        const { data } = await (await generate('a dental clinic in koramangala')).json();
+        await settled(data.job_id);
+
+        const res = await stream(data.job_id);
+        expect(res.headers.get('content-type')).toContain('text/event-stream');
+
+        const body = await res.text();
+        const events = [...body.matchAll(/^event: (\w+)$/gm)].map((m) => m[1]);
+
+        expect(events[0]).toBe('plan');
+        expect(events).toContain('section');
+        expect(events.at(-1)).toBe('done');
+        expect(events.indexOf('validate')).toBeGreaterThan(events.lastIndexOf('section'));
+    });
+
+    it('R11: emits fallback when generation is abandoned', async () => {
+        setGateway(new MockGateway('error'));
+        const { data } = await (await generate('anything at all')).json();
+        await settled(data.job_id);
+
+        const body = await (await stream(data.job_id)).text();
+        expect(body).toContain('event: fallback');
+    });
+
+    it('another user\'s job is not_found', async () => {
+        const { data } = await (await generate('a dental clinic')).json();
+        auth.requireUser.mockResolvedValue({ userId: 'u_2', supabase: {} });
+        expect((await stream(data.job_id)).status).toBe(404);
+    });
+});
+
+describe('POST /api/v1/projects/{id}/edits', () => {
+    const section = {
+        id: 's_01', type: 'hero', variant: 'centred',
+        brief: 'welcome', props: { heading: 'Old heading' },
+    };
+
+    function fake(reply: string): Gateway {
+        return {
+            async complete() {
+                return {
+                    provider: 'groq' as const, text: reply, model: 'm',
+                    inputTokens: 1, outputTokens: 1, latencyMs: 1,
+                };
+            },
+        };
+    }
+
+    it('R13: returns a diff and writes nothing', async () => {
+        setGateway(fake(JSON.stringify({
+            changes: { heading: 'New heading' },
+            explanation: 'Punchier.',
+        })));
+
+        const res = await edit({ instruction: 'make it punchier', section });
+        const json = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(json.data.applied).toBe(false);
+        expect(json.data.patch).toEqual([
+            { op: 'replace', path: '/props/heading', value: 'New heading' },
+        ]);
+    });
+
+    it('R14: sanitises the proposal before returning it', async () => {
+        setGateway(fake(JSON.stringify({
+            changes: { heading: 'Hi<script>alert(1)</script>' },
+            explanation: 'Done <script>steal()</script>',
+        })));
+
+        const json = await (await edit({ instruction: 'x', section })).json();
+        expect(JSON.stringify(json.data)).not.toContain('<script');
+    });
+
+    it('rejects an unknown section type', async () => {
+        const res = await edit({ instruction: 'x', section: { ...section, type: 'vibes' } });
+        expect(res.status).toBe(422);
+    });
+
+    it('rejects an empty instruction', async () => {
+        const res = await edit({ instruction: '', section });
+        expect(res.status).toBe(422);
+    });
+});

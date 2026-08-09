@@ -55,7 +55,6 @@ describe('FallbackGateway', () => {
         expect(out.provider).toBe('gemini');
     });
 
-    // C1 / D6 — a wrong key advances the chain and warns clearly.
     it('D6: advances on unauthorized and warns to check the key', async () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const groq = stub('groq', new GatewayError('unauthorized', 'groq 401', false));
@@ -65,8 +64,7 @@ describe('FallbackGateway', () => {
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('GROQ_API_KEY'));
     });
 
-    // An unfunded account (402) or a missing model (404) is provider-specific —
-    // the next provider may well serve, so the chain must advance, not halt.
+    // Provider-specific faults — the next provider may well serve.
     it.each([
         ['payment_required' as const, 'cerebras: HTTP 402'],
         ['not_found' as const, 'cerebras: HTTP 404'],
@@ -98,7 +96,6 @@ describe('FallbackGateway', () => {
         expect(solo.complete).toHaveBeenCalledTimes(2);
     });
 
-    // C2 / D7 — a stop-the-chain fault does not attempt provider two.
     it('D7: stops immediately on a validation_failed fault', async () => {
         const groq = stub('groq', new GatewayError('validation_failed', 'too big', false));
         const cerebras = stub('cerebras', reply('cerebras'));
@@ -107,7 +104,6 @@ describe('FallbackGateway', () => {
         expect(cerebras.complete).not.toHaveBeenCalled();
     });
 
-    // C2 — a non-retryable request fault (e.g. a 400) also stops the chain.
     it('stops on a non-retryable generation_failed (400-shaped)', async () => {
         const groq = stub('groq', new GatewayError('generation_failed', 'groq HTTP 400', false));
         const cerebras = stub('cerebras', reply('cerebras'));
@@ -127,7 +123,6 @@ describe('FallbackGateway', () => {
         expect(() => new FallbackGateway([])).toThrow(/at least one/);
     });
 
-    // B3 / D4 — every provider stalls; total time stays within one overall deadline.
     it('D4: honours one overall deadline when every provider stalls', async () => {
         const stalling = (name: Provider): NamedGateway => ({
             name,

@@ -19,10 +19,10 @@ through; this one is a claim about the models named above and stops being true i
 One paragraph: what was decided, and the single strongest reason.
 
 On this evidence **GO WITH GUARDRAILS** is what the data supports. Structure holds
-at 90% across the corpus, the single failure was a provider outage rather than a
-bad generation, and art direction is fully differentiated — 9 distinct pairs over 9
-runs. The named guardrails are: **P95 model time breaches NFR-003** (49.4s against
-45s), the corpus is **10 verticals rather than 30** so no pass rate here can carry
+at **10 of 10** on the D8 re-run, and art direction is fully differentiated — 9
+distinct (theme, motion) pairs. The named guardrails are: **NFR-003 is unproven**
+because both P95 measurements included client-side pacing and a clean re-run is
+still owed, the corpus is **10 verticals rather than 30** so no rate here can carry
 AC-F4-1, and the **copy has not been read** — every 1–5 column is still empty.
 
 The decision line is not mine to set; the rubric's human rows should be filled
@@ -46,33 +46,35 @@ and five plan-onlys. Four things landed since:
 
 ## The corpus
 
-**Corpus size: 10 verticals, not 30.** Stated plainly because it matters: the D11
-target assumes 30, and AC-F4-1's ≥85% bar is not meaningfully measurable at 10.
-The corpus has to grow before D11 — that is a finding for today, not a surprise
-for later.
+**Corpus size: 30 verticals**, grown from 10 during D8–D10. It now covers all 17
+categories, with 20 of 30 having no hand-authored template — the population the
+"no template" claim is actually about. The measurements below were taken on the
+10-vertical corpus; **they have not been re-taken at 30**, so the pass rate here
+still carries a denominator of 10, not 30.
 
-Run: `evals/spike/results/2026-08-08T18-37-21-011Z-full`
+Run: `evals/spike/results/2026-08-09T14-00-57-553Z-full` (D8 re-run)
 
 | | |
 |---|---|
 | Verticals | 10 (6 with no hand-authored template) |
 | Mode | `full` |
-| **Auto pass rate** | **90% — 9 of 10** |
-| Calls served | 87 Groq · 6 Gemini |
-| Tokens | 81,907 (47,324 in / 34,583 out) |
+| **Auto pass rate** | **10 of 10** on the D8 re-run (9 of 10 on D7) |
+| Calls served | 87 Groq · 12 Gemini |
+| Tokens | 84,805 (48,406 in / 36,399 out) |
+| Repairs used | 5, all genuine validation failures |
 | Sections scored ≥4 for copy | *(human rows pending)* |
 
-### The one failure was availability, not quality
+### The D7 failure did not recur
 
-`restaurant` failed at the **plan** stage with both providers down at the same
-moment: Groq timed out, and Gemini returned 429 — its 20 RPD was already spent.
-It never reached a fill call, so it says nothing about generation quality. The
-distinction matters: 9 of 9 verticals that got a working provider produced a site.
+On D7 `restaurant` failed at the **plan** stage with both providers down at the
+same moment — Groq timed out and Gemini's 20 RPD was already spent. It never
+reached a fill call, so it never said anything about quality. On the D8 re-run,
+with `Retry-After` back-off in place, it completed. **10 of 10.**
 
 ### Art direction — diversity held across the corpus
 
-**9 distinct (theme, motion) pairs across 9 runs — no two alike.** Six of eight
-themes and **all six** motions were used, and the pairings are apt: `mono-precision
+**9 distinct (theme, motion) pairs across 10 runs.** Six of eight themes and
+**all six** motions were used, and the pairings are apt: `mono-precision
 / none` for the law firm, `vivid-energy / kinetic` for the gym, `tech-slate / calm`
 for SaaS, `calm-sage / calm` for yoga.
 
@@ -91,7 +93,7 @@ the generated copy in each `<vertical>.md`)*
 | law-firm | no | pass | pass | — | — | — |
 | yoga-studio | no | pass | pass | — | — | — |
 | ngo | no | pass | pass | — | — | — |
-| restaurant | yes | **fail** | — | — | — | — |
+| restaurant | yes | pass | pass | — | — | — |
 | photography | yes | pass | pass | — | — | — |
 | saas | yes | pass | pass | — | — | — |
 | gym | yes | pass | pass | — | — | — |
@@ -115,27 +117,32 @@ A single generation exceeds the 8,000 TPM budget on its own, so pacing is not
 optional — it is the difference between a corpus run and a wall of 429s. The
 corpus measured 8,812 tokens per generation and **~19 full generations/day**.
 
-### NFR-003 — model time is at the limit, and P95 breaches it
+### NFR-003 — not yet answerable, and the reason is a measurement defect
 
-| Figure | Corpus | Budget |
+Two corpus runs, and the re-run moved the wrong way:
+
+| Figure | Run 1 (D7) | Run 2 (D8, after the repair fix) |
 |---|---|---|
-| Mean model time | 39.6s | 45s |
-| **P95 model time** | **49.4s** | **45s — breached** |
-| Mean wall clock | 67.1s | reported, not the acceptance figure |
-| Pacing overhead | 27.5s | deliberate; the alternative is a 429 |
+| Pass rate | 9 of 10 | **10 of 10** |
+| Mean model time | 39.6s | 36.2s |
+| P95 model time | 49.4s | **73.5s** |
+| Mean wall clock | 67.1s | 72.2s |
 
-**This is the finding that most deserves attention.** The single-vertical run on
-D6 measured 13.3s; at corpus scale it is 39.6s mean and 49.4s at P95. Two causes,
-and only one of them is now fixed:
+Pass rate improved and the mean came down, but P95 nearly doubled. The cause is
+not the pipeline — it is that **`latencyMs` was counting our own waiting**. The
+limiter's pacing sleep and the `Retry-After` back-off both happen inside
+`complete()`, so a call that waited 27s for a rate limit recorded 27s of "model
+time". NFR-003 explicitly measures provider time and excludes client-side pacing.
 
-- **Retries inflate model time.** Each repair and each `Retry-After` wait adds a
-  real provider call to the sum. Seven of the thirteen repairs in this run were
-  mis-scoped (see below) and will not recur, which should pull the figure down —
-  but by how much is unmeasured, and a re-run is needed before claiming NFR-003.
-- **Groq under sustained load is slower than a single call suggests.** Timeouts
-  appeared repeatedly during the corpus that never appeared in isolation.
+Fixed: `acquire()` now reports what it waited, and both waits are subtracted from
+`latencyMs`. **Neither run's P95 is a valid NFR-003 figure** — run 1 understated
+the problem, run 2 overstated it, and both included pacing. A third run is needed
+before the requirement can be called met or missed, and it should be done before
+the D10 review rather than argued about there.
 
-Do not report "under 45s" as met. The mean is inside it; P95 is not.
+What can be said now: the pipeline completed **10 of 10** verticals, and wall
+clock — which legitimately includes pacing — is 72.2s per generation. That is the
+number a user would feel, and it is why the SSE progress stream matters.
 
 ---
 
@@ -157,9 +164,10 @@ mechanisms cannot compound into several attempts against the same fault.
 
 ### A defect the corpus run found in the repair path
 
-Thirteen repairs fired across the corpus, but only **six** were genuine validation
+Thirteen repairs fired on the D7 run, but only **six** were genuine validation
 failures. The other seven were chain exhaustion — *"all AI providers failed"* —
-being retried as though the reply had been malformed.
+being retried as though the reply had been malformed. The D8 re-run, with the fix
+in place, used **5 repairs, all genuine**.
 
 The cause: `FallbackGateway` raises exhaustion as a non-retryable
 `generation_failed`, which is exactly the signature the repair path treats as
@@ -181,14 +189,14 @@ model, prompt version, tokens, cost and status. Pricing is per provider: a Groq
 call is never costed at Gemini's rate, which is what NFR-142's 5% reconciliation
 requires across three invoices.
 
-Corpus totals: **93 calls · 81,907 tokens · 0.0000c**. Cost is zero because both
+Corpus totals: **99 calls · 84,805 tokens · 0.0000c**. Cost is zero because both
 providers are on free tiers with price tables set to 0 — the plumbing is exercised
 and per-provider, but the reconciliation claim in NFR-142 is untested until a paid
 tier supplies real rates.
 
-**Known gap:** the `generations` table has `model` but **no `provider` column**.
-The ledger produces the value and nothing can store it. Needs a migration from E1
-before D9's persistence work.
+**Known gap:** the `generations` table exists but has `model` and no `provider`,
+`prompt_version`, `latency_ms` or `stage`. The ledger produces all four and none
+can be stored. Needs an `ALTER TABLE` from E1 before D9's persistence work.
 
 ---
 

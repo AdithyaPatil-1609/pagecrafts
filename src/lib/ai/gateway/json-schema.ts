@@ -1,9 +1,6 @@
 import { Type, type Schema } from '@google/genai';
 
-/**
- * A JSON Schema subset accepted by OpenAI-compatible `response_format:
- * { type: 'json_schema', json_schema: { schema, strict: true } }`.
- */
+/** The JSON Schema subset OpenAI-compatible `json_schema` mode accepts. */
 export interface JsonSchema {
     type: string;
     description?: string;
@@ -25,12 +22,8 @@ const TYPES: Record<string, string> = {
 };
 
 /**
- * Convert a Gemini `Schema` into strict JSON Schema.
- *
- * Strict mode requires every declared property to appear in `required` and
- * `additionalProperties: false` on every object, so the constraint Gemini
- * enforced natively is restored on Groq and Cerebras rather than left to Zod.
- * `propertyOrdering` is Gemini-only and is dropped.
+ * Gemini `Schema` → strict JSON Schema. Strict mode requires every property in
+ * `required` and `additionalProperties: false`. `propertyOrdering` is Gemini-only.
  */
 export function toJsonSchema(schema: Schema): JsonSchema {
     const type = TYPES[String(schema.type ?? Type.STRING)] ?? 'string';

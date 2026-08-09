@@ -108,8 +108,7 @@ describe('generationPlan — shape is strict, variant legality is repaired downs
         expect(generationPlan.safeParse([s]).success).toBe(true);
     });
 
-    // Variant legality is no longer enforced by the schema — normalisePlan repairs
-    // an unregistered (or mismatched) variant to a valid one and reports the repair.
+    // normalisePlan repairs an unregistered variant and reports it.
     it('accepts a variant registered to a different type (repaired downstream)', () => {
         expect(generationPlan.safeParse([{ ...s, variant: 'masonry' }]).success).toBe(true);
     });
@@ -122,8 +121,7 @@ describe('generationPlan — shape is strict, variant legality is repaired downs
         expect(generationPlan.safeParse([{ ...s, variant: '' }]).success).toBe(false);
     });
 
-    // Section-type legality moved to normalisePlan too: an unknown type must reach
-    // it to be dropped-and-reported (B1a), not fail the whole plan on the compat path.
+    // An unknown type is dropped by normalisePlan, not fatal here.
     it('accepts an unknown section type (dropped downstream)', () => {
         expect(generationPlan.safeParse([{ ...s, type: 'vibes' }]).success).toBe(true);
     });
@@ -165,8 +163,7 @@ describe('verticalProfile — strict', () => {
         expect(verticalProfile.safeParse(valid).success).toBe(true);
     });
 
-    // Art-direction ids fall back rather than fail (B1a): the compat path can't
-    // enforce enums, so an invented themeId degrades to the first registered theme.
+    // An invented themeId degrades rather than failing the profile.
     it('coerces an unknown theme to the first registered theme', () => {
         const bad = { ...valid, artDirection: { ...valid.artDirection, themeId: 'neon-chaos' } };
         const out = verticalProfile.safeParse(bad);

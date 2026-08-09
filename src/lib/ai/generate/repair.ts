@@ -8,18 +8,7 @@ export interface RepairOutcome<T> {
     firstError?: string;
 }
 
-/**
- * Run `attempt`, and on a validation failure run it exactly once more with the
- * error as context.
- *
- * BR-09: a second repair is a defect, not a retry. The single-attempt rule is
- * enforced here by construction rather than by a counter a caller could get
- * wrong — there is no loop to mis-bound.
- *
- * Only *validation* failures are repairable: a rate limit or an outage is the
- * provider chain's problem and is rethrown untouched, so the two mechanisms
- * cannot compound into several attempts against the same fault.
- */
+/** Run `attempt`, and on a validation failure run it exactly once more with the error context. */
 export async function withOneRepair<T>(
     attempt: (repairContext?: string) => Promise<T>,
     isRepairable: (err: unknown) => boolean = defaultIsRepairable,
@@ -37,13 +26,7 @@ export async function withOneRepair<T>(
     }
 }
 
-/**
- * A validation failure is worth one more try; anything else is not.
- *
- * `chainExhausted` is excluded deliberately: it also arrives as a non-retryable
- * `generation_failed`, but it means every provider has already been tried, so a
- * repair spends quota that is not there and cannot change the reply's shape.
- */
+/** Checks whether an error is a repairable validation failure. */
 function defaultIsRepairable(err: unknown): boolean {
     if (!(err instanceof GatewayError)) return false;
     if (err.code !== 'generation_failed' || err.retryable) return false;

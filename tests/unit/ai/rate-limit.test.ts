@@ -32,8 +32,17 @@ describe('RateLimiter', () => {
     it('does not wait while the window has room', async () => {
         const c = clock();
         const l = new RateLimiter(GROQ, c.deps);
-        await l.acquire(500);
+        expect(await l.acquire(500)).toBe(0);
         expect(c.waits).toEqual([]);
+    });
+
+    // NFR-003 is measured on provider time, so callers subtract what we waited.
+    it('reports how long it waited', async () => {
+        const c = clock();
+        const l = new RateLimiter(GROQ, c.deps);
+        l.record(4_000, 3_500);
+        c.advance(45_000);
+        expect(await l.acquire(1_000)).toBe(15_000);
     });
 
     it('waits once the per-minute token budget is spent', async () => {
@@ -88,8 +97,7 @@ describe('RateLimiter', () => {
         expect(c.waits).toEqual([]);
     });
 
-    // The cross-process gap: a fresh run must not start blind, or it 429s on its
-    // first call for tokens a previous run already spent.
+    // A fresh run must not start blind and 429 on tokens already spent.
     it('restores a window written by an earlier process', async () => {
         const store = memoryStore();
         const c1 = clock();
@@ -121,10 +129,9 @@ describe('RateLimiter', () => {
         const c = clock();
         const l = new RateLimiter(GROQ, { ...c.deps, store: broken });
         expect(() => l.record(100, 100)).not.toThrow();
-        await expect(l.acquire(100)).resolves.toBeUndefined();
+        await expect(l.acquire(100)).resolves.toBe(0);
     });
 
-    // The real shape of the problem: ten calls of one generation, back to back.
     it('paces a full generation across the minute boundary', async () => {
         const c = clock();
         const l = new RateLimiter(GROQ, c.deps);

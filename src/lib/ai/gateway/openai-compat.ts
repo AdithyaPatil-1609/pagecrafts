@@ -23,10 +23,7 @@ const schemaSupport = new Set<string>();
 /** Longest Retry-After we will wait out rather than advancing the chain. */
 const MAX_RETRY_AFTER_MS = 30_000;
 
-/**
- * Retry-After is either seconds or an HTTP date. Returns -1 when the header is
- * absent or unusable — distinct from `0`, which means "retry immediately".
- */
+/** Seconds or an HTTP date. Returns -1 when absent; `0` means retry immediately. */
 export function retryAfterMs(header: string | null): number {
     if (!header) return -1;
     const seconds = Number(header);
@@ -35,20 +32,12 @@ export function retryAfterMs(header: string | null): number {
     return Number.isNaN(at) ? -1 : Math.max(0, at - Date.now());
 }
 
-/** Rough token estimate for pre-dispatch ceiling checks (~4 chars per token). */
+/** ~4 chars per token. */
 function estimateTokens(text: string): number {
     return Math.ceil(text.length / 4);
 }
 
-/**
- * A gateway for any OpenAI-compatible chat-completions endpoint (Groq, Cerebras, …).
- *
- * We talk to `${baseUrl}/chat/completions` over `fetch` rather than pulling in a
- * per-vendor SDK: the wire format is identical, so one client covers them all.
- * Structured output uses `json_object` mode (universally supported) and leans on
- * the downstream Zod validation + repair for shape — see generate/plan.ts and the
- * `.catch()` safety nets in contracts/schemas/ai.ts.
- */
+/** Any OpenAI-compatible chat-completions endpoint (Groq, Cerebras, …). */
 export class OpenAICompatGateway implements NamedGateway {
     constructor(
         readonly name: Provider,
@@ -75,9 +64,7 @@ export class OpenAICompatGateway implements NamedGateway {
         if (req.system) messages.push({ role: 'system', content: req.system });
         messages.push({ role: 'user', content: req.user });
 
-        // AC-F10-5: reject an over-budget request before dispatch, not after. A
-        // non-retryable validation error stops the chain — an oversized prompt
-        // fails identically at every provider.
+        // AC-F10-5: reject before dispatch, not after.
         const estimatedInput = estimateTokens((req.system ?? '') + req.user);
         const ceiling = this.cfg.quota.maxRequestTokens;
         if (estimatedInput > ceiling) {
@@ -95,9 +82,8 @@ export class OpenAICompatGateway implements NamedGateway {
         };
 
         if (req.schema) {
-            // Strict json_schema restores the provider-side enum guarantee that
-            // Gemini's responseSchema gave us; Zod stays as the safety net. Not
-            // every hosted model supports it, so `send` degrades to json_object.
+            // Strict json_schema enforces enums provider-side; not every model
+            // supports it, so a rejection degrades to json_object below.
             body.response_format = schemaSupport.has(`${this.name}:${model}`)
                 ? { type: 'json_object' }
                 : {
@@ -122,8 +108,6 @@ export class OpenAICompatGateway implements NamedGateway {
                     signal: attemptSignal(req.job, req.signal),
                 });
             } catch (err) {
-                // Network failure or timeout — treat as "provider unavailable" so the
-                // fallback chain advances to the next provider.
                 const timedOut =
                     err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
                 throw new GatewayError(
@@ -135,10 +119,11 @@ export class OpenAICompatGateway implements NamedGateway {
             }
         };
 
-        // Pace against the provider's per-minute budget before spending it. A
-        // 429 here is not flakiness — one generation can exceed a minute's tokens.
+        // Pacing and Retry-After waits are client-side, so they are excluded from
+        // latencyMs — NFR-003 is measured on provider time, not on our own waiting.
+        let waitedMs = 0;
         const limiter = limiterFor(this.name, this.cfg.quota);
-        await limiter.acquire(estimatedInput);
+        waitedMs += await limiter.acquire(estimatedInput);
 
         let res = await send();
 
@@ -155,13 +140,15 @@ export class OpenAICompatGateway implements NamedGateway {
             }
         }
 
-        // A 429 is transient. Advancing the chain would spend a scarcer provider's
-        // quota on it, so wait out a short Retry-After and try this one again first.
+        // Advancing on a transient 429 would spend a scarcer provider's quota.
         if (res.status === 429) {
             const waitMs = retryAfterMs(res.headers.get('retry-after'));
             if (waitMs >= 0 && waitMs <= MAX_RETRY_AFTER_MS) {
                 console.warn(`[gateway] ${this.name} rate-limited; waiting ${Math.round(waitMs / 1000)}s before retrying.`);
-                if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs));
+                if (waitMs > 0) {
+                    await new Promise((r) => setTimeout(r, waitMs));
+                    waitedMs += waitMs;
+                }
                 res = await send();
             }
         }
@@ -198,7 +185,7 @@ export class OpenAICompatGateway implements NamedGateway {
             model,
             inputTokens: data.usage?.prompt_tokens ?? 0,
             outputTokens: data.usage?.completion_tokens ?? 0,
-            latencyMs: Date.now() - startedAt,
+            latencyMs: Math.max(0, Date.now() - startedAt - waitedMs),
         };
     }
 }
