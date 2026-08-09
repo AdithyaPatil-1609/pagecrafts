@@ -184,6 +184,9 @@ export const MOTIF_BY_CATEGORY: Record<string, MotifId> = {
     design: "rules",
     professional_services: "orbit",
     entertainment: "marquee",
+    hospitality: "lantern",
+    automotive: "orbit",
+    media: "marquee",
 };
 
 export function toMotifId(value: string | undefined | null): MotifId {

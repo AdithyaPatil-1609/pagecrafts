@@ -31,7 +31,12 @@ export type Category =
   | "healthcare"
   | "design"
   | "professional_services"
-  | "entertainment";
+  | "entertainment"
+  // Designs 25-36 (the third batch), on the same rule: a bucket exists because a tile is
+  // labelled with it and nothing already carried that label.
+  | "hospitality"
+  | "automotive"
+  | "media";
 
 export type FileMap = Record<string, string>;
 

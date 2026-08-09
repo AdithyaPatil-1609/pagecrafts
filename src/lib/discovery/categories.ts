@@ -14,7 +14,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   resume: "Resume",
   agency: "Agency",
   store: "E-commerce",
-  nonprofit: "Non-profit",
+  nonprofit: "Nonprofit",
   other: "Other",
   fitness: "Fitness",
   food: "Food & Beverage",
@@ -29,6 +29,9 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   design: "Design",
   professional_services: "Professional Services",
   entertainment: "Entertainment",
+  hospitality: "Hospitality",
+  automotive: "Automotive",
+  media: "Media",
 };
 
 // The cards on the intent screen (screen 03), in display order. This is the set of
@@ -58,6 +61,11 @@ export const CATEGORY_CARDS: Category[] = [
   "professional_services",
   "entertainment",
   "store",
+  // The buckets designs 25-36 brought with them.
+  "hospitality",
+  "automotive",
+  "media",
+  "nonprofit",
 ];
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);
