@@ -9,6 +9,8 @@ export default defineConfig({
             HOSTING_ACCOUNT_ID: 'pagecraft-sites',
             HOSTING_CREDENTIAL_KEY_ID: 'test-key',
             PAGECRAFT_ROOT_DOMAIN: 'pagecrafts.in',
+            UPSTASH_REDIS_REST_URL: '',
+            UPSTASH_REDIS_REST_TOKEN: '',
         },
     },
     resolve: {
