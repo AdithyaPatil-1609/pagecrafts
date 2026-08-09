@@ -379,6 +379,30 @@ paths:
                 $ref: '#/components/schemas/CreateCommitResult'
         default:
           $ref: '#/components/responses/Error'
+  /projects/{projectId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: restoreProject
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestoreRequest'
+      responses:
+        '200':
+          description: >-
+            Working tree returned to the chosen version. Additive — older history is
+            untouched (FR-075, BR-15).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestoreResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects/{projectId}/edit:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -963,6 +987,20 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+    RestoreRequest:
+      type: object
+      required: [sha]
+      properties:
+        sha:
+          type: string
+          pattern: '^[0-9a-f]{7,40}$'
+    RestoreResponse:
+      type: object
+      required: [newSha]
+      properties:
+        newSha:
+          type: string
+          pattern: '^[0-9a-f]{7,40}$'
     CreateCommitResponse:
       type: object
       required: [sha]
@@ -1052,6 +1090,14 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/ProjectFilesResponse'
+    RestoreResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/RestoreResponse'
     CreateCommitResult:
       type: object
       required: [ok, data]
