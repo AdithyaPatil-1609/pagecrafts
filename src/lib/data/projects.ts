@@ -4,6 +4,7 @@ import type {
   ProjectStatus,
   CreateProjectRequest,
   CreateProjectResponse,
+  FileMap,
   PatchProjectRequest,
   ProjectDetail,
   ProjectSummary,
@@ -11,6 +12,8 @@ import type {
 } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
+import { putProjectFiles } from "./project-files";
+import { createCommit } from "./commits";
 
 const DETAIL_COLUMNS =
   "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at, " +
@@ -115,9 +118,16 @@ export async function getProject(
   return rowToDetail(data as unknown as ProjectRow);
 }
 
-// Creates the project row. Copying the template's files into the working tree and
-// recording version #1 lands in the fork follow-up (R3 D6b) — it needs the persistence
-// acceptance's template fixture and its "no commits yet" assertion updated with it.
+// Fork a template (R3 D8).
+//
+// A person picks a design and expects to land in the editor looking at it. That means the
+// template's files are copied into the project's own working tree — a copy, never a
+// reference, so editing a project can never change the template or another project made
+// from it — and the state they arrived at is recorded as version #1. Without that first
+// commit their history starts empty and there is nothing to restore back to.
+//
+// Without a sourceTemplateId this is still just an empty project row; the generation path
+// fills one in and belongs to E4.
 export async function createProject(
   supabase: SupabaseClient,
   userId: string,
@@ -142,7 +152,40 @@ export async function createProject(
     );
   }
 
-  return { id: data.id };
+  const projectId = data.id as string;
+  if (!req.sourceTemplateId) return { id: projectId };
+
+  try {
+    const { data: template, error: templateError } = await supabase
+      .from("templates")
+      .select("name, files")
+      .eq("id", req.sourceTemplateId)
+      .maybeSingle();
+
+    if (templateError) {
+      throw new ApiError("internal", "Could not read the template.", templateError.message);
+    }
+    if (!template) throw new ApiError("not_found", "That design does not exist.");
+
+    const files = (template.files ?? {}) as FileMap;
+    await putProjectFiles(supabase, projectId, files);
+
+    const { sha } = await createCommit(
+      supabase,
+      projectId,
+      `Created from ${template.name}`,
+      "system",
+      files,
+    );
+
+    return { id: projectId, firstCommit: sha };
+  } catch (err) {
+    // A project with no files is not a draft, it is wreckage: it renders as nothing and the
+    // person cannot tell why. Remove it so they see the error and can pick again, rather
+    // than finding an empty site in their dashboard tomorrow.
+    await supabase.from("projects").delete().eq("id", projectId);
+    throw err;
+  }
 }
 
 export async function patchProject(

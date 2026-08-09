@@ -49,39 +49,32 @@ export async function putProjectFiles(
         );
     }
 
-    await loadProject(supabase, projectId);
+    // One statement (R3 D8). It removes the paths that are gone, writes the ones that
+    // changed, bumps projects.updated_at and hands it back — all or nothing.
+    //
+    // What it replaces was three separate round trips: delete, upsert, touch. A connection
+    // that dropped between the first and the second left the project with some of its files
+    // deleted and none of the new ones written, which is a site that no longer renders. The
+    // delete also built its path list by pasting file names into a string, so a name
+    // carrying a comma or a quote would have changed which rows it matched.
+    const { data, error } = await supabase.rpc('replace_project_files', {
+        p_project_id: projectId,
+        p_files: files,
+    });
 
-    const keep = Object.keys(files);
-
-    const { error: deleteError } = await supabase
-        .from('project_files')
-        .delete()
-        .eq('project_id', projectId)
-        .not('path', 'in', `(${keep.map((p) => `"${p}"`).join(',')})`);
-
-    if (deleteError) {
-        throw new ApiError('internal', 'Could not remove old files.', deleteError.message);
-    }
-
-    const rows = keep.map((path) => ({ project_id: projectId, path, content: files[path] }));
-
-    const { error: upsertError } = await supabase
-        .from('project_files')
-        .upsert(rows, { onConflict: 'project_id,path' });
-
-    if (upsertError) {
-        // The same database limits the single-file write translates. validateFileMap checks
-        // the request against the same numbers first, so reaching this means the app's caps
-        // and the trigger's have drifted apart — which is worth saying as a 422 the caller
+    if (error) {
+        if (/project_not_found/.test(error.message)) {
+            throw new ApiError('not_found', 'That project does not exist.');
+        }
+        // The per-project file and byte ceilings are trigger-raised, and validateFileMap
+        // checked the request against the same numbers first — so reaching this means the
+        // app's caps and the database's have drifted apart. Worth saying as a 422 the caller
         // can act on rather than as a 500 they cannot.
-        throw fileLimitError(upsertError.message)
-            ?? new ApiError('internal', 'Could not save the files.', upsertError.message);
+        throw fileLimitError(error.message)
+            ?? new ApiError('internal', 'Could not save the files.', error.message);
     }
 
-    // The migration ships replace_project_files(), which does all three statements
-    // atomically and returns the new updated_at. Adopting it needs tests/support/fake-db.ts
-    // to model rpc(); that lands with the fork follow-up (R3 D6b).
-    return { projectId, files, updatedAt: await touchProject(supabase, projectId) };
+    return { projectId, files, updatedAt: data as string };
 }
 
 // Bump projects.updated_at so the dashboard orders by real activity.
