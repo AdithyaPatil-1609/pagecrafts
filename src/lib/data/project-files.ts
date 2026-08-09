@@ -70,28 +70,31 @@ export async function putProjectFiles(
         .upsert(rows, { onConflict: 'project_id,path' });
 
     if (upsertError) {
-        throw new ApiError('internal', 'Could not save the files.', upsertError.message);
+        // The same database limits the single-file write translates. validateFileMap checks
+        // the request against the same numbers first, so reaching this means the app's caps
+        // and the trigger's have drifted apart — which is worth saying as a 422 the caller
+        // can act on rather than as a 500 they cannot.
+        throw fileLimitError(upsertError.message)
+            ?? new ApiError('internal', 'Could not save the files.', upsertError.message);
     }
 
-    const { data: touched, error: touchError } = await supabase
-        .from('projects')
-        .update({ name: undefined })
-        .eq('id', projectId)
-        .select('updated_at')
-        .single();
-
-    if (touchError) {
-        throw new ApiError('internal', 'Could not update the project.', touchError.message);
-    }
-
-    return { projectId, files, updatedAt: touched.updated_at };
+    return { projectId, files, updatedAt: await touchProject(supabase, projectId) };
 }
-// Bump projects.updated_at so the dashboard orders by real activity. The empty update
-// still fires the set_updated_at trigger (same pattern as putProjectFiles above).
+
+// Bump projects.updated_at so the dashboard orders by real activity.
+//
+// The column is written explicitly rather than by sending an empty update. `{ name:
+// undefined }` looks like a no-op update that would still fire the set_updated_at trigger,
+// but supabase-js serialises the payload with JSON.stringify, which drops undefined — so
+// what reaches PostgREST is `{}`, an update with no columns to set, and every file write
+// failed on it with a 500 (found by the R3 D5 acceptance).
+//
+// The trigger still overwrites this value with now(), so the timestamp remains the
+// database's to decide; what changed is that the statement is now a valid one.
 async function touchProject(supabase: SupabaseClient, projectId: string): Promise<string> {
     const { data, error } = await supabase
         .from('projects')
-        .update({ name: undefined })
+        .update({ updated_at: new Date().toISOString() })
         .eq('id', projectId)
         .select('updated_at')
         .single();
