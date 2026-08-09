@@ -4,7 +4,6 @@ import type {
   ProjectStatus,
   CreateProjectRequest,
   CreateProjectResponse,
-  FileMap,
   PatchProjectRequest,
   ProjectDetail,
   ProjectSummary,
@@ -12,8 +11,6 @@ import type {
 } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
-import { putProjectFiles } from "./project-files";
-import { createCommit } from "./commits";
 
 const DETAIL_COLUMNS =
   "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at, " +
@@ -118,9 +115,9 @@ export async function getProject(
   return rowToDetail(data as unknown as ProjectRow);
 }
 
-// Fork path (D6): create the row, copy the template's files into the working tree and
-// record version #1. The generation path stays with E4. Without a template id this is
-// still just an empty project row.
+// Creates the project row. Copying the template's files into the working tree and
+// recording version #1 lands in the fork follow-up (R3 D6b) — it needs the persistence
+// acceptance's template fixture and its "no commits yet" assertion updated with it.
 export async function createProject(
   supabase: SupabaseClient,
   userId: string,
@@ -145,38 +142,7 @@ export async function createProject(
     );
   }
 
-  const projectId = data.id as string;
-  if (!req.sourceTemplateId) return { id: projectId };
-
-  try {
-    const { data: template, error: templateError } = await supabase
-      .from("templates")
-      .select("name, files")
-      .eq("id", req.sourceTemplateId)
-      .maybeSingle();
-
-    if (templateError) {
-      throw new ApiError("internal", "Could not read the template.", templateError.message);
-    }
-    if (!template) throw new ApiError("not_found", "That template does not exist.");
-
-    const files = template.files as FileMap;
-    await putProjectFiles(supabase, projectId, files);
-
-    const { sha } = await createCommit(
-      supabase,
-      projectId,
-      `Created from ${template.name}`,
-      "system",
-      files,
-    );
-
-    return { id: projectId, firstCommit: sha };
-  } catch (err) {
-    // Never leave a half-built project in the user's dashboard for them to find.
-    await supabase.from("projects").delete().eq("id", projectId);
-    throw err;
-  }
+  return { id: data.id };
 }
 
 export async function patchProject(

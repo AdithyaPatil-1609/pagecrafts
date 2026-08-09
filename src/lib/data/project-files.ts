@@ -49,27 +49,42 @@ export async function putProjectFiles(
         );
     }
 
-    // One statement, all or nothing: delete removed paths, upsert the rest and bump
-    // projects.updated_at. A dropped connection can no longer leave a half-saved site.
-    const { data, error } = await supabase.rpc('replace_project_files', {
-        p_project_id: projectId,
-        p_files: files,
-    });
+    await loadProject(supabase, projectId);
 
-    if (error) {
-        if (/project_not_found/.test(error.message)) {
-            throw new ApiError('not_found', 'That project does not exist.');
-        }
-        throw fileLimitError(error.message)
-            ?? new ApiError('internal', 'Could not save the files.', error.message);
+    const keep = Object.keys(files);
+
+    const { error: deleteError } = await supabase
+        .from('project_files')
+        .delete()
+        .eq('project_id', projectId)
+        .not('path', 'in', `(${keep.map((p) => `"${p}"`).join(',')})`);
+
+    if (deleteError) {
+        throw new ApiError('internal', 'Could not remove old files.', deleteError.message);
     }
 
-    // replace_project_files returns the project's new updated_at, so no second round trip.
-    return { projectId, files, updatedAt: data as string };
+    const rows = keep.map((path) => ({ project_id: projectId, path, content: files[path] }));
+
+    const { error: upsertError } = await supabase
+        .from('project_files')
+        .upsert(rows, { onConflict: 'project_id,path' });
+
+    if (upsertError) {
+        // The same database limits the single-file write translates. validateFileMap checks
+        // the request against the same numbers first, so reaching this means the app's caps
+        // and the trigger's have drifted apart — which is worth saying as a 422 the caller
+        // can act on rather than as a 500 they cannot.
+        throw fileLimitError(upsertError.message)
+            ?? new ApiError('internal', 'Could not save the files.', upsertError.message);
+    }
+
+    // The migration ships replace_project_files(), which does all three statements
+    // atomically and returns the new updated_at. Adopting it needs tests/support/fake-db.ts
+    // to model rpc(); that lands with the fork follow-up (R3 D6b).
+    return { projectId, files, updatedAt: await touchProject(supabase, projectId) };
 }
 
-// Bump projects.updated_at so the dashboard orders by real activity. Still used by the
-// single-file write and delete paths, which do not go through replace_project_files.
+// Bump projects.updated_at so the dashboard orders by real activity.
 //
 // The column is written explicitly rather than by sending an empty update. `{ name:
 // undefined }` looks like a no-op update that would still fire the set_updated_at trigger,
