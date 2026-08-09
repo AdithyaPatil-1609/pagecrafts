@@ -1,14 +1,14 @@
 import { MAX_SECTIONS, SECTION_KEYS, type SectionKey } from '@/lib/contracts';
 import { variantsFor } from '../sections/contracts';
 
-/** A section as the model proposed it — `type` may be anything until validated here. */
+/** As proposed by the model; `type` is unvalidated. */
 export interface PlannedSection {
     type: string;
     variant: string;
     brief: string;
 }
 
-/** A section after normalisation — `type` is guaranteed to be a registered key. */
+/** After normalisation; `type` is a registered key. */
 export interface NormalisedSection {
     type: SectionKey;
     variant: string;
@@ -28,7 +28,6 @@ export function normalisePlan(sections: PlannedSection[]): NormalisedPlan {
 
     const valid: NormalisedSection[] = [];
     for (const s of sections) {
-        // Unknown section type — drop it and report, rather than fail the plan.
         if (!isSectionKey(s.type)) {
             repairs.push(`dropped unknown section type "${s.type}"`);
             continue;

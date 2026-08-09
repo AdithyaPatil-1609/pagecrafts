@@ -6,10 +6,9 @@ import { CATEGORY_LIST } from '../schemas';
 import { variantMenu } from '../sections/contracts';
 
 /**
- * Every allowed-value list a prompt may name, generated from the registries that
- * define them. Templates read these through `render()`, which merges them
- * automatically — so adding a `{{...}}` to a template cannot break a caller that
- * does not know about it, and no list is ever hand-copied into a second place.
+ * Every allowed-value list a prompt may name, generated from its registry.
+ * `render()` merges these, so a template can add a `{{...}}` without breaking
+ * callers and no list is hand-copied into a prompt.
  */
 export function registryVars(): Record<string, string> {
     return {

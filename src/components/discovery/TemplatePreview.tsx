@@ -67,15 +67,40 @@ function SearchGlyph({ color }: { color: string }) {
     );
 }
 
-export function TemplatePreview({ preview }: { preview: PreviewSpec }) {
+export function TemplatePreview({
+    preview,
+    priority = false,
+}: {
+    preview: PreviewSpec;
+    /**
+     * Set on the handful of tiles above the fold. Everything else waits until it is
+     * scrolled towards — a gallery of twelve designs must not spend its first paint on
+     * photographs nobody has looked at yet (NFR-001, first paint under 1.5s on 4G).
+     */
+    priority?: boolean;
+}) {
     const { wordmark, nav, headline, subhead, cta, layout, motif, heroImage, palette } = preview;
 
     // The design's own hero photograph where it ships one, drawn edge-to-edge so the tile
     // reads as the page it advertises; the code-drawn motif is the fallback for designs
     // that carry none. Decorative here — the tile's name and category sit around it.
+    //
+    // Width and height are declared so the browser reserves the space before the bytes
+    // arrive: without them a lazy image lands into a collapsed box and shoves the grid
+    // down as it loads. They are the miniature's own aspect (16:10), not the file's.
     const art = heroImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={heroImage} alt="" aria-hidden className="size-full object-cover" />
+        <img
+            src={heroImage}
+            alt=""
+            aria-hidden
+            width={640}
+            height={400}
+            loading={priority ? "eager" : "lazy"}
+            decoding="async"
+            {...(priority ? { fetchPriority: "high" as const } : {})}
+            className="size-full object-cover"
+        />
     ) : (
         <MotifArt motif={motif} palette={palette} className="size-full" />
     );

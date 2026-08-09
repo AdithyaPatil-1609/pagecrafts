@@ -7,17 +7,7 @@ import {
     type NamedGateway,
 } from './provider';
 
-/**
- * Decide whether a failure should advance the chain or stop it.
- *
- * The chain covers **availability, not quality**. It advances when a provider is
- * rate-limited, unreachable, unfunded or misconfigured — all provider-specific,
- * so the next one may well serve. It stops immediately on a request-shape fault
- * (`validation_failed`, a non-retryable 400), because that fault reproduces
- * identically at every provider and advancing would burn the chain to learn
- * nothing. Downstream Zod validation throws *outside* the gateway, so it never
- * reaches here: quality failures were never the chain's job.
- */
+/** Defines error conditions where fallback logic should try the next provider. */
 const ADVANCE_ON: ReadonlySet<string> = new Set([
     'rate_limited', 'unauthorized', 'forbidden', 'payment_required',
     'spend_capped', 'not_found', 'hosting_error',
@@ -33,27 +23,15 @@ function shouldAdvance(err: unknown): boolean {
         if (err.code === 'validation_failed') return false;
         return err.retryable || ADVANCE_ON.has(err.code);
     }
-    // Unknown / network-shaped errors — try the next provider.
     return true;
 }
 
-/**
- * Tries a chain of providers in priority order under a single overall deadline.
- *
- * With the default chain this means: Groq first, then Cerebras when Groq is
- * exhausted or unavailable, and finally Gemini as the last resort. The whole
- * request shares one budget (B3 / NFR-003), so three providers cannot stack
- * three timeouts — each attempt runs against the remaining time.
- */
+/** Tries a chain of providers in priority order under a single overall deadline. */
 export class FallbackGateway implements Gateway {
     /** Repeating conditions already reported, so a dead provider logs once. */
     private readonly warned = new Set<string>();
 
-    /**
-     * Providers dropped for this gateway's lifetime. A missing key or an unfunded
-     * account will not recover mid-run, and re-attempting it buys only a wasted
-     * round-trip on every later call before the working provider serves.
-     */
+    /** Dropped for this gateway's lifetime; retrying them only costs a round-trip. */
     private readonly disabled = new Set<string>();
 
     constructor(
@@ -79,8 +57,7 @@ export class FallbackGateway implements Gateway {
 
         const failures: string[] = [];
 
-        // Never disable the last provider standing — a bad chain should surface
-        // its real error, not an empty-chain one.
+        // Never disable the last provider standing.
         const usable = this.chain.filter((gw) => !this.disabled.has(gw.name));
         const chain = usable.length ? usable : this.chain;
 
@@ -99,8 +76,7 @@ export class FallbackGateway implements Gateway {
                 const message = err instanceof Error ? err.message : String(err);
                 failures.push(`${gw.name}: ${message}`);
 
-                // A wrong key or an unfunded account is a config mistake, not an
-                // outage — say so once, and name the thing to go and fix.
+                // Config mistakes, not outages — name the thing to go and fix.
                 if (err instanceof GatewayError) {
                     if (err.code === 'unauthorized' || err.code === 'forbidden') {
                         this.warnOnce(
@@ -134,9 +110,7 @@ export class FallbackGateway implements Gateway {
             'generation_failed',
             `all AI providers failed — ${failures.join(' | ')}`,
             false,
-            // `chainExhausted` marks this as an availability failure, not a bad
-            // reply. The repair path must not retry it: every provider has already
-            // been tried, so another attempt only spends quota that is not there.
+            // An availability failure, not a bad reply — the repair path skips it.
             { failures, chainExhausted: true },
         );
     }

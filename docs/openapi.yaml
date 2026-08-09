@@ -26,6 +26,92 @@ paths:
                 $ref: '#/components/schemas/GenerateSiteResult'
         default:
           $ref: '#/components/responses/Error'
+  # The design library (R2). Public, read-only: choosing a design happens before anyone has
+  # an account, so a door here would be a door in the middle of the funnel.
+  /templates:
+    get:
+      operationId: listTemplates
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/Category'
+        - name: colour
+          in: query
+          schema:
+            type: string
+            enum: [light, dark]
+        - name: layout
+          in: query
+          schema:
+            type: string
+            enum: [split, full-bleed, centered, showcase]
+        - name: feature
+          in: query
+          schema:
+            type: string
+            enum: [form, list, photo]
+        - name: tier
+          in: query
+          schema:
+            $ref: '#/components/schemas/TemplateTier'
+        - name: q
+          in: query
+          description: Free text over a design's name, description and tags.
+          schema:
+            type: string
+            maxLength: 100
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [recommended, free-first, premium-first, name]
+        - name: intent
+          in: query
+          description: >-
+            The classifier's category for a described site. Orders the gallery by the
+            deterministic score; unlike `category` it never filters (D5).
+          schema:
+            $ref: '#/components/schemas/Category'
+        - name: tone
+          in: query
+          schema:
+            type: string
+            enum: [playful, formal, minimal, bold, warm]
+        - name: palette
+          in: query
+          schema:
+            type: string
+            enum: [light, dark, colourful, muted]
+      responses:
+        '200':
+          description: >-
+            Matching designs, ordered. An unrecognised filter value is ignored rather than
+            refused, so a stale link answers with a broader gallery (D-4, FR-035).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateListResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /templates/{templateId}:
+    parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getTemplate
+      responses:
+        '200':
+          description: One design, for the detail modal (screen 05).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateDetailResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects:
     get:
       operationId: listProjects
@@ -393,7 +479,173 @@ components:
   schemas:
     Category:
       type: string
-      enum: [portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other]
+      # The frozen ten, plus the finer buckets the R2 library refresh added so each design
+      # reads with the right label and the classifier can route intent to it.
+      enum: [portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other,
+             fitness, food, photography, architecture, education, travel, business]
+    TemplateTier:
+      type: string
+      enum: [free, premium, signature]
+    TemplatePalette:
+      type: object
+      required: [bg, ink, muted, accent, panel]
+      properties:
+        bg: { type: string }
+        ink: { type: string }
+        muted: { type: string }
+        accent: { type: string }
+        panel: { type: string }
+    # The miniature a tile draws, parsed from the design's own markup so a card can never
+    # advertise a layout the template does not have. Static: never a live iframe (D-3).
+    TemplatePreview:
+      type: object
+      required: [wordmark, nav, headline, subhead, cta, layout, motif, palette]
+      properties:
+        wordmark: { type: string }
+        nav:
+          type: array
+          items: { type: string }
+        headline: { type: string }
+        subhead: { type: string }
+        cta: { type: string }
+        layout:
+          type: string
+          enum: [split, full-bleed, centered, showcase]
+        motif: { type: string }
+        heroImage:
+          type: string
+          description: Absolute https URL, or absent when the design ships no photograph.
+        palette:
+          $ref: '#/components/schemas/TemplatePalette'
+    TemplateSummary:
+      type: object
+      required: [id, name, description, category, tags, tier, priceInr, thumbnailUrl, colour,
+                 layout, features, preview, score]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        category:
+          $ref: '#/components/schemas/Category'
+        tags:
+          type: array
+          items: { type: string }
+        tier:
+          $ref: '#/components/schemas/TemplateTier'
+        priceInr:
+          type: integer
+        thumbnailUrl:
+          type: [string, 'null']
+          description: Null until a thumbnail has actually been rendered — never a URL that 404s.
+        colour:
+          type: string
+          enum: [light, dark]
+        layout:
+          type: string
+          enum: [split, full-bleed, centered, showcase]
+        features:
+          type: array
+          items:
+            type: string
+            enum: [form, list, photo]
+        preview:
+          $ref: '#/components/schemas/TemplatePreview'
+        score:
+          type: integer
+          description: Deterministic relevance for this query; 0 when nothing was asked for (D-5).
+    TemplateListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateSummary'
+        total:
+          type: integer
+          description: Designs in the library before filters, for the "showing N of M" line.
+    ContentField:
+      type: object
+      required: [key, label, type]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        type:
+          type: string
+          enum: [text, richtext, image, color, select, list]
+        options:
+          type: array
+          items: { type: string }
+        itemSchema:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentField'
+        maxLength:
+          type: integer
+    ContentSchema:
+      type: object
+      required: [sections]
+      properties:
+        sections:
+          type: array
+          items:
+            type: object
+            required: [key, label, fields]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              fields:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContentField'
+    TemplateFileEntry:
+      type: object
+      required: [path, bytes]
+      properties:
+        path: { type: string }
+        bytes: { type: integer }
+    TemplateDetail:
+      type: object
+      required: [id, name, description, category, tags, thumbnailUrl, contentSchema, files,
+                 preview, license, sourceUrl, tier, priceInr, editable]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        category:
+          $ref: '#/components/schemas/Category'
+        tags:
+          type: array
+          items: { type: string }
+        thumbnailUrl: { type: string }
+        contentSchema:
+          $ref: '#/components/schemas/ContentSchema'
+        files:
+          type: array
+          description: The file map as a manifest — path and size, never the file bodies.
+          items:
+            $ref: '#/components/schemas/TemplateFileEntry'
+        preview:
+          $ref: '#/components/schemas/TemplatePreview'
+        license:
+          type: string
+          description: Non-null provenance (C-06).
+        sourceUrl:
+          type: string
+        tier:
+          $ref: '#/components/schemas/TemplateTier'
+        priceInr:
+          type: integer
+        editable:
+          type: array
+          description: What the person can change, read straight off content_schema (C-07).
+          items:
+            type: object
+            required: [key, label, fields]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              fields: { type: integer }
     FileMap:
       type: object
       additionalProperties:
@@ -832,6 +1084,22 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/DeploymentResponse'
+    TemplateListResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/TemplateListResponse'
+    TemplateDetailResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/TemplateDetail'
     ProjectFileResult:
       type: object
       required: [ok, data]

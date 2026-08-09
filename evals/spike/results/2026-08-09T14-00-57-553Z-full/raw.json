@@ -1,0 +1,4056 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 649,
+        "outputTokens": 413,
+        "latencyMs": 931
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 924,
+        "outputTokens": 1094,
+        "latencyMs": 2754
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 543,
+        "outputTokens": 301,
+        "latencyMs": 4794
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 232,
+        "outputTokens": 121,
+        "latencyMs": 3713
+      },
+      {
+        "stage": "fill",
+        "section": "about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 419,
+        "outputTokens": 223,
+        "latencyMs": 1049
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 221,
+        "outputTokens": 186,
+        "latencyMs": 3511
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 406,
+        "outputTokens": 377,
+        "latencyMs": 1553
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 427,
+        "outputTokens": 701,
+        "latencyMs": 9002
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 365,
+        "outputTokens": 190,
+        "latencyMs": 6922
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "dental-clinic",
+      "artDirection": {
+        "themeId": "clinical-blue",
+        "motionId": "calm",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Dental Clinic",
+        "description": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Welcome families to our Koramangala clinic with a friendly invitation to book their next dental appointment.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Family Dental Practice in Koramangala",
+            "heading": "Gentle dental care for every member of your family",
+            "sub": "From routine check-ups and braces to root canal therapy, we make visits comfortable and stress-free for patients of all ages.",
+            "ctaLabel": "Book an Appointment",
+            "image": {
+              "query": "friendly family dentist checkup smiling",
+              "alt": "A smiling family during a routine dental consultation in a bright clinic"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Introduce our family-focused dental practice in Koramangala and our commitment to gentle, stress-free care.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Gentle, Family‑Focused Dental Care in Koramangala",
+            "body": "Our clinic in Koramangala provides check‑ups, root canals, braces and more, all delivered with a gentle, stress‑free approach. We treat every patient like family, creating a calm environment where comfort comes first.",
+            "image": {
+              "query": "family dental clinic Koramangala interior",
+              "alt": "Bright clinic interior with comfortable treatment rooms"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Detail our key dental services including routine check-ups, gentle root canals, and modern braces.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Gentle dental care for your family",
+            "items": [
+              {
+                "title": "Routine check-ups & cleaning",
+                "body": "Keep your smile healthy and bright. We provide thorough oral health assessments, gentle cleanings, and early cavity detection to prevent future dental issues."
+              },
+              {
+                "title": "Gentle root canal therapy",
+                "body": "Relieve persistent tooth pain and save your natural tooth. Our modern techniques ensure your root canal treatment is comfortable, quiet, and completely stress-free."
+              },
+              {
+                "title": "Modern braces & aligners",
+                "body": "Straighten your teeth and improve your bite. From traditional braces to clear, comfortable aligners, we design personalized treatment plans for adults and children."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Share heartwarming reviews and happy smiles from local families we have treated.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "What Our Patients Say",
+            "items": [
+              {
+                "quote": "The team at the clinic made my child's first visit fun and painless – now she looks forward to every check‑up!",
+                "author": "Ravi K., patient"
+              },
+              {
+                "quote": "Thanks to the gentle care and clear explanations, my braces journey was smooth and confidence‑boosting.",
+                "author": "Anita S., patient"
+              },
+              {
+                "quote": "From routine cleaning to a complex root canal, the staff handled everything with expertise and a warm smile.",
+                "author": "Manoj D., patient"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Provide our Koramangala clinic location, contact details, and an easy form to book or request an appointment.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Contact Our Koramangala Clinic",
+            "blurb": "We’re ready to schedule your check‑up, root canal or braces appointment. Get in touch with us today.",
+            "address": "Koramangala, Bengaluru",
+            "phone": "(XXX) XXX‑XXXX",
+            "email": "info@dentalclinic.com",
+            "hours": "Mon‑Fri 9 am – 6 pm, Sat 9 am – 2 pm"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "Display copyright info, opening hours, and quick links to our services and booking system.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Keeping Koramangala smiles bright—open Mon‑Fri 9 am‑7 pm."
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 34229,
+    "wallClockMs": 111374,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 649,
+        "outputTokens": 413,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 931,
+        "createdAt": "2026-08-09T13:48:56.876Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 924,
+        "outputTokens": 1094,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2754,
+        "createdAt": "2026-08-09T13:48:59.633Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "inputTokens": 543,
+        "outputTokens": 301,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 4794,
+        "createdAt": "2026-08-09T13:49:24.432Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 232,
+        "outputTokens": 121,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 3713,
+        "createdAt": "2026-08-09T13:49:55.225Z"
+      },
+      {
+        "stage": "fill:about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 419,
+        "outputTokens": 223,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1049,
+        "createdAt": "2026-08-09T13:49:56.278Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 221,
+        "outputTokens": 186,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 3511,
+        "createdAt": "2026-08-09T13:50:29.837Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 406,
+        "outputTokens": 377,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1553,
+        "createdAt": "2026-08-09T13:50:31.391Z"
+      },
+      {
+        "stage": "fill:contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 427,
+        "outputTokens": 701,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 9002,
+        "createdAt": "2026-08-09T13:50:40.394Z"
+      },
+      {
+        "stage": "fill:footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 365,
+        "outputTokens": 190,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 6922,
+        "createdAt": "2026-08-09T13:50:47.317Z"
+      }
+    ],
+    "spend": {
+      "calls": 9,
+      "inputTokens": 4186,
+      "outputTokens": 3606,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "law-firm",
+    "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 641,
+        "outputTokens": 301,
+        "latencyMs": 469
+      },
+      {
+        "stage": "profile",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 467,
+        "outputTokens": 414,
+        "latencyMs": 5483
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 844,
+        "outputTokens": 770,
+        "latencyMs": 2108
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 445,
+        "outputTokens": 340,
+        "latencyMs": 8266
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 405,
+        "outputTokens": 280,
+        "latencyMs": 5115
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 410,
+        "outputTokens": 365,
+        "latencyMs": 3351
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 412,
+        "outputTokens": 455,
+        "latencyMs": 5313
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 398,
+        "outputTokens": 379,
+        "latencyMs": 14152
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 411,
+        "outputTokens": 487,
+        "latencyMs": 9416
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 355,
+        "outputTokens": 76,
+        "latencyMs": 5752
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "law-firm",
+      "artDirection": {
+        "themeId": "deep-luxury",
+        "motionId": "editorial",
+        "radiusId": "sharp",
+        "spacingId": "airy",
+        "imageryId": "bold-contrast"
+      },
+      "meta": {
+        "title": "Law Firm",
+        "description": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Prominent headline with the firm’s core expertise in property and family law and a call‑to‑action for a confidential consultation.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Property & Family Law",
+            "heading": "Trusted Expertise in Property and Family Law",
+            "sub": "Over 20 years of dedicated representation for clients in real estate and family matters. Confidential consultations are available.",
+            "ctaLabel": "Request Confidential Consultation",
+            "image": {
+              "query": "law firm office consultation",
+              "alt": "Attorney meeting with a client in a modern office"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Brief narrative of the firm’s founding, commitment to justice, and decades of experience.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our History",
+            "body": "Founded in 1992, our firm has devoted more than three decades to protecting property rights and family interests. Guided by an unwavering commitment to justice, we combine seasoned expertise with personalized service for every client.",
+            "image": {
+              "query": "law firm office exterior historic building",
+              "alt": "Exterior view of the law firm's office building"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List of key practice areas such as property transactions, family law, estate planning, and civil litigation, each with a concise description.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Practice Areas",
+            "items": [
+              {
+                "title": "Property Transactions",
+                "body": "Guidance through conveyancing, purchases, sales, and lease agreements, ensuring compliance and protection of client interests."
+              },
+              {
+                "title": "Family Law",
+                "body": "Comprehensive representation in divorce, child custody, support, and marital agreements, prioritizing client welfare."
+              },
+              {
+                "title": "Estate Planning",
+                "body": "Drafting wills, trusts, and powers of attorney to preserve assets and reflect client intentions."
+              },
+              {
+                "title": "Civil Litigation",
+                "body": "Advocacy in contractual disputes, personal injury, and other civil matters, delivering strategic solutions for clients."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "team",
+          "variant": "grid",
+          "brief": "Cards presenting each attorney with photo, name, title, bar admissions, and years of experience.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Attorneys",
+            "members": [
+              {
+                "name": "John A. Smith, Esq.",
+                "role": "Partner – Real Estate Law",
+                "bio": "Admitted to the State Bar of California, 2005. 19 years experience handling residential and commercial property transactions and family law matters."
+              },
+              {
+                "name": "Maria L. Gomez, Esq.",
+                "role": "Associate – Family Law",
+                "bio": "Admitted to the State Bar of California, 2012. 11 years experience in divorce, child custody, and support cases."
+              },
+              {
+                "name": "David K. Lee, Esq.",
+                "role": "Senior Counsel – Property & Probate",
+                "bio": "Admitted to the State Bar of California, 1998. 24 years experience in real estate, probate, and estate planning."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Anonymized client testimonials highlighting successful outcomes in property and family matters.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Client Testimonials",
+            "items": [
+              {
+                "quote": "The firm secured a swift and favourable settlement in my divorce, preserving my assets and ensuring a fair custody arrangement.",
+                "author": "Client, Family Law"
+              },
+              {
+                "quote": "Our property purchase was complicated by title issues; the attorneys resolved them efficiently, allowing us to close on schedule.",
+                "author": "Client, Real Estate Transaction"
+              },
+              {
+                "quote": "During a contested will, the firm’s thorough preparation led to a resolution that honored my father's wishes without protracted litigation.",
+                "author": "Client, Estate Matter"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Contact section with a secure consultation request form alongside an office location map.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Contact Our Firm",
+            "blurb": "Request a confidential consultation with our experienced property and family law team. Our office is open for client meetings during the hours below.",
+            "address": "Office address",
+            "phone": "Phone number",
+            "email": "Email address",
+            "hours": "Mon‑Fri 9:00 am – 5:00 pm"
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Footer with mandatory legal disclaimer, attorney advertising notice, and office location details.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Experienced attorneys dedicated to property and family law"
+          }
+        }
+      ]
+    },
+    "requests": 10,
+    "modelTimeMs": 59425,
+    "wallClockMs": 60558,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 641,
+        "outputTokens": 301,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 469,
+        "createdAt": "2026-08-09T13:50:47.787Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "profile.v1",
+        "inputTokens": 467,
+        "outputTokens": 414,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 5483,
+        "createdAt": "2026-08-09T13:50:54.394Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 844,
+        "outputTokens": 770,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2108,
+        "createdAt": "2026-08-09T13:50:56.503Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 445,
+        "outputTokens": 340,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 8266,
+        "createdAt": "2026-08-09T13:51:04.770Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 405,
+        "outputTokens": 280,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 5115,
+        "createdAt": "2026-08-09T13:51:09.886Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 410,
+        "outputTokens": 365,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 3351,
+        "createdAt": "2026-08-09T13:51:13.237Z"
+      },
+      {
+        "stage": "fill:team/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 412,
+        "outputTokens": 455,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 5313,
+        "createdAt": "2026-08-09T13:51:18.552Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 398,
+        "outputTokens": 379,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 14152,
+        "createdAt": "2026-08-09T13:51:32.705Z"
+      },
+      {
+        "stage": "fill:contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 411,
+        "outputTokens": 487,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 9416,
+        "createdAt": "2026-08-09T13:51:42.123Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 355,
+        "outputTokens": 76,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 5752,
+        "createdAt": "2026-08-09T13:51:47.875Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 4788,
+      "outputTokens": 3867,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "yoga-studio",
+    "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 642,
+        "outputTokens": 520,
+        "latencyMs": 943
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 924,
+        "outputTokens": 850,
+        "latencyMs": 9982
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 815,
+        "outputTokens": 872,
+        "latencyMs": 13467
+      },
+      {
+        "stage": "fill",
+        "section": "hero/minimal",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 437,
+        "outputTokens": 259,
+        "latencyMs": 7573
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 400,
+        "outputTokens": 304,
+        "latencyMs": 14075
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 393,
+        "outputTokens": 368,
+        "latencyMs": 9475
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 395,
+        "outputTokens": 296,
+        "latencyMs": 864
+      },
+      {
+        "stage": "fill",
+        "section": "team/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 403,
+        "outputTokens": 256,
+        "latencyMs": 5488
+      },
+      {
+        "stage": "fill",
+        "section": "team/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 440,
+        "outputTokens": 272,
+        "latencyMs": 946
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 390,
+        "outputTokens": 242,
+        "latencyMs": 9108
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 393,
+        "outputTokens": 528,
+        "latencyMs": 1593
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "yoga-studio",
+      "artDirection": {
+        "themeId": "calm-sage",
+        "motionId": "calm",
+        "radiusId": "soft",
+        "spacingId": "airy",
+        "imageryId": "warm-natural"
+      },
+      "meta": {
+        "title": "Yoga Studio",
+        "description": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "minimal",
+          "brief": "Show a calming hero image with the studio’s tagline and a button to join a class.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Find Your Balance",
+            "heading": "Gentle Yoga for Every Student",
+            "sub": "Join a class and experience calm movement in a welcoming space.",
+            "ctaLabel": "Reserve Your Spot",
+            "image": {
+              "query": "calm yoga studio interior with natural light",
+              "alt": "Soft-lit studio with mats arranged for a class"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Share the studio’s story and philosophy in concise text.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Story",
+            "body": "We created a calm, simple space where every student can explore yoga at their own pace. Our approach blends mindful movement with clear instruction, fostering balance on and off the mat.",
+            "image": {
+              "query": "calm yoga studio interior",
+              "alt": "Sunlit studio with wooden floors and simple décor"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List the yoga classes and workshops offered.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Classes & Workshops",
+            "items": [
+              {
+                "title": "Morning Flow",
+                "body": "Mon‑Fri 7am–8am"
+              },
+              {
+                "title": "Power Vinyasa",
+                "body": "Tue & Thu 6pm–7pm"
+              },
+              {
+                "title": "Evening Restorative",
+                "body": "Mon & Wed 8pm–9pm"
+              },
+              {
+                "title": "Weekend Yin",
+                "body": "Sat 9am–10am"
+              },
+              {
+                "title": "Monthly Workshop: Mindful Movement",
+                "body": "First Saturday each month 10am–12pm"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "gallery",
+          "variant": "grid",
+          "brief": "Display clean grid photos of classes and studio space.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Studio Gallery",
+            "images": [
+              {
+                "query": "yoga studio interior",
+                "alt": "Warm wooden studio with neatly arranged yoga mats"
+              },
+              {
+                "query": "yoga class in session",
+                "alt": "Instructor guiding students through a flow"
+              },
+              {
+                "query": "yoga props display",
+                "alt": "Shelf with blocks, straps, and bolsters"
+              },
+              {
+                "query": "peaceful meditation corner",
+                "alt": "Soft lighting and cushions for meditation"
+              },
+              {
+                "query": "outdoor yoga session",
+                "alt": "Students practicing on a lawn at sunrise"
+              },
+              {
+                "query": "studio reception area",
+                "alt": "Front desk with calming décor and plant"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "team",
+          "variant": "cards",
+          "brief": "Introduce each instructor with a short bio.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Instructors",
+            "members": [
+              {
+                "name": "Ava Patel",
+                "role": "Lead Instructor",
+                "bio": "15 years of Vinyasa flow, guiding students to mindful movement."
+              },
+              {
+                "name": "Liam Chen",
+                "role": "Assistant Instructor",
+                "bio": "Specializes in restorative yoga and breath work for stress relief."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Feature brief student reviews.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Student testimonials",
+            "items": [
+              {
+                "quote": "The classes help me find calm and focus.",
+                "author": "A. Student"
+              },
+              {
+                "quote": "Simple, clear instruction – perfect for my busy schedule.",
+                "author": "B. Student"
+              },
+              {
+                "quote": "I love the welcoming vibe and supportive community.",
+                "author": "C. Student"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Answer common questions about classes and policies.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "What are the class times?",
+                "answer": "Classes run Monday‑Friday 6‑7 am, 12‑1 pm, and 6‑7 pm; Saturday 9‑10 am and 11‑12 pm."
+              },
+              {
+                "question": "Do I need prior yoga experience?",
+                "answer": "No. All levels are welcome; we offer beginner, intermediate and advanced classes."
+              },
+              {
+                "question": "How do I book a spot?",
+                "answer": "Book online via our schedule or call the studio; a credit card is required to hold your place."
+              },
+              {
+                "question": "What is your cancellation policy?",
+                "answer": "Cancellations must be made at least 24 hours before class for a full refund; otherwise the fee is non‑refundable."
+              },
+              {
+                "question": "What should I bring?",
+                "answer": "Bring a mat, water bottle, and wear comfortable clothing. Props are provided if needed."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "requests": 11,
+    "modelTimeMs": 73514,
+    "wallClockMs": 73522,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 642,
+        "outputTokens": 520,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 943,
+        "createdAt": "2026-08-09T13:51:48.819Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 924,
+        "outputTokens": 850,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 9982,
+        "createdAt": "2026-08-09T13:51:58.802Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 815,
+        "outputTokens": 872,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 13467,
+        "createdAt": "2026-08-09T13:52:12.269Z"
+      },
+      {
+        "stage": "fill:hero/minimal",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 437,
+        "outputTokens": 259,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 7573,
+        "createdAt": "2026-08-09T13:52:19.844Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 400,
+        "outputTokens": 304,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 14075,
+        "createdAt": "2026-08-09T13:52:33.920Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 393,
+        "outputTokens": 368,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 9475,
+        "createdAt": "2026-08-09T13:52:43.395Z"
+      },
+      {
+        "stage": "fill:gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 395,
+        "outputTokens": 296,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 864,
+        "createdAt": "2026-08-09T13:52:44.260Z"
+      },
+      {
+        "stage": "fill:team/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 403,
+        "outputTokens": 256,
+        "costCents": 0,
+        "status": "failed",
+        "latencyMs": 5488,
+        "createdAt": "2026-08-09T13:52:49.750Z"
+      },
+      {
+        "stage": "fill:team/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 440,
+        "outputTokens": 272,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 946,
+        "createdAt": "2026-08-09T13:52:50.696Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 390,
+        "outputTokens": 242,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 9108,
+        "createdAt": "2026-08-09T13:52:59.804Z"
+      },
+      {
+        "stage": "fill:faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 393,
+        "outputTokens": 528,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1593,
+        "createdAt": "2026-08-09T13:53:01.398Z"
+      }
+    ],
+    "spend": {
+      "calls": 11,
+      "inputTokens": 5632,
+      "outputTokens": 4767,
+      "costCents": 0,
+      "failed": 1
+    },
+    "repairs": [
+      "team: fillSection(team): model output failed validation"
+    ]
+  },
+  {
+    "vertical": "ngo",
+    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 367,
+        "outputTokens": 85,
+        "latencyMs": 1167
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 922,
+        "outputTokens": 477,
+        "latencyMs": 1523
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 820,
+        "outputTokens": 907,
+        "latencyMs": 7297
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 217,
+        "outputTokens": 97,
+        "latencyMs": 4205
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 400,
+        "outputTokens": 294,
+        "latencyMs": 901
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 398,
+        "outputTokens": 389,
+        "latencyMs": 1254
+      },
+      {
+        "stage": "fill",
+        "section": "contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 415,
+        "outputTokens": 291,
+        "latencyMs": 941
+      },
+      {
+        "stage": "fill",
+        "section": "contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 494,
+        "outputTokens": 419,
+        "latencyMs": 1341
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 351,
+        "outputTokens": 128,
+        "latencyMs": 8574
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "ngo",
+      "artDirection": {
+        "themeId": "warm-editorial",
+        "motionId": "whisper",
+        "radiusId": "soft",
+        "spacingId": "airy",
+        "imageryId": "warm-natural"
+      },
+      "meta": {
+        "title": "Non-profit Organization",
+        "description": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Inspire brighter futures with our after‑school classes – join, donate, or volunteer today.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Empowering local children",
+            "heading": "Building brighter futures, one afternoon at a time",
+            "sub": "We provide safe, free after-school tutoring and creative classes for kids who need them most. Join us as a volunteer or donor to help our community's children thrive.",
+            "ctaLabel": "Become a supporter",
+            "image": {
+              "query": "kids laughing in after school program",
+              "alt": "Group of happy elementary school children collaborating on a science experiment in an after-school"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Our journey, impact on kids, and core values that drive community learning.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Journey, Impact, and Values",
+            "body": "Founded in 2015 by a group of educators and parents, our NGO has grown from a single classroom to a network of after‑school programs serving over 2,000 children each year. With the support of volunteers and generous supporters, we provide safe, engaging learning spaces where kids explore science, art, and teamwork. Our impact is measured in brighter smiles, improved grades, and stronger confidence as students discover their passions. Guided by the values of empowerment, inclusion, and community partnership, we strive every day to create a nurturing environment that sparks curiosity and builds a brighter future for every child.",
+            "image": {
+              "query": "children after school learning program",
+              "alt": "Kids participating in an after‑school class"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Explore our range of after‑school programs, tutoring, arts, and mentorship initiatives.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our After‑School Programs",
+            "items": [
+              {
+                "title": "Learning Sessions",
+                "body": "Engaging classes that help kids strengthen core subjects and discover new interests. Your support makes each session possible."
+              },
+              {
+                "title": "Tutoring Support",
+                "body": "One‑on‑one tutoring that builds confidence and academic skills. Volunteers and donors enable us to match every child with a caring tutor."
+              },
+              {
+                "title": "Arts & Creativity",
+                "body": "Music, visual arts, and drama workshops that let children express themselves. Contributions fund supplies and skilled instructors."
+              },
+              {
+                "title": "Mentorship & Leadership",
+                "body": "Mentors guide youths toward personal growth and future goals. Join as a mentor or sponsor a mentorship pair today."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "contact",
+          "variant": "simple",
+          "brief": "Get involved, volunteer, or donate—contact us via phone, email, or the sign‑up form.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Get Involved",
+            "blurb": "We welcome supporters to help our after‑school programs thrive. Volunteer, donate, or ask any question—our team is ready to assist.",
+            "address": "123 Community Way, Springfield, USA",
+            "phone": "(555) 123‑4567",
+            "email": "contact@afterclassngo.org",
+            "hours": "Mon‑Fri 9:00 am – 5:00 pm"
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Legal information, privacy policy, and links to our social media channels.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Together, supporters nurture bright futures."
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 27203,
+    "wallClockMs": 59218,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "promptVersion": "classify.v1",
+        "inputTokens": 367,
+        "outputTokens": 85,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1167,
+        "createdAt": "2026-08-09T13:53:13.437Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 922,
+        "outputTokens": 477,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1523,
+        "createdAt": "2026-08-09T13:53:14.962Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 820,
+        "outputTokens": 907,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 7297,
+        "createdAt": "2026-08-09T13:53:22.259Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 217,
+        "outputTokens": 97,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 4205,
+        "createdAt": "2026-08-09T13:53:47.601Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 400,
+        "outputTokens": 294,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 901,
+        "createdAt": "2026-08-09T13:53:48.503Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 398,
+        "outputTokens": 389,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1254,
+        "createdAt": "2026-08-09T13:53:49.757Z"
+      },
+      {
+        "stage": "fill:contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 415,
+        "outputTokens": 291,
+        "costCents": 0,
+        "status": "failed",
+        "latencyMs": 941,
+        "createdAt": "2026-08-09T13:53:50.699Z"
+      },
+      {
+        "stage": "fill:contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 494,
+        "outputTokens": 419,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1341,
+        "createdAt": "2026-08-09T13:53:52.041Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 351,
+        "outputTokens": 128,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 8574,
+        "createdAt": "2026-08-09T13:54:00.616Z"
+      }
+    ],
+    "spend": {
+      "calls": 9,
+      "inputTokens": 4384,
+      "outputTokens": 3087,
+      "costCents": 0,
+      "failed": 1
+    },
+    "repairs": [
+      "contact: fillSection(contact): model output failed validation"
+    ]
+  },
+  {
+    "vertical": "restaurant",
+    "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 640,
+        "outputTokens": 534,
+        "latencyMs": 1909
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 922,
+        "outputTokens": 617,
+        "latencyMs": 14275
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 803,
+        "outputTokens": 620,
+        "latencyMs": 7233
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 215,
+        "outputTokens": 137,
+        "latencyMs": 4475
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 398,
+        "outputTokens": 367,
+        "latencyMs": 1191
+      },
+      {
+        "stage": "fill",
+        "section": "menu/grouped",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 407,
+        "outputTokens": 546,
+        "latencyMs": 1690
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 394,
+        "outputTokens": 345,
+        "latencyMs": 1189
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 390,
+        "outputTokens": 363,
+        "latencyMs": 1048
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 409,
+        "outputTokens": 486,
+        "latencyMs": 3990
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 460,
+        "outputTokens": 273,
+        "latencyMs": 1489
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 346,
+        "outputTokens": 148,
+        "latencyMs": 14034
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "restaurant",
+      "artDirection": {
+        "themeId": "warm-editorial",
+        "motionId": "calm",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "warm-natural"
+      },
+      "meta": {
+        "title": "Restaurant",
+        "description": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Show a vibrant breakfast scene with the restaurant name and tagline inviting visitors to explore.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Open Daily from 6:30 AM in Jayanagar",
+            "heading": "Jayanagar Tiffin House",
+            "sub": "Start your morning with crispy, golden dosas, pillowy-soft idlis, and our signature aromatic filter coffee, served fresh daily.",
+            "ctaLabel": "View Today's Menu",
+            "image": {
+              "query": "south indian breakfast table dosa idli filter coffee",
+              "alt": "A warm, steaming spread of masala dosa, idlis, and filter coffee on a traditional steel platter"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Share the warm story and philosophy behind the South Indian breakfast spot.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Story",
+            "body": "At our humble spot in Jayanagar, every sunrise brings the aroma of freshly ground idli batter and steaming dosa pans. We opened our doors to share the comforting flavors of South Indian mornings with our diners, believing that a simple, wholesome breakfast can start the day right. Inspired by family recipes and a love for community, we keep each bite authentic, fresh, and made with care.",
+            "image": {
+              "query": "South Indian breakfast restaurant interior Jayanagar",
+              "alt": "Cozy interior of a South Indian breakfast spot with dosa batter spread and steaming idlis on a copper plate"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "menu",
+          "variant": "grouped",
+          "brief": "Present categories like idli, dosa, vada with dish names and brief descriptions.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "South Indian Breakfast Menu",
+            "items": [
+              {
+                "name": "Idli",
+                "description": "Steamed rice cakes served with coconut chutney and sambar",
+                "price": "₹60"
+              },
+              {
+                "name": "Medu Vada",
+                "description": "Crispy lentil donuts paired with chutney and sambar",
+                "price": "₹70"
+              },
+              {
+                "name": "Masala Dosa",
+                "description": "Fermented rice‑crepe filled with spiced potato, with chutney & sambar",
+                "price": "₹110"
+              },
+              {
+                "name": "Plain Dosa",
+                "description": "Thin, crisp rice crepe served with chutney & sambar",
+                "price": "₹90"
+              },
+              {
+                "name": "Rava Idli",
+                "description": "Semolina steamed dumplings served with coconut chutney",
+                "price": "₹80"
+              },
+              {
+                "name": "Onion Rava Dosa",
+                "description": "Crunchy semolina dosa with onions, served with chutney & sambar",
+                "price": "₹100"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "gallery",
+          "variant": "masonry",
+          "brief": "Show a collage of mouth‑watering dishes and cozy interior shots.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "South Indian Breakfast Highlights",
+            "images": [
+              {
+                "query": "idli sambhar plate",
+                "alt": "Steaming idlis served with bright yellow sambhar and coconut chutney"
+              },
+              {
+                "query": "medu vada with chutney",
+                "alt": "Crispy medu vadas arranged with coconut and tomato chutney"
+              },
+              {
+                "query": "filter coffee cup",
+                "alt": "Traditional South Indian filter coffee in a stainless steel tumbler"
+              },
+              {
+                "query": "cozy interior dining area",
+                "alt": "Warm wooden tables and soft lighting inside the Jayanagar eatery"
+              },
+              {
+                "query": "breakfast spread table",
+                "alt": "Assorted South Indian breakfast items displayed on a wooden board"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Feature warm customer quotes highlighting the breakfast experience.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "What Our Diners Say",
+            "items": [
+              {
+                "quote": "The sunrise breakfast at our table feels like a hug, every bite a warm memory.",
+                "author": "Anita R."
+              },
+              {
+                "quote": "From fluffy idlis to spicy chutney, the morning flavors here start my day right.",
+                "author": "Ravi K."
+              },
+              {
+                "quote": "A cozy corner, fresh coffee, and friendly faces—breakfast feels like home.",
+                "author": "Meera S."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Provide the address with a map, phone number, and a reservation form.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Visit Us",
+            "blurb": "We welcome diners to enjoy a fresh South Indian breakfast in the heart of Jayanagar.",
+            "address": "123 4th Main Road, Jayanagar, Bangalore 560041",
+            "phone": "+91 80 1234 5678",
+            "email": "info@mysouthindianbreakfast.com",
+            "hours": "Mon‑Sat: 7 am – 2 pm"
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Include quick navigation links and social media icons.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Start your day, diners, with authentic South Indian breakfast in Jayanagar."
+          }
+        }
+      ]
+    },
+    "requests": 11,
+    "modelTimeMs": 52523,
+    "wallClockMs": 77000,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 640,
+        "outputTokens": 534,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1909,
+        "createdAt": "2026-08-09T13:54:02.526Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 922,
+        "outputTokens": 617,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 14275,
+        "createdAt": "2026-08-09T13:54:16.802Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 803,
+        "outputTokens": 620,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 7233,
+        "createdAt": "2026-08-09T13:54:24.036Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 215,
+        "outputTokens": 137,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 4475,
+        "createdAt": "2026-08-09T13:54:52.979Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 398,
+        "outputTokens": 367,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1191,
+        "createdAt": "2026-08-09T13:54:54.171Z"
+      },
+      {
+        "stage": "fill:menu/grouped",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 407,
+        "outputTokens": 546,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1690,
+        "createdAt": "2026-08-09T13:54:55.863Z"
+      },
+      {
+        "stage": "fill:gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 394,
+        "outputTokens": 345,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1189,
+        "createdAt": "2026-08-09T13:54:57.052Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 390,
+        "outputTokens": 363,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1048,
+        "createdAt": "2026-08-09T13:54:58.100Z"
+      },
+      {
+        "stage": "fill:contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 409,
+        "outputTokens": 486,
+        "costCents": 0,
+        "status": "failed",
+        "latencyMs": 3990,
+        "createdAt": "2026-08-09T13:55:02.092Z"
+      },
+      {
+        "stage": "fill:contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 460,
+        "outputTokens": 273,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1489,
+        "createdAt": "2026-08-09T13:55:03.582Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 346,
+        "outputTokens": 148,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 14034,
+        "createdAt": "2026-08-09T13:55:17.616Z"
+      }
+    ],
+    "spend": {
+      "calls": 11,
+      "inputTokens": 5384,
+      "outputTokens": 4436,
+      "costCents": 0,
+      "failed": 1
+    },
+    "repairs": [
+      "contact: fillSection(contact): model output failed validation"
+    ]
+  },
+  {
+    "vertical": "photography",
+    "prompt": "dark moody one page site for a photography studio, mostly pictures",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 633,
+        "outputTokens": 299,
+        "latencyMs": 757
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 922,
+        "outputTokens": 611,
+        "latencyMs": 8037
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 556,
+        "outputTokens": 301,
+        "latencyMs": 4872
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 430,
+        "outputTokens": 344,
+        "latencyMs": 1217
+      },
+      {
+        "stage": "fill",
+        "section": "about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 404,
+        "outputTokens": 236,
+        "latencyMs": 934
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 391,
+        "outputTokens": 240,
+        "latencyMs": 944
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 395,
+        "outputTokens": 446,
+        "latencyMs": 1401
+      },
+      {
+        "stage": "fill",
+        "section": "contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 404,
+        "outputTokens": 279,
+        "latencyMs": 1027
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 346,
+        "outputTokens": 122,
+        "latencyMs": 651
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "photography",
+      "artDirection": {
+        "themeId": "vivid-energy",
+        "motionId": "showcase",
+        "radiusId": "soft",
+        "spacingId": "airy",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Photography Studio",
+        "description": "dark moody one page site for a photography studio, mostly pictures",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Showcase a striking, high-contrast signature portrait next to a bold invitation to capture raw, cinematic moments.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "RAW CINEMATIC",
+            "heading": "Turn Moments into Movies",
+            "sub": "We specialize in bold, high‑contrast portraits that feel like a scene from a film. Let’s craft your story frame by frame.",
+            "ctaLabel": "Book Your Session",
+            "image": {
+              "query": "high contrast portrait photography",
+              "alt": "Striking high‑contrast signature portrait with dramatic lighting"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Introduce our moody and artistic approach to photography, highlighting our focus on shadow, light, and unfiltered emotion.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Moody Vision, Unfiltered Emotion",
+            "body": "We sculpt light and shadow into raw, emotive images that capture the moment exactly as the client feels it—no filters, no artifice.",
+            "image": {
+              "query": "moody portrait lighting shadows",
+              "alt": "A dramatic portrait with deep shadows and striking light highlighting raw emotion"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Present our tailored photography sessions, featuring portraits, wedding stories, and editorial brand campaigns.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Bold Photography Sessions",
+            "items": [
+              {
+                "title": "Portraits",
+                "body": "Capture your essence with striking, personalized portrait sessions."
+              },
+              {
+                "title": "Wedding Stories",
+                "body": "Turn your day into an unforgettable visual narrative, from vows to celebration."
+              },
+              {
+                "title": "Editorial & Brand Campaigns",
+                "body": "Craft compelling images that define your brand’s voice and vision."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "gallery",
+          "variant": "masonry",
+          "brief": "Display a curated visual portfolio of our most powerful landscape, portrait, and artistic photographs in a dynamic layout.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Bold Visuals: Landscape, Portrait & Artistic Works",
+            "images": [
+              {
+                "query": "dramatic mountain landscape sunrise",
+                "alt": "Mountain landscape at sunrise with dramatic lighting"
+              },
+              {
+                "query": "moody portrait black and white",
+                "alt": "Black-and-white portrait with deep shadows"
+              },
+              {
+                "query": "abstract light painting long exposure",
+                "alt": "Abstract light painting creating colorful trails"
+              },
+              {
+                "query": "coastal cliffs sunset photography",
+                "alt": "Sunset over rugged coastal cliffs"
+              },
+              {
+                "query": "vibrant city night skyline portrait",
+                "alt": "Portrait of a subject against vibrant night city skyline"
+              },
+              {
+                "query": "forest mist early morning landscape",
+                "alt": "Misty forest landscape in early morning light"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "form",
+          "brief": "Offer a direct booking and inquiry form for clients to schedule their custom, atmospheric photo shoot.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Book Your Custom Shoot",
+            "blurb": "Bold visuals start here. Fill the form to lock in your atmospheric session.",
+            "address": "Studio address",
+            "phone": "Phone number",
+            "email": "Email address",
+            "hours": "Mon‑Fri 9am‑6pm"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "Display social media connections, studio location details, copyright information, and essential links.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Capture bold moments."
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 19840,
+    "wallClockMs": 49296,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 633,
+        "outputTokens": 299,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 757,
+        "createdAt": "2026-08-09T13:55:18.374Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 922,
+        "outputTokens": 611,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 8037,
+        "createdAt": "2026-08-09T13:55:26.412Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "inputTokens": 556,
+        "outputTokens": 301,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 4872,
+        "createdAt": "2026-08-09T13:56:00.737Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 430,
+        "outputTokens": 344,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1217,
+        "createdAt": "2026-08-09T13:56:01.954Z"
+      },
+      {
+        "stage": "fill:about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 404,
+        "outputTokens": 236,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 934,
+        "createdAt": "2026-08-09T13:56:02.888Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 391,
+        "outputTokens": 240,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 944,
+        "createdAt": "2026-08-09T13:56:03.833Z"
+      },
+      {
+        "stage": "fill:gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 395,
+        "outputTokens": 446,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1401,
+        "createdAt": "2026-08-09T13:56:05.234Z"
+      },
+      {
+        "stage": "fill:contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 404,
+        "outputTokens": 279,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1027,
+        "createdAt": "2026-08-09T13:56:06.262Z"
+      },
+      {
+        "stage": "fill:footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 346,
+        "outputTokens": 122,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 651,
+        "createdAt": "2026-08-09T13:56:06.913Z"
+      }
+    ],
+    "spend": {
+      "calls": 9,
+      "inputTokens": 4481,
+      "outputTokens": 2878,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "saas",
+    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 638,
+        "outputTokens": 827,
+        "latencyMs": 1286
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 923,
+        "outputTokens": 831,
+        "latencyMs": 12557
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 538,
+        "outputTokens": 331,
+        "latencyMs": 25036
+      },
+      {
+        "stage": "fill",
+        "section": "hero/minimal",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 439,
+        "outputTokens": 314,
+        "latencyMs": 1098
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 400,
+        "outputTokens": 281,
+        "latencyMs": 1036
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 395,
+        "outputTokens": 256,
+        "latencyMs": 855
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 397,
+        "outputTokens": 207,
+        "latencyMs": 932
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 396,
+        "outputTokens": 343,
+        "latencyMs": 1073
+      },
+      {
+        "stage": "fill",
+        "section": "contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 407,
+        "outputTokens": 264,
+        "latencyMs": 989
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 350,
+        "outputTokens": 112,
+        "latencyMs": 657
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "saas",
+      "artDirection": {
+        "themeId": "tech-slate",
+        "motionId": "showcase",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "SaaS Company",
+        "description": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "minimal",
+          "brief": "Introduce our effortless inventory tracking software designed specifically for small retail shops with a direct call to action to begin a free trial.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Built for small retailers",
+            "heading": "Effortless stock tracking",
+            "sub": "Real‑time inventory updates keep you aware of stock levels, low items, and sales—no spreadsheets, no guesswork.",
+            "ctaLabel": "Start free trial",
+            "image": {
+              "query": "small retail shop inventory software UI",
+              "alt": "Dashboard view of inventory tracking tool for a small shop"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Highlight the core features including real-time stock level alerts, barcode scanning, and basic sales performance reports.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Core Features",
+            "items": [
+              {
+                "title": "Real‑time Stock Alerts",
+                "body": "Get instant notifications when inventory falls below your set thresholds."
+              },
+              {
+                "title": "Barcode Scanning",
+                "body": "Quickly add or update items using any standard barcode scanner."
+              },
+              {
+                "title": "Sales Performance Reports",
+                "body": "View basic reports that show daily sales, top‑selling items and trends."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "gallery",
+          "variant": "grid",
+          "brief": "Display clean, high-resolution screenshots of the intuitive desktop and mobile dashboard interface.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Dashboard snapshots",
+            "images": [
+              {
+                "query": "SaaS desktop dashboard screenshot",
+                "alt": "Desktop view of the intuitive dashboard showing inventory overview for users"
+              },
+              {
+                "query": "SaaS mobile dashboard screenshot",
+                "alt": "Mobile view of the dashboard with key metrics for users"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Present short, impactful success stories from boutique and local shop owners who streamlined their operations.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "What our users say",
+            "items": [
+              {
+                "quote": "Cut inventory errors in half and freed up evenings for my family.",
+                "author": "Lena, boutique owner"
+              },
+              {
+                "quote": "Stock alerts saved me from running out of best‑sellers during the holiday rush.",
+                "author": "Marco, local coffee shop"
+              },
+              {
+                "quote": "Automated reporting let me focus on designing, not spreadsheets.",
+                "author": "Sofia, handmade jewelry shop"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Answer frequently asked questions regarding pricing tiers, data safety, and ease of setup.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "FAQ",
+            "items": [
+              {
+                "question": "What pricing tiers are available?",
+                "answer": "Three plans: Starter, Growth, Enterprise. Choose based on monthly active users."
+              },
+              {
+                "question": "How is my data protected?",
+                "answer": "Data is encrypted at rest and in transit, with regular backups and SOC 2 compliance."
+              },
+              {
+                "question": "Is setup difficult?",
+                "answer": "No. Connect your inventory source, configure alerts, and start tracking within minutes."
+              },
+              {
+                "question": "Can I switch plans later?",
+                "answer": "Yes, upgrade or downgrade anytime from the dashboard."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "form",
+          "brief": "Provide a simple contact form for potential customers seeking custom demos or support assistance.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Get in touch",
+            "blurb": "Request a demo or support. Fill the form and we’ll contact you.",
+            "address": "123 Cloud Ave, Suite 400, San Francisco, CA 94107",
+            "phone": "+1 (800) 555-0123",
+            "email": "support@saasexample.com",
+            "hours": "Mon‑Fri 9 am–6 pm PT"
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "Display standard copyright notices, privacy policy links, and social media icons.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "© 2026 StockTracker. All rights reserved."
+          }
+        }
+      ]
+    },
+    "requests": 10,
+    "modelTimeMs": 45519,
+    "wallClockMs": 86726,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 638,
+        "outputTokens": 827,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1286,
+        "createdAt": "2026-08-09T13:56:08.200Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 923,
+        "outputTokens": 831,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 12557,
+        "createdAt": "2026-08-09T13:56:20.758Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "inputTokens": 538,
+        "outputTokens": 331,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 25036,
+        "createdAt": "2026-08-09T13:57:26.992Z"
+      },
+      {
+        "stage": "fill:hero/minimal",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 439,
+        "outputTokens": 314,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1098,
+        "createdAt": "2026-08-09T13:57:28.092Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 400,
+        "outputTokens": 281,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1036,
+        "createdAt": "2026-08-09T13:57:29.129Z"
+      },
+      {
+        "stage": "fill:gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 395,
+        "outputTokens": 256,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 855,
+        "createdAt": "2026-08-09T13:57:29.985Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 397,
+        "outputTokens": 207,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 932,
+        "createdAt": "2026-08-09T13:57:30.917Z"
+      },
+      {
+        "stage": "fill:faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 396,
+        "outputTokens": 343,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1073,
+        "createdAt": "2026-08-09T13:57:31.992Z"
+      },
+      {
+        "stage": "fill:contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 407,
+        "outputTokens": 264,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 989,
+        "createdAt": "2026-08-09T13:57:32.982Z"
+      },
+      {
+        "stage": "fill:footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 350,
+        "outputTokens": 112,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 657,
+        "createdAt": "2026-08-09T13:57:33.640Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 4883,
+      "outputTokens": 3766,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "gym",
+    "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 641,
+        "outputTokens": 631,
+        "latencyMs": 1061
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 922,
+        "outputTokens": 601,
+        "latencyMs": 1733
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 544,
+        "outputTokens": 303,
+        "latencyMs": 8329
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 440,
+        "outputTokens": 330,
+        "latencyMs": 1182
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 402,
+        "outputTokens": 336,
+        "latencyMs": 1123
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 403,
+        "outputTokens": 437,
+        "latencyMs": 1345
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 398,
+        "outputTokens": 201,
+        "latencyMs": 854
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 415,
+        "outputTokens": 353,
+        "latencyMs": 1196
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 349,
+        "outputTokens": 150,
+        "latencyMs": 659
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "gym",
+      "artDirection": {
+        "themeId": "vivid-energy",
+        "motionId": "kinetic",
+        "radiusId": "sharp",
+        "spacingId": "airy",
+        "imageryId": "bold-contrast"
+      },
+      "meta": {
+        "title": "Gym",
+        "description": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "A high-impact headline challenging visitors to transform their strength, featuring an intense training photo and a bold sign-up button.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "UNLEASH POWER",
+            "heading": "Transform Your Strength",
+            "sub": "Train with elite coaches, push past limits, and stay open till 11 PM.",
+            "ctaLabel": "Become a Member",
+            "image": {
+              "query": "intense gym training photo",
+              "alt": "Member performing high‑intensity workout in boutique gym"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Present our premium signature classes, customized personal training options, and key amenities like late-night floor access.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Premium Services for Members",
+            "items": [
+              {
+                "title": "Signature Classes",
+                "body": "High‑intensity, instructor‑led sessions that push limits and deliver results—available daily."
+              },
+              {
+                "title": "Custom Personal Training",
+                "body": "One‑on‑one programs designed around your goals, schedule, and fitness level."
+              },
+              {
+                "title": "Late‑Night Floor Access",
+                "body": "Unlimited gym use until 11 pm, so you train on your terms."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "gallery",
+          "variant": "grid",
+          "brief": "A striking visual display of our state-of-the-art facility, elite equipment, and members pushing their limits.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Gym Gallery: Elite Equipment & Member Workouts",
+            "images": [
+              {
+                "query": "modern gym interior with cardio machines",
+                "alt": "Spacious cardio area filled with treadmills and ellipticals"
+              },
+              {
+                "query": "weightlifting zone with free weights and squat racks",
+                "alt": "Weight zone showcasing squat racks, dumbbells, and members lifting"
+              },
+              {
+                "query": "group fitness class in studio with high-intensity workout",
+                "alt": "Members participating in a high‑intensity group class"
+              },
+              {
+                "query": "functional training area with battle ropes and kettlebells",
+                "alt": "Functional training space with battle ropes, kettlebells, and members in action"
+              },
+              {
+                "query": "gym open late with neon lighting at 11pm",
+                "alt": "Gym illuminated for late‑night training, members working out past 10 pm"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Raw, motivational success quotes from members who have reached their peak fitness with us.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Peak Performance Stories",
+            "items": [
+              {
+                "quote": "I smashed my PRs and never looked back—this gym turned my hustle into results.",
+                "author": "J. Martinez, member"
+              },
+              {
+                "quote": "From zero to marathon-ready in six months—nothing stopped me here.",
+                "author": "L. Chen, member"
+              },
+              {
+                "quote": "Late nights, heavy lifts, unstoppable confidence—my transformation is proof.",
+                "author": "A. Patel, member"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Our location details, late-night hours up to 11 PM, and a direct membership registration form.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Train Late. Join Now.",
+            "blurb": "Our boutique gym powers your grind until 11 PM. Swing by, feel the energy, and lock in your membership on the spot.",
+            "address": "123 Fitness Ave, City, State ZIP",
+            "phone": "(555) 123-4567",
+            "email": "membership@irongym.com",
+            "hours": "Mon‑Fri 5 am – 11 pm; Sat‑Sun 7 am – 11 pm"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "Quick links to our social channels and legal policy details.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "TRAIN HARD, OWN YOUR POWER"
+          }
+        }
+      ]
+    },
+    "requests": 9,
+    "modelTimeMs": 17482,
+    "wallClockMs": 69144,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 641,
+        "outputTokens": 631,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1061,
+        "createdAt": "2026-08-09T13:57:34.702Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 922,
+        "outputTokens": 601,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1733,
+        "createdAt": "2026-08-09T13:57:36.436Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "inputTokens": 544,
+        "outputTokens": 303,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 8329,
+        "createdAt": "2026-08-09T13:58:36.422Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 440,
+        "outputTokens": 330,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1182,
+        "createdAt": "2026-08-09T13:58:37.605Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 402,
+        "outputTokens": 336,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1123,
+        "createdAt": "2026-08-09T13:58:38.728Z"
+      },
+      {
+        "stage": "fill:gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 403,
+        "outputTokens": 437,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1345,
+        "createdAt": "2026-08-09T13:58:40.074Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 398,
+        "outputTokens": 201,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 854,
+        "createdAt": "2026-08-09T13:58:40.929Z"
+      },
+      {
+        "stage": "fill:contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 415,
+        "outputTokens": 353,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1196,
+        "createdAt": "2026-08-09T13:58:42.126Z"
+      },
+      {
+        "stage": "fill:footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 349,
+        "outputTokens": 150,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 659,
+        "createdAt": "2026-08-09T13:58:42.785Z"
+      }
+    ],
+    "spend": {
+      "calls": 9,
+      "inputTokens": 4514,
+      "outputTokens": 3342,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "unknown",
+    "prompt": "a website",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 622,
+        "outputTokens": 505,
+        "latencyMs": 984
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 922,
+        "outputTokens": 480,
+        "latencyMs": 1498
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 766,
+        "outputTokens": 455,
+        "latencyMs": 1423
+      },
+      {
+        "stage": "fill",
+        "section": "hero/minimal",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 193,
+        "outputTokens": 67,
+        "latencyMs": 3959
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 377,
+        "outputTokens": 264,
+        "latencyMs": 1267
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 375,
+        "outputTokens": 188,
+        "latencyMs": 911
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 369,
+        "outputTokens": 202,
+        "latencyMs": 942
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 406,
+        "outputTokens": 205,
+        "latencyMs": 863
+      },
+      {
+        "stage": "fill",
+        "section": "contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 385,
+        "outputTokens": 343,
+        "latencyMs": 1137
+      },
+      {
+        "stage": "fill",
+        "section": "contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 464,
+        "outputTokens": 212,
+        "latencyMs": 883
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 326,
+        "outputTokens": 128,
+        "latencyMs": 622
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "unknown",
+      "artDirection": {
+        "themeId": "warm-editorial",
+        "motionId": "calm",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Generic Business",
+        "description": "a website",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "minimal",
+          "brief": "Clear headline introducing the business with a concise call‑to‑action.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Strategic Advisory",
+            "heading": "Clarity for your next move.",
+            "sub": "We partner with leaders to solve complex organizational challenges and deliver measurable results.",
+            "ctaLabel": "Work with us",
+            "image": {
+              "query": "minimalist professional office space",
+              "alt": "A bright, clean workspace with natural light and minimal decor."
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Brief story of the company and its core values.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Story",
+            "body": "Since our start, we’ve focused on delivering reliable results for each client, guided by integrity, quality, and innovation.",
+            "image": {
+              "query": "professional team meeting",
+              "alt": "Team discussing project"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Overview of key services offered, each with a short description.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Services",
+            "items": [
+              {
+                "title": "Website Development",
+                "body": "a website"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Client quotes highlighting successful outcomes.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Client Testimonials",
+            "items": [
+              {
+                "quote": "The new site boosted our bookings by 30%.",
+                "author": "John Doe, CEO"
+              },
+              {
+                "quote": "User feedback improved instantly after the redesign.",
+                "author": "Jane Smith, Operations Manager"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "contact",
+          "variant": "simple",
+          "brief": "Contact form with address and phone number for inquiries.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Get in Touch",
+            "blurb": "We’re here to answer any questions you have.",
+            "address": "123 Main St, Anytown, ST 12345",
+            "phone": "555-123-4567",
+            "email": "info@example.com",
+            "hours": "Mon‑Fri 9am‑5pm"
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Legal links and social media icons.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "© 2026. All rights reserved."
+          }
+        }
+      ]
+    },
+    "requests": 11,
+    "modelTimeMs": 14489,
+    "wallClockMs": 65409,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 622,
+        "outputTokens": 505,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 984,
+        "createdAt": "2026-08-09T13:58:43.770Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 922,
+        "outputTokens": 480,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1498,
+        "createdAt": "2026-08-09T13:58:45.269Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 766,
+        "outputTokens": 455,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1423,
+        "createdAt": "2026-08-09T13:58:46.692Z"
+      },
+      {
+        "stage": "fill:hero/minimal",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 193,
+        "outputTokens": 67,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 3959,
+        "createdAt": "2026-08-09T13:59:41.564Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 377,
+        "outputTokens": 264,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1267,
+        "createdAt": "2026-08-09T13:59:42.834Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 375,
+        "outputTokens": 188,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 911,
+        "createdAt": "2026-08-09T13:59:43.745Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 369,
+        "outputTokens": 202,
+        "costCents": 0,
+        "status": "failed",
+        "latencyMs": 942,
+        "createdAt": "2026-08-09T13:59:44.688Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 406,
+        "outputTokens": 205,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 863,
+        "createdAt": "2026-08-09T13:59:45.551Z"
+      },
+      {
+        "stage": "fill:contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 385,
+        "outputTokens": 343,
+        "costCents": 0,
+        "status": "failed",
+        "latencyMs": 1137,
+        "createdAt": "2026-08-09T13:59:46.689Z"
+      },
+      {
+        "stage": "fill:contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 464,
+        "outputTokens": 212,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 883,
+        "createdAt": "2026-08-09T13:59:47.572Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 326,
+        "outputTokens": 128,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 622,
+        "createdAt": "2026-08-09T13:59:48.194Z"
+      }
+    ],
+    "spend": {
+      "calls": 11,
+      "inputTokens": 5205,
+      "outputTokens": 3049,
+      "costCents": 0,
+      "failed": 2
+    },
+    "repairs": [
+      "testimonials: fillSection(testimonials): model output failed validation",
+      "contact: fillSection(contact): model output failed validation"
+    ]
+  },
+  {
+    "vertical": "interior-design",
+    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 642,
+        "outputTokens": 264,
+        "latencyMs": 635
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 923,
+        "outputTokens": 904,
+        "latencyMs": 2346
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "response_schema",
+        "inputTokens": 574,
+        "outputTokens": 327,
+        "latencyMs": 6415
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 437,
+        "outputTokens": 290,
+        "latencyMs": 1909
+      },
+      {
+        "stage": "fill",
+        "section": "about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 408,
+        "outputTokens": 403,
+        "latencyMs": 1238
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 405,
+        "outputTokens": 332,
+        "latencyMs": 1167
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 399,
+        "outputTokens": 321,
+        "latencyMs": 1109
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 399,
+        "outputTokens": 186,
+        "latencyMs": 642
+      },
+      {
+        "stage": "fill",
+        "section": "contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 408,
+        "outputTokens": 417,
+        "latencyMs": 1229
+      },
+      {
+        "stage": "fill",
+        "section": "footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 354,
+        "outputTokens": 157,
+        "latencyMs": 999
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "interior-design",
+      "artDirection": {
+        "themeId": "warm-editorial",
+        "motionId": "showcase",
+        "radiusId": "soft",
+        "spacingId": "airy",
+        "imageryId": "warm-natural"
+      },
+      "meta": {
+        "title": "Interior Design",
+        "description": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Introduce Priya Ramanathan's refined interior design philosophy alongside an elegant signature project image.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Refined Interiors",
+            "heading": "Priya Ramanathan – Curating Timeless Spaces",
+            "sub": "Combining classic elegance with contemporary function, Priya creates tailored environments that reflect each client’s unique narrative.",
+            "ctaLabel": "Schedule a Consultation",
+            "image": {
+              "query": "Priya Ramanathan signature living room",
+              "alt": "Signature living room designed by Priya Ramanathan, showcasing refined interior design"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Detail Priya's professional background, bespoke design approach, and commitment to executing sophisticated spaces.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "About Priya Ramanathan",
+            "body": "Priya Ramanathan brings over a decade of experience in residential and commercial interiors, having trained at the Academy of Art University and contributed to award‑winning projects across the region. Her bespoke design process begins with an in‑depth consultation to understand each client’s lifestyle and aesthetic aspirations, followed by meticulous space planning, material selection, and artisanal detailing. Committed to delivering sophisticated environments, Priya oversees every phase of execution to ensure precision, quality, and a seamless realization of the design vision.",
+            "image": {
+              "query": "Priya Ramanathan interior designer studio portrait",
+              "alt": "Portrait of Priya Ramanathan reviewing design plans in her studio"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Outline the primary interior design services offered, including structural consultations, full-scale remodels, and custom styling.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Services",
+            "items": [
+              {
+                "title": "Structural Consultations",
+                "body": "We assess load‑bearing elements, spatial flow, and building codes to create a sound framework for any design project."
+              },
+              {
+                "title": "Full‑Scale Remodels",
+                "body": "From demolition to final finishes, we manage complete transformations, coordinating contractors, permits, and design specifications."
+              },
+              {
+                "title": "Custom Styling",
+                "body": "Tailored décor solutions—including color palettes, furniture selection, and accessorising—crafted to reflect each client’s unique aesthetic."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "gallery",
+          "variant": "grid",
+          "brief": "Showcase a curated, high-end grid portfolio of completed residential and commercial projects.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Curated Portfolio",
+            "images": [
+              {
+                "query": "luxury residential living room interior design",
+                "alt": "Spacious living room with neutral palette, marble flooring, and custom lighting"
+              },
+              {
+                "query": "high-end commercial office lobby design",
+                "alt": "Modern office lobby featuring glass walls, statement chandelier, and polished concrete"
+              },
+              {
+                "query": "boutique retail interior with bespoke fixtures",
+                "alt": "Elegant boutique interior showcasing custom shelving and ambient lighting"
+              },
+              {
+                "query": "contemporary kitchen with bespoke cabinetry",
+                "alt": "Open kitchen with white cabinetry, marble countertops, and integrated appliances"
+              },
+              {
+                "query": "luxury hotel suite with tailored furnishings",
+                "alt": "Hotel suite featuring plush textiles, sculptural furniture, and city view windows"
+              },
+              {
+                "query": "corporate conference room with acoustic panels",
+                "alt": "Conference room with acoustic wall panels, glass table, and ergonomic seating"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Share polished endorsements from clients highlighting Priya's professional execution and aesthetic precision.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Client Testimonials",
+            "items": [
+              {
+                "quote": "Priya’s meticulous approach transformed our living space into a sophisticated retreat, exceeding every expectation.",
+                "author": "A. Patel, Homeowner"
+              },
+              {
+                "quote": "The precision of her design execution delivered a seamless blend of functionality and elegance.",
+                "author": "M. Singh, Corporate Executive"
+              },
+              {
+                "quote": "Her professional insight and aesthetic acuity made the renovation process effortless and rewarding.",
+                "author": "R. Desai, Property Developer"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "form",
+          "brief": "Provide a formal consultation enquiry form accompanied by professional contact details.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Request a Consultation",
+            "blurb": "Complete the form below to schedule a private consultation. Our team will review your inquiry and respond within 24 hours.",
+            "address": "456 Oak Avenue, Suite 200, Anytown, CA 90210",
+            "phone": "(555) 123‑4567",
+            "email": "priyaa@example.com",
+            "hours": "Monday‑Friday 9 am‑5 pm"
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "simple",
+          "brief": "Present standard copyright, social media links, and essential professional legal disclosures.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Timeless interiors crafted for discerning clients."
+          }
+        }
+      ]
+    },
+    "requests": 10,
+    "modelTimeMs": 17689,
+    "wallClockMs": 69359,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 642,
+        "outputTokens": 264,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 635,
+        "createdAt": "2026-08-09T13:59:48.830Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 923,
+        "outputTokens": 904,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2346,
+        "createdAt": "2026-08-09T13:59:51.177Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "inputTokens": 574,
+        "outputTokens": 327,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 6415,
+        "createdAt": "2026-08-09T14:00:49.250Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 437,
+        "outputTokens": 290,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1909,
+        "createdAt": "2026-08-09T14:00:51.162Z"
+      },
+      {
+        "stage": "fill:about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 408,
+        "outputTokens": 403,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1238,
+        "createdAt": "2026-08-09T14:00:52.401Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 405,
+        "outputTokens": 332,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1167,
+        "createdAt": "2026-08-09T14:00:53.569Z"
+      },
+      {
+        "stage": "fill:gallery/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 399,
+        "outputTokens": 321,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1109,
+        "createdAt": "2026-08-09T14:00:54.679Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 399,
+        "outputTokens": 186,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 642,
+        "createdAt": "2026-08-09T14:00:55.321Z"
+      },
+      {
+        "stage": "fill:contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 408,
+        "outputTokens": 417,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1229,
+        "createdAt": "2026-08-09T14:00:56.552Z"
+      },
+      {
+        "stage": "fill:footer/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 354,
+        "outputTokens": 157,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 999,
+        "createdAt": "2026-08-09T14:00:57.552Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 4949,
+      "outputTokens": 3601,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  }
+]

@@ -514,4 +514,60 @@ export const DESIGNS: Template[] = [
         ],
         footer: "Built with PageCraft.",
     }),
+    // Template 13 (D6). It is a storefront because that was the library's one hole: the
+    // describe screen has offered an "E-commerce" card since D3, and until now the library
+    // shipped no design in the `store` bucket, so pressing it quietly fell through to the
+    // whole library. A card that leads to the right kind of design is worth more than a
+    // thirteenth design of a kind we already had.
+    buildTemplate({
+        id: "shop",
+        name: "Shop",
+        description: "A small online shop — a product-led hero, what's in stock and a way to order.",
+        category: "store",
+        tags: ["store", "shop", "light", "warm"],
+        tier: "premium",
+        license: "MIT",
+        sourceUrl: source("shop"),
+        layout: "showcase",
+        palette: light("#0f766e"),
+        nav: ["Shop", "About", "Delivery", "Contact"],
+        hero: {
+            headline: "Made in small batches.",
+            subhead: "Everything here is made by hand, in short runs, and sent out the week you order it.",
+            cta: "Shop the range",
+        },
+        heroImage: {
+            src: img("photo-1441986300917-64674bd600d8"),
+            alt: "A shelf of ceramics in a small shop",
+        },
+        sections: [
+            {
+                key: "range",
+                label: "Products",
+                kind: "cards",
+                heading: "In stock now",
+                body: "A short range, restocked as it sells. When something is gone it is genuinely gone.",
+                cards: [
+                    { title: "Everyday mug", body: "Thrown by hand, glazed in slate. Holds a proper amount of tea." },
+                    { title: "Serving bowl", body: "Wide, shallow and heavy enough to stay put on a full table." },
+                    { title: "Small vase", body: "For one stem or a handful of whatever is in season." },
+                ],
+            },
+            {
+                key: "delivery",
+                label: "Delivery",
+                kind: "prose",
+                heading: "Delivery and returns",
+                body: "Orders go out within three working days. If something arrives damaged, tell us and we replace it.",
+            },
+            {
+                key: "order",
+                label: "Order",
+                kind: "form",
+                heading: "Order or ask",
+                body: "Leave your email and we'll get back to you about stock, sizes or a custom piece.",
+            },
+        ],
+        footer: "Built with PageCraft.",
+    }),
 ];

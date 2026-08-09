@@ -48,7 +48,6 @@ describe('scoped edits (M3.5)', () => {
         expect(data.patch[0].op).toBe('add');
     });
 
-    // FR-067 — one instruction, exactly one target.
     it('targets only the section it was given', async () => {
         setGateway(fake(JSON.stringify({
             changes: { heading: 'x' }, explanation: 'y',
@@ -58,8 +57,7 @@ describe('scoped edits (M3.5)', () => {
         expect(data.targetSectionId).toBe(section.id);
     });
 
-    // FR-066 — a rejected proposal is still rendered to a human, so both the
-    // changes and the explanation must be clean before they are returned.
+    // FR-066 — a rejected proposal is still shown to a human.
     it('sanitises the changes', async () => {
         setGateway(fake(JSON.stringify({
             changes: { heading: 'Hi<script>alert(1)</script>' },
@@ -84,8 +82,7 @@ describe('scoped edits (M3.5)', () => {
         await expect(proposeEdit(section, 'x')).rejects.toThrow(/proposeEdit/);
     });
 
-    // C-03 — the write path is absent, not disabled. A static check, because a
-    // guarded write is exactly what this rule forbids.
+    // C-03 — the write path must be absent, not merely guarded.
     it('the edit module reaches no filesystem write API', () => {
         const src = readFileSync(
             join(process.cwd(), 'src/lib/ai/edit/propose.ts'), 'utf8');

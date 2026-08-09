@@ -1,31 +1,212 @@
 [
-  { "id": "p01", "vertical": "dental-clinic", "expectedCategory": "other", "hasTemplate": false,
-    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment" },
-
-  { "id": "p02", "vertical": "law-firm", "expectedCategory": "agency", "hasTemplate": false,
-    "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice" },
-
-  { "id": "p03", "vertical": "yoga-studio", "expectedCategory": "other", "hasTemplate": false,
-    "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place" },
-
-  { "id": "p04", "vertical": "ngo", "expectedCategory": "nonprofit", "hasTemplate": false,
-    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up" },
-
-  { "id": "p05", "vertical": "restaurant", "expectedCategory": "restaurant", "hasTemplate": true,
-    "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings" },
-
-  { "id": "p06", "vertical": "photography", "expectedCategory": "portfolio", "hasTemplate": true,
-    "prompt": "dark moody one page site for a photography studio, mostly pictures" },
-
-  { "id": "p07", "vertical": "saas", "expectedCategory": "saas", "hasTemplate": true,
-    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table" },
-
-  { "id": "p08", "vertical": "gym", "expectedCategory": "other", "hasTemplate": true,
-    "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm" },
-
-  { "id": "p09", "vertical": "unknown", "expectedCategory": "other", "hasTemplate": false,
-    "prompt": "a website" },
-
-  { "id": "p10", "vertical": "interior-design", "expectedCategory": "portfolio", "hasTemplate": false,
-    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form" }
+  {
+    "id": "p01",
+    "vertical": "dental-clinic",
+    "expectedCategory": "other",
+    "hasTemplate": false,
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment"
+  },
+  {
+    "id": "p02",
+    "vertical": "law-firm",
+    "expectedCategory": "agency",
+    "hasTemplate": false,
+    "prompt": "site for a small law firm doing property and family matters, formal, needs our qualifications and years of practice"
+  },
+  {
+    "id": "p03",
+    "vertical": "yoga-studio",
+    "expectedCategory": "other",
+    "hasTemplate": false,
+    "prompt": "calm simple page for my yoga studio, class timings, a bit about me and how to reach the place"
+  },
+  {
+    "id": "p04",
+    "vertical": "ngo",
+    "expectedCategory": "nonprofit",
+    "hasTemplate": false,
+    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up"
+  },
+  {
+    "id": "p05",
+    "vertical": "restaurant",
+    "expectedCategory": "restaurant",
+    "hasTemplate": true,
+    "prompt": "warm friendly site for my small south indian breakfast place in jayanagar, with the menu and timings"
+  },
+  {
+    "id": "p06",
+    "vertical": "photography",
+    "expectedCategory": "portfolio",
+    "hasTemplate": true,
+    "prompt": "dark moody one page site for a photography studio, mostly pictures"
+  },
+  {
+    "id": "p07",
+    "vertical": "saas",
+    "expectedCategory": "saas",
+    "hasTemplate": true,
+    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table"
+  },
+  {
+    "id": "p08",
+    "vertical": "gym",
+    "expectedCategory": "other",
+    "hasTemplate": true,
+    "prompt": "bold loud page for a boutique gym, big pictures, class packages and pricing, open till 11pm"
+  },
+  {
+    "id": "p09",
+    "vertical": "unknown",
+    "expectedCategory": "other",
+    "hasTemplate": false,
+    "prompt": "a website"
+  },
+  {
+    "id": "p10",
+    "vertical": "interior-design",
+    "expectedCategory": "portfolio",
+    "hasTemplate": false,
+    "prompt": "site for Priya Ramanathan, freelance interior designer, formal tone, gallery of past work and an enquiry form"
+  },
+  {
+    "id": "p11",
+    "vertical": "bakery",
+    "expectedCategory": "restaurant",
+    "hasTemplate": false,
+    "prompt": "small home bakery in indiranagar, we do custom birthday cakes brownies and cupcakes, want people to whatsapp me orders"
+  },
+  {
+    "id": "p12",
+    "vertical": "plumber",
+    "expectedCategory": "business",
+    "hasTemplate": false,
+    "prompt": "i'm a plumber in pune doing emergency callouts leak repairs and bathroom fittings, need my number big on the page and 24/7 mentioned"
+  },
+  {
+    "id": "p13",
+    "vertical": "music-school",
+    "expectedCategory": "education",
+    "hasTemplate": false,
+    "prompt": "guitar and keyboard classes for kids and adults, small studio in jayanagar, batches on weekends, want photos of the studio and fee details"
+  },
+  {
+    "id": "p14",
+    "vertical": "pet-grooming",
+    "expectedCategory": "business",
+    "hasTemplate": false,
+    "prompt": "dog grooming place in hsr layout, baths nail trimming and de-shedding, we pick up and drop, want it to feel friendly and not clinical"
+  },
+  {
+    "id": "p15",
+    "vertical": "wedding-photographer",
+    "expectedCategory": "photography",
+    "hasTemplate": true,
+    "prompt": "wedding photographer covering south india, candid style, need a big gallery and packages, moody dark look"
+  },
+  {
+    "id": "p16",
+    "vertical": "salon",
+    "expectedCategory": "business",
+    "hasTemplate": false,
+    "prompt": "hair and beauty salon in kalyan nagar, we do haircuts colouring facials and bridal makeup, need prices and some way to book a slot"
+  },
+  {
+    "id": "p17",
+    "vertical": "car-repair",
+    "expectedCategory": "business",
+    "hasTemplate": false,
+    "prompt": "garage in whitefield doing car servicing denting painting and ac repair, we pick up the car from your house, want people to call or whatsapp"
+  },
+  {
+    "id": "p18",
+    "vertical": "tuition-centre",
+    "expectedCategory": "education",
+    "hasTemplate": true,
+    "prompt": "tuition classes for 8th to 10th std maths and science in vijayanagar, small batches of 10, want to show our results and what parents said"
+  },
+  {
+    "id": "p19",
+    "vertical": "physiotherapy",
+    "expectedCategory": "other",
+    "hasTemplate": false,
+    "prompt": "physio clinic in bandra, sports injuries back pain and post surgery rehab, we do home visits also, need appointment booking"
+  },
+  {
+    "id": "p20",
+    "vertical": "cafe",
+    "expectedCategory": "restaurant",
+    "hasTemplate": true,
+    "prompt": "small specialty coffee place in fort kochi, we roast our own beans, also sandwiches and cakes, want the menu and photos, quiet vibe not loud"
+  },
+  {
+    "id": "p21",
+    "vertical": "food-truck",
+    "expectedCategory": "food",
+    "hasTemplate": false,
+    "prompt": "food truck doing rolls and momos, we move between hitech city and gachibowli, need todays location and the menu on the page"
+  },
+  {
+    "id": "p22",
+    "vertical": "tailor",
+    "expectedCategory": "business",
+    "hasTemplate": false,
+    "prompt": "tailoring shop in chandni chowk, blouse stitching alterations and custom suits, 30 years in the same shop, want photos of the work"
+  },
+  {
+    "id": "p23",
+    "vertical": "real-estate",
+    "expectedCategory": "business",
+    "hasTemplate": true,
+    "prompt": "real estate agent in gurgaon dealing in flats and plots, want listings with photos and price, and my number should be big"
+  },
+  {
+    "id": "p24",
+    "vertical": "architecture-studio",
+    "expectedCategory": "architecture",
+    "hasTemplate": false,
+    "prompt": "architecture practice in ahmedabad, residential and small commercial projects, want a clean portfolio with drawings and site photos"
+  },
+  {
+    "id": "p25",
+    "vertical": "travel-agency",
+    "expectedCategory": "travel",
+    "hasTemplate": false,
+    "prompt": "we do custom trips to ladakh and spiti, bike tours and jeep safaris, need packages with prices and an enquiry form"
+  },
+  {
+    "id": "p26",
+    "vertical": "personal-trainer",
+    "expectedCategory": "fitness",
+    "hasTemplate": true,
+    "prompt": "personal trainer in powai, weight loss strength training and online coaching plans, want before after photos and my packages"
+  },
+  {
+    "id": "p27",
+    "vertical": "online-store",
+    "expectedCategory": "store",
+    "hasTemplate": true,
+    "prompt": "small shop selling handmade soaps and candles, we ship all over india, need product photos prices and a cart"
+  },
+  {
+    "id": "p28",
+    "vertical": "wedding-planner",
+    "expectedCategory": "event",
+    "hasTemplate": false,
+    "prompt": "wedding planning in jaipur, we handle venue decor catering and photography coordination, want a gallery and package options"
+  },
+  {
+    "id": "p29",
+    "vertical": "writer-blog",
+    "expectedCategory": "blog",
+    "hasTemplate": false,
+    "prompt": "personal blog where i write about books and slow living, keep it minimal, just the posts and an about page"
+  },
+  {
+    "id": "p30",
+    "vertical": "freelance-cv",
+    "expectedCategory": "resume",
+    "hasTemplate": false,
+    "prompt": "one page site about me, i'm a freelance graphic designer looking for work, need my projects skills and a contact button"
+  }
 ]

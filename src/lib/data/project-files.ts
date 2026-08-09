@@ -64,13 +64,21 @@ export async function putProjectFiles(
             ?? new ApiError('internal', 'Could not save the files.', error.message);
     }
 
+    // replace_project_files returns the project's new updated_at, so no second round trip.
     return { projectId, files, updatedAt: data as string };
 }
 
-// Bump projects.updated_at so the dashboard orders by real activity. The value sent
-// here is a placeholder — the set_updated_at trigger overwrites it with now(). It has
-// to be a real column though: supabase-js strips undefined, so an "empty" update sends
-// nothing and the trigger never fires.
+// Bump projects.updated_at so the dashboard orders by real activity. Still used by the
+// single-file write and delete paths, which do not go through replace_project_files.
+//
+// The column is written explicitly rather than by sending an empty update. `{ name:
+// undefined }` looks like a no-op update that would still fire the set_updated_at trigger,
+// but supabase-js serialises the payload with JSON.stringify, which drops undefined — so
+// what reaches PostgREST is `{}`, an update with no columns to set, and every file write
+// failed on it with a 500 (found by the R3 D5 acceptance).
+//
+// The trigger still overwrites this value with now(), so the timestamp remains the
+// database's to decide; what changed is that the statement is now a valid one.
 async function touchProject(supabase: SupabaseClient, projectId: string): Promise<string> {
     const { data, error } = await supabase
         .from('projects')

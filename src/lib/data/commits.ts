@@ -10,21 +10,9 @@ import { ApiError } from "@/lib/errors/respond";
 import { getProjectFiles } from "./project-files";
 import { treeSha } from "./tree-hash";
 
-// The commit mirror (E-6, V-1).
-//
-// Git is the truth about a project's history; this table is the copy we read. Version
-// history is on screen every time the editor opens, and answering that from the Git layer
-// would mean a network call per project per open — so every commit is written here as it
-// is made, and reads never touch Git at all.
-//
-// Three entry points. recordCommit() is the single writer. listCommits() is the read this
-// whole table exists for. createCommit() (R3 D6) is the explicit-save path: it derives a
-// content-addressed sha from the working tree, stores that tree in `snapshot`, and then
-// mirrors through recordCommit like everything else.
-//
-// Writes are additive and that is enforced below the application: the table grants only
-// select and insert, so nothing signed in can rewrite or erase history. A restore appends
-// a new commit that returns the tree to an older state; it never removes what happened.
+// The commit mirror: reads project commit history from database instead of Git calls.
+// recordCommit is the single writer; createCommit (R3 D6) is the explicit-save path that
+// derives a content-addressed sha from the working tree and stores that tree in `snapshot`.
 
 // A single project's history is small — a working session is tens of commits, not
 // thousands. Capped so one very old project cannot turn a history read into a large
@@ -50,16 +38,7 @@ function rowToCommit(row: CommitRow): Commit {
   };
 }
 
-/**
- * The project's history, newest first.
- *
- * One indexed query on (project_id, created_at desc, id desc) and no Git call. Ordering
- * includes the id because a fork writes its first commit in the same instant as the
- * project row, and two commits sharing a timestamp must still have one stable order.
- *
- * Owner-scoped by RLS: a project belonging to someone else has no visible commits, so a
- * leaked id yields not_found rather than a history.
- */
+/** List the project's commit history, newest first. */
 export async function listCommits(
   supabase: SupabaseClient,
   projectId: string,
@@ -96,16 +75,7 @@ export async function listCommits(
 /**
  * Mirror one commit that already exists, optionally carrying the tree it describes.
  *
- * Called by whoever made the commit, immediately after making it — never speculatively.
- * A row here claims a commit exists, and history is read from here, so writing one before
- * the commit lands would put a sha in the editor's history that Git cannot resolve.
- *
- * Re-mirroring the same sha is not an error. Publish carries an Idempotency-Key and a
- * retried request can reach this point twice with the same commit; the unique
- * (project_id, sha) index makes the second write a no-op rather than a duplicate row or a
- * failed retry.
- *
- * `snapshot` is the tree as it stood at this commit (R3 D6). Restore and publish both need
+ * `snapshot` is the tree as it stood at this commit (R3 D6): restore and publish both need
  * the exact files of a past version, and reading them back out of a commit is one query.
  */
 export async function recordCommit(

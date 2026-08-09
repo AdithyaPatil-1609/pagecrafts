@@ -123,10 +123,8 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
         });
     };
 
-    // Spend, run, and record the call. A call that dispatched but then failed
-    // validation still cost tokens (B6) — record its usage rather than refund it,
-    // so `requests` and the ledger never undercount a paid call. Only a call that
-    // never reached the provider is refunded.
+    // A call that dispatched but failed validation still cost tokens, so it is
+    // recorded rather than refunded. Only calls that never reached a provider are.
     const runStage = async <T extends { usage: Usage }>(
         stage: CallRecord['stage'],
         n: number,
@@ -174,7 +172,6 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
                     customerWord: p.data.vocabulary.customer,
                 };
 
-                // BR-09: one repair attempt, never two. Each attempt is billed.
                 const outcome = await withOneRepair((repairContext) =>
                     runStage(
                         'fill',

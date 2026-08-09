@@ -13,7 +13,7 @@ function pricingTable(): Partial<Record<Provider, ProviderPricing>> {
     };
 }
 
-/** One row per model invocation — successful or not (M3.8, NFR-142). */
+/** One row per model invocation, successful or not (M3.8). */
 export interface LedgerRow {
     stage: string;
     provider: Provider | 'unknown';
@@ -27,13 +27,7 @@ export interface LedgerRow {
     createdAt: string;
 }
 
-/**
- * Price a call against the provider that served it.
- *
- * Costing a Groq call at Gemini's rate produces a wrong number that looks real,
- * and NFR-142 requires reconciling to within 5% of the invoice — so the rate
- * always comes from the recorded provider, never from a shared default.
- */
+/** Priced at the rate of the provider that served it, never a shared default (NFR-142). */
 export function costCentsFor(
     provider: Provider | 'unknown',
     inputTokens: number,
@@ -69,11 +63,7 @@ export function rowFor(
     };
 }
 
-/**
- * Collects ledger rows for one generation. The sink is deliberately in-memory:
- * persistence lands with the `generations` table on D9, and this keeps the
- * accounting testable and provider-correct before then.
- */
+/** Rows for one generation. In-memory until the `generations` table lands on D9. */
 export class CostLedger {
     private readonly rows: LedgerRow[] = [];
 
@@ -100,7 +90,7 @@ export class CostLedger {
         );
     }
 
-    /** Spend split by provider — the shape NFR-142 reconciliation needs. */
+    /** Spend split by provider, for invoice reconciliation. */
     byProvider(): Record<string, { calls: number; costCents: number; tokens: number }> {
         const out: Record<string, { calls: number; costCents: number; tokens: number }> = {};
         for (const r of this.rows) {

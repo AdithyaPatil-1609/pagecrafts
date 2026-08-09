@@ -1,17 +1,6 @@
 import type { ContentSchema, Field } from "@/lib/contracts";
 
-// The content_schema authoring conventions, as code (C-07).
-//
-// The content panel is generated from `content_schema` and nothing else — no template ever
-// gets its own UI. That promise is only as strong as the schemas: one design that spells a
-// field `Heading_1`, or ships a list with no item shape, or leaves a free-text field
-// uncapped, forces a special case into the panel, and the first special case is the end of
-// "zero per-template UI".
-//
-// So the conventions are checked rather than agreed. Every rule here is one the panel
-// depends on, and the prose behind each — why it exists, and how to author to it — is in
-// docs/content-schema-conventions.md. The two are meant to be read together; if this file
-// and that document ever disagree, the disagreement is the bug.
+// Validation functions enforcing content_schema authoring conventions.
 
 const KEY_RE = /^[a-z][a-z0-9_]*$/;
 

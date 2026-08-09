@@ -13,10 +13,23 @@ vi.mock('@/lib/auth/session', () => ({
 const limits = vi.hoisted(() => ({
     evalMock: vi.fn(),
     zremMock: vi.fn(),
+    getMock: vi.fn(),
+    hgetallMock: vi.fn(),
+    hincrbyMock: vi.fn(),
+    hincrbyfloatMock: vi.fn(),
+    expireMock: vi.fn(),
 }));
 
 vi.mock('@/lib/limits/redis', () => ({
-    redis: () => ({ eval: limits.evalMock, zrem: limits.zremMock }),
+    redis: () => ({
+        eval: limits.evalMock,
+        zrem: limits.zremMock,
+        get: limits.getMock,
+        hgetall: limits.hgetallMock,
+        hincrby: limits.hincrbyMock,
+        hincrbyfloat: limits.hincrbyfloatMock,
+        expire: limits.expireMock,
+    }),
 }));
 
 import { setGateway } from '@/lib/ai/gateway';
@@ -34,9 +47,20 @@ beforeEach(() => {
     auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
     limits.evalMock.mockReset();
     limits.zremMock.mockReset();
+    limits.getMock.mockReset();
+    limits.hgetallMock.mockReset();
+    limits.hincrbyMock.mockReset();
+    limits.hincrbyfloatMock.mockReset();
+    limits.expireMock.mockReset();
+
     limits.evalMock.mockImplementation(async (_script: string, keys: string[]) =>
         keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0],
     );
+    limits.getMock.mockResolvedValue(null);
+    limits.hgetallMock.mockResolvedValue(null);
+    limits.hincrbyMock.mockResolvedValue(1);
+    limits.hincrbyfloatMock.mockResolvedValue(1);
+    limits.expireMock.mockResolvedValue(1);
 });
 
 afterEach(() => {

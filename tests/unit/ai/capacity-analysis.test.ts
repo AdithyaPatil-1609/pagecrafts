@@ -25,7 +25,7 @@ describe('capacity analysis — the binding limit', () => {
     it('reports tokens/day as binding when it runs out first', () => {
         const a = analyse([run(10, 9_426)], GROQ);
         expect(a.bindingLimit).toBe('tokens/day');
-        // 200k * 0.85 / 9426 = 18, far below the 85 a request-only model predicts.
+        // Far below the 85 a request-only model predicts.
         expect(a.projectedGenerationsPerDay).toBe(18);
     });
 

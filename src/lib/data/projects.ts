@@ -11,6 +11,7 @@ import type {
   SiteMeta,
 } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
+import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
 
@@ -136,7 +137,12 @@ export async function createProject(
     .single();
 
   if (error) {
-    throw new ApiError("internal", "Could not create the project.", error.message);
+    // A sourceTemplateId that no longer exists is a bad request, not our failure: saying
+    // `internal` would tell the caller to retry something that can never succeed.
+    throw (
+      clientFault(error, "That design is not available any more.") ??
+      new ApiError("internal", "Could not create the project.", error.message)
+    );
   }
 
   const projectId = data.id as string;
@@ -195,7 +201,10 @@ export async function patchProject(
     .maybeSingle();
 
   if (error) {
-    throw new ApiError("internal", "Could not update the project.", error.message);
+    throw (
+      clientFault(error, "Some of those settings were not allowed.") ??
+      new ApiError("internal", "Could not update the project.", error.message)
+    );
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
-import type { Category, Template } from "@/lib/contracts";
+import type { Category } from "@/lib/contracts";
 import { CATEGORY_LABELS } from "@/lib/discovery/categories";
-import type { SortKey } from "@/lib/discovery/sort";
+import type { SortKey, TemplateSummary } from "@/lib/templates/query";
 import { TemplateCard } from "@/components/discovery/TemplateCard";
 import { SortSelect } from "@/components/discovery/SortSelect";
+import { GalleryEmpty } from "@/components/discovery/GalleryStates";
 
 // Pinned below the grid in every state, including zero results (D-6, AC-F3-4): there is
 // always a way forward from this screen, even when no design matches.
@@ -43,23 +44,48 @@ function DesignSomethingNewCard({ index }: { index: number }) {
 
 export function GalleryGrid({
     templates,
+    total,
     activeCategory,
     sort,
     preserve,
     personalised,
+    resetHref,
+    ranked = false,
 }: {
-    templates: Template[];
+    templates: TemplateSummary[];
+    /** How many designs the library holds, for the "showing N of M" line. */
+    total: number;
     activeCategory?: Category;
     sort: SortKey;
     preserve: Record<string, string>;
     personalised: boolean;
+    resetHref: string;
+    /** True when a description was classified, so the order carries a real score (D6). */
+    ranked?: boolean;
 }) {
+    const filtered = templates.length !== total;
+
+    // The relevance cue, and the only honest one available: which designs actually matched
+    // something the person described, and which are simply the rest of the library sitting
+    // below them. A score of 30 is not "94% relevant" and must never be dressed up as one —
+    // it is tag overlap, and the useful thing it can say is "this matched, that did not".
+    // With no ranking, or with everything matching, there is nothing to divide and the grid
+    // stays one grid.
+    const matched = ranked ? templates.filter((t) => t.score > 0) : templates;
+    const rest = ranked ? templates.filter((t) => t.score === 0) : [];
+    const split = ranked && matched.length > 0 && rest.length > 0;
+
     return (
         <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <h2 className="flex flex-wrap items-center gap-2.5 text-xl font-bold tracking-tight text-foreground">
                     {templates.length} design{templates.length === 1 ? "" : "s"}
                     {personalised ? " for you" : " to start from"}
+                    {filtered && (
+                        <span className="text-sm font-normal text-muted-foreground">
+                            of {total}
+                        </span>
+                    )}
                     {activeCategory && (
                         <span className="rounded-full border border-primary/40 px-2.5 py-0.5 text-xs font-medium text-primary">
                             · {CATEGORY_LABELS[activeCategory]}
@@ -69,23 +95,31 @@ export function GalleryGrid({
                 <SortSelect value={sort} preserve={preserve} />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {templates.map((template, index) => (
-                    <TemplateCard key={template.id} template={template} index={index + 1} />
-                ))}
-            </div>
+            {templates.length === 0 && <GalleryEmpty resetHref={resetHref} />}
 
-            {templates.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                    No designs match that category yet — start from scratch below, or{" "}
-                    <Link
-                        href="/templates"
-                        className="font-medium text-primary underline underline-offset-4"
-                    >
-                        see every design
-                    </Link>
-                    .
-                </p>
+            {templates.length > 0 && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {(split ? matched : templates).map((template, index) => (
+                        <TemplateCard key={template.id} template={template} index={index + 1} />
+                    ))}
+                </div>
+            )}
+
+            {split && (
+                <section className="mt-4 flex flex-col gap-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                        Everything else in the library
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {rest.map((template, index) => (
+                            <TemplateCard
+                                key={template.id}
+                                template={template}
+                                index={matched.length + index + 1}
+                            />
+                        ))}
+                    </div>
+                </section>
             )}
 
             <section className="mt-6 flex flex-col gap-4">

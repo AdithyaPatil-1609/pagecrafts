@@ -3,9 +3,11 @@ import { create } from 'zustand';
 import { VFS } from '@/lib/vfs';
 import { validatePath, type PathError } from '@/lib/paths';
 import { loadProjectFiles, saveProjectFiles, pickEntryFile } from '@/lib/project-source';
+import { debounceTrigger } from '@/lib/debounce';
 import type { TreeNode } from '@/lib/contracts';
 
 const vfs = new VFS();
+const AUTOSAVE_DELAY_MS = 1500;
 
 interface EditorState {
     vfs: VFS;
@@ -28,6 +30,7 @@ interface EditorState {
     renameFile: (from: string, to: string) => PathError | null;
     deleteFile: (path: string) => void;
     saveProject: () => Promise<void>;
+    flushPendingSave: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -44,6 +47,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     lastSavedAt: null,
 
     loadProject: async (projectId) => {
+        autosave.cancel();
         set({ loading: true, loadError: null, saveError: null, projectId });
 
         const { files, updatedAt, error } = await loadProjectFiles(projectId);
@@ -64,14 +68,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         });
     },
 
-    openFile: (path) => set({ activeFile: path }),
+    openFile: (path) => {
+        autosave.flush();
+        set({ activeFile: path });
+    },
 
     writeActive: (content) => {
         const { vfs, activeFile } = get();
         if (activeFile) vfs.write(activeFile, content);
+        autosave.trigger();
     },
 
-    toggleAdvanced: () => set((s) => ({ advanced: !s.advanced })),
+    toggleAdvanced: () => {
+        autosave.flush();
+        set((s) => ({ advanced: !s.advanced }));
+    },
 
     refresh: () => set({ tree: vfs.list(), dirtyPaths: vfs.dirtyPaths() }),
 
@@ -82,6 +93,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const clean = path.trim();
         vfs.write(clean, '');
         set({ activeFile: clean });
+        autosave.flush();
         return null;
     },
 
@@ -92,6 +104,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const clean = to.trim();
         vfs.rename(from, clean);
         if (activeFile === from) set({ activeFile: clean });
+        autosave.flush();
         return null;
     },
 
@@ -99,6 +112,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const { vfs, activeFile } = get();
         vfs.delete(path);
         if (activeFile === path) set({ activeFile: vfs.paths()[0] ?? null });
+        autosave.flush();
     },
 
     saveProject: async () => {
@@ -118,6 +132,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         vfs.markClean();
         set({ saving: false, lastSavedAt: updatedAt });
     },
+
+    flushPendingSave: () => autosave.flush(),
 }));
+
+const autosave = debounceTrigger(() => {
+    useEditorStore.getState().saveProject();
+}, AUTOSAVE_DELAY_MS);
 
 vfs.subscribe(() => useEditorStore.getState().refresh());

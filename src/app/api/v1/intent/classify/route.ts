@@ -12,8 +12,9 @@ export const POST = withRoute({
     auth: 'required',
     limit: 'ai',
     schema: request.classify,
-    handler: async ({ body }) => {
-        const { data } = await classify(body.text);
+    handler: async ({ body, recordUsage }) => {
+        const { data, usage } = await classify(body.text);
+        await recordUsage(usage);
         return ok(data);
     },
 });
