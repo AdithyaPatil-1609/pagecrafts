@@ -187,6 +187,12 @@ export const MOTIF_BY_CATEGORY: Record<string, MotifId> = {
     hospitality: "lantern",
     automotive: "orbit",
     media: "marquee",
+    sports: "chart",
+    health_wellness: "lantern",
+    pets: "arcs",
+    arts_culture: "frame",
+    retail: "awning",
+    finance: "chart",
 };
 
 export function toMotifId(value: string | undefined | null): MotifId {

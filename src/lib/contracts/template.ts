@@ -36,7 +36,16 @@ export type Category =
   // labelled with it and nothing already carried that label.
   | "hospitality"
   | "automotive"
-  | "media";
+  | "media"
+  // Designs 37-51 (the fourth batch). Note health_wellness sits alongside beauty: the
+  // mockups label a spa "Health & Wellness" and a salon "Beauty & Wellness", and those are
+  // different shelves to the person choosing.
+  | "sports"
+  | "health_wellness"
+  | "pets"
+  | "arts_culture"
+  | "retail"
+  | "finance";
 
 export type FileMap = Record<string, string>;
 
