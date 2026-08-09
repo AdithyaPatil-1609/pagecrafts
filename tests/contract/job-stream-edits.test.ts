@@ -6,11 +6,12 @@ vi.mock('@/lib/auth/session', () => ({
     supabaseRoute: async () => ({}),
 }));
 
-const limits = vi.hoisted(() => ({ evalMock: vi.fn(), zremMock: vi.fn() }));
-vi.mock('@/lib/limits/redis', () => ({
-    redis: () => ({ eval: limits.evalMock, zrem: limits.zremMock }),
-}));
+vi.mock('@/lib/limits/redis', async () => {
+    const support = await import('../support/redis-mock');
+    return { redis: () => support.redisStub, isRedisConfigured: () => true };
+});
 
+import { redisMock as limits, resetRedisMock } from '../support/redis-mock';
 import { setGateway, type Gateway } from '@/lib/ai/gateway';
 import { MockGateway } from '@/lib/ai/gateway/mock';
 import { jobStore, setJobStore } from '@/lib/ai/jobs/store';
@@ -54,7 +55,7 @@ async function settled(id: string) {
 
 beforeEach(() => {
     auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
-    limits.evalMock.mockReset();
+    resetRedisMock();
     limits.evalMock.mockImplementation(async (_s: string, keys: string[]) =>
         keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0]);
     setJobStore(null);
