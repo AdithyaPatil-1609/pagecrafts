@@ -22,7 +22,16 @@ export type Category =
   | "architecture"
   | "education"
   | "travel"
-  | "business";
+  | "business"
+  // Designs 13-24 (the second library batch). Each of these exists because a design in
+  // that batch is labelled with it on its tile and no existing bucket carries that label:
+  // a salon is not "Other", and a dental clinic is not "Business".
+  | "beauty"
+  | "real_estate"
+  | "healthcare"
+  | "design"
+  | "professional_services"
+  | "entertainment";
 
 export type FileMap = Record<string, string>;
 

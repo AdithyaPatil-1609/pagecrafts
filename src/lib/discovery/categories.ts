@@ -7,19 +7,28 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   restaurant: "Restaurant",
   saas: "SaaS",
   blog: "Blog",
-  event: "Event",
+  // "Events", "Food & Beverage" and "E-commerce" are the words the second batch's tiles
+  // use. The label is shared, so Event and Restaurant now read that way too — the designs
+  // themselves are untouched, only the word above them changed.
+  event: "Events",
   resume: "Resume",
   agency: "Agency",
-  store: "Store",
+  store: "E-commerce",
   nonprofit: "Non-profit",
   other: "Other",
   fitness: "Fitness",
-  food: "Food",
+  food: "Food & Beverage",
   photography: "Photography",
   architecture: "Architecture",
   education: "Education",
   travel: "Travel",
   business: "Business",
+  beauty: "Beauty & Wellness",
+  real_estate: "Real Estate",
+  healthcare: "Healthcare",
+  design: "Design",
+  professional_services: "Professional Services",
+  entertainment: "Entertainment",
 };
 
 // The cards on the intent screen (screen 03), in display order. This is the set of
@@ -41,6 +50,14 @@ export const CATEGORY_CARDS: Category[] = [
   "agency",
   "business",
   "event",
+  // The buckets designs 13-24 brought with them.
+  "beauty",
+  "real_estate",
+  "healthcare",
+  "design",
+  "professional_services",
+  "entertainment",
+  "store",
 ];
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);
