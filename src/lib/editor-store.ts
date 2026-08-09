@@ -4,10 +4,24 @@ import { VFS } from '@/lib/vfs';
 import { validatePath, type PathError } from '@/lib/paths';
 import { loadProjectFiles, saveProjectFiles, pickEntryFile } from '@/lib/project-source';
 import { debounceTrigger } from '@/lib/debounce';
+import { compareText } from '@/lib/compare';
 import type { TreeNode } from '@/lib/contracts';
 
 const vfs = new VFS();
 const AUTOSAVE_DELAY_MS = 1500;
+
+export interface PendingChange {
+    path: string;
+    before: string;
+    after: string;
+    explanation: string;
+}
+
+export interface ProposedChange {
+    path: string;
+    after: string;
+    explanation: string;
+}
 
 interface EditorState {
     vfs: VFS;
@@ -21,6 +35,7 @@ interface EditorState {
     saving: boolean;
     saveError: string | null;
     lastSavedAt: string | null;
+    pendingChange: PendingChange | null;
     loadProject: (projectId: string) => Promise<void>;
     openFile: (path: string) => void;
     writeActive: (content: string) => void;
@@ -31,6 +46,9 @@ interface EditorState {
     deleteFile: (path: string) => void;
     saveProject: () => Promise<void>;
     flushPendingSave: () => void;
+    proposeChange: (proposed: ProposedChange) => void;
+    acceptChange: () => void;
+    rejectChange: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -45,10 +63,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saving: false,
     saveError: null,
     lastSavedAt: null,
+    pendingChange: null,
 
     loadProject: async (projectId) => {
         autosave.cancel();
-        set({ loading: true, loadError: null, saveError: null, projectId });
+        set({
+            loading: true,
+            loadError: null,
+            saveError: null,
+            pendingChange: null,
+            projectId,
+        });
 
         const { files, updatedAt, error } = await loadProjectFiles(projectId);
 
@@ -134,6 +159,36 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     },
 
     flushPendingSave: () => autosave.flush(),
+
+    proposeChange: (proposed) => {
+        const { vfs } = get();
+        const before = vfs.read(proposed.path);
+
+        if (before === null) return;
+
+        const compared = compareText(before, proposed.after);
+        if (compared.isEmpty) return;
+
+        set({
+            pendingChange: {
+                path: proposed.path,
+                before,
+                after: proposed.after,
+                explanation: proposed.explanation,
+            },
+            activeFile: proposed.path,
+        });
+    },
+
+    acceptChange: () => {
+        const { vfs, pendingChange } = get();
+        if (!pendingChange) return;
+
+        vfs.write(pendingChange.path, pendingChange.after);
+        set({ pendingChange: null });
+    },
+
+    rejectChange: () => set({ pendingChange: null }),
 }));
 
 const autosave = debounceTrigger(() => {
