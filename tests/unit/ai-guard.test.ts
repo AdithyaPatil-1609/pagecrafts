@@ -2,9 +2,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const evalMock = vi.fn();
 const zremMock = vi.fn();
+const getMock = vi.fn();
+const hgetallMock = vi.fn();
+const hincrbyMock = vi.fn();
+const hincrbyfloatMock = vi.fn();
+const expireMock = vi.fn();
 
 vi.mock("@/lib/limits/redis", () => ({
-  redis: () => ({ eval: evalMock, zrem: zremMock }),
+  redis: () => ({
+    eval: evalMock,
+    zrem: zremMock,
+    get: getMock,
+    hgetall: hgetallMock,
+    hincrby: hincrbyMock,
+    hincrbyfloat: hincrbyfloatMock,
+    expire: expireMock,
+  }),
 }));
 
 import { guardAiRequest } from "@/lib/limits/ai-guard";
@@ -15,6 +28,17 @@ const headers = new Headers({ "x-forwarded-for": "203.0.113.9" });
 beforeEach(() => {
   evalMock.mockReset();
   zremMock.mockReset();
+  getMock.mockReset();
+  hgetallMock.mockReset();
+  hincrbyMock.mockReset();
+  hincrbyfloatMock.mockReset();
+  expireMock.mockReset();
+
+  getMock.mockResolvedValue(null);
+  hgetallMock.mockResolvedValue(null);
+  hincrbyMock.mockResolvedValue(1);
+  hincrbyfloatMock.mockResolvedValue(1);
+  expireMock.mockResolvedValue(1);
 });
 
 describe("guardAiRequest", () => {
