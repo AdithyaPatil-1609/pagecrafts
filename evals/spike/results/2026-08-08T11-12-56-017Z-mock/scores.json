@@ -1,0 +1,142 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "hasTemplate": false,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "law-firm",
+    "hasTemplate": false,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "yoga-studio",
+    "hasTemplate": false,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "ngo",
+    "hasTemplate": false,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "restaurant",
+    "hasTemplate": true,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "photography",
+    "hasTemplate": true,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "saas",
+    "hasTemplate": true,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "gym",
+    "hasTemplate": true,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "unknown",
+    "hasTemplate": false,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  },
+  {
+    "vertical": "interior-design",
+    "hasTemplate": false,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  }
+]

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
+import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import TopBar from './TopBar';
 import ContentPanel from './ContentPanel';
 import PreviewPane from './PreviewPane';
@@ -9,6 +10,7 @@ import CodePane from './CodePane';
 import { TreeSkeleton, PaneSkeleton } from './Skeletons';
 
 export default function EditorShell({ projectId }: { projectId: string }) {
+    useUnsavedGuard();
     const advanced = useEditorStore((s) => s.advanced);
     const loading = useEditorStore((s) => s.loading);
     const loadError = useEditorStore((s) => s.loadError);

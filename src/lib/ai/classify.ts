@@ -33,20 +33,19 @@ export async function classify(text: string): Promise<AiResult<IntentAttributes>
     try {
         const reply = await model.fast.complete({
             job: 'classify',
-            system: render(tpl.system, {
-                categories: CATEGORIES,
-                sectionKeys: SECTION_KEYS.join(', '),
-            }),
+            system: render(tpl.system),
             user: render(tpl.user, { text: input }),
             schema: classifySchema,
         });
 
+        const usage: Usage = { ...reply, promptVersion: `${tpl.id}.${tpl.version}` };
+
         const raw: unknown = JSON.parse(stripFences(reply.text));
-        if (!isClassificationShaped(raw)) return { data: SAFE, usage: reply };
+        if (!isClassificationShaped(raw)) return { data: SAFE, usage };
 
         const coerced = coercedFields(raw);
         const parsed = classification.safeParse(raw);
-        if (!parsed.success) return { data: SAFE, usage: reply };
+        if (!parsed.success) return { data: SAFE, usage };
 
         if (coerced.length > 0) {
             console.warn(`classify: coerced ${coerced.join(', ')}`);
@@ -54,7 +53,7 @@ export async function classify(text: string): Promise<AiResult<IntentAttributes>
 
         return {
             data: { ...parsed.data, fallback: coerced.includes('category') },
-            usage: reply,
+            usage,
         };
     } catch (err) {
         console.warn(`classify: fell back — ${err instanceof Error ? err.message : err}`);

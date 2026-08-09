@@ -5,6 +5,7 @@ import type { ZodType } from "zod";
 
 import { requireUser, supabaseRoute } from "@/lib/auth/session";
 import { ApiError, fail } from "@/lib/errors/respond"
+import { guardAiRequest } from "@/lib/limits/ai-guard";
 
 export interface RouteContext<Body, Params> {
   req: NextRequest;
@@ -17,6 +18,7 @@ export interface RouteContext<Body, Params> {
 export interface RouteOptions<Body, Params> {
   auth?: "required" | "none";
   schema?: ZodType<Body>;
+  limit?: "ai";
   handler: (ctx: RouteContext<Body, Params>) => Promise<Response>;
 }
 
@@ -56,7 +58,19 @@ export function withRoute<
         body = parsed.data;
       }
 
-      return await opts.handler({ req, params, body, userId, supabase });
+      if (opts.limit !== "ai") {
+        return await opts.handler({ req, params, body, userId, supabase });
+      }
+
+      const guard = await guardAiRequest(userId, req.headers);
+
+      if (!guard.ok) return guard.response;
+
+      try {
+        return await opts.handler({ req, params, body, userId, supabase });
+      } finally {
+        await guard.release();
+      }
     } catch (err) {
       if (err instanceof ApiError) return fail(err.code, err.message, err.detail);
       console.error("[api]", err);

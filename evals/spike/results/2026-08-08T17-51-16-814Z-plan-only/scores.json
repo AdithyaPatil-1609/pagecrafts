@@ -1,0 +1,16 @@
+[
+  {
+    "vertical": "photography",
+    "hasTemplate": true,
+    "structureValid": true,
+    "requiredSectionsPresent": true,
+    "nonBlank": true,
+    "missing": [],
+    "human": {
+      "copySensible": null,
+      "sectionSelectionAppropriate": null,
+      "artDirectionAppropriate": null,
+      "notes": ""
+    }
+  }
+]

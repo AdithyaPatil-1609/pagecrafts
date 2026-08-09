@@ -146,6 +146,118 @@ paths:
                 $ref: '#/components/schemas/ProjectFilesResult'
         default:
           $ref: '#/components/responses/Error'
+  # Per-path file access. Shipped R3 D3; documented here at D4 so the contract tests have
+  # a spec to hold the routes to. `path` is a catch-all: "sections/hero.html" arrives as
+  # nested segments and is rejoined by the handler.
+  /projects/{projectId}/files/{path}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+      - $ref: '#/components/parameters/FilePath'
+    get:
+      operationId: getProjectFile
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: One file's contents.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectFileResult'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: putProjectFile
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: File written. Marks the tree dirty; never commits (V-4).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWriteResult'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteProjectFile
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: File removed from the working tree.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileWriteResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/content:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    patch:
+      operationId: patchProjectContent
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchContentRequest'
+      responses:
+        '200':
+          description: Content ops applied to content_json (E-1).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatchContentResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/assets:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: createProjectAsset
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUnsplashAssetRequest'
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                kind:
+                  $ref: '#/components/schemas/AssetKind'
+      responses:
+        '201':
+          description: Asset stored, with attribution for an Unsplash pick (S-1).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetResult'
+        default:
+          $ref: '#/components/responses/Error'
+  # The commit mirror (R3 D4). Read-only here: the explicit save (POST) and restore write
+  # a real commit first and mirror it afterwards, and land with the workspace Git work.
   /projects/{projectId}/commits:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -155,11 +267,11 @@ paths:
         - sessionCookie: []
       responses:
         '200':
-          description: Save points for this project, newest first.
+          description: Version history, newest first, read from the mirror (E-6).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListCommitsResult'
+                $ref: '#/components/schemas/CommitListResult'
         default:
           $ref: '#/components/responses/Error'
     post:
@@ -261,6 +373,16 @@ components:
       schema:
         type: string
         format: uuid
+    FilePath:
+      name: path
+      in: path
+      required: true
+      description: >-
+        Project-relative text path, e.g. "index.html" or "sections/hero.html".
+        Absolute paths and traversal are rejected with validation_failed (C-02).
+      schema:
+        type: string
+        minLength: 1
   responses:
     Error:
       description: API failure.
@@ -460,6 +582,105 @@ components:
         updatedAt:
           type: string
           format: date-time
+    ProjectFileResponse:
+      type: object
+      required: [projectId, path, content, updatedAt]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        path:
+          type: string
+        content:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    # PUT and DELETE answer the same way: the tree moved, and it is dirty until committed.
+    FileWriteResponse:
+      type: object
+      required: [projectId, path, dirty, updatedAt]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        path:
+          type: string
+        dirty:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+    ContentOp:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
+          description: Dotted slot path into content_json, e.g. "hero.headline".
+        value: {}
+    PatchContentRequest:
+      type: object
+      required: [ops]
+      properties:
+        ops:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ContentOp'
+    PatchContentResponse:
+      type: object
+      required: [rendered, dirty]
+      properties:
+        rendered:
+          type: boolean
+        dirty:
+          type: boolean
+    AssetKind:
+      type: string
+      enum: [image, favicon, og_image]
+    CreateUnsplashAssetRequest:
+      type: object
+      required: [source, unsplashId]
+      properties:
+        source:
+          const: unsplash
+        unsplashId:
+          type: string
+          minLength: 1
+        kind:
+          $ref: '#/components/schemas/AssetKind'
+    AssetAttribution:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        link:
+          type: string
+    AssetResponse:
+      type: object
+      required: [id, kind, mimeType, byteSize, url, attribution]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/AssetKind'
+        mimeType:
+          type: string
+        byteSize:
+          type: integer
+        url:
+          type: [string, 'null']
+          description: Time-limited signed URL; the bucket itself is private.
+        attribution:
+          $ref: '#/components/schemas/AssetAttribution'
+    CommitAuthor:
+      type: string
+      enum: [user, ai_edit, system]
     Commit:
       type: object
       required: [sha, message, author, createdAt]
@@ -469,11 +690,8 @@ components:
           pattern: '^[0-9a-f]{7,40}$'
         message:
           type: string
-          minLength: 1
-          maxLength: 500
         author:
-          type: string
-          enum: [user, ai_edit, system]
+          $ref: '#/components/schemas/CommitAuthor'
         createdAt:
           type: string
           format: date-time
@@ -561,7 +779,7 @@ components:
       properties:
         code:
           type: string
-          enum: [unauthorized, forbidden, not_found, rate_limited, spend_capped, validation_failed, generation_failed, payment_required, hosting_error, internal]
+          enum: [unauthorized, forbidden, not_found, rate_limited, spend_capped, validation_failed, payload_too_large, generation_failed, payment_required, hosting_error, internal]
         message:
           type: string
         detail:
@@ -582,14 +800,6 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/ProjectFilesResponse'
-    ListCommitsResult:
-      type: object
-      required: [ok, data]
-      properties:
-        ok:
-          const: true
-        data:
-          $ref: '#/components/schemas/ListCommitsResponse'
     CreateCommitResult:
       type: object
       required: [ok, data]
@@ -622,6 +832,46 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/DeploymentResponse'
+    ProjectFileResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/ProjectFileResponse'
+    FileWriteResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/FileWriteResponse'
+    PatchContentResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/PatchContentResponse'
+    AssetResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/AssetResponse'
+    CommitListResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/ListCommitsResponse'
     ErrorResult:
       type: object
       required: [ok, error]

@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export const POST = withRoute({
     auth: 'required',
+    limit: 'ai',
     schema: request.classify,
     handler: async ({ body }) => {
         const { data } = await classify(body.text);

@@ -9,7 +9,15 @@ import { blankScoresheet, passRate } from './rubric';
 import type { Score } from './rubric';
 import { analyse, analysisReport } from './analysis';
 import { aiConfig } from '@/lib/ai/config';
-console.log(aiConfig().models);
+import { chainFor } from '@/lib/ai/gateway';
+
+const cfg = aiConfig();
+const chain = chainFor(cfg);
+const chainSummary = chain.map((gw) => {
+    const p = cfg.providers[gw.name];
+    return `${gw.name}(${p.models.fast} / ${p.models.strong})`;
+}).join(' → ');
+console.log(`chain: ${chainSummary}`);
 
 interface CorpusItem {
     id: string;
@@ -18,8 +26,9 @@ interface CorpusItem {
     prompt: string;
 }
 
-const PACE_MS = 13_000;
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// Pacing lives in the gateway now (gateway/rate-limit.ts), which meters tokens per
+// minute rather than sleeping between verticals — a single generation can exceed a
+// minute's token budget on its own, so a gap between runs never helped.
 
 function args(): { mode: Mode; budget: number; only: string[] } {
     const argv = process.argv.slice(2);
@@ -61,9 +70,9 @@ async function main() {
 
             results.push(result);
             console.log(
-                result.ok
+                    result.ok
                     ? `ok   ${result.requests} req  ${(result.modelTimeMs / 1000).toFixed(1)}s`
-                    : `FAIL ${result.error?.slice(0, 60)}`,
+                    : `FAIL ${result.error?.slice(0, 60)}${result.detail ? ' [detail in results]' : ''}`,
             );
         } catch (err) {
             if (err instanceof BudgetExceeded) {
@@ -73,7 +82,6 @@ async function main() {
             throw err;
         }
 
-        if (mode !== 'mock') await sleep(PACE_MS);
     }
 
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -89,8 +97,14 @@ async function main() {
     writeFileSync(join(dir, 'scores.json'), JSON.stringify(blankScoresheet(results), null, 2));
 
     if (mode !== 'mock') {
-        const rpd = Number(process.env.GEMINI_RPD ?? 20);
-        writeFileSync(join(dir, 'capacity.md'), analysisReport(analyse(results, rpd), rpd));
+        // Project against the quota of the provider that actually served, not Gemini's.
+        const served = results.flatMap((r) => r.calls).find((c) => c.provider)?.provider;
+        const provider = (served ?? cfg.provider) as keyof typeof cfg.providers;
+        const { rpd, tpm, tpd } = cfg.providers[provider].quota;
+        writeFileSync(
+            join(dir, 'capacity.md'),
+            analysisReport(analyse(results, { rpd, tpm, tpd }), rpd, provider),
+        );
     }
 
     const { auto } = passRate(blankScoresheet(results));

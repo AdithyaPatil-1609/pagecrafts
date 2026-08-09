@@ -1,0 +1,125 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 262,
+        "outputTokens": 179,
+        "latencyMs": 560
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 488,
+        "outputTokens": 303,
+        "latencyMs": 1967
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 529,
+        "outputTokens": 173,
+        "latencyMs": 527
+      }
+    ],
+    "ok": false,
+    "error": "plan: model output failed validation",
+    "detail": {
+      "raw": "{\n  \"hero\": {\"variant\": \"minimal\", \"brief\": \"Introduction to the family dental clinic in Koramangala\"},\n   \"about\": {\"variant\": \"text\", \"brief\": \"Clinic history and mission statement\"},\n   \"services\": {\"variant\": \"cards\", \"brief\": \"List of dental services including check-ups, root canals, and braces\"},\n   \"team\": {\"variant\": \"cards\", \"brief\": \"Meet the dentists and staff at the clinic\"},\n   \"contact\": {\"variant\": \"simple\", \"brief\": \"Contact information and online appointment scheduling\"},\n   \"testimonials\": {\"variant\": \"quotes\", \"brief\": \"Patient reviews and testimonials about the clinic's services\"},\n   \"faq\": {\"variant\": \"accordion\", \"brief\": \"Frequently asked questions about the clinic and its services\"}\n}",
+      "issues": [
+        {
+          "origin": "array",
+          "code": "too_small",
+          "minimum": 1,
+          "inclusive": true,
+          "path": [],
+          "message": "Too small: expected array to have >=1 items"
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"hero\": {\"variant\": \"minimal\", \"brief\": \"Introduction to the family dental clinic in Koramangala\"},\n   \"about\": {\"variant\": \"text\", \"brief\": \"Clinic history and mission statement\"},\n   \"services\": {\"variant\": \"cards\", \"brief\": \"List of dental services including check-ups, root canals, and braces\"},\n   \"team\": {\"variant\": \"cards\", \"brief\": \"Meet the dentists and staff at the clinic\"},\n   \"contact\": {\"variant\": \"simple\", \"brief\": \"Contact information and online appointment scheduling\"},\n   \"testimonials\": {\"variant\": \"quotes\", \"brief\": \"Patient reviews and testimonials about the clinic's services\"},\n   \"faq\": {\"variant\": \"accordion\", \"brief\": \"Frequently asked questions about the clinic and its services\"}\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 529,
+        "outputTokens": 173,
+        "latencyMs": 527
+      }
+    },
+    "partial": {
+      "profile": {
+        "slug": "dental-clinic",
+        "label": "Dental Clinic",
+        "aliases": [
+          "Dentist Office",
+          "Dental Care",
+          "Orthodontic Clinic",
+          "Oral Health Clinic"
+        ],
+        "recipe": [
+          {
+            "type": "hero",
+            "required": true,
+            "note": "Introduction to the clinic"
+          },
+          {
+            "type": "about",
+            "required": true,
+            "note": "Clinic history and mission"
+          },
+          {
+            "type": "services",
+            "required": true,
+            "note": "List of dental services"
+          },
+          {
+            "type": "team",
+            "required": true,
+            "note": "Meet the dentists and staff"
+          },
+          {
+            "type": "testimonials",
+            "required": false,
+            "note": "Patient reviews"
+          },
+          {
+            "type": "faq",
+            "required": false,
+            "note": "Frequently asked questions"
+          },
+          {
+            "type": "contact",
+            "required": true,
+            "note": "Contact information and appointment scheduling"
+          }
+        ],
+        "artDirection": {
+          "themeId": "clinical-blue",
+          "motionId": "calm",
+          "radiusId": "soft",
+          "spacingId": "default",
+          "imageryId": "bright-clean"
+        },
+        "vocabulary": {
+          "customer": "patient",
+          "purchase": "appointment"
+        },
+        "imageQueries": [
+          "dentist chair",
+          "smiling dentist",
+          "dental exam"
+        ]
+      }
+    },
+    "requests": 3,
+    "modelTimeMs": 3054,
+    "wallClockMs": 3061
+  }
+]

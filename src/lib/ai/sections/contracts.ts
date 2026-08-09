@@ -151,3 +151,10 @@ export function contractFor(type: SectionKey): SectionContract {
 export function variantsFor(type: SectionKey): string[] {
     return contractFor(type).variants;
 }
+
+/** The variant menu, generated from the registry so the prompt can never drift from it. */
+export function variantMenu(): string {
+    return Object.values(SECTION_CONTRACTS)
+        .map((c) => `${c.type.padEnd(12)} ${c.variants.join(' | ')}`)
+        .join('\n');
+}

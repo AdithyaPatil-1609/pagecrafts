@@ -15,8 +15,22 @@ describe("template library", () => {
     expect(TEMPLATES.length).toBeGreaterThanOrEqual(3);
   });
 
+  it("meets the D4 batch floor (~6-7 real templates)", () => {
+    expect(TEMPLATES.length).toBeGreaterThanOrEqual(6);
+  });
+
   it("meets the D5 milestone floor (10 real templates, week-1 leg of 10/18/25)", () => {
     expect(TEMPLATES.length).toBeGreaterThanOrEqual(10);
+  });
+
+  // What the D4 14:00 batch is actually accepted on, and what the week-4 licence audit
+  // (D18) will re-run against 25: every entry names a licence and where it came from.
+  it("records non-null provenance for every template, one by one (C-06)", () => {
+    for (const t of TEMPLATES) {
+      expect(t.license.trim(), `${t.id}: license`).not.toBe("");
+      expect(t.sourceUrl.trim(), `${t.id}: source_url`).not.toBe("");
+      expect(t.sourceUrl, `${t.id}: source_url must be a URL`).toMatch(/^https?:\/\//);
+    }
   });
 
   it("has unique ids and spans more than one category", () => {

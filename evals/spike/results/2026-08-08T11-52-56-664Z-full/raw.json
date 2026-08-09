@@ -1,0 +1,185 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "llama-3.1-8b-instant",
+        "inputTokens": 262,
+        "outputTokens": 82,
+        "latencyMs": 507
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 488,
+        "outputTokens": 304,
+        "latencyMs": 760
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 566,
+        "outputTokens": 120,
+        "latencyMs": 392
+      },
+      {
+        "stage": "fill",
+        "section": "hero/minimal",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 234,
+        "outputTokens": 64,
+        "latencyMs": 470
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 227,
+        "outputTokens": 42,
+        "latencyMs": 247
+      }
+    ],
+    "ok": false,
+    "error": "fillSection(about): model output failed validation",
+    "detail": {
+      "raw": "{\n  \"heading\": \"Our Clinic\",\n   \"body\": \"Our family dental clinic in Koramangala provides services including check-ups, root canals, and braces.\",\n   \"image\": \"\"\n}",
+      "issues": [
+        {
+          "expected": "object",
+          "code": "invalid_type",
+          "path": [
+            "image"
+          ],
+          "message": "Invalid input: expected object, received string"
+        }
+      ],
+      "usage": {
+        "provider": "groq",
+        "text": "{\n  \"heading\": \"Our Clinic\",\n   \"body\": \"Our family dental clinic in Koramangala provides services including check-ups, root canals, and braces.\",\n   \"image\": \"\"\n}",
+        "model": "llama-3.3-70b-versatile",
+        "inputTokens": 227,
+        "outputTokens": 42,
+        "latencyMs": 247
+      }
+    },
+    "partial": {
+      "profile": {
+        "slug": "dental-clinic",
+        "label": "Dental Clinic",
+        "aliases": [
+          "Dentist Office",
+          "Dental Care",
+          "Orthodontic Clinic",
+          "Dental Surgery"
+        ],
+        "recipe": [
+          {
+            "type": "hero",
+            "required": true,
+            "note": "Introduction to the clinic"
+          },
+          {
+            "type": "about",
+            "required": true,
+            "note": "Clinic history and staff"
+          },
+          {
+            "type": "services",
+            "required": true,
+            "note": "List of dental services offered"
+          },
+          {
+            "type": "gallery",
+            "required": false,
+            "note": "Photos of the clinic and staff"
+          },
+          {
+            "type": "testimonials",
+            "required": false,
+            "note": "Patient reviews and feedback"
+          },
+          {
+            "type": "faq",
+            "required": false,
+            "note": "Frequently asked questions"
+          },
+          {
+            "type": "contact",
+            "required": true,
+            "note": "Contact information and appointment scheduling"
+          }
+        ],
+        "artDirection": {
+          "themeId": "clinical-blue",
+          "motionId": "calm",
+          "radiusId": "soft",
+          "spacingId": "default",
+          "imageryId": "bright-clean"
+        },
+        "vocabulary": {
+          "customer": "patient",
+          "purchase": "appointment"
+        },
+        "imageQueries": [
+          "dental chair",
+          "smiling dentist",
+          "healthy teeth"
+        ]
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "minimal",
+          "brief": "Introduction to the dental clinic",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Clinic history and staff",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List of dental services offered such as check-ups, root canals, and braces",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "contact",
+          "variant": "form",
+          "brief": "Contact information and appointment scheduling",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 5,
+    "modelTimeMs": 2376,
+    "wallClockMs": 2388
+  }
+]

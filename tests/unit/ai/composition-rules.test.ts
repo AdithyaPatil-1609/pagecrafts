@@ -1,16 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { normalisePlan, type PlannedSection } from '@/lib/ai/composition/rules';
+import { normalisePlan, type NormalisedPlan } from '@/lib/ai/composition/rules';
 import { MAX_SECTIONS } from '@/lib/contracts';
 
-const show = (p: PlannedSection[]) => p.map((s) => `${s.type}/${s.variant}`);
+const show = (p: NormalisedPlan) => p.sections.map((s) => `${s.type}/${s.variant}`);
 
 describe('normalisePlan', () => {
-    it('drops a section whose variant is not registered', () => {
+    it('repairs a section whose variant is not registered, and reports it', () => {
         const out = normalisePlan([
             { type: 'hero', variant: 'centred', brief: 'a' },
             { type: 'about', variant: 'parallax', brief: 'b' },
         ]);
-        expect(show(out)).toEqual(['hero/centred']);
+        expect(show(out)).toEqual(['hero/centred', 'about/text']);
+        expect(out.repairs).toHaveLength(1);
+        expect(out.repairs[0]).toContain('parallax');
+    });
+
+    // D10 / B1a — an unknown section type is dropped and reported, not fatal.
+    it('drops an unknown section type and reports it', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'centred', brief: 'a' },
+            { type: 'vibes', variant: 'whatever', brief: 'b' },
+            { type: 'footer', variant: 'columns', brief: 'c' },
+        ]);
+        expect(show(out)).toEqual(['hero/centred', 'footer/columns']);
+        expect(out.repairs.some((r) => r.includes('vibes'))).toBe(true);
     });
 
     it('keeps hero first and footer last', () => {
@@ -55,7 +68,7 @@ describe('normalisePlan', () => {
             { type: 'faq', variant: 'accordion', brief: 'h' },
             { type: 'footer', variant: 'columns', brief: 'i' },
         ]);
-        expect(out).toHaveLength(MAX_SECTIONS);
+        expect(out.sections).toHaveLength(MAX_SECTIONS);
         expect(show(out)).toEqual([
             'hero/centred', 'about/text', 'services/cards', 'team/grid',
             'testimonials/quotes', 'gallery/masonry', 'footer/columns',
@@ -71,6 +84,6 @@ describe('normalisePlan', () => {
     });
 
     it('returns an empty plan unchanged', () => {
-        expect(normalisePlan([])).toEqual([]);
+        expect(normalisePlan([])).toEqual({ sections: [], repairs: [] });
     });
 });

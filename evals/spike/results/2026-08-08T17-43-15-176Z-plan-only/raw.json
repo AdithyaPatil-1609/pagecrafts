@@ -1,0 +1,129 @@
+[
+  {
+    "vertical": "ngo",
+    "prompt": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+    "hasTemplate": false,
+    "mode": "plan-only",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "promptVersion": "classify.v1",
+        "inputTokens": 205,
+        "outputTokens": 90,
+        "latencyMs": 1159
+      },
+      {
+        "stage": "profile",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "profile.v1",
+        "inputTokens": 465,
+        "outputTokens": 549,
+        "latencyMs": 6012
+      },
+      {
+        "stage": "plan",
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "promptVersion": "plan.v1",
+        "inputTokens": 646,
+        "outputTokens": 339,
+        "latencyMs": 5819
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "ngo",
+      "artDirection": {
+        "themeId": "warm-editorial",
+        "motionId": "editorial",
+        "radiusId": "organic",
+        "spacingId": "airy",
+        "imageryId": "documentary"
+      },
+      "meta": {
+        "title": "Non-Governmental Organization",
+        "description": "page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "A warm, welcoming introduction to our after-school programs with clear call-to-action buttons to donate or volunteer.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Our mission to provide safe, enriching after-school environments for children and the local need we address.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Our key programs, including homework help, creative arts, and physical education initiatives.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "gallery",
+          "variant": "grid",
+          "brief": "Candid photos showcasing our daily activities, happy children, and active learning spaces.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_05",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Moving stories and quotes from parents and local teachers about the positive impact of our programs.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "form",
+          "brief": "A simple sign-up and inquiry form for prospective volunteers, donors, and partners.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Charity credentials, newsletter signup, social media links, and legal disclaimers.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 3,
+    "modelTimeMs": 12990,
+    "wallClockMs": 14280
+  }
+]

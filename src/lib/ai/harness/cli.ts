@@ -8,10 +8,12 @@ import {
     RADIUS_IDS, SPACING_IDS, IMAGERY_IDS,
 } from '@/lib/contracts';
 import { CATEGORY_LIST } from '../schemas';
+import { variantMenu } from '../sections/contracts';
 
 const DEFAULTS: Record<string, string> = {
     categories: CATEGORY_LIST,
     sectionKeys: SECTION_KEYS.join(', '),
+    variantMenu: variantMenu(),
     themes: THEME_IDS.join(', '),
     motions: MOTION_IDS.join(', '),
     radii: RADIUS_IDS.join(', '),
