@@ -53,7 +53,13 @@ export type Category =
   | "health"
   | "creative"
   // Designs 69-83 (the sixth batch) needed one bucket the library did not have.
-  | "technology";
+  | "technology"
+  // Designs 84-92 (the seventh batch). `professional` sits alongside the older
+  // `professional_services` for the same reason `wellness` sits alongside `health_wellness`:
+  // the mockups label a coach "Professional" and a law practice "Professional Services", and
+  // relabelling the older bucket would silently change tiles that already shipped.
+  | "professional"
+  | "personal";
 
 export type FileMap = Record<string, string>;
 

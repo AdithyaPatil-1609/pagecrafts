@@ -46,6 +46,11 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   health: "Health",
   creative: "Creative",
   technology: "Technology",
+  // The seventh batch's two new shelves. "Professional" is the coach's label and stays
+  // distinct from "Professional Services" above — see the note by the enum in
+  // contracts/template.ts.
+  professional: "Professional",
+  personal: "Personal",
 };
 
 // The cards on the intent screen (screen 03), in display order. This is the set of
@@ -93,6 +98,9 @@ export const CATEGORY_CARDS: Category[] = [
   "creative",
   // The bucket designs 69-83 brought with them.
   "technology",
+  // The buckets designs 84-92 brought with them.
+  "professional",
+  "personal",
 ];
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);
