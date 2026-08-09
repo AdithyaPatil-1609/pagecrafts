@@ -78,6 +78,9 @@ export async function putProjectFiles(
             ?? new ApiError('internal', 'Could not save the files.', upsertError.message);
     }
 
+    // The migration ships replace_project_files(), which does all three statements
+    // atomically and returns the new updated_at. Adopting it needs tests/support/fake-db.ts
+    // to model rpc(); that lands with the fork follow-up (R3 D6b).
     return { projectId, files, updatedAt: await touchProject(supabase, projectId) };
 }
 

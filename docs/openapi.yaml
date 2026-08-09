@@ -360,6 +360,25 @@ paths:
                 $ref: '#/components/schemas/CommitListResult'
         default:
           $ref: '#/components/responses/Error'
+    post:
+      operationId: createProjectCommit
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommitRequest'
+      responses:
+        '201':
+          description: Save point created. An unchanged tree returns the existing sha.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCommitResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects/{projectId}/edit:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -936,6 +955,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Commit'
+    CreateCommitRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+    CreateCommitResponse:
+      type: object
+      required: [sha]
+      properties:
+        sha:
+          type: string
+          pattern: '^[0-9a-f]{7,40}$'
     EditProjectRequest:
       type: object
       required: [filePath, instruction, currentContent]
@@ -1018,6 +1052,14 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/ProjectFilesResponse'
+    CreateCommitResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/CreateCommitResponse'
     EditProjectResult:
       type: object
       required: [ok, data]

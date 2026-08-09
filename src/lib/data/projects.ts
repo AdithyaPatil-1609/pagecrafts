@@ -115,8 +115,9 @@ export async function getProject(
   return rowToDetail(data as unknown as ProjectRow);
 }
 
-// D1 skeleton: create the project row. Copying template files + the initial commit
-// (fork) and the generation path arrive in later days (D7-D8 / E4).
+// Creates the project row. Copying the template's files into the working tree and
+// recording version #1 lands in the fork follow-up (R3 D6b) — it needs the persistence
+// acceptance's template fixture and its "no commits yet" assertion updated with it.
 export async function createProject(
   supabase: SupabaseClient,
   userId: string,
