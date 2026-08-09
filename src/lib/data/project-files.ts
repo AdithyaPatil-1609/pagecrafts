@@ -49,49 +49,32 @@ export async function putProjectFiles(
         );
     }
 
-    await loadProject(supabase, projectId);
+    // One statement, all or nothing: delete removed paths, upsert the rest and bump
+    // projects.updated_at. A dropped connection can no longer leave a half-saved site.
+    const { data, error } = await supabase.rpc('replace_project_files', {
+        p_project_id: projectId,
+        p_files: files,
+    });
 
-    const keep = Object.keys(files);
-
-    const { error: deleteError } = await supabase
-        .from('project_files')
-        .delete()
-        .eq('project_id', projectId)
-        .not('path', 'in', `(${keep.map((p) => `"${p}"`).join(',')})`);
-
-    if (deleteError) {
-        throw new ApiError('internal', 'Could not remove old files.', deleteError.message);
+    if (error) {
+        if (/project_not_found/.test(error.message)) {
+            throw new ApiError('not_found', 'That project does not exist.');
+        }
+        throw fileLimitError(error.message)
+            ?? new ApiError('internal', 'Could not save the files.', error.message);
     }
 
-    const rows = keep.map((path) => ({ project_id: projectId, path, content: files[path] }));
-
-    const { error: upsertError } = await supabase
-        .from('project_files')
-        .upsert(rows, { onConflict: 'project_id,path' });
-
-    if (upsertError) {
-        throw new ApiError('internal', 'Could not save the files.', upsertError.message);
-    }
-
-    const { data: touched, error: touchError } = await supabase
-        .from('projects')
-        .update({ name: undefined })
-        .eq('id', projectId)
-        .select('updated_at')
-        .single();
-
-    if (touchError) {
-        throw new ApiError('internal', 'Could not update the project.', touchError.message);
-    }
-
-    return { projectId, files, updatedAt: touched.updated_at };
+    return { projectId, files, updatedAt: data as string };
 }
-// Bump projects.updated_at so the dashboard orders by real activity. The empty update
-// still fires the set_updated_at trigger (same pattern as putProjectFiles above).
+
+// Bump projects.updated_at so the dashboard orders by real activity. The value sent
+// here is a placeholder — the set_updated_at trigger overwrites it with now(). It has
+// to be a real column though: supabase-js strips undefined, so an "empty" update sends
+// nothing and the trigger never fires.
 async function touchProject(supabase: SupabaseClient, projectId: string): Promise<string> {
     const { data, error } = await supabase
         .from('projects')
-        .update({ name: undefined })
+        .update({ updated_at: new Date().toISOString() })
         .eq('id', projectId)
         .select('updated_at')
         .single();

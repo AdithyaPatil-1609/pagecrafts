@@ -60,3 +60,8 @@ export const createUnsplashAssetSchema = z.object({
   unsplashId: z.string().min(1).max(80),
   kind: z.enum(["image", "favicon", "og_image"]).optional(),
 });
+
+export const createCommitSchema = z.object({
+  message: z.string().min(1).max(500),
+});
+

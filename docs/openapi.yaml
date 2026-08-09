@@ -146,6 +146,41 @@ paths:
                 $ref: '#/components/schemas/ProjectFilesResult'
         default:
           $ref: '#/components/responses/Error'
+  /projects/{projectId}/commits:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: listProjectCommits
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Save points for this project, newest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListCommitsResult'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      operationId: createProjectCommit
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommitRequest'
+      responses:
+        '201':
+          description: Save point created. An unchanged tree returns the existing sha.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCommitResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects/{projectId}/edit:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -425,6 +460,46 @@ components:
         updatedAt:
           type: string
           format: date-time
+    Commit:
+      type: object
+      required: [sha, message, author, createdAt]
+      properties:
+        sha:
+          type: string
+          pattern: '^[0-9a-f]{7,40}$'
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        author:
+          type: string
+          enum: [user, ai_edit, system]
+        createdAt:
+          type: string
+          format: date-time
+    ListCommitsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Commit'
+    CreateCommitRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+    CreateCommitResponse:
+      type: object
+      required: [sha]
+      properties:
+        sha:
+          type: string
+          pattern: '^[0-9a-f]{7,40}$'
     EditProjectRequest:
       type: object
       required: [filePath, instruction, currentContent]
@@ -507,6 +582,22 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/ProjectFilesResponse'
+    ListCommitsResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/ListCommitsResponse'
+    CreateCommitResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/CreateCommitResponse'
     EditProjectResult:
       type: object
       required: [ok, data]
