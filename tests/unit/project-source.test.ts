@@ -1,36 +1,62 @@
-import { describe, it, expect } from 'vitest';
-import { loadProjectFiles, pickEntryFile } from '@/lib/project-source';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { loadProjectFiles, saveProjectFiles } from '@/lib/project-source';
 
-describe('pickEntryFile', () => {
-    it('prefers index.html', () => {
-        expect(pickEntryFile(['styles.css', 'index.html', 'about.html'])).toBe('index.html');
-    });
+function replyWith(body: unknown) {
+    return vi.fn().mockResolvedValue({ json: async () => body } as Response);
+}
 
-    it('falls back to the first file in order', () => {
-        expect(pickEntryFile(['styles.css', 'about.html'])).toBe('about.html');
-    });
-
-    it('returns null for an empty project', () => {
-        expect(pickEntryFile([])).toBeNull();
-    });
-
-    it('does not change the array it was given', () => {
-        const paths = ['b.html', 'a.html'];
-        pickEntryFile(paths);
-        expect(paths).toEqual(['b.html', 'a.html']);
-    });
+afterEach(() => {
+    vi.unstubAllGlobals();
 });
 
 describe('loadProjectFiles', () => {
-    it('returns an error when no project is requested', async () => {
-        const { files, error } = await loadProjectFiles('');
+    it('does not call the server when there is no project id', async () => {
+        const fetchMock = replyWith({ ok: true, data: {} });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { error } = await loadProjectFiles('');
+
         expect(error).toBeTruthy();
-        expect(Object.keys(files)).toHaveLength(0);
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('returns files for a real project id', async () => {
-        const { files, error } = await loadProjectFiles('demo');
+    it('returns the files the server sent', async () => {
+        vi.stubGlobal(
+            'fetch',
+            replyWith({
+                ok: true,
+                data: { projectId: 'p1', files: { 'index.html': 'hi' }, updatedAt: 'now' },
+            }),
+        );
+
+        const { files, updatedAt, error } = await loadProjectFiles('p1');
+
         expect(error).toBeNull();
-        expect(Object.keys(files).length).toBeGreaterThan(0);
+        expect(files).toEqual({ 'index.html': 'hi' });
+        expect(updatedAt).toBe('now');
+    });
+
+    it('passes a server error back as a readable sentence', async () => {
+        vi.stubGlobal(
+            'fetch',
+            replyWith({ ok: false, error: { code: 'forbidden', message: 'nope' } }),
+        );
+
+        const { files, error } = await loadProjectFiles('someone-elses-project');
+
+        expect(error).toBe('This project belongs to someone else.');
+        expect(Object.keys(files)).toHaveLength(0);
+    });
+});
+
+describe('saveProjectFiles', () => {
+    it('refuses to send an empty project', async () => {
+        const fetchMock = replyWith({ ok: true, data: {} });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { error } = await saveProjectFiles('p1', {});
+
+        expect(error).toBeTruthy();
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 });

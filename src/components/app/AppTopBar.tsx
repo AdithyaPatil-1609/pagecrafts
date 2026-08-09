@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Sparkles } from "lucide-react";
+import { Bell, Plus, Sparkles } from "lucide-react";
 
 import type { Viewer } from "@/lib/auth/session";
 import { BrandMark } from "@/components/landing/BrandMark";
@@ -49,6 +49,15 @@ export function AppTopBar({
                     <Badge variant="secondary" className="px-2 py-0 text-[10px]">
                         Soon
                     </Badge>
+                </span>
+
+                {/* Notifications have no feed behind them yet, so the bell is present but
+                    inert — the shell's shape without a control that pretends to work. */}
+                <span
+                    aria-hidden
+                    className="hidden size-9 items-center justify-center rounded-full border border-border text-muted-foreground sm:flex"
+                >
+                    <Bell className="size-4" strokeWidth={1.75} />
                 </span>
 
                 {user ? (

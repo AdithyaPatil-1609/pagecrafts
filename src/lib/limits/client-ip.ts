@@ -1,6 +1,7 @@
 import "server-only";
 
-const UNKNOWN = "unknown";
+export const UNKNOWN_IP = "unknown";
+const UNKNOWN = UNKNOWN_IP;
 
 export function clientIp(headers: Headers): string {
   const forwarded = headers.get("x-forwarded-for");

@@ -93,3 +93,23 @@ describe("clientIp", () => {
     expect(clientIp(new Headers())).toBe("unknown");
   });
 });
+
+describe("failure reporting", () => {
+    it("names the reason in the log instead of swallowing it", async () => {
+        const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+        evalMock.mockRejectedValue(new Error("Rate limiter is not configured. Missing: UPSTASH_REDIS_REST_TOKEN"));
+
+        const result = await consume("login:ip", "1.2.3.4", LOGIN_PER_IP);
+
+        expect(result.degraded).toBe(true);
+        expect(spy).toHaveBeenCalledWith(
+            "[rate-limit] redis call failed, denying",
+            expect.objectContaining({
+                bucket: "login:ip",
+                reason: expect.stringContaining("UPSTASH_REDIS_REST_TOKEN"),
+            }),
+        );
+
+        spy.mockRestore();
+    });
+});
