@@ -4,10 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 
-import type { Category } from "@/lib/contracts";
+import type { Category, Palette, Tone } from "@/lib/contracts";
 import { MAX_CLASSIFY_CHARS } from "@/lib/contracts";
+import { INTENT_CARDS } from "@/lib/discovery/intent-cards";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// What the classifier told us about a description, in the form the gallery can rank with.
+interface Classified {
+  category: Category;
+  tone?: Tone;
+  palette?: Palette;
+}
 
 // Classify the free-text description via Hanish's endpoint. On ANY failure — network,
 // error envelope (a signed-out 401 included), bad shape, or the route's own safe default
@@ -15,9 +23,13 @@ import { cn } from "@/lib/utils";
 // by a classification problem.
 //
 // null means "we learned nothing", which is NOT the same as the model deciding the site is
-// genuinely "other". Filtering on a category we never established would strand the user on
-// an empty grid, so the caller sends them to the unfiltered gallery instead.
-async function classifyText(text: string): Promise<Category | null> {
+// genuinely "other". Ranking on attributes we never established would push the library into
+// an arbitrary order, so the caller sends them to the gallery in its own order instead.
+//
+// Tone and palette ride along with the category (D5). They are worth carrying because the
+// designs are tagged in the same vocabulary — "dark", "warm", "minimal", "bold" — so they
+// are real signal in the deterministic score, not decoration.
+async function classifyText(text: string): Promise<Classified | null> {
   try {
     const res = await fetch("/api/v1/intent/classify", {
       method: "POST",
@@ -31,66 +43,25 @@ async function classifyText(text: string): Promise<Category | null> {
       "ok" in json &&
       (json as { ok: boolean }).ok
     ) {
-      const data = (json as { data?: { category?: string; fallback?: boolean } }).data;
-      if (data?.category && !data.fallback) return data.category as Category;
+      const data = (json as {
+        data?: { category?: string; tone?: string; palette?: string; fallback?: boolean };
+      }).data;
+
+      // A fallback classification is the route's safe default, not something learned:
+      // its tone and palette are placeholders and must not be passed off as signal.
+      if (data?.category && !data.fallback) {
+        return {
+          category: data.category as Category,
+          ...(data.tone ? { tone: data.tone as Tone } : {}),
+          ...(data.palette ? { palette: data.palette as Palette } : {}),
+        };
+      }
     }
   } catch {
     // fall through to the null result
   }
   return null;
 }
-
-// The category cards on the describe screen — the six broad buckets the mockup shows, each
-// a real Category the gallery can filter on. Photographs are hosted on Unsplash (Unsplash
-// licence — free to use, no attribution required).
-const CARD_PHOTO = "?w=800&q=70&auto=format&fit=crop";
-const cardImg = (id: string): string => `https://images.unsplash.com/${id}${CARD_PHOTO}`;
-
-interface CategoryCard {
-  category: Category;
-  label: string;
-  description: string;
-  image: string;
-}
-
-const CATEGORY_CARDS: CategoryCard[] = [
-  {
-    category: "business",
-    label: "Business",
-    description: "Corporate sites, company profiles, and professional services.",
-    image: cardImg("photo-1486406146926-c627a92ad1ab"),
-  },
-  {
-    category: "portfolio",
-    label: "Portfolio",
-    description: "Showcase your work, skills, and creative projects.",
-    image: cardImg("photo-1498050108023-c5249f4df085"),
-  },
-  {
-    category: "blog",
-    label: "Blog",
-    description: "Share your ideas, stories, and expertise with your audience.",
-    image: cardImg("photo-1517842645767-c639042777db"),
-  },
-  {
-    category: "store",
-    label: "E-commerce",
-    description: "Sell products online with beautiful storefronts and secure checkout.",
-    image: cardImg("photo-1607082348824-0a96f2a4b9da"),
-  },
-  {
-    category: "event",
-    label: "Event",
-    description: "Promote events, sell tickets, and engage attendees.",
-    image: cardImg("photo-1470229722913-7c0e2dbbafd3"),
-  },
-  {
-    category: "other",
-    label: "Other",
-    description: "Non-profits, communities, landing pages, and more.",
-    image: cardImg("photo-1522071820081-009f0129c71c"),
-  },
-];
 
 export function IntentCapture({
   initialDescribe = "",
@@ -103,16 +74,25 @@ export function IntentCapture({
   const [describe, setDescribe] = useState(initialDescribe);
   const [busy, setBusy] = useState<"generate" | Category | null>(null);
 
-  // The description path. Text classifies to a category where it can; where it cannot, the
-  // gallery opens unfiltered rather than on a filter we never established. The funnel always
-  // advances (D-2). The text rides along so the gallery can show it back and offer an edit.
+  // The description path. What the classifier works out is sent as `intent`, not
+  // `category`: a guess ranks the gallery, an explicit pick filters it (see
+  // lib/discovery/ranking.ts). Describing "a website for my gym" should lead with the
+  // fitness design and still show the other eleven, not narrow the library to one.
+  //
+  // Where classification learns nothing the gallery simply opens in its own order. The
+  // funnel always advances (D-2). The text rides along so the gallery can show it back and
+  // offer an edit.
   async function generate() {
     setBusy("generate");
     const text = describe.trim();
-    const category = text ? await classifyText(text) : null;
+    const classified = text ? await classifyText(text) : null;
 
     const params = new URLSearchParams();
-    if (category) params.set("category", category);
+    if (classified) {
+      params.set("intent", classified.category);
+      if (classified.tone) params.set("tone", classified.tone);
+      if (classified.palette) params.set("palette", classified.palette);
+    }
     if (text) params.set("q", text);
     const query = params.toString();
     router.push(query ? `/templates?${query}` : "/templates");
@@ -178,7 +158,7 @@ export function IntentCapture({
         </header>
 
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
-          {CATEGORY_CARDS.map((card) => (
+          {INTENT_CARDS.map((card) => (
             <button
               key={card.category}
               type="button"

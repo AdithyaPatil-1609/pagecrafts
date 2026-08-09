@@ -1,27 +1,29 @@
-import type { Template } from "@/lib/contracts";
+import type { TemplateTier } from "@/lib/contracts";
 import { cn } from "@/lib/utils";
 
-// The tier badge styling for template tiers.
-const TIER_BADGE: Record<Template["tier"], string> = {
+const TIER_BADGE: Record<TemplateTier, string> = {
     free: "border border-border bg-background/85 text-foreground backdrop-blur-sm",
     premium: "bg-primary text-primary-foreground",
     signature: "brand-gradient text-primary-foreground",
 };
 
 export function PriceBadge({
-    template,
+    tier,
+    priceInr,
     className,
 }: {
-    template: Template;
+    tier: TemplateTier;
+    priceInr: number;
     className?: string;
 }) {
-    const label = template.tier === "free" ? "Free" : `Rs ${template.priceInr}`;
+    // "Free" is a fact about the design; "Rs 0" would be a price on something that has none.
+    const label = tier === "free" ? "Free" : `Rs ${priceInr}`;
 
     return (
         <span
             className={cn(
-                "rounded-md px-2.5 py-1 text-xs font-semibold",
-                TIER_BADGE[template.tier],
+                "rounded-md px-2 py-0.5 text-xs font-semibold",
+                TIER_BADGE[tier],
                 className,
             )}
         >
