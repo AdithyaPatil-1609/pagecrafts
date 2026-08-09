@@ -5,7 +5,7 @@ import type { ZodType } from "zod";
 
 import { requireUser, supabaseRoute } from "@/lib/auth/session";
 import { ApiError, fail } from "@/lib/errors/respond"
-import { guardAiRequest } from "@/lib/limits/ai-guard";
+import { guardAiRequest, type UsageReport } from "@/lib/limits/ai-guard";
 
 export interface RouteContext<Body, Params> {
   req: NextRequest;
@@ -13,6 +13,7 @@ export interface RouteContext<Body, Params> {
   body: Body;
   userId: string; // "" when auth is "none"
   supabase: SupabaseClient; // scoped to the session, so RLS applies
+  recordUsage: (usage: UsageReport) => Promise<void>; // no-op unless limit is "ai"
 }
 
 export interface RouteOptions<Body, Params> {
@@ -58,8 +59,10 @@ export function withRoute<
         body = parsed.data;
       }
 
+      const noUsage = async () => {};
+
       if (opts.limit !== "ai") {
-        return await opts.handler({ req, params, body, userId, supabase });
+        return await opts.handler({ req, params, body, userId, supabase, recordUsage: noUsage });
       }
 
       const guard = await guardAiRequest(userId, req.headers);
@@ -67,7 +70,10 @@ export function withRoute<
       if (!guard.ok) return guard.response;
 
       try {
-        return await opts.handler({ req, params, body, userId, supabase });
+        return await opts.handler({
+          req, params, body, userId, supabase,
+          recordUsage: guard.recordUsage,
+        });
       } finally {
         await guard.release();
       }
