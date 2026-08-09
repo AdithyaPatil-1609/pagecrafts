@@ -157,6 +157,11 @@ export async function createCommit(
  *
  * Used by restore (D7) and by publish (W3), which both need the files of a chosen version
  * rather than whatever the editor happens to be holding.
+ *
+ * A commit written before D6 carries no snapshot, and an empty tree is not a site anyone
+ * meant to save. Both are refused here rather than handed back, because the caller's next
+ * move is to write these files over the user's working tree — returning `{}` would blank
+ * their pages and look like the restore had worked.
  */
 export async function getCommitSnapshot(
   supabase: SupabaseClient,
@@ -173,5 +178,15 @@ export async function getCommitSnapshot(
   if (error) throw new ApiError("internal", "Could not read that version.", error.message);
   if (!data) throw new ApiError("not_found", "That version does not exist.");
 
-  return (data.snapshot ?? {}) as FileMap;
+  const snapshot = (data.snapshot ?? {}) as FileMap;
+
+  if (Object.keys(snapshot).length === 0) {
+    throw new ApiError(
+      "validation_failed",
+      "This version was saved before we started keeping file history, so it cannot be restored.",
+      sha,
+    );
+  }
+
+  return snapshot;
 }
