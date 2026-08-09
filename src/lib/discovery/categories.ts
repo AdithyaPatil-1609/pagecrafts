@@ -23,7 +23,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   education: "Education",
   travel: "Travel",
   business: "Business",
-  beauty: "Beauty & Wellness",
+  beauty: "Beauty",
   real_estate: "Real Estate",
   healthcare: "Healthcare",
   design: "Design",
@@ -38,6 +38,13 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   arts_culture: "Arts & Culture",
   retail: "Retail",
   finance: "Finance",
+  // Three neighbouring labels, kept apart because the mockups keep them apart: a spa is
+  // "Health & Wellness", a counselling practice is "Wellness", a nutritionist is "Health".
+  // A person browsing may well read those as the same shelf — worth collapsing to one
+  // bucket if the team agrees, which is a decision about the taxonomy, not about a design.
+  wellness: "Wellness",
+  health: "Health",
+  creative: "Creative",
 };
 
 // The cards on the intent screen (screen 03), in display order. This is the set of
@@ -79,6 +86,10 @@ export const CATEGORY_CARDS: Category[] = [
   "arts_culture",
   "retail",
   "finance",
+  // The buckets designs 52-68 brought with them.
+  "wellness",
+  "health",
+  "creative",
 ];
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);

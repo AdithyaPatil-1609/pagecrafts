@@ -45,7 +45,13 @@ export type Category =
   | "pets"
   | "arts_culture"
   | "retail"
-  | "finance";
+  | "finance"
+  // Designs 52-68 (the fifth batch). `wellness` and `health` are separate buckets from
+  // `health_wellness` because the mockups label them separately — see the note by their
+  // labels in lib/discovery/categories.ts, which is where that decision is worth reading.
+  | "wellness"
+  | "health"
+  | "creative";
 
 export type FileMap = Record<string, string>;
 

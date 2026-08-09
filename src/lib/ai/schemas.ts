@@ -8,6 +8,7 @@ export const CATEGORIES = [
     'beauty', 'real_estate', 'healthcare', 'design', 'professional_services', 'entertainment',
     'hospitality', 'automotive', 'media',
     'sports', 'health_wellness', 'pets', 'arts_culture', 'retail', 'finance',
+    'wellness', 'health', 'creative',
 ] as const satisfies readonly Category[];
 
 type MissingFromCategories = Exclude<Category, (typeof CATEGORIES)[number]>;
