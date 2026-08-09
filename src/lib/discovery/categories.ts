@@ -41,6 +41,9 @@ export const CATEGORY_CARDS: Category[] = [
   "agency",
   "business",
   "event",
+  // Added at D6 with the Shop design. Until then the describe screen's "E-commerce" card
+  // fell through to the unfiltered gallery for want of a single storefront.
+  "store",
 ];
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);
