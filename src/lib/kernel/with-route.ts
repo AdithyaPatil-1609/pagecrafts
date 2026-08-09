@@ -7,6 +7,8 @@ import { requireUser, supabaseRoute } from "@/lib/auth/session";
 import { ApiError, fail } from "@/lib/errors/respond"
 import { guardAiRequest, type UsageReport } from "@/lib/limits/ai-guard";
 
+const MAX_BODY_BYTES = 64 * 1024;
+
 export interface RouteContext<Body, Params> {
   req: NextRequest;
   params: Params;
@@ -47,14 +49,32 @@ export function withRoute<
 
       let body = undefined as Body;
       if (opts.schema) {
-        const json = await req.json().catch(() => null);
+        const declared = Number(req.headers.get("content-length") ?? 0);
+
+        if (declared > MAX_BODY_BYTES) {
+          return fail("payload_too_large", "That request is too large.");
+        }
+
+        const raw = await req.text().catch(() => "");
+
+        if (raw.length > MAX_BODY_BYTES) {
+          return fail("payload_too_large", "That request is too large.");
+        }
+
+        let json: unknown = null;
+        try {
+          json = raw ? JSON.parse(raw) : null;
+        } catch {
+          json = null;
+        }
+
         const parsed = opts.schema.safeParse(json);
         if (!parsed.success) {
-          return fail(
-            "validation_failed",
-            "Some fields were invalid.",
-            parsed.error.message,
-          );
+          console.warn("[api] rejected body", {
+            path: new URL(req.url).pathname,
+            issues: parsed.error.issues.map((i) => i.path.join(".")),
+          });
+          return fail("validation_failed", "Some fields were invalid.");
         }
         body = parsed.data;
       }

@@ -37,7 +37,7 @@ export async function guardAiRequest(
       reason: paused.reason,
     });
 
-    return { ok: false, response: fail("generation_failed", PAUSED, paused.reason ?? undefined) };
+    return { ok: false, response: fail("generation_failed", PAUSED) };
   }
 
   const spend = await checkSpend(userId);
