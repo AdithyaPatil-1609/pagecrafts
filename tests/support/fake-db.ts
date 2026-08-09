@@ -266,7 +266,62 @@ export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
             return builder;
         };
 
-        return { from } as unknown as SupabaseClient;
+        // Database functions the routes call through supabase.rpc(). Modelled by hand, the
+        // same way the policies above are: what matters is that the caller sees the shape of
+        // the real answer, including the shape of a refusal.
+        const rpc = async (name: string, args: Record<string, unknown>): Promise<Result> => {
+            if (name !== "replace_project_files") {
+                return { data: null, error: { message: `unknown function ${name}` } };
+            }
+
+            const projectId = args.p_project_id as string;
+            const files = (args.p_files ?? {}) as Record<string, string>;
+
+            // security invoker: the function runs under the caller's policies, so a project
+            // that is not theirs is simply not there — which the function raises on rather
+            // than silently writing nothing.
+            const project = table("projects").find(
+                (p) => p.id === projectId && p.user_id === userId,
+            );
+            if (!project) return { data: null, error: { message: "project_not_found" } };
+
+            const now = new Date().toISOString();
+            const paths = Object.keys(files);
+
+            tables.project_files = table("project_files").filter(
+                (f) => f.project_id !== projectId || paths.includes(String(f.path)),
+            );
+
+            for (const path of paths) {
+                const existing = table("project_files").find(
+                    (f) => f.project_id === projectId && f.path === path,
+                );
+
+                if (existing) {
+                    // The real statement only touches a row whose content actually changed.
+                    if (existing.content !== files[path]) {
+                        existing.content = files[path];
+                        existing.updated_at = now;
+                    }
+                    continue;
+                }
+
+                table("project_files").push({
+                    id: randomUUID(),
+                    project_id: projectId,
+                    path,
+                    content: files[path],
+                    created_at: now,
+                    updated_at: now,
+                });
+            }
+
+            project.updated_at = now;
+
+            return { data: now, error: null };
+        };
+
+        return { from, rpc } as unknown as SupabaseClient;
     }
 
     return {

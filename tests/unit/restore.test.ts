@@ -36,33 +36,37 @@ function commitsTable(snapshot: unknown | undefined): TableResponder {
     };
 }
 
-const projectsTable = row({ id: PROJECT_ID, updated_at: NOW });
+// The working tree is written by replace_project_files(), not by statements against
+// project_files — so what a restore wrote is read off the rpc call, not off the queries.
+const writesTheTree = { replace_project_files: () => ({ data: NOW, error: null }) };
+
+function withCommits(snapshot: unknown | undefined) {
+    return fakeSupabase(
+        {
+            commits: commitsTable(snapshot),
+            projects: row({ id: PROJECT_ID, updated_at: NOW }),
+            project_files: none,
+        },
+        writesTheTree,
+    );
+}
 
 describe("restoreProject", () => {
     it("writes the chosen version's files back and reports the sha it landed on", async () => {
-        const fake = fakeSupabase({
-            commits: commitsTable(TREE),
-            projects: projectsTable,
-            project_files: none,
-        });
+        const fake = withCommits(TREE);
 
         const result = await restoreProject(fake.client, PROJECT_ID, SHA);
 
         expect(result).toEqual({ newSha: SHA });
-
-        const written = fake.queries.find((q) => q.table === "project_files" && q.op === "upsert");
-        expect(written?.payload).toEqual([
-            { project_id: PROJECT_ID, path: "index.html", content: "<h1>Monday</h1>" },
-            { project_id: PROJECT_ID, path: "styles.css", content: "body{}" },
-        ]);
+        expect(fake.rpcs).toHaveLength(1);
+        expect(fake.rpcs[0]).toEqual({
+            name: "replace_project_files",
+            args: { p_project_id: PROJECT_ID, p_files: TREE },
+        });
     });
 
     it("records the restore as a system commit, naming the version it went back to", async () => {
-        const fake = fakeSupabase({
-            commits: commitsTable(TREE),
-            projects: projectsTable,
-            project_files: none,
-        });
+        const fake = withCommits(TREE);
 
         await restoreProject(fake.client, PROJECT_ID, SHA);
 
@@ -76,11 +80,7 @@ describe("restoreProject", () => {
     });
 
     it("never updates or deletes history — restore is additive (BR-15)", async () => {
-        const fake = fakeSupabase({
-            commits: commitsTable(TREE),
-            projects: projectsTable,
-            project_files: none,
-        });
+        const fake = withCommits(TREE);
 
         await restoreProject(fake.client, PROJECT_ID, SHA);
 
@@ -91,39 +91,27 @@ describe("restoreProject", () => {
     });
 
     it("refuses a version that carries no snapshot, and writes nothing", async () => {
-        const fake = fakeSupabase({
-            commits: commitsTable(null),
-            projects: projectsTable,
-            project_files: none,
-        });
+        const fake = withCommits(null);
 
         await expect(restoreProject(fake.client, PROJECT_ID, SHA)).rejects.toMatchObject({
             code: "validation_failed",
         });
 
-        expect(fake.queries.filter((q) => q.table === "project_files")).toEqual([]);
+        expect(fake.rpcs).toEqual([]);
     });
 
     it("refuses a version this caller cannot see, and writes nothing (SEC-14)", async () => {
-        const fake = fakeSupabase({
-            commits: commitsTable(undefined),
-            projects: projectsTable,
-            project_files: none,
-        });
+        const fake = withCommits(undefined);
 
         await expect(restoreProject(fake.client, PROJECT_ID, SHA)).rejects.toMatchObject({
             code: "not_found",
         });
 
-        expect(fake.queries.filter((q) => q.table === "project_files")).toEqual([]);
+        expect(fake.rpcs).toEqual([]);
     });
 
     it("refuses a snapshot that does not hash back to its own sha", async () => {
-        const fake = fakeSupabase({
-            commits: commitsTable({ "index.html": "<h1>something else</h1>" }),
-            projects: projectsTable,
-            project_files: none,
-        });
+        const fake = withCommits({ "index.html": "<h1>something else</h1>" });
 
         await expect(restoreProject(fake.client, PROJECT_ID, SHA)).rejects.toMatchObject({
             code: "internal",
