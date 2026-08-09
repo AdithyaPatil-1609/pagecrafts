@@ -45,6 +45,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   wellness: "Wellness",
   health: "Health",
   creative: "Creative",
+  technology: "Technology",
 };
 
 // The cards on the intent screen (screen 03), in display order. This is the set of
@@ -90,6 +91,8 @@ export const CATEGORY_CARDS: Category[] = [
   "wellness",
   "health",
   "creative",
+  // The bucket designs 69-83 brought with them.
+  "technology",
 ];
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);

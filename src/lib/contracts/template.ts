@@ -51,7 +51,9 @@ export type Category =
   // labels in lib/discovery/categories.ts, which is where that decision is worth reading.
   | "wellness"
   | "health"
-  | "creative";
+  | "creative"
+  // Designs 69-83 (the sixth batch) needed one bucket the library did not have.
+  | "technology";
 
 export type FileMap = Record<string, string>;
 
