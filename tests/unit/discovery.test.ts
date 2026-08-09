@@ -27,13 +27,14 @@ describe("toCategory", () => {
 });
 
 describe("category cards", () => {
-  it("offers exactly the twelve designs the library ships, each unique and labelled (D-6)", () => {
-    expect(CATEGORY_CARDS).toHaveLength(12);
+  // Stated as the rule rather than as a count: the cards are exactly the buckets the
+  // library ships a design for. A count has to be edited every time a design is added,
+  // and an edited expectation stops being a check.
+  it("offers exactly the buckets the library ships a design for, each once (D-6)", () => {
+    expect([...CATEGORY_CARDS].sort()).toEqual(
+      [...new Set(TEMPLATES.map((t) => t.category))].sort(),
+    );
     expect(new Set(CATEGORY_CARDS).size).toBe(CATEGORY_CARDS.length);
-    // Every card is a real Category with a human-readable label.
-    for (const category of CATEGORY_CARDS) {
-      expect(CATEGORY_LABELS[category]?.trim()).not.toBe("");
-    }
   });
 
   it("labels every card with something a non-technical reader can read", () => {

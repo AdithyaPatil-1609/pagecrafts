@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { paletteOf, previewOf } from "@/lib/discovery/preview";
 import { MOTIF_BY_CATEGORY, MOTIFS, motifToSvg } from "@/lib/templates/motifs";
-import {
-  DEFAULT_SORT,
-  SORT_KEYS,
-  SORT_LABELS,
-  sortTemplates,
-  toSort,
-} from "@/lib/discovery/sort";
+import { DEFAULT_SORT, SORT_KEYS, SORT_LABELS, toSort } from "@/lib/discovery/sort";
+import { queryTemplates } from "@/lib/templates/query";
 import { TEMPLATES } from "@/lib/templates";
+
+// The ordering moved to the query layer at D6, so the gallery and GET /templates cannot
+// sort differently. These exercise it the way both callers do.
+const ordered = (sort: Parameters<typeof toSort>[0]) =>
+  queryTemplates({ sort: toSort(sort) }).items;
 
 describe("toSort", () => {
   it("accepts every key the picker offers", () => {
@@ -29,29 +29,27 @@ describe("toSort", () => {
   });
 });
 
-describe("sortTemplates", () => {
+describe("gallery ordering", () => {
   it("never reorders the registry in place", () => {
-    const before = [...TEMPLATES];
-    sortTemplates(TEMPLATES, "name");
-    expect(TEMPLATES).toEqual(before);
+    const before = TEMPLATES.map((t) => t.id);
+    ordered("name");
+    expect(TEMPLATES.map((t) => t.id)).toEqual(before);
   });
 
   it("keeps every template, whatever the order", () => {
     for (const key of SORT_KEYS) {
-      const sorted = sortTemplates(TEMPLATES, key);
+      const sorted = ordered(key);
       expect(sorted).toHaveLength(TEMPLATES.length);
-      expect(new Set(sorted.map((t) => t.id))).toEqual(
-        new Set(TEMPLATES.map((t) => t.id)),
-      );
+      expect(new Set(sorted.map((t) => t.id))).toEqual(new Set(TEMPLATES.map((t) => t.id)));
     }
   });
 
   it("leaves the recommended order exactly as the library declares it", () => {
-    expect(sortTemplates(TEMPLATES, "recommended")).toEqual(TEMPLATES);
+    expect(ordered("recommended").map((t) => t.id)).toEqual(TEMPLATES.map((t) => t.id));
   });
 
   it("puts free designs first, then premium, then signature", () => {
-    const tiers = sortTemplates(TEMPLATES, "free-first").map((t) => t.tier);
+    const tiers = ordered("free-first").map((t) => t.tier);
     const rank = { free: 0, premium: 1, signature: 2 } as const;
     for (let i = 1; i < tiers.length; i += 1) {
       expect(rank[tiers[i]!]).toBeGreaterThanOrEqual(rank[tiers[i - 1]!]);
@@ -59,7 +57,7 @@ describe("sortTemplates", () => {
   });
 
   it("reverses that ladder for premium-first", () => {
-    const tiers = sortTemplates(TEMPLATES, "premium-first").map((t) => t.tier);
+    const tiers = ordered("premium-first").map((t) => t.tier);
     const rank = { free: 0, premium: 1, signature: 2 } as const;
     for (let i = 1; i < tiers.length; i += 1) {
       expect(rank[tiers[i]!]).toBeLessThanOrEqual(rank[tiers[i - 1]!]);
@@ -67,7 +65,7 @@ describe("sortTemplates", () => {
   });
 
   it("sorts by name alphabetically", () => {
-    const names = sortTemplates(TEMPLATES, "name").map((t) => t.name);
+    const names = ordered("name").map((t) => t.name);
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
   });
 });
