@@ -10,24 +10,7 @@ import type {
 } from "@/lib/contracts";
 import { validateTemplate } from "./index";
 
-// The normaliser — the front door of the template grind (D4).
-//
-// Sourcing 25 designs by hand is the bottleneck of R2, and a hand-normalised template is
-// where provenance and schema drift creep in. So a source never becomes a library entry by
-// being typed out: it is fed through here, which does four things and refuses to guess at
-// any of them quietly:
-//
-//   1. enforces provenance — no verified licence + source_url, no record (C-06);
-//   2. drafts `content_schema` by reading the markup's own `data-slot` attributes, so the
-//      schema and the slots cannot disagree — that parity is what makes the content panel
-//      zero-per-template (C-07);
-//   3. infers a category and tags from the design's own words when the source does not
-//      declare them, so ranking has something to bite on (D-5);
-//   4. runs the same validateTemplate() the registry is held to, so a normalised record is
-//      valid by construction or it is not a record at all.
-//
-// Blueprint-authored designs (lib/templates/blueprint.ts) go the other way — generated from
-// a spec. Both roads have to arrive at the same shape, and tests hold them to it.
+// Normalises source templates by verifying provenance, drafting content schemas, and validating records.
 
 export interface SourceTemplate {
     id: string;

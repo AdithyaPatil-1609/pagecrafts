@@ -17,8 +17,6 @@ describe('prompt templates', () => {
         expect(loadTemplate('classify.v1').tier).toBe('fast');
     });
 
-    // Block 3 — registry lists are merged in, so a template can name one without
-    // its caller knowing, and no list is ever hand-copied into a prompt.
     it('supplies registry lists without the caller passing them', () => {
         expect(render('{{tones}}')).toContain('minimal');
         expect(render('{{palettes}}')).toContain('colourful');
@@ -31,8 +29,7 @@ describe('prompt templates', () => {
         expect(render('{{tones}}', { tones: 'only-this' })).toBe('only-this');
     });
 
-    // Guards against drift: a placeholder that is neither a registry list nor a
-    // known per-call value is a typo that only shows up as a runtime throw.
+    // A placeholder that is neither is a typo that only shows up at runtime.
     it('every placeholder is either a registry list or a known per-call value', () => {
         const perCall = new Set([
             'vertical', 'tone', 'prompt', 'recipe', 'text', 'sectionKey',

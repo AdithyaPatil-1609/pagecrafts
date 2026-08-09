@@ -3,19 +3,6 @@ import { join } from "node:path";
 
 import { load } from "js-yaml";
 
-// Reads docs/openapi.yaml and checks real responses against it.
-//
-// The spec is the canonical HTTP contract (contracts.md), which is only true if something
-// fails when a route and the spec disagree. That is what this is for: the persistence
-// contract tests drive the actual route handlers and hand the parsed body to `validate`
-// against the schema the spec names for that operation.
-//
-// The validator covers the subset of JSON Schema the spec actually uses — object/required/
-// properties/additionalProperties, arrays with items and length bounds, scalar types
-// including nullable unions, enum, const, pattern, $ref and allOf. It deliberately does
-// not grow beyond that: an unrecognised keyword is reported rather than skipped, so the
-// spec cannot quietly outrun the checker.
-
 export interface OpenApiDocument {
     paths: Record<string, Record<string, OperationObject>>;
     components: { schemas: Record<string, Schema>; responses: Record<string, unknown> };
@@ -90,13 +77,6 @@ function deref(schema: Schema): Schema {
     return deref(target);
 }
 
-/**
- * Follow $refs and fold `allOf` into one effective schema.
- *
- * Composed schemas have to be merged rather than checked branch by branch: ProjectDetail
- * is `allOf: [ProjectSummary, {…}]`, and validating a project against each half separately
- * would have each half reject the other half's properties as undocumented.
- */
 function resolve(schema: Schema): Schema {
     const base = deref(schema);
     if (!base.allOf) return base;

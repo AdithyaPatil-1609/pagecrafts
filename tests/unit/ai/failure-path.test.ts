@@ -12,11 +12,9 @@ const validationFailure = (issues: unknown[] = []) =>
 
 afterEach(() => vi.restoreAllMocks());
 
-// D7 Block 2 — "the failure path is proven by deliberately breaking it", four ways.
 describe('failure path', () => {
     beforeEach(() => vi.spyOn(console, 'warn').mockImplementation(() => {}));
 
-    // 1 · Model returns an invalid shape twice → exactly ONE repair, then give up.
     describe('BR-09 — exactly one repair attempt', () => {
         it('does not repair when the first attempt succeeds', async () => {
             const attempt = vi.fn(async () => 'ok');
@@ -59,9 +57,7 @@ describe('failure path', () => {
             expect(attempt).toHaveBeenCalledOnce();
         });
 
-        // Caught by the D7 corpus run: chain exhaustion also surfaces as a
-        // non-retryable generation_failed, and was being retried as if the reply
-        // were malformed. Every provider has already been tried by then.
+        // Chain exhaustion also arrives as a non-retryable generation_failed.
         it('does not repair an exhausted provider chain', async () => {
             const attempt = vi.fn().mockRejectedValue(new GatewayError(
                 'generation_failed',
@@ -78,7 +74,6 @@ describe('failure path', () => {
         });
     });
 
-    // 2 · A provider returns 429 → the chain advances; the user sees nothing.
     it('A3 §5.1 — a 429 advances the chain rather than surfacing', async () => {
         const reply = (p: Provider): CompleteReply => ({
             provider: p, text: 'ok', model: 'm', inputTokens: 1, outputTokens: 1, latencyMs: 1,
@@ -95,7 +90,6 @@ describe('failure path', () => {
         expect(out.provider).toBe('gemini');
     });
 
-    // 3 · Every provider fails → one aggregate error naming each, never a bare 500.
     it('yields one aggregate error when the whole chain fails', async () => {
         const dead = (name: Provider): NamedGateway => ({
             name, configured: true,
@@ -131,7 +125,6 @@ describe('failure path', () => {
         expect(nearestTemplate({ category: 'agency' }, [], 'x')).toBeUndefined();
     });
 
-    // 4 · Request over the token ceiling → rejected BEFORE dispatch (FR-103, AC-F10-5).
     it('rejects an over-budget request before it is dispatched', async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);

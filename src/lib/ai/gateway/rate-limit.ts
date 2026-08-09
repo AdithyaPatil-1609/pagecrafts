@@ -9,7 +9,7 @@ interface Spend {
     tokens: number;
 }
 
-/** Somewhere a limiter's rolling window survives between processes. */
+/** Where a limiter's window survives between processes. */
 export interface WindowStore {
     load(): Spend[];
     save(window: Spend[]): void;
@@ -21,21 +21,7 @@ export interface LimiterDeps {
     store?: WindowStore;
 }
 
-/**
- * Paces calls against a provider's per-minute limits.
- *
- * A free tier is usually metered on tokens per minute, not requests, and one full
- * generation can exceed a minute's token allowance on its own — so waiting between
- * generations does nothing. This holds a rolling 60s window of spend and waits
- * only as long as it takes for enough of it to age out.
- *
- * Output length is not known before the call, so a request reserves its measured
- * input plus a running estimate of output, then records the true cost afterwards.
- *
- * The window is restored from `store` when given: the provider counts spend across
- * processes, so a short-lived CLI run that starts blind would 429 on its first call
- * for tokens a previous run had already spent.
- */
+/** Paces calls against a provider's per-minute limits using a rolling 60s window. */
 export class RateLimiter {
     private window: Spend[] = [];
     private avgOutput = 800;
@@ -51,7 +37,7 @@ export class RateLimiter {
         this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
         this.store = deps.store;
         if (this.store) {
-            // Pacing must never be the reason a generation fails.
+            // Pacing must never be why a generation fails.
             try {
                 this.window = this.store.load();
                 this.prune(this.now());
@@ -82,20 +68,22 @@ export class RateLimiter {
         const overRequests = this.quota.rpm > 0 && requests + 1 > this.quota.rpm;
         if (!overTokens && !overRequests) return 0;
 
-        // A single call larger than the whole per-minute budget can never fit;
-        // waiting for an empty window is the most we can usefully do.
+        // A call larger than the whole budget can never fit.
         if (this.window.length === 0) return 0;
 
         return Math.max(0, MINUTE_MS - (at - this.window[0].at));
     }
 
-    /** Wait until this request fits inside the per-minute budget. */
-    async acquire(estimatedInput: number): Promise<void> {
+    /** Wait until this request fits the per-minute budget; returns ms spent waiting. */
+    async acquire(estimatedInput: number): Promise<number> {
         const need = estimatedInput + this.avgOutput;
-        // Each wait retires the oldest slice of the window, so this terminates.
+        let waited = 0;
+        // Each wait retires the oldest slice, so this terminates.
         for (let wait = this.waitFor(need); wait > 0; wait = this.waitFor(need)) {
             await this.sleep(wait);
+            waited += wait;
         }
+        return waited;
     }
 
     /** Record what the call actually cost, and refine the output estimate. */
@@ -108,20 +96,14 @@ export class RateLimiter {
         try {
             this.store?.save(this.window);
         } catch {
-            // Same rule as load: unusable state degrades pacing, never the call.
+            // Unusable state degrades pacing, never the call.
         }
     }
 }
 
 const CACHE_DIR = join(process.cwd(), 'node_modules/.cache/pagecrafts');
 
-/**
- * A window that survives between processes, kept in the build cache.
- *
- * Every operation is fail-soft: a limiter that cannot read or write its state is
- * simply as blind as one with no store at all, which must never be fatal. Nothing
- * here runs inside the deployed app — see `defaultStore`.
- */
+/** Kept in the build cache. Fail-soft: unreadable state just means no pacing. */
 export function fileWindowStore(provider: Provider): WindowStore {
     const file = join(CACHE_DIR, `rate-limit-${provider}.json`);
     return {
@@ -144,17 +126,13 @@ export function fileWindowStore(provider: Provider): WindowStore {
                 mkdirSync(CACHE_DIR, { recursive: true });
                 writeFileSync(file, JSON.stringify(window));
             } catch {
-                // Read-only or ephemeral filesystem — pacing stays in-process.
+                // Read-only or ephemeral filesystem.
             }
         },
     };
 }
 
-/**
- * Persist only outside the Next.js runtime. Server instances are replaced and
- * scaled independently, so a local file is neither shared nor durable there —
- * cross-instance pacing is the rate limiter's job (M7.1), not this file's.
- */
+/** Persist store state only outside Next.js runtime / test environments. */
 function defaultStore(provider: Provider): WindowStore | undefined {
     if (process.env.NEXT_RUNTIME || process.env.VITEST) return undefined;
     return fileWindowStore(provider);

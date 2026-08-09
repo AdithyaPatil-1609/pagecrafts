@@ -50,10 +50,7 @@ export function isClassificationShaped(value: unknown): value is Record<string, 
     );
 }
 
-// On the OpenAI-compatible path the provider does not enforce enums (json_object
-// mode, not responseSchema), so an invented id would otherwise fail the whole
-// profile. Each id falls back to the first registered value instead — the model
-// picking a bad theme degrades the art direction, it does not sink generation.
+// An invented id degrades the art direction rather than sinking the profile.
 export const artDirection = z.object({
     themeId: z.enum(THEME_IDS).catch(THEME_IDS[0]),
     motionId: z.enum(MOTION_IDS).catch(MOTION_IDS[0]),
@@ -75,10 +72,8 @@ export const verticalProfile = z.object({
     imageQueries: z.array(z.string().min(1)).min(1).max(5),
 });
 
-// `type` is intentionally lenient (not `sectionKeySchema`): on the compat path an
-// unknown section type must reach normalisePlan to be dropped-and-reported, not
-// fail the whole plan array. Legality of both `type` and `variant` is enforced in
-// normalisePlan (composition/rules.ts).
+// `type` is lenient so an unknown section reaches normalisePlan to be dropped
+// rather than failing the whole plan. Legality is enforced there.
 export const plannedSection = z.object({
     type: z.string().min(1),
     variant: z.string().min(1),
