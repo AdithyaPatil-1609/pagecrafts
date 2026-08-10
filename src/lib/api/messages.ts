@@ -15,6 +15,7 @@ const FRIENDLY: Record<ErrorCode, string> = {
     generation_failed: 'The site could not be generated.',
     payment_required: 'This needs an upgrade before it can run.',
     hosting_error: 'The hosting service did not respond.',
+    service_unavailable: 'PageCraft is having trouble right now. Your work is safe. Try again in a moment.',
     internal: 'Something went wrong on our side. Your work is safe in this tab.',
 };
 
