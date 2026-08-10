@@ -4790,8 +4790,6 @@ export const DESIGNS: Template[] = [
                 kind: "form",
                 heading: "Get new listings",
                 body: "Leave your email and we will send places as they come up.",
-                heading: "Order or ask",
-                body: "Leave your email and we'll get back to you about stock, sizes or a custom piece.",
             },
         ],
         footer: "Built with PageCraft.",
