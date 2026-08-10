@@ -1,0 +1,45 @@
+import type { Composition } from '@/lib/contracts';
+import type { LedgerRow } from '../cost/ledger';
+
+export type JobStatus =
+    | 'queued' | 'planning' | 'streaming' | 'validating'
+    | 'repairing' | 'done' | 'failed';
+
+/** Ordered so a caller can tell forward progress from a repeat. */
+export const JOB_STATES: readonly JobStatus[] = [
+    'queued', 'planning', 'streaming', 'validating', 'repairing', 'done', 'failed',
+] as const;
+
+export type JobEventName =
+    | 'plan' | 'section' | 'validate' | 'repair' | 'done' | 'fallback';
+
+export interface JobEvent {
+    name: JobEventName;
+    at: number;
+    data?: Record<string, unknown>;
+}
+
+export interface Job {
+    id: string;
+    projectId: string;
+    userId: string;
+    prompt: string;
+    status: JobStatus;
+    sectionsDone: number;
+    sectionsTotal: number;
+    provider?: string;
+    startedAt: number;
+    endedAt?: number;
+    events: JobEvent[];
+    ledger: LedgerRow[];
+    composition?: Composition;
+    /** Set when generation was abandoned and a template was substituted. */
+    fallbackTemplateId?: string;
+    error?: string;
+}
+
+export interface JobStore {
+    create(job: Job): Promise<Job>;
+    get(id: string): Promise<Job | undefined>;
+    update(id: string, patch: Partial<Job>): Promise<Job | undefined>;
+}

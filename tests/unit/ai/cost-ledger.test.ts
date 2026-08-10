@@ -25,7 +25,6 @@ describe('cost ledger (M3.8)', () => {
         expect(l.totals.failed).toBe(1);
     });
 
-    // B6 — a failed call still cost tokens and must not vanish from the ledger.
     it('counts tokens for a failed call', () => {
         const l = new CostLedger();
         l.add('plan', usage(), 'failed');
@@ -46,7 +45,7 @@ describe('cost ledger (M3.8)', () => {
             .toBe('unknown');
     });
 
-    // NFR-142 — a Groq call priced at Gemini's rate is a wrong number that looks real.
+    // NFR-142 — a Groq call at Gemini's rate is a wrong number that looks real.
     it('prices each provider at its own rate', () => {
         const rates = {
             groq: { inPerMTokCents: 10, outPerMTokCents: 20 },

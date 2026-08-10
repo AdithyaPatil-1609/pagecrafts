@@ -29,6 +29,7 @@ describe("toCategory", () => {
 describe("category cards", () => {
   // Stated as the rule rather than as a count: the cards are exactly the buckets the
   // library ships a design for. A count has to be edited every time designs are added,
+  // library ships a design for. A count has to be edited every time a design is added,
   // and an edited expectation stops being a check.
   it("offers exactly the buckets the library ships a design for, each once (D-6)", () => {
     expect([...CATEGORY_CARDS].sort()).toEqual(

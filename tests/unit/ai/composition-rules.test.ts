@@ -15,7 +15,6 @@ describe('normalisePlan', () => {
         expect(out.repairs[0]).toContain('parallax');
     });
 
-    // D10 / B1a — an unknown section type is dropped and reported, not fatal.
     it('drops an unknown section type and reports it', () => {
         const out = normalisePlan([
             { type: 'hero', variant: 'centred', brief: 'a' },

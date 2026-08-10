@@ -51,14 +51,45 @@ export function dbError(message: string): TableResponder {
     return () => ({ data: null, error: { message } });
 }
 
+/** One supabase.rpc() call, as the handler made it. */
+export interface RpcCall {
+    name: string;
+    args: Record<string, unknown>;
+}
+
+export type RpcResponder = (
+    args: Record<string, unknown>,
+) => { data: unknown; error: { message: string } | null };
+
 export interface FakeSupabase {
     client: SupabaseClient;
     /** Every query the handler made, in order — enough to assert what was written. */
     queries: Query[];
+    /** Every database function the handler called, in order, with its arguments. */
+    rpcs: RpcCall[];
 }
 
-export function fakeSupabase(tables: Record<string, TableResponder>): FakeSupabase {
+/**
+ * `functions` declares the database functions this test expects to be called, the same way
+ * `tables` declares its tables. A function a test has not declared answers with an error
+ * rather than a plausible success, so a route that starts calling one shows up as a
+ * failure here instead of passing on a fake that quietly said yes.
+ */
+export function fakeSupabase(
+    tables: Record<string, TableResponder>,
+    functions: Record<string, RpcResponder> = {},
+): FakeSupabase {
     const queries: Query[] = [];
+    const rpcs: RpcCall[] = [];
+
+    const rpc = async (name: string, args: Record<string, unknown>) => {
+        rpcs.push({ name, args });
+        const responder = functions[name];
+
+        return responder
+            ? responder(args)
+            : { data: null, error: { message: `unknown function ${name}` } };
+    };
 
     const from = (table: string) => {
         const query: Query = { table, op: "select", filters: {}, shape: "many" };
@@ -93,7 +124,8 @@ export function fakeSupabase(tables: Record<string, TableResponder>): FakeSupaba
     };
 
     return {
-        client: { from } as unknown as SupabaseClient,
+        client: { from, rpc } as unknown as SupabaseClient,
         queries,
+        rpcs,
     };
 }

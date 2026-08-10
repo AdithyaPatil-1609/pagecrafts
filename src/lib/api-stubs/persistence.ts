@@ -13,26 +13,8 @@ import { ERROR_STATUS } from "@/lib/errors/codes";
 import { isValidFilePath } from "@/lib/data/validate-file-map";
 import { SEED_PROJECT } from "@/lib/seed";
 
-// Deterministic stubs for the persistence API (R3 D4).
-//
-// Preethi's editor and Hanish's edit flow both need the files, commits and content
-// endpoints before the real path is finished and before anyone has a database to point at.
-// Left to itself each of them would grow a private mock, the two would drift, and the
-// integration day would find the disagreement. So there is one set of stubs, here, and it
-// answers in the contract's own envelopes — including the failures.
-//
-// What is guaranteed:
-//   - deterministic: same call, same bytes, every run. Fixed ids, fixed timestamps, fixed
-//     shas — nothing derived from Date.now() or Math.random(), so a snapshot test written
-//     against a stub stays true tomorrow.
-//   - contract-shaped: every response is an ApiResult with the status code the real route
-//     would use. tests/contract/stubs.test.ts holds these to the same openapi.yaml
-//     schemas as the live handlers, so a stub cannot drift from the thing it stands in for.
-//   - failures included: an unknown path 404s, a bad path 422s. Integrators can build the
-//     error states without a database to break.
-//
-// What is NOT guaranteed: persistence. Writes live in module memory and vanish on reload;
-// call resetStubs() between tests.
+// Deterministic in-memory stubs for the persistence API.
+// Answers in contract-shaped ApiResult envelopes. Call resetStubs() between tests.
 
 export const STUB_PROJECT_ID = "00000000-0000-4000-8000-000000000001";
 export const STUB_TEMPLATE_ID = "00000000-0000-4000-8000-000000000002";

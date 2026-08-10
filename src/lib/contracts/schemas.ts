@@ -60,3 +60,16 @@ export const createUnsplashAssetSchema = z.object({
   unsplashId: z.string().min(1).max(80),
   kind: z.enum(["image", "favicon", "og_image"]).optional(),
 });
+
+export const createCommitSchema = z.object({
+  message: z.string().min(1).max(500),
+});
+
+// POST /projects/{id}/restore — the sha shape is the commits.sha column's own check, so a
+// value that could never exist is refused at the edge rather than as a miss in the table.
+export const restoreSchema = z.object({
+  sha: z
+    .string()
+    .regex(/^[0-9a-f]{7,40}$/, "That is not a version id."),
+});
+

@@ -2,16 +2,14 @@ import { z } from 'zod';
 
 export type AiOperation = 'classify' | 'generate' | 'edit';
 
-/** Every provider we know how to talk to. Order in the fallback chain is separate (see `order`). */
+/** Every provider we can talk to; chain order is separate (see `order`). */
 export type Provider = 'gemini' | 'groq' | 'cerebras';
 
 const KNOWN_PROVIDERS: readonly Provider[] = ['gemini', 'groq', 'cerebras'] as const;
 
 const envSchema = z.object({
-    // Priority chain, tried left to right. Providers without an API key are skipped.
-    // Cerebras is supported but out of the default chain — the account is unfunded
-    // and returns 402, so including it only buys a wasted round-trip per call.
-    // Add it back to this list once billing is sorted; no code change needed.
+    // Tried left to right; a provider with no key is skipped. Cerebras is
+    // supported but omitted while its account is unfunded (402).
     AI_PROVIDER_ORDER: z.string().default('groq,gemini'),
 
     // Per-operation output ceilings (FR-103). Shared across providers; sent as max_tokens.
@@ -25,8 +23,7 @@ const envSchema = z.object({
     GEMINI_TIMEOUT_EDIT_MS: z.coerce.number().int().positive().default(30_000),
 
     // ── Gemini (final fallback) ──────────────────────────────────────────────
-    // Optional: the chain skips a provider with no key. The "at least one key"
-    // rule lives in the gateway builder, so it is stated in exactly one place.
+    // Optional; the "at least one key" rule lives in the gateway builder.
     GEMINI_API_KEY: z.string().default(''),
     GEMINI_MODEL_FAST: z.string().default('gemini-3.5-flash-lite'),
     GEMINI_MODEL_STRONG: z.string().default('gemini-3.5-flash'),
@@ -45,8 +42,8 @@ const envSchema = z.object({
     GROQ_MODEL_FAST: z.string().default('openai/gpt-oss-20b'),
     GROQ_MODEL_STRONG: z.string().default('openai/gpt-oss-120b'),
     GROQ_BASE_URL: z.string().default('https://api.groq.com/openai/v1'),
-    // Published free-tier limits for the gpt-oss models (console.groq.com/docs/rate-limits).
-    // TPD is the binding constraint, not RPD: one full generation is ~9.4k tokens.
+    // Published free-tier limits (console.groq.com/docs/rate-limits). TPD binds
+    // before RPD: one full generation is ~9.4k tokens.
     GROQ_RPM: z.coerce.number().int().positive().default(30),
     GROQ_RPD: z.coerce.number().int().positive().default(1_000),
     GROQ_TPM: z.coerce.number().int().min(0).default(8_000),
@@ -91,18 +88,15 @@ export interface ProviderConfig {
     models: { fast: string; strong: string };
     /** OpenAI-compatible base URL. Empty for Gemini (it uses the native SDK). */
     baseUrl: string;
-    /** Rate/size limits are per provider — Groq's ceiling is not Gemini's. */
     quota: ProviderQuota;
-    /** Prices are per provider — a Groq cost must never be priced at Gemini's rate (NFR-142). */
     pricing: ProviderPricing;
 }
 
 export interface AiConfig {
-    /** The head of the fallback chain (informational; derived from `order`). */
+    /** Head of the chain, derived from `order`. */
     provider: Provider;
-    /** Fallback priority, already trimmed to known providers; never empty. */
+    /** Priority, trimmed to known providers; never empty. */
     order: Provider[];
-    /** Per-provider credentials, model names, quota and pricing. */
     providers: Record<Provider, ProviderConfig>;
 
     // Back-compat: these mirror the Gemini provider so existing callers keep working.
@@ -111,17 +105,11 @@ export interface AiConfig {
     quota: ProviderQuota;
     pricing: ProviderPricing;
 
-    /** Per-operation timeouts, shared across providers. */
     timeouts: Record<AiOperation, number>;
-    /** Per-operation output-token ceilings, shared across providers. */
     maxOutputTokens: Record<AiOperation, number>;
 }
 
-/**
- * Parse the comma-separated priority list into known providers, de-duped.
- * Warns on every unrecognised token; throws if nothing valid survives — a typo
- * like `grok,cerbras` must fail loudly, not silently collapse to a default.
- */
+/** Known providers only, de-duped. Throws if nothing valid survives. */
 function parseOrder(raw: string): Provider[] {
     const seen = new Set<Provider>();
     const dropped: string[] = [];

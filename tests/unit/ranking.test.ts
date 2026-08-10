@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { TEMPLATES } from "@/lib/templates";
 import { filterByCategory } from "@/lib/discovery/categories";
 import { intentParams, rankForIntent, toIntent } from "@/lib/discovery/ranking";
-import { sortTemplates } from "@/lib/discovery/sort";
+import { queryTemplates } from "@/lib/templates/query";
 
 describe("toIntent", () => {
   it("reads a full classification out of the URL", () => {
@@ -121,7 +121,7 @@ describe("ranking and the sort picker", () => {
   const intent = { category: "fitness", tone: "bold", palette: "dark" } as const;
 
   it("an explicit sort wins over the ranking", () => {
-    const byName = sortTemplates(TEMPLATES, "name").map((t) => t.name);
+    const byName = queryTemplates({ sort: "name" }).items.map((t) => t.name);
     expect(byName).toEqual([...byName].sort((a, b) => a.localeCompare(b)));
 
     const ranked = rankForIntent(TEMPLATES, intent).map((t) => t.name);
@@ -130,7 +130,7 @@ describe("ranking and the sort picker", () => {
 
   it("both orders hold the same designs, so switching sort never loses one", () => {
     for (const key of ["free-first", "premium-first", "name"] as const) {
-      expect(new Set(sortTemplates(TEMPLATES, key).map((t) => t.id))).toEqual(
+      expect(new Set(queryTemplates({ sort: key }).items.map((t) => t.id))).toEqual(
         new Set(rankForIntent(TEMPLATES, intent).map((t) => t.id)),
       );
     }

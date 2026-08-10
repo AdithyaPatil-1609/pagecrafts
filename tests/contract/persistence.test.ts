@@ -2,7 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ERROR_STATUS } from "@/lib/errors/codes";
 import { responseSchema, spec, validate } from "../support/openapi";
-import { dbError, fakeSupabase, none, row, rows, type TableResponder } from "../support/fake-supabase";
+import {
+    dbError,
+    fakeSupabase,
+    none,
+    row,
+    rows,
+    type RpcResponder,
+    type TableResponder,
+} from "../support/fake-supabase";
 
 // Contract tests for the persistence surface (R3 D4).
 //
@@ -42,8 +50,11 @@ const projectRow = {
 };
 
 // Wires the mocked session to a fake database and returns the recorded queries.
-function withTables(tables: Record<string, TableResponder>) {
-    const fake = fakeSupabase(tables);
+function withTables(
+    tables: Record<string, TableResponder>,
+    functions: Record<string, RpcResponder> = {},
+) {
+    const fake = fakeSupabase(tables, functions);
     auth.requireUser.mockResolvedValue({ userId: "u_1", supabase: fake.client });
     auth.supabaseRoute.mockResolvedValue(fake.client);
     return fake;
@@ -162,6 +173,7 @@ describe("the spec and the frozen error codes agree", () => {
             "/projects/{projectId}/content",
             "/projects/{projectId}/assets",
             "/projects/{projectId}/commits",
+            "/projects/{projectId}/restore",
         ]) {
             expect(spec.paths[path], `${path} is undocumented`).toBeDefined();
         }
@@ -547,6 +559,168 @@ describe("GET /projects/{projectId}/commits", () => {
         const { GET } = await import("@/app/api/v1/projects/[id]/commits/route");
 
         await expectApiError(await GET(get(), params as never), path, "get", "not_found");
+    });
+});
+
+describe("POST /projects/{projectId}/commits", () => {
+    const path = "/projects/{projectId}/commits";
+    const params = { params: Promise.resolve({ id: PROJECT_ID }) };
+    const post = (body: unknown) => request(`/api/v1/projects/${PROJECT_ID}/commits`, json(body));
+
+    const TREE = { "index.html": "<h1>Kettle</h1>" };
+
+    // The working tree read back by createCommit, and the row the mirror hands back after
+    // writing. The sha is whatever this tree hashes to — the point of a content-addressed
+    // id is that the test does not get to choose it.
+    function savedTables(existing: unknown = null) {
+        return {
+            projects: row({ id: PROJECT_ID, updated_at: NOW }),
+            project_files: rows([{ path: "index.html", content: TREE["index.html"] }]),
+            commits: ((): TableResponder => {
+                return (query) =>
+                    query.op === "upsert"
+                        ? { data: { sha: "a".repeat(40), message: "m", author: "user", created_at: NOW }, error: null }
+                        : { data: existing, error: null };
+            })(),
+        };
+    }
+
+    it("answers 201 with the documented save-point envelope", async () => {
+        withTables(savedTables());
+        const { POST } = await import("@/app/api/v1/projects/[id]/commits/route");
+
+        const body = await expectMatchesSpec(
+            await POST(post({ message: "Save the hero" }), params as never),
+            path,
+            "post",
+            201,
+        );
+        expect(body.data.sha).toMatch(/^[0-9a-f]{40}$/);
+    });
+
+    it("commits the stored tree, not a tree the caller supplied", async () => {
+        const fake = withTables(savedTables());
+        const { POST } = await import("@/app/api/v1/projects/[id]/commits/route");
+
+        await POST(post({ message: "Save the hero" }), params as never);
+
+        const written = fake.queries.find((q) => q.table === "commits" && q.op === "upsert");
+        expect((written?.payload as { snapshot: unknown }).snapshot).toEqual(TREE);
+    });
+
+    it("refuses a message the column could not hold (422)", async () => {
+        withTables(savedTables());
+        const { POST } = await import("@/app/api/v1/projects/[id]/commits/route");
+
+        await expectApiError(
+            await POST(post({ message: "" }), params as never),
+            path,
+            "post",
+            "validation_failed",
+        );
+        await expectApiError(
+            await POST(post({ message: "x".repeat(501) }), params as never),
+            path,
+            "post",
+            "validation_failed",
+        );
+    });
+
+    it("cannot save a point on someone else's project (404)", async () => {
+        withTables({ projects: none, project_files: none, commits: none });
+        const { POST } = await import("@/app/api/v1/projects/[id]/commits/route");
+
+        await expectApiError(
+            await POST(post({ message: "Save the hero" }), params as never),
+            path,
+            "post",
+            "not_found",
+        );
+    });
+});
+
+describe("POST /projects/{projectId}/restore", () => {
+    const path = "/projects/{projectId}/restore";
+    const params = { params: Promise.resolve({ id: PROJECT_ID }) };
+    const post = (body: unknown) => request(`/api/v1/projects/${PROJECT_ID}/restore`, json(body));
+
+    const TREE = { "index.html": "<h1>Monday</h1>" };
+
+    // Built the same way the route will read it back, so the sha and the snapshot agree.
+    async function shaOf(tree: Record<string, string>) {
+        const { treeSha } = await import("@/lib/data/tree-hash");
+        return treeSha(tree);
+    }
+
+    function versionTables(snapshot: unknown | undefined): Record<string, TableResponder> {
+        let reads = 0;
+
+        return {
+            projects: row({ id: PROJECT_ID, updated_at: NOW }),
+            commits: (query) => {
+                if (query.op === "upsert") {
+                    return { data: { sha: "a".repeat(40), message: "m", author: "system", created_at: NOW }, error: null };
+                }
+                reads += 1;
+                // The snapshot read, then the "does this sha already exist" check.
+                return reads === 1
+                    ? { data: snapshot === undefined ? null : { snapshot }, error: null }
+                    : { data: null, error: null };
+            },
+        };
+    }
+
+    const writesTheTree = { replace_project_files: () => ({ data: NOW, error: null }) };
+
+    it("answers 200 with the documented restore envelope", async () => {
+        const sha = await shaOf(TREE);
+        const fake = withTables(versionTables(TREE), writesTheTree);
+        const { POST } = await import("@/app/api/v1/projects/[id]/restore/route");
+
+        const body = await expectMatchesSpec(
+            await POST(post({ sha }), params as never),
+            path,
+            "post",
+            200,
+        );
+        expect(body.data.newSha).toBe(sha);
+        expect(fake.rpcs[0]?.args.p_files).toEqual(TREE);
+    });
+
+    it("refuses a sha the commits column could never hold (422), and writes nothing", async () => {
+        const fake = withTables(versionTables(TREE), writesTheTree);
+        const { POST } = await import("@/app/api/v1/projects/[id]/restore/route");
+
+        await expectApiError(
+            await POST(post({ sha: "not-a-sha" }), params as never),
+            path,
+            "post",
+            "validation_failed",
+        );
+        expect(fake.rpcs).toEqual([]);
+    });
+
+    it("cannot restore a version it cannot see (404), and writes nothing", async () => {
+        const sha = await shaOf(TREE);
+        const fake = withTables(versionTables(undefined), writesTheTree);
+        const { POST } = await import("@/app/api/v1/projects/[id]/restore/route");
+
+        await expectApiError(await POST(post({ sha }), params as never), path, "post", "not_found");
+        expect(fake.rpcs).toEqual([]);
+    });
+
+    it("refuses a version saved before file history existed (422), and writes nothing", async () => {
+        const sha = await shaOf(TREE);
+        const fake = withTables(versionTables(null), writesTheTree);
+        const { POST } = await import("@/app/api/v1/projects/[id]/restore/route");
+
+        await expectApiError(
+            await POST(post({ sha }), params as never),
+            path,
+            "post",
+            "validation_failed",
+        );
+        expect(fake.rpcs).toEqual([]);
     });
 });
 

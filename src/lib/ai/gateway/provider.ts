@@ -16,7 +16,7 @@ export interface CompleteRequest {
 export interface CompleteReply {
     /** The provider that served this reply. */
     provider: Provider;
-    /** How the shape was constrained — a quality difference between the two is traceable. */
+    /** How the shape was constrained, so a quality difference is traceable. */
     structuredOutput?: 'json_schema' | 'json_object' | 'response_schema' | 'none';
     text: string;
     model: string;
@@ -47,10 +47,7 @@ export interface NamedGateway extends Gateway {
     readonly configured: boolean;
 }
 
-/**
- * Combine the caller's deadline (if any) with this attempt's own timeout, so a
- * single request never runs longer than the fallback chain's overall budget.
- */
+/** The caller's deadline combined with this attempt's own timeout. */
 export function attemptSignal(job: Job, external?: AbortSignal): AbortSignal {
     const own = AbortSignal.timeout(timeoutFor(job));
     return external ? AbortSignal.any([external, own]) : own;

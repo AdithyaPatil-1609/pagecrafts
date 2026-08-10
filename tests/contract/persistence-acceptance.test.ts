@@ -41,6 +41,13 @@ const CONTENT_SCHEMA = {
     ],
 };
 
+// templates.files is `not null` in the schema, and forking copies it into the project's own
+// working tree (R3 D8) — so a fixture without it is a template that could not exist.
+const TEMPLATE_FILES = {
+    "index.html": "<!doctype html><html><body><h1>Ember</h1></body></html>",
+    "styles.css": "body{margin:0}",
+};
+
 let db: FakeDb;
 
 /** Point the route kernel at one signed-in user for the next call. */
@@ -69,7 +76,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     db = createFakeDb({
         users: [{ id: OWNER }, { id: STRANGER }],
-        templates: [{ id: TEMPLATE_ID, content_schema: CONTENT_SCHEMA }],
+        templates: [
+            { id: TEMPLATE_ID, name: "Ember", files: TEMPLATE_FILES, content_schema: CONTENT_SCHEMA },
+        ],
     });
 });
 
@@ -129,7 +138,9 @@ describe("the owner's full round trip", () => {
         );
         expect(wrote.status).toBe(200);
         expect(wrote.json.data.dirty).toBe(true);
-        expect(db.rows("commits")).toHaveLength(0);
+        // Still only the fork's own commit: writing a file marks the tree dirty and never
+        // commits, because committing is an explicit act (V-4).
+        expect(db.rows("commits")).toHaveLength(1);
 
         // 6. Edit the content through the panel's endpoint.
         signedInAs(OWNER);
@@ -156,8 +167,10 @@ describe("the owner's full round trip", () => {
         // 8. Read the history. One indexed query, no git call.
         signedInAs(OWNER);
         const history = await body(await commits.GET(url(`/api/v1/projects/${id}/commits`), params({ id })));
-        expect(history.json.data.items).toHaveLength(1);
+        // Two: the fork's own commit, then this one. Newest first.
+        expect(history.json.data.items).toHaveLength(2);
         expect(history.json.data.items[0]).toMatchObject({ message: "Save the hero", author: "user" });
+        expect(history.json.data.items[1]).toMatchObject({ message: "Created from Ember", author: "system" });
 
         // 9. Delete removes our rows and their children.
         signedInAs(OWNER);
@@ -165,6 +178,136 @@ describe("the owner's full round trip", () => {
         expect(deleted.json.data).toEqual({ deleted: true });
         expect(db.rows("projects")).toHaveLength(0);
         expect(db.rows("project_files")).toHaveLength(0);
+    });
+
+    // The Week-1 exit condition for this slice, stated as a test: "using a template creates
+    // a project with version #1 recorded".
+    it("picking a design copies it in and records version #1 (R3 D8)", async () => {
+        const projects = await import("@/app/api/v1/projects/route");
+        const files = await import("@/app/api/v1/projects/[id]/files/route");
+        const commits = await import("@/app/api/v1/projects/[id]/commits/route");
+
+        signedInAs(OWNER);
+        const created = await body(
+            await projects.POST(
+                url("/api/v1/projects", jsonBody("POST", { name: "Kettle & Co.", sourceTemplateId: TEMPLATE_ID })),
+            ),
+        );
+
+        expect(created.status).toBe(201);
+        expect(created.json.data.firstCommit).toMatch(/^[0-9a-f]{7,40}$/);
+        const id = created.json.data.id as string;
+
+        // The design is now the project's own working tree — a copy, not a reference.
+        signedInAs(OWNER);
+        const tree = await body(await files.GET(url(`/api/v1/projects/${id}/files`), params({ id })));
+        expect(tree.json.data.files).toEqual(TEMPLATE_FILES);
+
+        // And there is somewhere to go back to.
+        signedInAs(OWNER);
+        const history = await body(await commits.GET(url(`/api/v1/projects/${id}/commits`), params({ id })));
+        expect(history.json.data.items).toHaveLength(1);
+        expect(history.json.data.items[0]).toMatchObject({
+            sha: created.json.data.firstCommit,
+            message: "Created from Ember",
+            author: "system",
+        });
+
+        // Editing the project left the catalogue alone.
+        expect(db.rows("templates")[0]!.files).toEqual(TEMPLATE_FILES);
+    });
+
+    // The D10 milestone in one test: pick a design, change it, save the change, change your
+    // mind, and get the old site back — every step through the real route handler, with a
+    // second user locked out of all of it.
+    it("the core loop closes: fork, edit, save, restore (R3 D9)", async () => {
+        const projects = await import("@/app/api/v1/projects/route");
+        const files = await import("@/app/api/v1/projects/[id]/files/route");
+        const commits = await import("@/app/api/v1/projects/[id]/commits/route");
+        const restore = await import("@/app/api/v1/projects/[id]/restore/route");
+
+        // 1. Fork. The design is in, and version #1 is recorded.
+        signedInAs(OWNER);
+        const created = await body(
+            await projects.POST(
+                url("/api/v1/projects", jsonBody("POST", { name: "Kettle & Co.", sourceTemplateId: TEMPLATE_ID })),
+            ),
+        );
+        const id = created.json.data.id as string;
+        const asForked = created.json.data.firstCommit as string;
+
+        // 2. Change the site.
+        const edited = { ...TEMPLATE_FILES, "index.html": "<h1>Kettle &amp; Co.</h1>" };
+        signedInAs(OWNER);
+        await files.PUT(
+            url(`/api/v1/projects/${id}/files`, jsonBody("PUT", { files: edited })),
+            params({ id }),
+        );
+
+        // 3. Save that as a version of its own.
+        signedInAs(OWNER);
+        const saved = await body(
+            await commits.POST(
+                url(`/api/v1/projects/${id}/commits`, jsonBody("POST", { message: "New heading" })),
+                params({ id }),
+            ),
+        );
+        expect(saved.status).toBe(201);
+        expect(saved.json.data.sha).not.toBe(asForked);
+
+        // 4. Change your mind. Go back to the design as it arrived.
+        signedInAs(OWNER);
+        const restored = await body(
+            await restore.POST(
+                url(`/api/v1/projects/${id}/restore`, jsonBody("POST", { sha: asForked })),
+                params({ id }),
+            ),
+        );
+        expect(restored.status).toBe(200);
+        expect(restored.json.data.newSha).toBe(asForked);
+
+        // 5. The files really came back — not a reported success over an unchanged tree.
+        signedInAs(OWNER);
+        const tree = await body(await files.GET(url(`/api/v1/projects/${id}/files`), params({ id })));
+        expect(tree.json.data.files).toEqual(TEMPLATE_FILES);
+
+        // 6. And going forward again is still possible: nothing was rewritten (BR-15).
+        signedInAs(OWNER);
+        const history = await body(await commits.GET(url(`/api/v1/projects/${id}/commits`), params({ id })));
+        expect(history.json.data.items.map((c: { message: string }) => c.message)).toEqual([
+            "New heading",
+            "Created from Ember",
+        ]);
+
+        // 7. None of it is reachable by anyone else.
+        signedInAs(STRANGER);
+        const theirs = await body(
+            await restore.POST(
+                url(`/api/v1/projects/${id}/restore`, jsonBody("POST", { sha: asForked })),
+                params({ id }),
+            ),
+        );
+        expect(theirs.status).toBe(404);
+        expect(db.rows("project_files").map((f) => f.path).sort()).toEqual(
+            Object.keys(TEMPLATE_FILES).sort(),
+        );
+    });
+
+    it("a design that has gone leaves no half-built project behind", async () => {
+        const projects = await import("@/app/api/v1/projects/route");
+
+        signedInAs(OWNER);
+        const created = await body(
+            await projects.POST(
+                url("/api/v1/projects", jsonBody("POST", {
+                    name: "Ghost",
+                    sourceTemplateId: "33333333-3333-4333-8333-000000000009",
+                })),
+            ),
+        );
+
+        expect(created.status).toBe(404);
+        expect(db.rows("projects")).toHaveLength(0);
     });
 
     it("deleting a project never takes down a live site — that is hosting's to end (C-12)", async () => {
@@ -334,6 +477,7 @@ describe("a second user is denied at every step", () => {
             }),
         ).rejects.toMatchObject({ code: "not_found" });
 
-        expect(db.rows("commits")).toHaveLength(1);
+        // The fork's commit and the owner's — the stranger's write added nothing.
+        expect(db.rows("commits")).toHaveLength(2);
     });
 });

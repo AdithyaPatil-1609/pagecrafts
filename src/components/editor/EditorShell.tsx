@@ -8,6 +8,7 @@ import PreviewPane from './PreviewPane';
 import FileTree from './FileTree';
 import CodePane from './CodePane';
 import { TreeSkeleton, PaneSkeleton } from './Skeletons';
+import ChangeSummary from './ChangeSummary';
 
 export default function EditorShell({ projectId }: { projectId: string }) {
     useUnsavedGuard();
@@ -16,10 +17,12 @@ export default function EditorShell({ projectId }: { projectId: string }) {
     const loadError = useEditorStore((s) => s.loadError);
     const loadProject = useEditorStore((s) => s.loadProject);
     const saveProject = useEditorStore((s) => s.saveProject);
+    const flushPendingSave = useEditorStore((s) => s.flushPendingSave);
 
     useEffect(() => {
         loadProject(projectId);
-    }, [projectId, loadProject]);
+        return () => flushPendingSave();
+    }, [projectId, loadProject, flushPendingSave]);
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
@@ -72,6 +75,7 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                             </section>
                         </>
                     )}
+                    <ChangeSummary />
                 </main>
             )}
         </div>
