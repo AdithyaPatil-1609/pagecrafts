@@ -21,5 +21,5 @@ export const GET = withRoute<undefined, Params>({
 export const PUT = withRoute<PutBody, Params>({
   schema: putFilesSchema,
   handler: async ({ supabase, params, body }) =>
-    ok(await putProjectFiles(supabase, params.id, body.files)),
+    ok(await putProjectFiles(supabase, params.id, body.files, body.expectedUpdatedAt)),
 });

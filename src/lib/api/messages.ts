@@ -8,6 +8,9 @@ const FRIENDLY: Record<ErrorCode, string> = {
     unauthorized: 'Please sign in again to continue.',
     forbidden: 'This project belongs to someone else.',
     not_found: 'We could not find this project.',
+    // Said as "nothing was lost" first, because the person's fear on seeing a failed save is
+    // that their work is gone. It is not: the write was refused before anything changed.
+    conflict: 'This project was changed somewhere else. Nothing was lost — reload to get the latest version, then save again.',
     rate_limited: 'That was a lot of saves at once. Wait a moment and try again.',
     spend_capped: 'The daily limit has been reached. Please try again tomorrow.',
     validation_failed: 'Some of your files were rejected.',
