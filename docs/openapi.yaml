@@ -503,7 +503,7 @@ components:
   schemas:
     Category:
       type: string
-      # The frozen ten, plus the finer buckets the R2 library refresh added so each design
+      # The frozen ten, plus the finer buckets each library batch added so each design
       # reads with the right label and the classifier can route intent to it.
       enum: [portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other,
              fitness, food, photography, architecture, education, travel, business,

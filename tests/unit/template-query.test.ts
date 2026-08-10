@@ -84,6 +84,7 @@ describe("queryTemplates", () => {
   });
 
   it("answers an impossible combination with nothing, not an error", () => {
+    expect(run("category=store&tier=signature&colour=dark").items).toEqual([]);
     const all = run("").items;
     const categories = [...new Set(all.map((t) => t.category))];
     const colours = [...new Set(all.map((t) => t.colour))];
