@@ -84,6 +84,22 @@ describe("queryTemplates", () => {
   });
 
   it("answers an impossible combination with nothing, not an error", () => {
+    // Taken from the library rather than hard-coded. This was `category=store&colour=dark`,
+    // which stopped being impossible the moment the store bucket gained a dark design — a
+    // hard-coded pair quietly turns into a no-op the batch after someone fills it in.
+    //
+    // It has to be a category the library ships, paired with a colour none of its designs
+    // have: an unrecognised category is dropped rather than refused, so it widens the
+    // gallery to everything instead of narrowing it to nothing.
+    const all = run("").items;
+    const stocked = new Set(all.map((t) => `${t.category}:${t.colour}`));
+    const pair = all
+      .flatMap((t) => [`${t.category}:light`, `${t.category}:dark`])
+      .find((candidate) => !stocked.has(candidate));
+
+    expect(pair).toBeDefined();
+    const [category, colour] = pair!.split(":");
+    expect(run(`category=${category}&colour=${colour}`).items).toEqual([]);
     expect(run("category=store&tier=signature&colour=dark").items).toEqual([]);
     const all = run("").items;
     const categories = [...new Set(all.map((t) => t.category))];
