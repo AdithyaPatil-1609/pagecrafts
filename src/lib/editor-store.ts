@@ -6,6 +6,10 @@ import { loadProjectFiles, saveProjectFiles, pickEntryFile } from '@/lib/project
 import { debounceTrigger } from '@/lib/debounce';
 import { compareText } from '@/lib/compare';
 import type { TreeNode } from '@/lib/contracts';
+import type { ArtDirection, Composition } from '@/lib/contracts';
+import {
+    changeVariant, reorderSection, restyle, toggleLocked, toggleVisible,
+} from '@/lib/editor/section-actions';
 
 const vfs = new VFS();
 const AUTOSAVE_DELAY_MS = 1500;
