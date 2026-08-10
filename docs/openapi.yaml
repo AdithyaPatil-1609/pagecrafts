@@ -223,6 +223,14 @@ paths:
               properties:
                 files:
                   $ref: '#/components/schemas/FileMap'
+                expectedUpdatedAt:
+                  type: string
+                  format: date-time
+                  description: >-
+                    The `updatedAt` this tree was read at. When present the write is refused
+                    with `conflict` if the project has changed since, so two editors open on
+                    one project cannot silently delete each other's work (R3 D6). Omit it to
+                    replace the tree unconditionally.
       responses:
         '200':
           description: Updated project working tree.
@@ -230,6 +238,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProjectFilesResult'
+        '409':
+          description: >-
+            `expectedUpdatedAt` no longer matches: someone saved between this caller's read
+            and its write. Nothing was written. Re-read the tree and merge before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
         default:
           $ref: '#/components/responses/Error'
   # Per-path file access. Shipped R3 D3; documented here at D4 so the contract tests have
@@ -1077,7 +1093,7 @@ components:
       properties:
         code:
           type: string
-          enum: [unauthorized, forbidden, not_found, rate_limited, spend_capped, validation_failed, payload_too_large, generation_failed, payment_required, hosting_error, service_unavailable, internal]
+          enum: [unauthorized, forbidden, not_found, conflict, rate_limited, spend_capped, validation_failed, payload_too_large, generation_failed, payment_required, hosting_error, service_unavailable, internal]
         message:
           type: string
         detail:

@@ -4,6 +4,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
     unauthorized: 401,
     forbidden: 403,
     not_found: 404,
+    conflict: 409,
     rate_limited: 429,
     spend_capped: 429,
     validation_failed: 422,
