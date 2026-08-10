@@ -503,10 +503,16 @@ components:
   schemas:
     Category:
       type: string
-      # The frozen ten, plus the finer buckets the R2 library refresh added so each design
-      # reads with the right label and the classifier can route intent to it.
+      # The frozen ten, plus the finer buckets each library batch added so a design reads
+      # with the right label and the classifier can route intent to it. Kept in step with
+      # CATEGORIES in lib/ai/schemas.ts, which a contract test compares this list against.
       enum: [portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other,
-             fitness, food, photography, architecture, education, travel, business]
+             fitness, food, photography, architecture, education, travel, business,
+             beauty, real_estate, healthcare, design, professional_services, entertainment,
+             hospitality, automotive, media,
+             sports, health_wellness, pets, arts_culture, retail, finance,
+             wellness, health, creative, technology,
+             professional, personal]
     TemplateTier:
       type: string
       enum: [free, premium, signature]

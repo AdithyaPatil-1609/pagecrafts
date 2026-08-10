@@ -1005,6 +1005,17 @@ export const DESIGNS: Template[] = [
                     { title: "Pastries", body: "Laminated by hand, best within an hour of opening." },
                     { title: "Cakes", body: "Whole or by the slice, and to order for the weekend." },
                 ],
+            },
+            {
+                key: "order",
+                label: "Order",
+                kind: "form",
+                heading: "Order ahead",
+                body: "Leave your email to reserve a loaf or ask about a cake.",
+            },
+        ],
+        footer: "Built with PageCraft.",
+    }),
     // Template 13 (D6). It is a storefront because that was the library's one hole: the
     // describe screen has offered an "E-commerce" card since D3, and until now the library
     // shipped no design in the `store` bucket, so pressing it quietly fell through to the
@@ -1055,8 +1066,8 @@ export const DESIGNS: Template[] = [
                 key: "order",
                 label: "Order",
                 kind: "form",
-                heading: "Order ahead",
-                body: "Leave your email to reserve a loaf or ask about a cake.",
+                heading: "Order or ask",
+                body: "Leave your email and we'll get back to you about stock, sizes or a custom piece.",
             },
         ],
         footer: "Built with PageCraft.",
@@ -4784,8 +4795,6 @@ export const DESIGNS: Template[] = [
                 kind: "form",
                 heading: "Get new listings",
                 body: "Leave your email and we will send places as they come up.",
-                heading: "Order or ask",
-                body: "Leave your email and we'll get back to you about stock, sizes or a custom piece.",
             },
         ],
         footer: "Built with PageCraft.",
