@@ -84,7 +84,17 @@ describe("queryTemplates", () => {
   });
 
   it("answers an impossible combination with nothing, not an error", () => {
-    expect(run("category=store&colour=dark").items).toEqual([]);
+    const all = run("").items;
+    const categories = [...new Set(all.map((t) => t.category))];
+    const colours = [...new Set(all.map((t) => t.colour))];
+
+    const empty = categories
+      .flatMap((category) => colours.map((colour) => ({ category, colour })))
+      .find(({ category, colour }) =>
+        !all.some((t) => t.category === category && t.colour === colour));
+
+    expect(empty).toBeDefined();
+    expect(run(`category=${empty!.category}&colour=${empty!.colour}`).items).toEqual([]);
   });
 
   it("prices every item, and never invents a price for a free design", () => {
