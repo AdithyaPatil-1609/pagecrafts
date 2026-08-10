@@ -22,7 +22,44 @@ export type Category =
   | "architecture"
   | "education"
   | "travel"
-  | "business";
+  | "business"
+  // Designs 13-24 (the second library batch). Each of these exists because a design in
+  // that batch is labelled with it on its tile and no existing bucket carries that label:
+  // a salon is not "Other", and a dental clinic is not "Business".
+  | "beauty"
+  | "real_estate"
+  | "healthcare"
+  | "design"
+  | "professional_services"
+  | "entertainment"
+  // Designs 25-36 (the third batch), on the same rule: a bucket exists because a tile is
+  // labelled with it and nothing already carried that label.
+  | "hospitality"
+  | "automotive"
+  | "media"
+  // Designs 37-51 (the fourth batch). Note health_wellness sits alongside beauty: the
+  // mockups label a spa "Health & Wellness" and a salon "Beauty & Wellness", and those are
+  // different shelves to the person choosing.
+  | "sports"
+  | "health_wellness"
+  | "pets"
+  | "arts_culture"
+  | "retail"
+  | "finance"
+  // Designs 52-68 (the fifth batch). `wellness` and `health` are separate buckets from
+  // `health_wellness` because the mockups label them separately — see the note by their
+  // labels in lib/discovery/categories.ts, which is where that decision is worth reading.
+  | "wellness"
+  | "health"
+  | "creative"
+  // Designs 69-83 (the sixth batch) needed one bucket the library did not have.
+  | "technology"
+  // Designs 84-92 (the seventh batch). `professional` sits alongside the older
+  // `professional_services` for the same reason `wellness` sits alongside `health_wellness`:
+  // the mockups label a coach "Professional" and a law practice "Professional Services", and
+  // relabelling the older bucket would silently change tiles that already shipped.
+  | "professional"
+  | "personal";
 
 export type FileMap = Record<string, string>;
 

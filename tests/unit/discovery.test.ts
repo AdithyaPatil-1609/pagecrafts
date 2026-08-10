@@ -28,6 +28,7 @@ describe("toCategory", () => {
 
 describe("category cards", () => {
   // Stated as the rule rather than as a count: the cards are exactly the buckets the
+  // library ships a design for. A count has to be edited every time designs are added,
   // library ships a design for. A count has to be edited every time a design is added,
   // and an edited expectation stops being a check.
   it("offers exactly the buckets the library ships a design for, each once (D-6)", () => {
@@ -35,6 +36,9 @@ describe("category cards", () => {
       [...new Set(TEMPLATES.map((t) => t.category))].sort(),
     );
     expect(new Set(CATEGORY_CARDS).size).toBe(CATEGORY_CARDS.length);
+    for (const category of CATEGORY_CARDS) {
+      expect(CATEGORY_LABELS[category]?.trim()).not.toBe("");
+    }
   });
 
   it("labels every card with something a non-technical reader can read", () => {
