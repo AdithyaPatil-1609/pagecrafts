@@ -1,3 +1,5 @@
+import { isOverPreviewLimit } from './preview-security';
+
 export interface PreviewResult {
     html: string;
     warnings: string[];
@@ -46,6 +48,10 @@ export function assemblePreview(
             return `<script>\n${js}\n</script>`;
         },
     );
+
+    if (isOverPreviewLimit(out)) {
+        return { html: '', warnings: ['This preview is too large to display safely.'] };
+    }
 
     return { html: out, warnings };
 }

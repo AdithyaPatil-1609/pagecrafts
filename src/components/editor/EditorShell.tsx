@@ -9,6 +9,7 @@ import FileTree from './FileTree';
 import CodePane from './CodePane';
 import { TreeSkeleton, PaneSkeleton } from './Skeletons';
 import ChangeSummary from './ChangeSummary';
+import SectionsPanel from './SectionsPanel';
 
 export default function EditorShell({ projectId }: { projectId: string }) {
     useUnsavedGuard();
@@ -18,6 +19,7 @@ export default function EditorShell({ projectId }: { projectId: string }) {
     const loadProject = useEditorStore((s) => s.loadProject);
     const saveProject = useEditorStore((s) => s.saveProject);
     const flushPendingSave = useEditorStore((s) => s.flushPendingSave);
+    const composition = useEditorStore((s) => s.composition);
 
     useEffect(() => {
         loadProject(projectId);
@@ -53,6 +55,11 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                 </div>
             ) : (
                 <main className="flex min-h-0 flex-1">
+                    {composition && (
+                        <aside className="w-64 shrink-0 overflow-auto border-r border-border">
+                            <SectionsPanel />
+                        </aside>
+                    )}
                     {advanced ? (
                         <>
                             <aside className="w-56 shrink-0 overflow-auto border-r border-border">

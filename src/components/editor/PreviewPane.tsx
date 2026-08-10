@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
+import { withPreviewCsp } from '@/lib/preview-security';
 
 const DEBOUNCE_MS = 120;
 
@@ -13,7 +14,7 @@ export default function PreviewPane() {
     const frame = useRef<HTMLIFrameElement>(null);
     const [preview, setPreview] = useState(() => {
         const r = assemblePreview(vfs.toMap());
-        return { doc: injectErrorHook(r.html), warnings: r.warnings };
+        return { doc: withPreviewCsp(injectErrorHook(r.html)), warnings: r.warnings };
     });
     const [runtimeError, setRuntimeError] = useState<string | null>(null);
     const [dismissed, setDismissed] = useState(false);
@@ -22,7 +23,7 @@ export default function PreviewPane() {
     useEffect(() => {
         const t = setTimeout(() => {
             const r = assemblePreview(vfs.toMap());
-            const next = injectErrorHook(r.html);
+            const next = withPreviewCsp(injectErrorHook(r.html));
             if (next === last.current) return;
             last.current = next;
             setPreview({ doc: next, warnings: r.warnings });
