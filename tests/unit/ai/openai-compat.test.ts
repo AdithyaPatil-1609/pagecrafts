@@ -113,12 +113,23 @@ describe('OpenAICompatGateway', () => {
         expect(second.response_format).toEqual({ type: 'json_object' });
     });
 
+    // The clock is frozen for the date case. retryAfterMs reads Date.now() itself, so the
+    // header is built from one reading and compared against a later one; an HTTP date also
+    // truncates to whole seconds, spending up to 999ms of the gap before the test even
+    // starts. That left about a second of slack, and a loaded machine ate it — this failed
+    // at 1816ms on a box that was installing updates mid-run.
     it('parses Retry-After as seconds or an HTTP date', () => {
         expect(retryAfterMs('2')).toBe(2000);
         expect(retryAfterMs('0')).toBe(0);
         expect(retryAfterMs(null)).toBe(-1);
         expect(retryAfterMs('nonsense')).toBe(-1);
-        expect(retryAfterMs(new Date(Date.now() + 5000).toUTCString())).toBeGreaterThan(3000);
+
+        vi.useFakeTimers();
+        try {
+            expect(retryAfterMs(new Date(Date.now() + 5000).toUTCString())).toBeGreaterThan(3000);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     // A 429 is transient; advancing would spend a scarcer provider's quota on it.
