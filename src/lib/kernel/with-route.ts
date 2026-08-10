@@ -6,8 +6,9 @@ import type { ZodType } from "zod";
 import { requireUser, supabaseRoute } from "@/lib/auth/session";
 import { ApiError, fail } from "@/lib/errors/respond"
 import { guardAiRequest, type UsageReport } from "@/lib/limits/ai-guard";
+import { readJson } from "./body";
+import { captureError } from "@/lib/observability/capture";
 
-const MAX_BODY_BYTES = 64 * 1024;
 
 export interface RouteContext<Body, Params> {
   req: NextRequest;
@@ -49,24 +50,7 @@ export function withRoute<
 
       let body = undefined as Body;
       if (opts.schema) {
-        const declared = Number(req.headers.get("content-length") ?? 0);
-
-        if (declared > MAX_BODY_BYTES) {
-          return fail("payload_too_large", "That request is too large.");
-        }
-
-        const raw = await req.text().catch(() => "");
-
-        if (raw.length > MAX_BODY_BYTES) {
-          return fail("payload_too_large", "That request is too large.");
-        }
-
-        let json: unknown = null;
-        try {
-          json = raw ? JSON.parse(raw) : null;
-        } catch {
-          json = null;
-        }
+        const json = await readJson(req);
 
         const parsed = opts.schema.safeParse(json);
         if (!parsed.success) {
@@ -99,7 +83,13 @@ export function withRoute<
       }
     } catch (err) {
       if (err instanceof ApiError) return fail(err.code, err.message, err.detail);
+
+      captureError(err, {
+        tags: { boundary: "route" },
+        extra: { path: new URL(req.url).pathname },
+      });
       console.error("[api]", err);
+
       return fail("internal", "Something went wrong on our side.");
     }
   };

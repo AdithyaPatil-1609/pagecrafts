@@ -4,13 +4,14 @@ import { supabaseRouteClient } from "@/lib/auth/server";
 import { passwordResetRequestSchema } from "@/lib/contracts/auth";
 import { publicEnv } from "@/lib/config/env";
 import { ok, fail, guard } from "@/lib/errors/respond";
+import { readJson } from "@/lib/kernel/body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
     return guard(async () => {
-        const json = await request.json().catch(() => null);
+        const json = await readJson(request);
         const parsed = passwordResetRequestSchema.safeParse(json);
 
         if (!parsed.success) {

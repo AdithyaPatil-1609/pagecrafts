@@ -19,7 +19,8 @@
     "deploy:spike": "tsx --env-file=.env.local --conditions=react-server scripts/provision-spike.ts",
     "deploy:publish": "tsx --env-file=.env.local --conditions=react-server scripts/publish-spike.ts",
     "spike": "tsx --env-file=.env.local evals/spike/run.ts",
-    "deploy:leakcheck": "tsx --env-file=.env.local --conditions=react-server scripts/check-credential-leak.ts"
+    "deploy:leakcheck": "tsx --env-file=.env.local --conditions=react-server scripts/check-credential-leak.ts",
+    "pay:check": "tsx --env-file=.env.local scripts/razorpay-check.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",

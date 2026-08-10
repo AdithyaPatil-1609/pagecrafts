@@ -92,14 +92,18 @@ describe("queryTemplates", () => {
     // have: an unrecognised category is dropped rather than refused, so it widens the
     // gallery to everything instead of narrowing it to nothing.
     const all = run("").items;
-    const stocked = new Set(all.map((t) => `${t.category}:${t.colour}`));
-    const pair = all
-      .flatMap((t) => [`${t.category}:light`, `${t.category}:dark`])
-      .find((candidate) => !stocked.has(candidate));
+    const categories = [...new Set(all.map((t) => t.category))];
+    const colours = [...new Set(all.map((t) => t.colour))];
 
-    expect(pair).toBeDefined();
-    const [category, colour] = pair!.split(":");
-    expect(run(`category=${category}&colour=${colour}`).items).toEqual([]);
+    const empty = categories
+      .flatMap((category) => colours.map((colour) => ({ category, colour })))
+      .find(({ category, colour }) =>
+        !all.some((t) => t.category === category && t.colour === colour));
+
+    expect(empty).toBeDefined();
+    expect(run(`category=${empty!.category}&colour=${empty!.colour}`).items).toEqual([]);
+
+    // And a three-way narrowing nothing satisfies: the storefronts are free or premium.
     expect(run("category=store&tier=signature&colour=dark").items).toEqual([]);
   });
 

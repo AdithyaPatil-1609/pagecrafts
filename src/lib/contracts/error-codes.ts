@@ -9,4 +9,5 @@ export type ErrorCode =
   | "generation_failed"
   | "payment_required"
   | "hosting_error"
+  | "service_unavailable"
   | "internal";
