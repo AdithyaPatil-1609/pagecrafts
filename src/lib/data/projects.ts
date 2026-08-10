@@ -18,7 +18,7 @@ import { createCommit } from "./commits";
 import { contentFromFiles } from "@/lib/content/from-files";
 
 const DETAIL_COLUMNS =
-  "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at, " +
+  "id, name, source_template_id, content_json, content_schema, site_meta, form_endpoint, updated_at, " +
   "deployments(status, live_url, created_at)";
 
 const SUMMARY_COLUMNS = "id, name, updated_at, deployments(status, live_url, created_at)";
@@ -52,6 +52,7 @@ interface ProjectRow {
   name: string;
   source_template_id: string | null;
   content_json: Record<string, unknown>;
+  content_schema: ContentSchema | null;
   site_meta: SiteMeta;
   form_endpoint: string | null;
   updated_at: string;
@@ -68,6 +69,7 @@ function rowToDetail(row: ProjectRow): ProjectDetail {
     updatedAt: row.updated_at,
     sourceTemplateId: row.source_template_id,
     contentJson: row.content_json ?? {},
+    contentSchema: row.content_schema ?? { sections: [] },
     siteMeta: row.site_meta ?? {},
     formEndpoint: row.form_endpoint,
   };
