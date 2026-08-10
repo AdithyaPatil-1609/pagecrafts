@@ -1012,6 +1012,8 @@ export const DESIGNS: Template[] = [
                 kind: "form",
                 heading: "Order ahead",
                 body: "Leave your email to reserve a loaf or ask about a cake.",
+                heading: "Stay in the loop",
+                body: "Leave your email for new pieces, restocks and sizing help.",
             },
         ],
         footer: "Built with PageCraft.",

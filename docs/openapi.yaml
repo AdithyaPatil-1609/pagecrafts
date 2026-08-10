@@ -506,6 +506,8 @@ components:
       # The frozen ten, plus the finer buckets each library batch added so a design reads
       # with the right label and the classifier can route intent to it. Kept in step with
       # CATEGORIES in lib/ai/schemas.ts, which a contract test compares this list against.
+      # The frozen ten, plus the finer buckets each library batch added so each design
+      # reads with the right label and the classifier can route intent to it.
       enum: [portfolio, restaurant, saas, blog, event, resume, agency, store, nonprofit, other,
              fitness, food, photography, architecture, education, travel, business,
              beauty, real_estate, healthcare, design, professional_services, entertainment,
