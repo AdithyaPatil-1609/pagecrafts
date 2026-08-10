@@ -776,7 +776,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/ProjectSummary'
         - type: object
-          required: [sourceTemplateId, contentJson, siteMeta, formEndpoint]
+          required: [sourceTemplateId, contentJson, contentSchema, siteMeta, formEndpoint]
           properties:
             sourceTemplateId:
               type: [string, 'null']
@@ -784,6 +784,11 @@ components:
             contentJson:
               type: object
               additionalProperties: true
+            contentSchema:
+              # The project's own copy, taken at fork (R3 D7). The content panel is
+              # generated from this and nothing else (C-07), so it travels with the project
+              # rather than being fetched from a template that may since have been retired.
+              $ref: '#/components/schemas/ContentSchema'
             siteMeta:
               $ref: '#/components/schemas/SiteMeta'
             formEndpoint:
