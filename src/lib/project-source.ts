@@ -1,5 +1,22 @@
 import { apiGet, apiPut } from '@/lib/api/client';
 import type { FileMap, GetProjectFilesResponse } from '@/lib/contracts';
+import { apiPost } from '@/lib/api/client';
+import type { CreateCommitResponse } from '@/lib/contracts';
+
+export interface CommitResult {
+    sha: string | null;
+    error: string | null;
+}
+
+export async function createCommit(projectId: string, message: string): Promise<CommitResult> {
+    const { data, error } = await apiPost<CreateCommitResponse>(
+        `/api/v1/projects/${encodeURIComponent(projectId)}/commits`,
+        { message },
+    );
+
+    if (error || !data) return { sha: null, error: error ?? 'The server replied with nothing at all.' };
+    return { sha: data.sha, error: null };
+}
 
 export interface ProjectLoadResult {
     files: FileMap;

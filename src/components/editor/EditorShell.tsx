@@ -30,7 +30,7 @@ export default function EditorShell({ projectId }: { projectId: string }) {
         function onKey(e: KeyboardEvent) {
             if ((e.metaKey || e.ctrlKey) && e.key === 's') {
                 e.preventDefault();
-                saveProject();
+                saveProject({ commit: true });
             }
         }
         window.addEventListener('keydown', onKey);
