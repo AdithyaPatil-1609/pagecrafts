@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   DeploymentState,
   ProjectStatus,
+  ContentSchema,
   CreateProjectRequest,
   CreateProjectResponse,
   FileMap,
@@ -14,6 +15,7 @@ import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
+import { contentFromFiles } from "@/lib/content/from-files";
 
 const DETAIL_COLUMNS =
   "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at, " +
@@ -158,7 +160,7 @@ export async function createProject(
   try {
     const { data: template, error: templateError } = await supabase
       .from("templates")
-      .select("name, files")
+      .select("name, description, files, content_schema")
       .eq("id", req.sourceTemplateId)
       .maybeSingle();
 
@@ -169,6 +171,36 @@ export async function createProject(
 
     const files = (template.files ?? {}) as FileMap;
     await putProjectFiles(supabase, projectId, files);
+
+    // The schema is copied for the same reason the files are (R3 D7). Read live through
+    // source_template_id it was a reference, and a reference to a row that can be deleted
+    // (`on delete set null`) or re-normalised under the project's feet — either of which
+    // leaves someone holding a site they cannot edit.
+    //
+    // content_json is seeded from the markup at the same time, so the panel opens showing
+    // the words that are on the page instead of a column of blanks. See content/from-files.
+    const contentSchema = (template.content_schema ?? { sections: [] }) as ContentSchema;
+    const { error: seedError } = await supabase
+      .from("projects")
+      .update({
+        content_schema: contentSchema,
+        content_json: contentFromFiles(files, contentSchema),
+        // Enough for publish to emit a real <title> and description on day one (S-2). Both
+        // are the owner's to change from the settings panel; what they must not be is
+        // absent, because a site that publishes with no title is one nobody finds and the
+        // person has no reason to suspect it. The name is what they typed a moment ago;
+        // the description is the design's own, which at least describes the page they are
+        // looking at.
+        site_meta: {
+          title: req.name,
+          ...(template.description ? { description: template.description as string } : {}),
+        },
+      })
+      .eq("id", projectId);
+
+    if (seedError) {
+      throw new ApiError("internal", "Could not set up the project's content.", seedError.message);
+    }
 
     const { sha } = await createCommit(
       supabase,
