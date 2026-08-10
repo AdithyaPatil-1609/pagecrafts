@@ -52,6 +52,69 @@ function fieldOf(schema: ContentSchema, sectionKey: string, fieldKey: string): F
  * panel is generated from the schema, so a value it cannot render is a value nobody can ever
  * see or correct.
  */
+/**
+ * Carry image slots across when content is rebuilt from a different set of files (R3 D7).
+ *
+ * contentFromFiles cannot recover an image slot: the value is an asset id and the markup
+ * only has a URL. So rebuilding content from files and writing the result straight back
+ * would clear every picture the owner had chosen — a restore of last Tuesday's words would
+ * quietly unpick this morning's photograph, which nobody asked for and nothing announced.
+ *
+ * The words come from the files, because the files are what the page now says. The images
+ * are kept, because nothing in the files can say anything truer about them.
+ */
+export function keepImages(
+    previous: Record<string, unknown>,
+    next: Record<string, unknown>,
+    schema: ContentSchema,
+): Record<string, unknown> {
+    const merged: Record<string, unknown> = { ...next };
+
+    for (const section of schema.sections) {
+        const before = previous[section.key] as Record<string, unknown> | undefined;
+        if (!before) continue;
+
+        for (const field of section.fields) {
+            if (field.type === "image") {
+                if (before[field.key] === undefined) continue;
+                merged[section.key] = { ...(merged[section.key] as Record<string, unknown>) };
+                (merged[section.key] as Record<string, unknown>)[field.key] = before[field.key];
+                continue;
+            }
+
+            // An image nested in a list item, matched by position: the restored list decides
+            // how many items there are, and an item that no longer exists takes its picture
+            // with it.
+            if (field.type === "list") {
+                const imageKeys = (field.itemSchema ?? [])
+                    .filter((f) => f.type === "image")
+                    .map((f) => f.key);
+                if (imageKeys.length === 0) continue;
+
+                const beforeItems = before[field.key];
+                const nextItems = (merged[section.key] as Record<string, unknown> | undefined)?.[field.key];
+                if (!Array.isArray(beforeItems) || !Array.isArray(nextItems)) continue;
+
+                const items = nextItems.map((item, index) => {
+                    const priorItem = beforeItems[index];
+                    if (priorItem === null || typeof priorItem !== "object") return item;
+
+                    const carried: Record<string, unknown> = { ...(item as Record<string, unknown>) };
+                    for (const key of imageKeys) {
+                        const value = (priorItem as Record<string, unknown>)[key];
+                        if (value !== undefined) carried[key] = value;
+                    }
+                    return carried;
+                });
+
+                merged[section.key] = { ...(merged[section.key] as Record<string, unknown>), [field.key]: items };
+            }
+        }
+    }
+
+    return merged;
+}
+
 export function contentFromFiles(files: FileMap, schema: ContentSchema): Record<string, unknown> {
     const html = files["index.html"] ?? "";
     const content: Record<string, unknown> = {};
