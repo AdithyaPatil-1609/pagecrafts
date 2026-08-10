@@ -1,6 +1,8 @@
 import { MAX_CLASSIFY_CHARS } from "@/lib/contracts";
 import { intentParams } from "@/lib/discovery/ranking";
 import { parseTemplateQuery, queryTemplates, type TemplateQuery } from "@/lib/templates/query";
+import { DEFAULT_SORT } from "@/lib/discovery/sort";
+import { FilterChips } from "@/components/discovery/FilterChips";
 import { GalleryGrid } from "@/components/discovery/GalleryGrid";
 import { GalleryError } from "@/components/discovery/GalleryStates";
 import { PromptEcho } from "@/components/discovery/PromptEcho";
@@ -130,16 +132,31 @@ async function Gallery({
     ...intentParams(query.intent),
   };
 
+  // What a chip carries, which is `preserve` plus the sort (R2 D7). The two differ by
+  // exactly one parameter and for opposite reasons: the sort control must not re-send the
+  // sort it is replacing, and a chip must not throw away the order someone chose. Building
+  // the chip map out of `preserve` rather than beside it keeps the other seven parameters
+  // from having to be remembered twice.
+  //
+  // The default order stays out of the URL, so an unsorted gallery has a clean address.
+  const chipPreserve: Record<string, string> = {
+    ...preserve,
+    ...(query.sort !== DEFAULT_SORT ? { sort: query.sort } : {}),
+  };
+
   return (
-    <GalleryGrid
-      templates={result.items}
-      total={result.total}
-      activeCategory={query.category}
-      sort={query.sort}
-      preserve={preserve}
-      personalised={Boolean(prompt || query.category || query.intent)}
-      resetHref="/templates"
-      ranked={query.sort === "recommended" && Boolean(query.intent)}
-    />
+    <>
+      <FilterChips query={query} preserve={chipPreserve} resetHref="/templates" />
+      <GalleryGrid
+        templates={result.items}
+        total={result.total}
+        activeCategory={query.category}
+        sort={query.sort}
+        preserve={preserve}
+        personalised={Boolean(prompt || query.category || query.intent)}
+        resetHref="/templates"
+        ranked={query.sort === "recommended" && Boolean(query.intent)}
+      />
+    </>
   );
 }
