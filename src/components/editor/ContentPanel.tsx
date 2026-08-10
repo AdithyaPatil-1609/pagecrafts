@@ -66,6 +66,50 @@ function TextRow({
 }
 
 /**
+ * An image slot, wherever one appears — a content field or a site-wide setting.
+ *
+ * Choosing an image needs the picker (D12), so the slot says what it holds rather than
+ * offering an input that does nothing. Clearing, though, is possible today and is offered:
+ * the schema has always accepted null for an image, and someone who has put the wrong
+ * picture on their site should not have to wait two days to take it off again.
+ *
+ * The asset id itself is deliberately not shown. It is a uuid — it tells the owner nothing,
+ * and inviting them to type one is inviting a broken reference.
+ */
+function AssetSlot({
+    label,
+    assetId,
+    error,
+    onClear,
+}: {
+    label: string;
+    assetId: string | null;
+    error?: string;
+    onClear: () => void;
+}) {
+    return (
+        <div className="block">
+            <span className="mb-1 block text-sm">{label}</span>
+            <div className="flex items-center gap-2 rounded border border-dashed border-border px-2 py-1.5">
+                <p className="flex-1 text-xs text-muted-foreground">
+                    {assetId ? 'An image is set. Choosing images arrives with the picker.' : 'No image chosen yet.'}
+                </p>
+                {assetId && (
+                    <button
+                        type="button"
+                        onClick={onClear}
+                        className="rounded border border-border px-2 py-0.5 text-xs text-foreground hover:bg-accent"
+                    >
+                        Clear
+                    </button>
+                )}
+            </div>
+            {error && <span className="mt-1 block text-xs text-destructive">{error}</span>}
+        </div>
+    );
+}
+
+/**
  * One control per FieldType. The whole of the panel's per-design behaviour lives in this
  * switch, which is what keeps "no per-template UI" true rather than aspirational.
  */
@@ -130,17 +174,13 @@ export function FieldControl({
             );
 
         case 'image':
-            // The picker is D12. Until then the slot says what it holds and admits it cannot
-            // be changed here yet, which is more use than an input that does nothing.
             return (
-                <div className="block">
-                    <span className="mb-1 block text-sm">{field.label}</span>
-                    <p className="rounded border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground">
-                        {typeof value === 'string' && value
-                            ? 'An image is set. Choosing images arrives with the picker.'
-                            : 'No image chosen yet.'}
-                    </p>
-                </div>
+                <AssetSlot
+                    label={field.label}
+                    assetId={typeof value === 'string' ? value : null}
+                    error={error}
+                    onClear={() => onChange(null)}
+                />
             );
 
         case 'list':
@@ -279,6 +319,18 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
         [projectId, queueSave, siteMeta],
     );
 
+    // Removing the key rather than writing an empty string: siteMeta is optional all the
+    // way down, and "" would publish an empty favicon link instead of no favicon link.
+    const clearSiteMetaAsset = useCallback(
+        (key: 'faviconAssetId' | 'ogImageAssetId') => {
+            const next = { ...siteMeta };
+            delete next[key];
+            setSiteMeta(next);
+            queueSave(`site_meta.${key}`, () => saveSiteMeta(projectId, next));
+        },
+        [projectId, queueSave, siteMeta],
+    );
+
     if (loading) {
         return <p className="p-4 text-sm text-muted-foreground">Loading your content…</p>;
     }
@@ -331,6 +383,21 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
                     error={fieldErrors['site_meta.description']}
                     multiline
                     onChange={(value) => editSiteMeta('description', value)}
+                />
+
+                {/* Both are asset ids (S-3, S-4), so they behave like any other image slot
+                    rather than inviting someone to type a uuid. */}
+                <AssetSlot
+                    label="Favicon"
+                    assetId={siteMeta.faviconAssetId ?? null}
+                    error={fieldErrors['site_meta.faviconAssetId']}
+                    onClear={() => clearSiteMetaAsset('faviconAssetId')}
+                />
+                <AssetSlot
+                    label="Social share image"
+                    assetId={siteMeta.ogImageAssetId ?? null}
+                    error={fieldErrors['site_meta.ogImageAssetId']}
+                    onClear={() => clearSiteMetaAsset('ogImageAssetId')}
                 />
             </section>
         </div>
