@@ -84,7 +84,7 @@ describe("queryTemplates", () => {
   });
 
   it("answers an impossible combination with nothing, not an error", () => {
-    expect(run("category=store&colour=dark").items).toEqual([]);
+    expect(run("category=store&tier=signature&colour=dark").items).toEqual([]);
   });
 
   it("prices every item, and never invents a price for a free design", () => {
