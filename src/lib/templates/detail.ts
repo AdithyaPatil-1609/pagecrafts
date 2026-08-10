@@ -1,5 +1,6 @@
 import type { Category, ContentSchema, Template, TemplateTier } from "@/lib/contracts";
 import { previewOf, type TemplatePreview } from "@/lib/discovery/preview";
+import { templateUuid } from "./template-id";
 
 // Template detail contract without file bodies.
 export interface TemplateFileEntry {
@@ -8,7 +9,16 @@ export interface TemplateFileEntry {
 }
 
 export interface TemplateDetail {
+    /** The library slug — what a URL carries and what a person reads. */
     id: string;
+    /**
+     * The `templates.id` this design occupies once seeded, derived from the slug (R3 D8).
+     *
+     * The CTA forks with this rather than the slug, because source_template_id is a foreign
+     * key and createProjectSchema rightly insists on a uuid. Sent alongside the slug rather
+     * than replacing it: the slug is still what /templates/<id> is addressed by.
+     */
+    forkId: string;
     name: string;
     description: string;
     category: Category;
@@ -35,6 +45,7 @@ const encoder = new TextEncoder();
 export function toTemplateDetail(template: Template): TemplateDetail {
     return {
         id: template.id,
+        forkId: templateUuid(template.id),
         name: template.name,
         description: template.description,
         category: template.category,

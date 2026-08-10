@@ -654,10 +654,17 @@ components:
         bytes: { type: integer }
     TemplateDetail:
       type: object
-      required: [id, name, description, category, tags, thumbnailUrl, contentSchema, files,
-                 preview, license, sourceUrl, tier, priceInr, editable]
+      required: [id, forkId, name, description, category, tags, thumbnailUrl, contentSchema,
+                 files, preview, license, sourceUrl, tier, priceInr, editable]
       properties:
         id: { type: string }
+        forkId:
+          type: string
+          format: uuid
+          description: >-
+            The `templates.id` this design occupies, derived from the slug (R3 D8). Fork
+            with this: `source_template_id` is a foreign key, so `POST /projects` needs the
+            uuid rather than the slug the URL carries.
         name: { type: string }
         description: { type: string }
         category:
