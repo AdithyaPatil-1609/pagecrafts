@@ -79,7 +79,6 @@ export const CATEGORY_CARDS: Category[] = [
   "design",
   "professional_services",
   "entertainment",
-  "store",
   // The buckets designs 25-36 brought with them.
   "hospitality",
   "automotive",
