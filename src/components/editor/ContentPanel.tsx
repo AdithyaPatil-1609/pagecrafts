@@ -3,7 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ContentSchema, Field, SiteMeta } from '@/lib/contracts';
 import { applyContentToFiles } from '@/lib/content/to-files';
+import { validateFieldValue } from '@/lib/content/apply-ops';
 import { useEditorStore } from '@/lib/editor-store';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import {
     loadProjectContent,
     saveContentOps,
@@ -66,6 +75,54 @@ function TextRow({
 }
 
 /**
+ * The asset picker, as far as D9 takes it.
+ *
+ * Searching Unsplash and uploading are D12. What exists now is the door: the button, the
+ * dialog and the two routes into it, disabled and labelled with why. A placeholder that
+ * says what it will do beats a button that silently does nothing, and it means D12 is
+ * filling in a panel rather than deciding where the panel goes.
+ */
+function AssetPicker({ label }: { label: string }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <button
+                    type="button"
+                    className="rounded border border-border px-2 py-0.5 text-xs text-foreground hover:bg-accent"
+                >
+                    Choose
+                </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Choose an image — {label}</DialogTitle>
+                    <DialogDescription>
+                        Photo search and uploading are not wired up yet. Until they are, images
+                        come from the design you started with, and clearing a slot leaves it empty.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <button
+                        type="button"
+                        disabled
+                        className="w-full rounded border border-border px-3 py-2 text-left text-sm text-muted-foreground"
+                    >
+                        Search free photos — coming soon
+                    </button>
+                    <button
+                        type="button"
+                        disabled
+                        className="w-full rounded border border-border px-3 py-2 text-left text-sm text-muted-foreground"
+                    >
+                        Upload your own — coming soon
+                    </button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/**
  * An image slot, wherever one appears — a content field or a site-wide setting.
  *
  * Choosing an image needs the picker (D12), so the slot says what it holds rather than
@@ -92,8 +149,9 @@ function AssetSlot({
             <span className="mb-1 block text-sm">{label}</span>
             <div className="flex items-center gap-2 rounded border border-dashed border-border px-2 py-1.5">
                 <p className="flex-1 text-xs text-muted-foreground">
-                    {assetId ? 'An image is set. Choosing images arrives with the picker.' : 'No image chosen yet.'}
+                    {assetId ? 'An image is set.' : 'No image chosen yet.'}
                 </p>
+                <AssetPicker label={label} />
                 {assetId && (
                     <button
                         type="button"
@@ -104,6 +162,69 @@ function AssetSlot({
                     </button>
                 )}
             </div>
+            {error && <span className="mt-1 block text-xs text-destructive">{error}</span>}
+        </div>
+    );
+}
+
+/**
+ * A repeatable list — the cards on a page (R2 D9).
+ *
+ * The items are editable; adding, removing and reordering are D11. Every cell is a field in
+ * its own right with its own type and cap, so each one goes through the same controls as a
+ * top-level field rather than being assumed to be text.
+ *
+ * A list is set whole, as one op, because that is what the write path accepts: content_json
+ * holds the array, and sending "item 2's title" as its own edit would need a path shape
+ * neither the schema nor applyContentOps has.
+ */
+function ListRows({
+    field,
+    value,
+    error,
+    onChange,
+}: {
+    field: Field;
+    value: unknown;
+    error?: string;
+    onChange: (value: unknown) => void;
+}) {
+    const items = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
+    const itemSchema = field.itemSchema ?? [];
+
+    const editCell = (index: number, key: string, cell: unknown) => {
+        const next = items.map((item, i) => (i === index ? { ...item, [key]: cell } : item));
+        onChange(next);
+    };
+
+    return (
+        <div className="block">
+            <span className="mb-1 block text-sm">{field.label}</span>
+
+            {items.length === 0 ? (
+                <p className="rounded border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground">
+                    Nothing in this list yet. Adding items arrives with reordering.
+                </p>
+            ) : (
+                <ul className="space-y-3">
+                    {items.map((item, index) => (
+                        <li key={index} className="space-y-2 rounded border border-border p-2">
+                            <span className="block text-xs font-medium text-muted-foreground">
+                                Item {index + 1}
+                            </span>
+                            {itemSchema.map((itemField) => (
+                                <FieldControl
+                                    key={itemField.key}
+                                    field={itemField}
+                                    value={item?.[itemField.key]}
+                                    onChange={(cell) => editCell(index, itemField.key, cell)}
+                                />
+                            ))}
+                        </li>
+                    ))}
+                </ul>
+            )}
+
             {error && <span className="mt-1 block text-xs text-destructive">{error}</span>}
         </div>
     );
@@ -184,26 +305,7 @@ export function FieldControl({
             );
 
         case 'list':
-            // Editing the items is D9; add / remove / reorder is D11. Showing them read-only
-            // means the panel already describes the whole page rather than the half of it
-            // that happens to be scalar.
-            return (
-                <div className="block">
-                    <span className="mb-1 block text-sm">{field.label}</span>
-                    <ul className="space-y-1">
-                        {(Array.isArray(value) ? value : []).map((item, index) => (
-                            <li
-                                key={index}
-                                className="rounded border border-border px-2 py-1 text-xs text-muted-foreground"
-                            >
-                                {Object.values((item ?? {}) as Record<string, unknown>)
-                                    .filter((cell) => typeof cell === 'string')
-                                    .join(' — ') || `Item ${index + 1}`}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            );
+            return <ListRows field={field} value={value} error={error} onChange={onChange} />;
 
         case 'text':
         default:
@@ -295,15 +397,42 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
     const editField = useCallback(
         (sectionKey: string, fieldKey: string, value: unknown) => {
             const path = `${sectionKey}.${fieldKey}`;
+            const field = schema.sections
+                .find((section) => section.key === sectionKey)
+                ?.fields.find((f) => f.key === fieldKey);
+
+            // Checked with the same function the route uses (R2 D9), so the panel cannot
+            // accept something the server will refuse. The typing is always kept — refusing
+            // to render a keystroke because the value is one character over the cap makes
+            // the field feel broken, and the person cannot see what they typed to fix it.
+            const problem = field ? validateFieldValue(field, value) : null;
 
             setContent((current) => {
                 const section = { ...((current[sectionKey] as Record<string, unknown>) ?? {}) };
                 section[fieldKey] = value;
                 const next = { ...current, [sectionKey]: section };
 
-                renderPreview(next, schema);
+                // The preview follows valid content only. Showing an over-long headline on
+                // the page would promise a save that is not going to happen.
+                if (!problem) renderPreview(next, schema);
                 return next;
             });
+
+            setFieldErrors((current) => {
+                const next = { ...current };
+                if (problem) next[path] = problem;
+                else delete next[path];
+                return next;
+            });
+
+            if (problem) {
+                // Nothing queued: a request certain to come back 422 costs a round trip and
+                // tells the person nothing they are not already being told, inline.
+                const existing = timers.current.get(path);
+                if (existing) clearTimeout(existing);
+                timers.current.delete(path);
+                return;
+            }
 
             queueSave(path, () => saveContentOps(projectId, [{ path, value }]));
         },
