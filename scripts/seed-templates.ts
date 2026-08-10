@@ -46,6 +46,9 @@ export function templateRow(template: (typeof TEMPLATES)[number]) {
         content_schema: template.contentSchema,
         license: template.license,
         source_url: template.sourceUrl,
+        // What the design costs, so the fork check can read it from the row rather than
+        // trusting whoever is asking (R3 D8).
+        tier: template.tier,
     };
 }
 

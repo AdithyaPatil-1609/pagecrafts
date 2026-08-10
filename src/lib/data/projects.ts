@@ -10,12 +10,14 @@ import type {
   ProjectDetail,
   ProjectSummary,
   SiteMeta,
+  TemplateTier,
 } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
 import { contentFromFiles } from "@/lib/content/from-files";
+import { PROJECTS_PER_USER } from "@/lib/limits/config";
 
 const DETAIL_COLUMNS =
   "id, name, source_template_id, content_json, content_schema, site_meta, form_endpoint, updated_at, " +
@@ -122,6 +124,60 @@ export async function getProject(
   return rowToDetail(data as unknown as ProjectRow);
 }
 
+/**
+ * Whether this account holds an active `pro` entitlement (R3 D8).
+ *
+ * `pro` is the per-user row — the kinds that carry a project_id are grants against a
+ * particular site and say nothing about whether somebody may make another one. Read here
+ * rather than passed in, because entitlement state is never client-held (A-5).
+ *
+ * An expired or revoked row is not an entitlement, so status is part of the question rather
+ * than something to filter afterwards and forget.
+ */
+async function hasPro(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("entitlements")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("kind", "pro")
+    .eq("status", "active")
+    .limit(1);
+
+  if (error) throw new ApiError("internal", "Could not check your account.", error.message);
+  return (data ?? []).length > 0;
+}
+
+/** How many sites this account already holds. Pro accounts are not capped. */
+async function assertUnderQuota(
+  supabase: SupabaseClient,
+  userId: string,
+  pro: boolean,
+): Promise<void> {
+  if (pro) return;
+
+  // The ids rather than an exact count header: the cap is small by construction, so this is
+  // a handful of uuids either way, and it does not depend on PostgREST's counting options
+  // being modelled anywhere a test might run.
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("user_id", userId);
+
+  if (error) throw new ApiError("internal", "Could not check your sites.", error.message);
+
+  const count = (data ?? []).length;
+
+  if (count >= PROJECTS_PER_USER) {
+    // payment_required rather than rate_limited: waiting changes nothing, and the two ways
+    // out — delete a site, or upgrade — are both things the person can act on now.
+    throw new ApiError(
+      "payment_required",
+      `You have reached ${PROJECTS_PER_USER} sites. Delete one, or upgrade, to make another.`,
+      `projects=${count}`,
+    );
+  }
+}
+
 // Fork a template (R3 D8).
 //
 // A person picks a design and expects to land in the editor looking at it. That means the
@@ -137,6 +193,11 @@ export async function createProject(
   userId: string,
   req: CreateProjectRequest,
 ): Promise<CreateProjectResponse> {
+  // Both gates are checked here rather than in the route, because they are facts about the
+  // database and the route only has the caller's word for anything (R3 D8).
+  const pro = await hasPro(supabase, userId);
+  await assertUnderQuota(supabase, userId, pro);
+
   const { data, error } = await supabase
     .from("projects")
     .insert({
@@ -162,7 +223,7 @@ export async function createProject(
   try {
     const { data: template, error: templateError } = await supabase
       .from("templates")
-      .select("name, description, files, content_schema")
+      .select("name, description, files, content_schema, tier")
       .eq("id", req.sourceTemplateId)
       .maybeSingle();
 
@@ -170,6 +231,19 @@ export async function createProject(
       throw new ApiError("internal", "Could not read the template.", templateError.message);
     }
     if (!template) throw new ApiError("not_found", "That design does not exist.");
+
+    // Doc 22 P2/P3: a premium or signature design is paid for once, before the fork runs.
+    // The price is read from the row and never from the request — a paywall the caller is
+    // trusted to declare is not a paywall. Thrown inside the try, so the catch below removes
+    // the empty project rather than leaving a site nobody paid for sitting in a dashboard.
+    const tier = (template.tier ?? "free") as TemplateTier;
+    if (tier !== "free" && !pro) {
+      throw new ApiError(
+        "payment_required",
+        "This design needs to be paid for before you can use it.",
+        `tier=${tier}`,
+      );
+    }
 
     const files = (template.files ?? {}) as FileMap;
     await putProjectFiles(supabase, projectId, files);
