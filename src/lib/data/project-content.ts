@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ContentOp, ContentSchema, Field, PatchContentResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { applyContentOps } from "@/lib/content/apply-ops";
+import { clientFault } from "./pg-errors";
 
 // PATCH /projects/{id}/content (E-1). Ops mutate content_json under the template's
 // content_schema; the panel edits structure, never code (C-07). The saved project is
@@ -154,7 +155,14 @@ export async function patchProjectContent(
     .eq("id", projectId);
 
   if (saveError) {
-    throw new ApiError("internal", "Could not save the edits.", saveError.message);
+    // The ops were checked against the schema above, so anything the database still refuses
+    // is a constraint the app does not model — a size cap, a check on the column. Saying
+    // `internal` about it tells the caller to retry something that can never succeed
+    // (R3 D9, the pattern in pg-errors.ts).
+    throw (
+      clientFault(saveError, "Some of those edits were not allowed.") ??
+      new ApiError("internal", "Could not save the edits.", saveError.message)
+    );
   }
 
   return { rendered: true, dirty: true };

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AssetAttribution, AssetKind, AssetResponse } from "@/lib/contracts";
 import { serverEnv } from "@/lib/config/env";
 import { ApiError } from "@/lib/errors/respond";
+import { clientFault } from "./pg-errors";
 
 // POST /projects/{id}/assets (S-1, E-4). Every image enters through here: an Unsplash
 // pick the server downloads itself (the access key never reaches the browser), or a
@@ -106,7 +107,10 @@ async function storeAsset(
         insertError.message,
       );
     }
-    throw new ApiError("internal", "Could not save the image record.", insertError.message);
+    throw (
+      clientFault(insertError, "That image was not allowed.") ??
+      new ApiError("internal", "Could not save the image record.", insertError.message)
+    );
   }
 
   const { data: signed } = await supabase.storage
