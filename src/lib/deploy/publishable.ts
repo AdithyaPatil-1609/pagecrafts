@@ -1,4 +1,7 @@
-import type { FileMap, SiteMeta } from "@/lib/contracts";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { FileMap, PublishFile, SiteMeta } from "@/lib/contracts";
+import { getProject } from "@/lib/data/projects";
+import { getProjectFiles } from "@/lib/data/project-files";
 
 // The file set that actually goes live (R3 D9).
 //
@@ -133,4 +136,48 @@ export function publishableFiles({
     const next = wireForms(injectHead(html, metaTags(siteMeta, assetUrls)), formEndpoint);
 
     return next === html ? files : { ...files, "index.html": next };
+}
+
+/**
+ * A project, ready to hand to publish() (R3 D9).
+ *
+ * This is the whole of the handover to the publish route: read the working tree and the
+ * owner's settings, prepare the one file that needs preparing, and return it in the shape
+ * publish() takes. The route calling it needs one line and no knowledge of site_meta,
+ * form_endpoint or where either lives.
+ *
+ * Owner-scoped by RLS through the caller's client, so a project that is not theirs is not
+ * found rather than published.
+ *
+ * `assetUrls` is a parameter rather than something resolved here, and that is not laziness:
+ * project assets live in a private bucket, so the only URL this layer could produce is a
+ * signed one that expires in an hour — which is exactly wrong for a favicon on a live site.
+ * Giving published sites durable image URLs is a hosting decision nobody has made yet.
+ * Until it is made, metaTags skips an unresolved id rather than writing a broken link.
+ */
+export async function projectPublishInputs(
+    supabase: SupabaseClient,
+    projectId: string,
+    assetUrls: Record<string, string> = {},
+): Promise<{ projectName: string; files: PublishFile[] }> {
+    const [project, tree] = await Promise.all([
+        getProject(supabase, projectId),
+        getProjectFiles(supabase, projectId),
+    ]);
+
+    const files = publishableFiles({
+        files: tree.files,
+        siteMeta: project.siteMeta,
+        formEndpoint: project.formEndpoint,
+        assetUrls,
+    });
+
+    return {
+        projectName: project.name,
+        files: Object.entries(files)
+            .map(([path, content]) => ({ path, content, encoding: "utf-8" as const }))
+            // Sorted so two publishes of an unchanged site produce the same input, which is
+            // what lets the idempotency key mean anything.
+            .sort((a, b) => a.path.localeCompare(b.path)),
+    };
 }

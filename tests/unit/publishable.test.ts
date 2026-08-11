@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { metaTags, publishableFiles } from "@/lib/deploy/publishable";
+import { metaTags, projectPublishInputs, publishableFiles } from "@/lib/deploy/publishable";
+import { createFakeDb } from "../support/fake-db";
 
 // R3 D9 — what actually goes live.
 //
@@ -135,5 +136,66 @@ describe("what publishing does not touch", () => {
     it("hands back the same object when there is nothing to add", () => {
         const plain = { "index.html": "<html><head></head><body></body></html>" };
         expect(publishableFiles({ files: plain, siteMeta: {}, formEndpoint: null })).toBe(plain);
+    });
+});
+
+// The handover to the publish route: one call, and it needs to know nothing about
+// site_meta, form_endpoint or where either is kept.
+describe("a project, ready to publish", () => {
+    function siteReadyToGoLive() {
+        const db = createFakeDb({ users: [{ id: "u1" }] });
+        const project = db.insert("projects", {
+            user_id: "u1",
+            name: "Kettle & Co.",
+            content_json: {},
+            site_meta: { title: "Kettle & Co. — coffee", description: "Open from seven." },
+            form_endpoint: "https://forms.example/abc",
+        });
+        const id = project.id as string;
+
+        db.insert("project_files", { project_id: id, path: "index.html", content: HTML });
+        db.insert("project_files", { project_id: id, path: "styles.css", content: ".a{}" });
+
+        return { db, id };
+    }
+
+    it("returns the prepared tree in the shape publish() takes", async () => {
+        const { db, id } = siteReadyToGoLive();
+
+        const { projectName, files } = await projectPublishInputs(db.asUser("u1"), id);
+
+        expect(projectName).toBe("Kettle & Co.");
+        expect(files.map((f) => f.path)).toEqual(["index.html", "styles.css"]);
+        expect(files.every((f) => f.encoding === "utf-8")).toBe(true);
+    });
+
+    it("has already applied the owner's settings", async () => {
+        const { db, id } = siteReadyToGoLive();
+
+        const { files } = await projectPublishInputs(db.asUser("u1"), id);
+        const html = files.find((f) => f.path === "index.html")!.content;
+
+        expect(html).toContain("<title>Kettle &amp; Co. — coffee</title>");
+        expect(html).toContain('action="https://forms.example/abc"');
+    });
+
+    it("is in a stable order, so an unchanged site publishes identically twice", async () => {
+        // The idempotency key means nothing if the same site produces a different input
+        // each time it is prepared.
+        const { db, id } = siteReadyToGoLive();
+
+        const first = await projectPublishInputs(db.asUser("u1"), id);
+        const second = await projectPublishInputs(db.asUser("u1"), id);
+
+        expect(second.files).toEqual(first.files);
+    });
+
+    it("will not prepare somebody else's site", async () => {
+        const { db, id } = siteReadyToGoLive();
+        db.insert("users", { id: "u2" });
+
+        await expect(projectPublishInputs(db.asUser("u2"), id)).rejects.toMatchObject({
+            code: "not_found",
+        });
     });
 });
