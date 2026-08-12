@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ContentSchema, Field, SiteMeta } from '@/lib/contracts';
+import type { AssetKind, ContentSchema, Field, SiteMeta } from '@/lib/contracts';
 import { applyContentToFiles } from '@/lib/content/to-files';
 import { validateFieldValue } from '@/lib/content/apply-ops';
 import { addItem, moveItem, removeItem } from '@/lib/content/list-ops';
@@ -14,10 +14,14 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import type { PhotoResult } from '@/lib/data/unsplash-search';
 import {
     loadProjectContent,
+    pickPhoto,
     saveContentOps,
     saveSiteMeta,
+    searchPhotos,
+    uploadPhoto,
 } from '@/lib/project-content-source';
 
 // Screen 07 — the content panel (R2 D8).
@@ -76,16 +80,83 @@ function TextRow({
 }
 
 /**
- * The asset picker, as far as D9 takes it.
+ * The asset picker (R2 D12).
  *
- * Searching Unsplash and uploading are D12. What exists now is the door: the button, the
- * dialog and the two routes into it, disabled and labelled with why. A placeholder that
- * says what it will do beats a button that silently does nothing, and it means D12 is
- * filling in a panel rather than deciding where the panel goes.
+ * Two ways in, because they fail differently: search depends on a third party and an hourly
+ * quota, upload depends on nothing but the person's own machine. When search is down or
+ * spent, the dialog still offers upload rather than becoming a dead end — which is why the
+ * search error is shown inside the panel instead of replacing it.
+ *
+ * Both paths end at the same place: POST /assets creates a row this project owns, and the
+ * slot is set to that id. Nothing here ever holds an Unsplash URL — the server downloads
+ * the file, so a picture cannot vanish later because somebody deleted it upstream.
  */
-function AssetPicker({ label }: { label: string }) {
+function AssetPicker({
+    label,
+    projectId,
+    kind,
+    onPicked,
+}: {
+    label: string;
+    projectId: string;
+    kind: AssetKind;
+    onPicked: (assetId: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState<PhotoResult[]>([]);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const runSearch = useCallback(async () => {
+        if (!query.trim()) return;
+        setBusy(true);
+        setError(null);
+
+        const { items, error: failure } = await searchPhotos(query);
+        setResults(items);
+        setError(failure);
+        setBusy(false);
+    }, [query]);
+
+    const choose = useCallback(
+        async (unsplashId: string) => {
+            setBusy(true);
+            setError(null);
+
+            const { asset, error: failure } = await pickPhoto(projectId, unsplashId, kind);
+            setBusy(false);
+
+            if (failure || !asset) {
+                setError(failure);
+                return;
+            }
+            onPicked(asset.id);
+            setOpen(false);
+        },
+        [projectId, kind, onPicked],
+    );
+
+    const upload = useCallback(
+        async (file: File) => {
+            setBusy(true);
+            setError(null);
+
+            const { asset, error: failure } = await uploadPhoto(projectId, file, kind);
+            setBusy(false);
+
+            if (failure || !asset) {
+                setError(failure);
+                return;
+            }
+            onPicked(asset.id);
+            setOpen(false);
+        },
+        [projectId, kind, onPicked],
+    );
+
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <button
                     type="button"
@@ -94,29 +165,88 @@ function AssetPicker({ label }: { label: string }) {
                     Choose
                 </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Choose an image — {label}</DialogTitle>
                     <DialogDescription>
-                        Photo search and uploading are not wired up yet. Until they are, images
-                        come from the design you started with, and clearing a slot leaves it empty.
+                        Search free photos, or upload one of your own. Either way we save a copy,
+                        so your site keeps working whatever happens to the original.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-2">
-                    <button
-                        type="button"
-                        disabled
-                        className="w-full rounded border border-border px-3 py-2 text-left text-sm text-muted-foreground"
+
+                <div className="space-y-3">
+                    {/* A form, so Enter searches — the key everybody presses in a search box. */}
+                    <form
+                        className="flex gap-2"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            void runSearch();
+                        }}
                     >
-                        Search free photos — coming soon
-                    </button>
-                    <button
-                        type="button"
-                        disabled
-                        className="w-full rounded border border-border px-3 py-2 text-left text-sm text-muted-foreground"
-                    >
-                        Upload your own — coming soon
-                    </button>
+                        <input
+                            className={INPUT_CLASS}
+                            placeholder="coffee, workshop, mountains…"
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            aria-label="Search free photos"
+                        />
+                        <button
+                            type="submit"
+                            disabled={busy || !query.trim()}
+                            className="shrink-0 rounded border border-border px-3 py-1 text-sm hover:bg-accent disabled:opacity-50"
+                        >
+                            {busy ? 'Working…' : 'Search'}
+                        </button>
+                    </form>
+
+                    {error && (
+                        <p role="alert" className="text-xs text-destructive">
+                            {error}
+                        </p>
+                    )}
+
+                    {results.length > 0 && (
+                        <ul className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto">
+                            {results.map((photo) => (
+                                <li key={photo.id}>
+                                    <button
+                                        type="button"
+                                        disabled={busy}
+                                        onClick={() => void choose(photo.id)}
+                                        className="block w-full overflow-hidden rounded border border-border hover:border-primary disabled:opacity-50"
+                                    >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={photo.thumbUrl}
+                                            alt={photo.description || 'Photo'}
+                                            className="h-20 w-full object-cover"
+                                            loading="lazy"
+                                        />
+                                        {/* The credit rides with the thumbnail because showing it
+                                            is a licence condition, not a courtesy — and the moment
+                                            to establish that is before the picture is chosen. */}
+                                        <span className="block truncate px-1 py-0.5 text-[10px] text-muted-foreground">
+                                            {photo.credit.name}
+                                        </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    <label className="block border-t border-border pt-3">
+                        <span className="mb-1 block text-sm">Or upload your own</span>
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                            disabled={busy}
+                            className="block w-full text-xs text-muted-foreground"
+                            onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) void upload(file);
+                            }}
+                        />
+                    </label>
                 </div>
             </DialogContent>
         </Dialog>
@@ -138,11 +268,17 @@ function AssetSlot({
     label,
     assetId,
     error,
+    projectId,
+    kind,
+    onSet,
     onClear,
 }: {
     label: string;
     assetId: string | null;
     error?: string;
+    projectId: string;
+    kind: AssetKind;
+    onSet: (assetId: string) => void;
     onClear: () => void;
 }) {
     return (
@@ -152,7 +288,7 @@ function AssetSlot({
                 <p className="flex-1 text-xs text-muted-foreground">
                     {assetId ? 'An image is set.' : 'No image chosen yet.'}
                 </p>
-                <AssetPicker label={label} />
+                <AssetPicker label={label} projectId={projectId} kind={kind} onPicked={onSet} />
                 {assetId && (
                     <button
                         type="button"
@@ -184,11 +320,13 @@ function ListRows({
     field,
     value,
     error,
+    projectId,
     onChange,
 }: {
     field: Field;
     value: unknown;
     error?: string;
+    projectId: string;
     onChange: (value: unknown) => void;
 }) {
     const items = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
@@ -264,6 +402,7 @@ function ListRows({
                                     key={itemField.key}
                                     field={itemField}
                                     value={item?.[itemField.key]}
+                                    projectId={projectId}
                                     onChange={(cell) => editCell(index, itemField.key, cell)}
                                 />
                             ))}
@@ -285,11 +424,13 @@ export function FieldControl({
     field,
     value,
     error,
+    projectId,
     onChange,
 }: {
     field: Field;
     value: unknown;
     error?: string;
+    projectId: string;
     onChange: (value: unknown) => void;
 }) {
     const label = field.maxLength ? `${field.label} (max ${field.maxLength})` : field.label;
@@ -347,12 +488,23 @@ export function FieldControl({
                     label={field.label}
                     assetId={typeof value === 'string' ? value : null}
                     error={error}
+                    projectId={projectId}
+                    kind="image"
+                    onSet={(id) => onChange(id)}
                     onClear={() => onChange(null)}
                 />
             );
 
         case 'list':
-            return <ListRows field={field} value={value} error={error} onChange={onChange} />;
+            return (
+                <ListRows
+                    field={field}
+                    value={value}
+                    error={error}
+                    projectId={projectId}
+                    onChange={onChange}
+                />
+            );
 
         case 'text':
         default:
@@ -534,6 +686,7 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
                                 field={field}
                                 value={(content[section.key] as Record<string, unknown>)?.[field.key]}
                                 error={fieldErrors[`${section.key}.${field.key}`]}
+                                projectId={projectId}
                                 onChange={(value) => editField(section.key, field.key, value)}
                             />
                         ))}
@@ -567,12 +720,18 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
                     label="Favicon"
                     assetId={siteMeta.faviconAssetId ?? null}
                     error={fieldErrors['site_meta.faviconAssetId']}
+                    projectId={projectId}
+                    kind="favicon"
+                    onSet={(id) => editSiteMeta('faviconAssetId', id)}
                     onClear={() => clearSiteMetaAsset('faviconAssetId')}
                 />
                 <AssetSlot
                     label="Social share image"
                     assetId={siteMeta.ogImageAssetId ?? null}
                     error={fieldErrors['site_meta.ogImageAssetId']}
+                    projectId={projectId}
+                    kind="og_image"
+                    onSet={(id) => editSiteMeta('ogImageAssetId', id)}
                     onClear={() => clearSiteMetaAsset('ogImageAssetId')}
                 />
             </section>
