@@ -18,6 +18,9 @@ import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
 import { contentFromFiles } from "@/lib/content/from-files";
 import { PROJECTS_PER_USER } from "@/lib/limits/config";
+// Shared with the publish gate (R3 D9), so fork and publish agree about what a live
+// entitlement is — including that a lapsed one is not.
+import { hasPro } from "./entitlements";
 
 const DETAIL_COLUMNS =
   "id, name, source_template_id, content_json, content_schema, site_meta, form_endpoint, updated_at, " +
@@ -122,29 +125,6 @@ export async function getProject(
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
   return rowToDetail(data as unknown as ProjectRow);
-}
-
-/**
- * Whether this account holds an active `pro` entitlement (R3 D8).
- *
- * `pro` is the per-user row — the kinds that carry a project_id are grants against a
- * particular site and say nothing about whether somebody may make another one. Read here
- * rather than passed in, because entitlement state is never client-held (A-5).
- *
- * An expired or revoked row is not an entitlement, so status is part of the question rather
- * than something to filter afterwards and forget.
- */
-async function hasPro(supabase: SupabaseClient, userId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("entitlements")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("kind", "pro")
-    .eq("status", "active")
-    .limit(1);
-
-  if (error) throw new ApiError("internal", "Could not check your account.", error.message);
-  return (data ?? []).length > 0;
 }
 
 /** How many sites this account already holds. Pro accounts are not capped. */
