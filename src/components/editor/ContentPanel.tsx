@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ContentSchema, Field, SiteMeta } from '@/lib/contracts';
 import { applyContentToFiles } from '@/lib/content/to-files';
 import { validateFieldValue } from '@/lib/content/apply-ops';
+import { addItem, moveItem, removeItem } from '@/lib/content/list-ops';
 import { useEditorStore } from '@/lib/editor-store';
 import {
     Dialog,
@@ -168,11 +169,12 @@ function AssetSlot({
 }
 
 /**
- * A repeatable list — the cards on a page (R2 D9).
+ * A repeatable list — the cards on a page (R2 D9, finished at D11).
  *
- * The items are editable; adding, removing and reordering are D11. Every cell is a field in
- * its own right with its own type and cap, so each one goes through the same controls as a
- * top-level field rather than being assumed to be text.
+ * Items can be edited, added, removed and reordered. Every cell is a field in its own right
+ * with its own type and cap, so each one goes through the same controls as a top-level
+ * field rather than being assumed to be text — which is also why adding an item does not
+ * mean adding an empty object (see blankItem).
  *
  * A list is set whole, as one op, because that is what the write path accepts: content_json
  * holds the array, and sending "item 2's title" as its own edit would need a path shape
@@ -199,19 +201,64 @@ function ListRows({
 
     return (
         <div className="block">
-            <span className="mb-1 block text-sm">{field.label}</span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="text-sm">{field.label}</span>
+                <button
+                    type="button"
+                    onClick={() => onChange(addItem(items, itemSchema))}
+                    className="rounded border border-border px-2 py-0.5 text-xs text-foreground hover:bg-accent"
+                >
+                    Add item
+                </button>
+            </div>
 
             {items.length === 0 ? (
                 <p className="rounded border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground">
-                    Nothing in this list yet. Adding items arrives with reordering.
+                    Nothing in this list yet.
                 </p>
             ) : (
                 <ul className="space-y-3">
                     {items.map((item, index) => (
                         <li key={index} className="space-y-2 rounded border border-border p-2">
-                            <span className="block text-xs font-medium text-muted-foreground">
-                                Item {index + 1}
-                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    Item {index + 1}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    {/* Hidden rather than disabled at the ends: a button that
+                                        looks pressable and does nothing is worse than one that
+                                        is not there. moveItem agrees — it refuses to clamp. */}
+                                    {index > 0 && (
+                                        <button
+                                            type="button"
+                                            aria-label={`Move item ${index + 1} up`}
+                                            onClick={() => onChange(moveItem(items, index, -1))}
+                                            className="rounded border border-border px-1.5 py-0.5 text-xs hover:bg-accent"
+                                        >
+                                            ↑
+                                        </button>
+                                    )}
+                                    {index < items.length - 1 && (
+                                        <button
+                                            type="button"
+                                            aria-label={`Move item ${index + 1} down`}
+                                            onClick={() => onChange(moveItem(items, index, 1))}
+                                            className="rounded border border-border px-1.5 py-0.5 text-xs hover:bg-accent"
+                                        >
+                                            ↓
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        aria-label={`Remove item ${index + 1}`}
+                                        onClick={() => onChange(removeItem(items, index))}
+                                        className="rounded border border-border px-1.5 py-0.5 text-xs text-destructive hover:bg-accent"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+
                             {itemSchema.map((itemField) => (
                                 <FieldControl
                                     key={itemField.key}
