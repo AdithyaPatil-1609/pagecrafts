@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FileMap, PublishFile, SiteMeta } from "@/lib/contracts";
 import { getProject } from "@/lib/data/projects";
 import { getProjectFiles } from "@/lib/data/project-files";
+import { applyAssetsToHtml, bundleAssets, referencedAssetIds } from "./publish-assets";
 
 // The file set that actually goes live (R3 D9).
 //
@@ -149,33 +150,63 @@ export function publishableFiles({
  * Owner-scoped by RLS through the caller's client, so a project that is not theirs is not
  * found rather than published.
  *
- * `assetUrls` is a parameter rather than something resolved here, and that is not laziness:
- * project assets live in a private bucket, so the only URL this layer could produce is a
- * signed one that expires in an hour — which is exactly wrong for a favicon on a live site.
- * Giving published sites durable image URLs is a hosting decision nobody has made yet.
- * Until it is made, metaTags skips an unresolved id rather than writing a broken link.
+ * Images travel with the build (R3 D11). The referenced assets are copied into the
+ * deployment under `assets/`, so a favicon is a relative path rather than a signed URL that
+ * expires in an hour — which is what made this an open hosting question until now.
  */
 export async function projectPublishInputs(
     supabase: SupabaseClient,
     projectId: string,
-    assetUrls: Record<string, string> = {},
 ): Promise<{ projectName: string; files: PublishFile[] }> {
     const [project, tree] = await Promise.all([
         getProject(supabase, projectId),
         getProjectFiles(supabase, projectId),
     ]);
 
+    // Only what the site shows. A project collects images somebody tried and replaced, and
+    // shipping those would put pictures the owner thought they had removed onto a live site.
+    const bundled = await bundleAssets(
+        supabase,
+        projectId,
+        referencedAssetIds(project.contentJson, project.contentSchema, project.siteMeta),
+    );
+
+    const html = tree.files["index.html"];
+    const withAssets = html
+        ? {
+              ...tree.files,
+              "index.html": applyAssetsToHtml(
+                  html,
+                  project.contentJson,
+                  project.contentSchema,
+                  bundled.paths,
+              ),
+          }
+        : tree.files;
+
     const files = publishableFiles({
-        files: tree.files,
+        files: withAssets,
         siteMeta: project.siteMeta,
         formEndpoint: project.formEndpoint,
-        assetUrls,
+        assetUrls: bundled.paths,
     });
 
     return {
         projectName: project.name,
-        files: Object.entries(files)
-            .map(([path, content]) => ({ path, content, encoding: "utf-8" as const }))
+        files: [
+            ...Object.entries(files).map(([path, content]) => ({
+                path,
+                content,
+                encoding: "utf-8" as const,
+            })),
+            // Base64 because these are photographs, not text. PublishFile carries the
+            // encoding so the push side never has to guess from the extension.
+            ...Object.entries(bundled.files).map(([path, content]) => ({
+                path,
+                content,
+                encoding: "base64" as const,
+            })),
+        ]
             // Sorted so two publishes of an unchanged site produce the same input, which is
             // what lets the idempotency key mean anything.
             .sort((a, b) => a.path.localeCompare(b.path)),
