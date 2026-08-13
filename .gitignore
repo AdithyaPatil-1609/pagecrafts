@@ -51,3 +51,4 @@ e2e/.report/
 playwright-report/
 test-results/
 backup-*.sql
+backup-*.sql
