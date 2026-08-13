@@ -853,10 +853,6 @@ components:
             formEndpoint:
               type: [string, 'null']
               format: uri
-            # The template's content_schema, travelling with the project so the content
-            # panel is drawn from one fetch (C-07). Null when the project has no template.
-            contentSchema:
-              $ref: '#/components/schemas/NullableContentSchema'
     CreateProjectRequest:
       type: object
       required: [name]

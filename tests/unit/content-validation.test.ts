@@ -43,10 +43,10 @@ describe("every FieldType says yes or why not", () => {
         expect(validateFieldValue(LAYOUT, "c")).toContain("Expected one of");
     });
 
-    it("takes an asset id or null for an image, and nothing else", () => {
-        expect(validateFieldValue(PHOTO, "some-asset-id")).toBeNull();
+    it("takes an image address or null for an image, and nothing else", () => {
+        expect(validateFieldValue(PHOTO, "https://cdn.example.test/a.png")).toBeNull();
         expect(validateFieldValue(PHOTO, null)).toBeNull();
-        expect(validateFieldValue(PHOTO, 42)).toContain("asset id");
+        expect(validateFieldValue(PHOTO, 42)).toContain("image address");
     });
 
     it("checks each cell of a list against its own field, cap included", () => {
