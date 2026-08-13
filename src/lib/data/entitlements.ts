@@ -117,3 +117,81 @@ export async function assertCanPublish(
 
     return check;
 }
+
+/** Doc 22 P5: the first change within this long after going live is free. */
+export const GOODWILL_WINDOW_DAYS = 7;
+const GOODWILL_WINDOW_MS = GOODWILL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+export interface EditPermission {
+    allowed: boolean;
+    /** Why it is allowed, for anything that wants to explain itself. */
+    reason: "never_published" | "goodwill_window" | "unlocked" | "pro" | "locked";
+}
+
+/**
+ * May this project still be edited? (R3 D13, Doc 22 P5)
+ *
+ * A site that has never gone live is simply a draft, and drafts are free to change. Once it
+ * is published the rules change: editing it again needs an `edit_unlock` entitlement â€” with
+ * the first change within seven days of publishing free, as a goodwill window.
+ *
+ * The window runs from the *first* successful publish, not the most recent. Measuring from
+ * the latest one would renew itself on every republish, so anybody willing to press publish
+ * again would never pay â€” which is not a goodwill window, it is a subscription nobody is
+ * charged for.
+ *
+ * Decided here rather than in the editor, because a gate the client evaluates is a gate
+ * (A-5). The panel may hide a button; this is what actually refuses the write.
+ */
+export async function checkEditPermission(
+    supabase: SupabaseClient,
+    userId: string,
+    projectId: string,
+): Promise<EditPermission> {
+    const { data, error } = await supabase
+        .from("deployments")
+        .select("created_at, status")
+        .eq("project_id", projectId)
+        .eq("status", "live")
+        .order("created_at", { ascending: true })
+        .limit(1);
+
+    if (error) throw new ApiError("internal", "Could not check the site's status.", error.message);
+
+    const firstLive = (data ?? [])[0]?.created_at as string | undefined;
+    if (!firstLive) return { allowed: true, reason: "never_published" };
+
+    const since = Date.now() - Date.parse(firstLive);
+    if (Number.isFinite(since) && since <= GOODWILL_WINDOW_MS) {
+        return { allowed: true, reason: "goodwill_window" };
+    }
+
+    const unlock = await checkEntitlement(supabase, userId, projectId, "edit_unlock");
+    if (unlock.granted) {
+        return { allowed: true, reason: unlock.source === "pro" ? "pro" : "unlocked" };
+    }
+
+    return { allowed: false, reason: "locked" };
+}
+
+/**
+ * The gate itself. Throws rather than returning false, for the same reason assertCanPublish
+ * does: the failure mode of a boolean is a caller who forgets to look at it.
+ */
+export async function assertCanEdit(
+    supabase: SupabaseClient,
+    userId: string,
+    projectId: string,
+): Promise<EditPermission> {
+    const permission = await checkEditPermission(supabase, userId, projectId);
+
+    if (!permission.allowed) {
+        throw new ApiError(
+            "payment_required",
+            `This site is live. Editing it again needs an unlock â€” changes in the first ${GOODWILL_WINDOW_DAYS} days after publishing are free.`,
+            `projectId=${projectId}`,
+        );
+    }
+
+    return permission;
+}
