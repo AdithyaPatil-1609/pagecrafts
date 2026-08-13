@@ -1,5 +1,7 @@
 import { model } from '../gateway';
+import { aiConfig } from '../config';
 import { loadTemplate, render } from '../harness/templates';
+import { contain } from '../containment/envelope';
 import { stripFences, sanitise, sanitiseDeep } from '../sanitise';
 import { editProposal } from '@/lib/contracts/schemas/ai';
 import type {
@@ -10,16 +12,23 @@ export async function proposeEdit(
     section: SectionInstance,
     instruction: string,
 ): Promise<AiResult<EditProposal>> {
-    const tpl = loadTemplate('edit.v1');
+    const tpl = loadTemplate(aiConfig().prompts.edit);
+
+    // SEC-43: the section's own content is the untrusted half. The instruction is
+    // not — it was typed by the person who owns the project. The content may have
+    // been planted by an earlier turn, a template, or injected model output.
+    const contained = contain(tpl.system, {
+        content: JSON.stringify(section.props, null, 2),
+    });
 
     const reply = await model.strong.complete({
         job: 'edit',
-        system: tpl.system,
+        system: contained.system,
         user: render(tpl.user, {
             instruction,
             sectionKey: section.type,
             variant: section.variant,
-            content: JSON.stringify(section.props, null, 2),
+            content: contained.values.content,
         }),
     });
 

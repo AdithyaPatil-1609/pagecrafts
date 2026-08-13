@@ -1,7 +1,9 @@
 import { model } from './gateway';
+import { aiConfig } from './config';
 import { classifySchema } from './gateway/response-schemas';
 import { loadTemplate, render } from './harness/templates';
 import { stripFences } from './sanitise';
+import { contain } from './containment/envelope';
 import { classification, coercedFields, isClassificationShaped } from '@/lib/contracts/schemas/ai';
 import { CATEGORY_LIST } from './schemas';
 import {
@@ -28,13 +30,16 @@ export async function classify(text: string): Promise<AiResult<IntentAttributes>
     const input = text.trim().slice(0, MAX_CLASSIFY_CHARS);
     if (!input) return { data: SAFE, usage: NO_USAGE };
 
-    const tpl = loadTemplate('classify.v1');
+    const tpl = loadTemplate(aiConfig().prompts.classify);
 
     try {
+        // Free text from the public, on the cheapest model in the chain (FR-110).
+        const contained = contain(render(tpl.system), { text: input });
+
         const reply = await model.fast.complete({
             job: 'classify',
-            system: render(tpl.system),
-            user: render(tpl.user, { text: input }),
+            system: contained.system,
+            user: render(tpl.user, { text: contained.values.text }),
             schema: classifySchema,
         });
 

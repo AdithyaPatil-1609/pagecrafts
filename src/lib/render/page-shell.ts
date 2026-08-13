@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { ArtDirection } from '@/lib/contracts';
+import { artDirectionCss } from './art-direction';
 
 const DIR = join(process.cwd(), 'src/lib/render');
 
@@ -13,6 +15,29 @@ export interface ShellOptions {
     motionId: string;
     themeCss: string;
     body: string;
+}
+
+/**
+ * D14 — the shell for a generated composition, with every art-direction dial
+ * applied. `pageShell` still takes raw CSS for callers that have their own
+ * (a forked template brings its own stylesheet); this is the composition path,
+ * where the dials are the stylesheet.
+ */
+export function compositionShell(o: {
+    title: string;
+    description: string;
+    lang: string;
+    artDirection: ArtDirection;
+    body: string;
+}): string {
+    return pageShell({
+        title: o.title,
+        description: o.description,
+        lang: o.lang,
+        motionId: o.artDirection.motionId,
+        themeCss: artDirectionCss(o.artDirection),
+        body: o.body,
+    });
 }
 
 export function pageShell(o: ShellOptions): string {

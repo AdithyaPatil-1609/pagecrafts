@@ -17,6 +17,26 @@ const envSchema = z.object({
     AI_OUTPUT_GENERATE_TOKENS: z.coerce.number().int().positive().default(4_000),
     AI_OUTPUT_EDIT_TOKENS: z.coerce.number().int().positive().default(2_000),
 
+    // Sampling, per operation (D12). Deliberately optional: left unset nothing is
+    // sent and the provider's own default applies, which is what every
+    // measurement up to D11 was taken under. Setting one changes generation
+    // output, so the sweep sets it explicitly and records the winner here.
+    AI_TEMPERATURE_CLASSIFY: z.coerce.number().min(0).max(2).optional(),
+    AI_TEMPERATURE_GENERATE: z.coerce.number().min(0).max(2).optional(),
+    AI_TEMPERATURE_EDIT: z.coerce.number().min(0).max(2).optional(),
+    AI_TOP_P_CLASSIFY: z.coerce.number().min(0).max(1).optional(),
+    AI_TOP_P_GENERATE: z.coerce.number().min(0).max(1).optional(),
+    AI_TOP_P_EDIT: z.coerce.number().min(0).max(1).optional(),
+
+    // Which prompt version each stage runs. A version number marks a decision,
+    // so switching v1 → v2 is a config change with a before/after behind it,
+    // not an edit to a file.
+    AI_PROMPT_CLASSIFY: z.string().default('classify.v1'),
+    AI_PROMPT_PROFILE: z.string().default('profile.v1'),
+    AI_PROMPT_PLAN: z.string().default('plan.v1'),
+    AI_PROMPT_FILL: z.string().default('fill-section.v1'),
+    AI_PROMPT_EDIT: z.string().default('edit.v1'),
+
     // Per-operation timeouts. Shared across providers.
     GEMINI_TIMEOUT_CLASSIFY_MS: z.coerce.number().int().positive().default(5_000),
     GEMINI_TIMEOUT_GENERATE_MS: z.coerce.number().int().positive().default(45_000),
@@ -92,6 +112,21 @@ export interface ProviderConfig {
     pricing: ProviderPricing;
 }
 
+/** Undefined means "send nothing and let the provider decide". */
+export interface Sampling {
+    temperature?: number;
+    topP?: number;
+}
+
+/** Which prompt file each stage loads, so a version switch is a config change. */
+export interface PromptVersions {
+    classify: string;
+    profile: string;
+    plan: string;
+    fill: string;
+    edit: string;
+}
+
 export interface AiConfig {
     /** Head of the chain, derived from `order`. */
     provider: Provider;
@@ -107,6 +142,8 @@ export interface AiConfig {
 
     timeouts: Record<AiOperation, number>;
     maxOutputTokens: Record<AiOperation, number>;
+    sampling: Record<AiOperation, Sampling>;
+    prompts: PromptVersions;
 }
 
 /** Known providers only, de-duped. Throws if nothing valid survives. */
@@ -224,6 +261,26 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
             generate: v.AI_OUTPUT_GENERATE_TOKENS,
             edit: v.AI_OUTPUT_EDIT_TOKENS,
         },
+        sampling: {
+            classify: sampling(v.AI_TEMPERATURE_CLASSIFY, v.AI_TOP_P_CLASSIFY),
+            generate: sampling(v.AI_TEMPERATURE_GENERATE, v.AI_TOP_P_GENERATE),
+            edit: sampling(v.AI_TEMPERATURE_EDIT, v.AI_TOP_P_EDIT),
+        },
+        prompts: {
+            classify: v.AI_PROMPT_CLASSIFY,
+            profile: v.AI_PROMPT_PROFILE,
+            plan: v.AI_PROMPT_PLAN,
+            fill: v.AI_PROMPT_FILL,
+            edit: v.AI_PROMPT_EDIT,
+        },
+    };
+}
+
+/** Omits a key entirely when unset, so `{...sampling}` sends nothing. */
+function sampling(temperature?: number, topP?: number): Sampling {
+    return {
+        ...(temperature === undefined ? {} : { temperature }),
+        ...(topP === undefined ? {} : { topP }),
     };
 }
 
@@ -231,4 +288,15 @@ let cached: AiConfig | null = null;
 
 export function aiConfig(): AiConfig {
     return (cached ??= loadAiConfig());
+}
+
+/**
+ * Drops the memoised config so the next call re-reads the environment.
+ *
+ * For the D12 sweep and for tests, which change one setting and need it to take
+ * effect. Callers that also hold a gateway must rebuild it — `setGateway(null)`
+ * — since the chain is built from the config it was created with.
+ */
+export function resetAiConfig(): void {
+    cached = null;
 }

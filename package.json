@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:injection": "vitest run tests/injection",
+    "verify:injection": "node scripts/verify-injection-suite.mjs",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "templates:normalise": "tsx scripts/normalise-template.ts",
     "templates:seed": "tsx --env-file=.env.local scripts/seed-templates.ts",

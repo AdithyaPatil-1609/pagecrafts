@@ -79,6 +79,11 @@ export const CATEGORY_CARDS: Category[] = [
   "design",
   "professional_services",
   "entertainment",
+  // "E-commerce". One of the original ten, and the library has shipped designs for it
+  // since the second batch — fourteen of them, from `shop` through to `handmade-crafts`.
+  // It was dropped from this list during the R2 refresh, which took the gallery's only
+  // e-commerce shelf off the intent screen and made `?category=store` unfilterable,
+  // because `toCategory` below accepts only what is carded.
   "store",
   // The buckets designs 25-36 brought with them.
   "hospitality",

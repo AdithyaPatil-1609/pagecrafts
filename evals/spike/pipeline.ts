@@ -1,12 +1,14 @@
 import { classify } from '@/lib/ai/classify';
-import { profile as fetchProfile } from '@/lib/ai/profile';
+import { cachedProfile as fetchProfile } from '@/lib/ai/profile-cache';
 import { plan } from '@/lib/ai/generate/plan';
 import { fillSection } from '@/lib/ai/generate/fill';
 import { assemble } from '@/lib/ai/generate/assemble';
 import { GatewayError } from '@/lib/ai/gateway';
 import { CostLedger, type GenerationStatus, type LedgerRow } from '@/lib/ai/cost/ledger';
 import { withOneRepair } from '@/lib/ai/generate/repair';
-import type { Composition, SectionInstance, SectionProps, Usage, VerticalProfile } from '@/lib/contracts';
+import type {
+    Composition, IntentAttributes, SectionInstance, SectionProps, Usage, VerticalProfile,
+} from '@/lib/contracts';
 
 export type Mode = 'mock' | 'plan-only' | 'full';
 
@@ -31,6 +33,8 @@ export interface SpikeResult {
     error?: string;
     detail?: unknown;
     composition?: Composition;
+    /** What the classifier decided. Present whenever the classify stage returned. */
+    intent?: IntentAttributes;
     partial?: {
         profile?: VerticalProfile;
         sections?: SectionInstance[];
@@ -91,10 +95,17 @@ interface SpikeInput {
     hasTemplate: boolean;
     mode: Mode;
     budget: Budget;
+    /**
+     * Which vertical the profile stage is asked for. The D5 spike pins it to the
+     * corpus label so a classifier miss cannot contaminate a generation
+     * measurement; the D11 quality pass wants `classified`, because the
+     * classify → profile handoff is part of what is under test.
+     */
+    profileFrom?: 'input' | 'classified';
 }
 
 export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
-    const { vertical, prompt, hasTemplate, mode, budget } = input;
+    const { vertical, prompt, hasTemplate, mode, budget, profileFrom = 'input' } = input;
     const calls: CallRecord[] = [];
     const ledger = new CostLedger();
     const repairs: string[] = [];
@@ -102,6 +113,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
 
     let profileData: VerticalProfile | undefined;
     let plannedSections: SectionInstance[] | undefined;
+    let intentData: IntentAttributes | undefined;
 
     const record = (
         stage: CallRecord['stage'],
@@ -154,8 +166,11 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
 
     try {
         const intent = await runStage('classify', 1, () => classify(prompt));
+        intentData = intent.data;
 
-        const p = await runStage('profile', 1, () => fetchProfile(vertical));
+        const profileVertical = profileFrom === 'classified' ? intent.data.vertical : vertical;
+
+        const p = await runStage('profile', 1, () => fetchProfile(profileVertical));
         profileData = p.data;
 
         const planned = await runStage('plan', 1, () => plan(prompt, intent.data, p.data));
@@ -166,7 +181,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
         if (mode !== 'plan-only') {
             for (const section of planned.data) {
                 const ctx = {
-                    vertical,
+                    vertical: profileVertical,
                     tone: intent.data.tone,
                     prompt,
                     customerWord: p.data.vocabulary.customer,
@@ -188,7 +203,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
         }
 
         const composition = assemble({
-            vertical,
+            vertical: profileVertical,
             profile: p.data,
             sections: planned.data,
             props,
@@ -200,6 +215,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             ...base,
             ok: true,
             composition,
+            intent: intentData,
             calls,
             requests: calls.length,
             modelTimeMs: calls.reduce((t, c) => t + c.latencyMs, 0),
@@ -215,6 +231,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             ok: false,
             error: err instanceof Error ? err.message : String(err),
             detail: err instanceof GatewayError ? err.detail : undefined,
+            intent: intentData,
             partial: { profile: profileData, sections: plannedSections },
             calls,
             requests: calls.length,

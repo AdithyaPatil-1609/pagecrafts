@@ -29,6 +29,27 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+
+  # DEP-01 / SEC-45 / FR-115: the injection corpus runs on every PR and the
+  # build fails on a regression. It is a separate job from `quality` so a
+  # containment failure is legible at a glance rather than buried in the
+  # eight-hundred-test run — AC-F11-1 is zero successful injections, not few.
+  injection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Injection corpus (AC-F11-1, AC-F11-2)
+        run: npm run test:injection
+      # AC-F11-4: weakens the sanitiser on purpose and asserts the suite goes
+      # red. Without it a green suite only proves the suite is green today, not
+      # that it is watching anything. Restores the file before it exits.
+      - name: Deliberate weakening must fail the build (AC-F11-4)
+        run: npm run verify:injection
   database:
     runs-on: ubuntu-latest
     steps:

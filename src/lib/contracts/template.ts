@@ -61,6 +61,35 @@ export type Category =
   | "professional"
   | "personal";
 
+/**
+ * The same buckets as `Category`, as a value.
+ *
+ * It exists because a runtime enum written out by hand drifts from the type
+ * without anything failing: `satisfies z.ZodType<Category>` accepts a *narrower*
+ * enum, so a validator can quietly stop at seventeen while the type, the prompt
+ * and the provider schema carry all of them. That is what happened between the
+ * fourth and ninth library batches, and the cost was every health, beauty and
+ * retail classification being rewritten to "other" before anyone saw it.
+ *
+ * Both checks below are load-bearing. `satisfies` catches an id that is not a
+ * Category; `_categoriesAreExhaustive` catches a Category that is not in the
+ * list — the direction that actually drifted.
+ */
+export const CATEGORY_IDS = [
+  "portfolio", "restaurant", "saas", "blog", "event",
+  "resume", "agency", "store", "nonprofit", "other",
+  "fitness", "food", "photography", "architecture", "education", "travel", "business",
+  "beauty", "real_estate", "healthcare", "design", "professional_services", "entertainment",
+  "hospitality", "automotive", "media",
+  "sports", "health_wellness", "pets", "arts_culture", "retail", "finance",
+  "wellness", "health", "creative", "technology",
+  "professional", "personal",
+] as const satisfies readonly Category[];
+
+type MissingFromCategoryIds = Exclude<Category, (typeof CATEGORY_IDS)[number]>;
+const _categoriesAreExhaustive: MissingFromCategoryIds extends never ? true : never = true;
+void _categoriesAreExhaustive;
+
 export type FileMap = Record<string, string>;
 
 // Pricing tier shown on the tile and in the detail modal (Doc 22 P1-P3, Amendment A1).

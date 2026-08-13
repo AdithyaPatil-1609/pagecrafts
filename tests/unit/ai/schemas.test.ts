@@ -2,37 +2,53 @@ import { describe, it, expect } from 'vitest';
 import {
     categorySchema,
     classification,
+    coercedFields,
     isClassificationShaped,
     generationPlan,
     verticalProfile,
 } from '@/lib/contracts/schemas/ai';
-import { MAX_SECTIONS, THEME_IDS } from '@/lib/contracts';
+import { MAX_SECTIONS, THEME_IDS, CATEGORY_IDS } from '@/lib/contracts';
+import { CATEGORIES } from '@/lib/ai/schemas';
 
-describe('categorySchema — the original ten plus the R2 refresh buckets', () => {
-    it('keeps the original ten and adds the seven refresh categories', () => {
-        expect([...categorySchema.options].sort()).toEqual([
-            // The original frozen ten (kept for back-compat; `other` is the catch-all).
-            'agency', 'blog', 'event', 'nonprofit', 'other',
-            'portfolio', 'restaurant', 'resume', 'saas', 'store',
-            // The seven added when the gallery grew to the mockup's twelve designs.
-            'architecture', 'business', 'education', 'fitness', 'food', 'photography', 'travel',
-        ].sort());
+describe('categorySchema — one list, three consumers', () => {
+    /**
+     * This test used to pin the seventeen buckets the validator happened to have.
+     * That is what let it fall behind: the library grew to thirty-eight, the
+     * prompt and the provider schema grew with it, and this validator did not —
+     * so 21 of 38 categories were accepted by the model and then silently
+     * rewritten to "other" by `classification`. The assertion is now the
+     * invariant rather than the snapshot.
+     */
+    it('accepts exactly the buckets the Category type defines', () => {
+        expect([...categorySchema.options].sort()).toEqual([...CATEGORY_IDS].sort());
     });
 
-    it('accepts resume and store', () => {
-        expect(categorySchema.safeParse('resume').success).toBe(true);
-        expect(categorySchema.safeParse('store').success).toBe(true);
-    });
-
-    it('accepts the new refresh categories', () => {
-        for (const c of ['fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business']) {
-            expect(categorySchema.safeParse(c).success).toBe(true);
+    it('offers the model nothing it will then coerce away', () => {
+        // The prompt's list and the provider's response schema both come from
+        // CATEGORIES; every one of them must survive the contract validator.
+        for (const c of CATEGORIES) {
+            expect(categorySchema.safeParse(c).success, c).toBe(true);
         }
     });
 
-    it('rejects personal and shop', () => {
-        expect(categorySchema.safeParse('personal').success).toBe(false);
+    it('accepts the buckets that were being dropped', () => {
+        for (const c of ['healthcare', 'beauty', 'real_estate', 'retail', 'personal', 'finance']) {
+            expect(categorySchema.safeParse(c).success, c).toBe(true);
+        }
+    });
+
+    it('still rejects a bucket the library does not have', () => {
         expect(categorySchema.safeParse('shop').success).toBe(false);
+        expect(categorySchema.safeParse('').success).toBe(false);
+    });
+
+    it('does not flag a valid category as coerced', () => {
+        const raw = {
+            category: 'healthcare', vertical: 'dental-clinic',
+            tone: 'formal', palette: 'light', sections: ['hero'],
+        };
+        expect(coercedFields(raw)).not.toContain('category');
+        expect(classification.parse(raw).category).toBe('healthcare');
     });
 });
 
