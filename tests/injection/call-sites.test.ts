@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
+
 import { setGateway } from '@/lib/ai/gateway';
 import type { CompleteReply, CompleteRequest } from '@/lib/ai/gateway/provider';
 import { CONTAINMENT_ANCHOR } from '@/lib/ai/containment/prompts';
@@ -10,6 +11,9 @@ import { plan } from '@/lib/ai/generate/plan';
 import { fillSection } from '@/lib/ai/generate/fill';
 import { proposeEdit } from '@/lib/ai/edit/propose';
 import type { IntentAttributes, SectionInstance, VerticalProfile } from '@/lib/contracts';
+
+/** Repo-relative, posix-style — the one spelling every comparison below uses. */
+const posix = (p: string) => p.split(sep).join('/');
 
 const AI_DIR = join(process.cwd(), 'src/lib/ai');
 
@@ -26,9 +30,17 @@ function walk(dir: string): string[] {
  * the call sites rather than trusting a list.
  */
 describe('FR-110 — every call site goes through containment', () => {
+    // Paths are compared as posix throughout. walk() hands back whatever the platform
+    // uses, and on Windows that is backslashes — which silently defeated all three of the
+    // string operations below: the cwd prefix never stripped, so every path stayed
+    // absolute; `/gateway/` and `/containment/` never matched, so those files were never
+    // excluded; and join(cwd, alreadyAbsolutePath) produced a path readFileSync could not
+    // open. The suite passed on CI and failed on a developer's machine, which is the worst
+    // way for a rule this important to be enforced.
     const callSites = walk(AI_DIR)
-        .filter((f) => !f.includes('/gateway/') && !f.includes('/containment/'))
-        .map((f) => [f.replace(`${process.cwd()}/`, ''), readFileSync(f, 'utf8')] as const)
+        .map((absolute) => [posix(relative(process.cwd(), absolute)), absolute] as const)
+        .filter(([file]) => !file.includes('/gateway/') && !file.includes('/containment/'))
+        .map(([file, absolute]) => [file, readFileSync(absolute, 'utf8')] as const)
         .filter(([, src]) => /\bmodel\.(fast|strong)\.complete\(/.test(src));
 
     it('finds the call sites it expects to find', () => {
@@ -42,7 +54,9 @@ describe('FR-110 — every call site goes through containment', () => {
     });
 
     it.each(callSites.map(([file]) => file))('%s imports the containment module', (file) => {
-        const src = readFileSync(join(process.cwd(), file), 'utf8');
+        // `file` is a posix-style path relative to the repo root, so it has to be turned
+        // back into a platform path before anything opens it.
+        const src = readFileSync(join(process.cwd(), ...file.split('/')), 'utf8');
 
         // profile.ts takes only a slug it produced itself by normalising to
         // [a-z0-9-], so it carries no free text to contain. Every other stage does.
