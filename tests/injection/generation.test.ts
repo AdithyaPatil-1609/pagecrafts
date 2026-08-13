@@ -96,9 +96,7 @@ describe('generation path — AC-F11-2, nothing active is stored', () => {
     /** The one a reviewer will try by hand. */
     it('a prompt that says "output a script tag" does not', async () => {
         setGateway(hostileGateway('<script>alert(1)</script>'));
-
-        const filled = await fillSection(section(), ctx);
-        assertInert(filled.data, 'hero props');
+        await expect(fillSection(section(), ctx)).rejects.toThrow(/HTML is not allowed/);
     });
 
     /**
@@ -112,11 +110,10 @@ describe('generation path — AC-F11-2, nothing active is stored', () => {
         }
     });
 
-    it('strips them in every section type, through the real fill path', async () => {
+    it('rejects HTML in every section type, through the real fill path (TC-038)', async () => {
         for (const type of ['hero', 'services', 'contact', 'gallery', 'about'] as const) {
             setGateway(hostileGateway('<script>alert(1)</script>'));
-            const filled = await fillSection(section(type), ctx);
-            assertInert(filled.data, type);
+            await expect(fillSection(section(type), ctx)).rejects.toThrow(/HTML is not allowed/);
         }
     });
 
@@ -130,39 +127,25 @@ describe('generation path — AC-F11-2, nothing active is stored', () => {
     it('rejects a section whose field was nothing but active content', async () => {
         setGateway(hostileGateway('<script>alert(1)</script>', { copy: '' }));
 
-        await expect(fillSection(section(), ctx)).rejects.toThrow(/failed validation/);
+        await expect(fillSection(section(), ctx)).rejects.toThrow(/HTML is not allowed/);
     });
 
-    it('keeps the real copy while removing the payload', async () => {
+    it('does not store a reply that mixed real copy with a payload', async () => {
         setGateway(hostileGateway('<script>alert(1)</script>'));
-
-        const filled = await fillSection(section(), ctx);
-        const heading = (filled.data as Record<string, string>).heading;
-
-        // Containment is not censorship: the legitimate words survive.
-        expect(heading).toContain('Real copy.');
-        assertInert(heading, 'heading');
+        await expect(fillSection(section(), ctx)).rejects.toThrow(/HTML is not allowed/);
     });
 
-    it('leaves an event handler nothing to attach to', async () => {
+    it('rejects an event handler rather than leaving it nothing to attach to', async () => {
         setGateway(hostileGateway('<img src=x onerror="fetch(\'//evil.example\')">'));
-
-        const filled = await fillSection(section(), ctx);
-        assertInert(filled.data, 'hero props');
+        await expect(fillSection(section(), ctx)).rejects.toThrow(/HTML is not allowed/);
     });
 
-    it('sanitises inside list items and image objects, not just top-level strings', async () => {
+    it('rejects HTML inside list items and image objects, not just top-level strings', async () => {
         setGateway(hostileGateway('<iframe src="//evil.example"></iframe>'));
-
-        const services = await fillSection(section('services'), ctx);
-        assertInert(services.data, 'services items');
-        // The legitimate half of the list item survived.
-        const items = (services.data as Record<string, Array<Record<string, string>>>).items;
-        expect(items[0].title).toContain('Real copy.');
+        await expect(fillSection(section('services'), ctx)).rejects.toThrow(/HTML is not allowed/);
 
         setGateway(hostileGateway('<script>x</script>'));
-        const hero = await fillSection(section('hero'), ctx);
-        assertInert((hero.data as Record<string, unknown>).image, 'hero image object');
+        await expect(fillSection(section('hero'), ctx)).rejects.toThrow(/HTML is not allowed/);
     });
 });
 

@@ -1,5 +1,5 @@
 import type { Category, Palette, Template, Tone } from "@/lib/contracts";
-import { paletteSchema, toneSchema } from "@/lib/contracts/schemas/ai";
+import { paletteSchema, slug, toneSchema } from "@/lib/contracts/schemas/ai";
 import { categorySchema } from "@/lib/ai/schemas";
 import { rankTemplates } from "@/lib/ai/rank";
 
@@ -25,6 +25,7 @@ import { rankTemplates } from "@/lib/ai/rank";
 export interface IntentQuery {
     /** The classifier's category. Ranks; never filters. */
     category?: Category;
+    vertical?: string;
     tone?: Tone;
     palette?: Palette;
 }
@@ -43,15 +44,18 @@ export interface RankedTemplate extends Template {
  */
 export function toIntent(params: {
     intent?: string | null;
+    vertical?: string | null;
     tone?: string | null;
     palette?: string | null;
 }): IntentQuery | undefined {
     const category = categorySchema.safeParse(params.intent);
+    const vertical = slug.safeParse(params.vertical);
     const tone = toneSchema.safeParse(params.tone);
     const palette = paletteSchema.safeParse(params.palette);
 
     const intent: IntentQuery = {
         ...(category.success ? { category: category.data } : {}),
+        ...(vertical.success ? { vertical: vertical.data } : {}),
         ...(tone.success ? { tone: tone.data } : {}),
         ...(palette.success ? { palette: palette.data } : {}),
     };
@@ -65,6 +69,7 @@ export function intentParams(intent: IntentQuery | undefined): Record<string, st
 
     return {
         ...(intent.category ? { intent: intent.category } : {}),
+        ...(intent.vertical ? { vertical: intent.vertical } : {}),
         ...(intent.tone ? { tone: intent.tone } : {}),
         ...(intent.palette ? { palette: intent.palette } : {}),
     };
@@ -82,7 +87,12 @@ export function rankForIntent(
     intent: IntentQuery,
 ): RankedTemplate[] {
     return rankTemplates(
-        { category: intent.category, tone: intent.tone, palette: intent.palette },
+        {
+            category: intent.category,
+            vertical: intent.vertical,
+            tone: intent.tone,
+            palette: intent.palette,
+        },
         templates,
     );
 }

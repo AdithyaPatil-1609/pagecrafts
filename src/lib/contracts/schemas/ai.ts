@@ -3,6 +3,7 @@ import type { Category } from '@/lib/contracts';
 import {
     SECTION_KEYS, THEME_IDS, MOTION_IDS, RADIUS_IDS,
     SPACING_IDS, IMAGERY_IDS, MAX_SECTIONS, TONE_IDS, PALETTE_IDS, CATEGORY_IDS,
+    SCHEMA_VERSION,
 } from '@/lib/contracts';
 
 // Derived from the single list in template.ts rather than restated. A restated
@@ -84,6 +85,29 @@ export const generationPlan = z.array(plannedSection).min(1).max(MAX_SECTIONS);
 export const editProposal = z.object({
     changes: z.record(z.string(), z.unknown()),
     explanation: z.string().min(1).max(200),
+});
+
+export const sectionInstance = z.object({
+    id: z.string().min(1),
+    type: sectionKeySchema,
+    variant: z.string().min(1),
+    brief: z.string(),
+    visible: z.boolean(),
+    locked: z.boolean(),
+    source: z.enum(['ai', 'user', 'profile-default']),
+    props: z.record(z.string(), z.unknown()),
+});
+
+export const composition = z.object({
+    schemaVersion: z.literal(SCHEMA_VERSION),
+    vertical: z.string().min(1),
+    artDirection,
+    meta: z.object({
+        title: z.string(),
+        description: z.string(),
+        lang: z.string().min(2).max(8),
+    }),
+    sections: z.array(sectionInstance).min(1).max(MAX_SECTIONS),
 });
 
 export const request = {

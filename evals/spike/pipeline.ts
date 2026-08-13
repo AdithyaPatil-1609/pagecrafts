@@ -209,6 +209,7 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             props,
             title: p.data.label,
             description: prompt.slice(0, 160),
+            tone: intent.data.tone,
         });
 
         return {

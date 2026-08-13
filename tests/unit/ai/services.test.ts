@@ -204,7 +204,15 @@ describe('fillSection (M3.3 stage two)', () => {
         expect(JSON.stringify(data)).not.toContain('<');
     });
 
-    it('strips a script and an onerror handler (AC-F4-5)', async () => {
+    it('rejects a fill reply containing any HTML tag (TC-038)', async () => {
+        setGateway(fake(JSON.stringify({
+            eyebrow: 'a', heading: '<h1>Hi</h1>', sub: 'b',
+            ctaLabel: 'Book', image: { query: 'q', alt: 'a' },
+        })));
+        await expect(fillSection(section, fillContext)).rejects.toThrow(/HTML is not allowed/);
+    });
+
+    it('rejects a script tag rather than stripping it through (TC-038)', async () => {
         setGateway(fake(JSON.stringify({
             eyebrow: 'a',
             heading: 'Hi',
@@ -212,10 +220,7 @@ describe('fillSection (M3.3 stage two)', () => {
             ctaLabel: 'Book',
             image: { query: 'q', alt: 'a' },
         })));
-        const { data } = await fillSection(section, fillContext);
-        expect(data.sub).not.toContain('script');
-        expect(data.sub).not.toContain('onerror');
-        expect(data.sub).toContain('Same-week appointments.');
+        await expect(fillSection(section, fillContext)).rejects.toThrow(/HTML is not allowed/);
     });
 
     it('fails validation when a field is empty after sanitising', async () => {

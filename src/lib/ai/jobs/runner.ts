@@ -6,15 +6,17 @@ import { assemble } from '../generate/assemble';
 import { validateComposition } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
-import { CostLedger } from '../cost/ledger';
+import { CostLedger, type LedgerRow } from '../cost/ledger';
 import type { RankableTemplate } from '../rank';
-import type { SectionProps, Usage } from '@/lib/contracts';
+import type { IntentAttributes, SectionProps, Usage } from '@/lib/contracts';
 import { jobStore } from './store';
 import type { Job, JobEventName, JobStatus } from './types';
 
 export interface RunnerDeps {
     /** Candidates for the last-resort template fallback. */
     templates?: readonly RankableTemplate[];
+    /** Persist ledger rows; must not throw. */
+    persistLedger?: (rows: readonly LedgerRow[]) => Promise<void>;
 }
 
 /**
@@ -27,6 +29,16 @@ export interface RunnerDeps {
 export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
     const store = jobStore();
     const ledger = new CostLedger();
+    let intentData: IntentAttributes | undefined;
+
+    const flush = async () => {
+        if (!deps.persistLedger) return;
+        try {
+            await deps.persistLedger(ledger.all());
+        } catch (err) {
+            console.warn('[ledger]', err instanceof Error ? err.message : err);
+        }
+    };
 
     const emit = async (name: JobEventName, data?: Record<string, unknown>) => {
         const current = await store.get(job.id);
@@ -47,6 +59,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         await advance('planning');
 
         const intent = await classify(job.prompt);
+        intentData = intent.data;
         const provider = bill('classify', intent.usage);
 
         const p = await fetchProfile(intent.data.vertical);
@@ -102,6 +115,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             props,
             title: p.data.label,
             description: job.prompt.slice(0, 160),
+            tone: intent.data.tone,
         });
 
         // D16: motion budget and diversity, checked on the page about to be
@@ -126,12 +140,13 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             endedAt: Date.now(),
             ledger: [...ledger.all()],
         });
+        await flush();
         return (await store.get(job.id)) ?? job;
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
 
         const fallback = nearestTemplate(
-            { category: undefined, sections: [] },
+            intentData ?? {},
             deps.templates ?? [],
             message,
         );
@@ -153,6 +168,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             });
         }
 
+        await flush();
         return (await store.get(job.id)) ?? job;
     }
 }

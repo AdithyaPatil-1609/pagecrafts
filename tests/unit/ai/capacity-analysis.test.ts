@@ -49,4 +49,28 @@ describe('capacity analysis — the binding limit', () => {
     it('still accepts a bare rpd number, as the old callers passed', () => {
         expect(analyse([run(10, 9_426)], 1_000).projectedGenerationsPerDay).toBe(85);
     });
+
+    it('excludes repair-path runs from the latency corpus (TC-036)', () => {
+        const clean = run(10, 9_426);
+        const repaired: SpikeResult = {
+            ...run(12, 11_000),
+            repairs: ['hero: invalid'],
+            modelTimeMs: 80_000,
+        };
+        const a = analyse([clean, repaired], GROQ);
+        expect(a.generations).toBe(1);
+        expect(a.meanModelTimeMs).toBe(clean.modelTimeMs);
+    });
+
+    it('does not average plan-only runs with full ones (TC-036)', () => {
+        const full = run(10, 9_426);
+        const planOnly: SpikeResult = {
+            ...run(3, 1_000),
+            mode: 'plan-only',
+            modelTimeMs: 4_000,
+        };
+        const a = analyse([full, planOnly], GROQ);
+        expect(a.generations).toBe(1);
+        expect(a.meanRequests).toBe(10);
+    });
 });

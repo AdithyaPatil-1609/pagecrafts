@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 3,
+  "vertical": "dental-clinic",
+  "artDirection": {
+    "themeId": "clinical-blue",
+    "motionId": "whisper",
+    "radiusId": "soft",
+    "spacingId": "default",
+    "imageryId": "bright-clean"
+  },
+  "meta": {
+    "title": "Smile Dental",
+    "description": "Family dentistry in Koramangala",
+    "lang": "en"
+  },
+  "sections": [
+    {
+      "id": "s_01",
+      "type": "hero",
+      "variant": "centred",
+      "brief": "welcome",
+      "visible": true,
+      "locked": false,
+      "source": "ai",
+      "props": {
+        "heading": "Gentle dentistry"
+      }
+    }
+  ]
+}

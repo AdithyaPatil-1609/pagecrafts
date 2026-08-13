@@ -33,8 +33,12 @@ export interface Limits {
 
 export function analyse(results: SpikeResult[], limits: Limits | number, headroom = 0.15): Analysis {
     const { rpd, tpm = 0, tpd = 0 } = typeof limits === 'number' ? { rpd: limits } : limits;
-    const full = results.filter((r) => r.ok && r.mode === 'full');
-    const source = full.length > 0 ? full : results.filter((r) => r.ok);
+    // TC-036: model time is measured on a clean generation. Repair-path runs
+    // are a different question (FR-044/FR-045), and plan-only must not be
+    // averaged with full — three requests against nine overstates the ceiling.
+    const full = results.filter((r) =>
+        r.ok && r.mode === 'full' && !(r.repairs && r.repairs.length > 0));
+    const source = full.length > 0 ? full : results.filter((r) => r.ok && r.mode !== 'plan-only');
 
     const meanRequests = source.reduce((t, r) => t + r.requests, 0) / (source.length || 1);
     const modelTimes = source.map((r) => r.modelTimeMs);

@@ -10,6 +10,7 @@ import {
     type CompleteRequest,
     type NamedGateway,
 } from './provider';
+import { backoffClock, delayForAttempt, MAX_RATE_LIMIT_ATTEMPTS } from './backoff';
 
 interface ChatCompletionResponse {
     choices?: Array<{ message?: { content?: string | null } }>;
@@ -19,9 +20,6 @@ interface ChatCompletionResponse {
 
 /** `provider:model` pairs found not to support json_schema, so we ask only once. */
 const schemaSupport = new Set<string>();
-
-/** Longest Retry-After we will wait out rather than advancing the chain. */
-const MAX_RETRY_AFTER_MS = 30_000;
 
 /** Seconds or an HTTP date. Returns -1 when absent; `0` means retry immediately. */
 export function retryAfterMs(header: string | null): number {
@@ -145,17 +143,18 @@ export class OpenAICompatGateway implements NamedGateway {
             }
         }
 
-        // Advancing on a transient 429 would spend a scarcer provider's quota.
-        if (res.status === 429) {
-            const waitMs = retryAfterMs(res.headers.get('retry-after'));
-            if (waitMs >= 0 && waitMs <= MAX_RETRY_AFTER_MS) {
-                console.warn(`[gateway] ${this.name} rate-limited; waiting ${Math.round(waitMs / 1000)}s before retrying.`);
-                if (waitMs > 0) {
-                    await new Promise((r) => setTimeout(r, waitMs));
-                    waitedMs += waitMs;
-                }
-                res = await send();
+        // A 429 is expected traffic. Retry this provider with backoff + jitter
+        // before advancing the chain (which would spend a scarcer quota).
+        for (let attempt = 0; res.status === 429 && attempt < MAX_RATE_LIMIT_ATTEMPTS - 1; attempt++) {
+            const waitMs = delayForAttempt(attempt, retryAfterMs(res.headers.get('retry-after')));
+            console.warn(
+                `[gateway] ${this.name} rate-limited; waiting ${Math.round(waitMs / 1000)}s before retrying.`,
+            );
+            if (waitMs > 0) {
+                await backoffClock().sleep(waitMs);
+                waitedMs += waitMs;
             }
+            res = await send();
         }
 
         if (!res.ok) {

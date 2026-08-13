@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { assemble, isBlank, missingSections, AssemblyError } from '@/lib/ai/generate/assemble';
+import type { AssembleInput } from '@/lib/ai/generate/assemble';
 import { SCHEMA_VERSION } from '@/lib/contracts';
 import type { SectionInstance, VerticalProfile } from '@/lib/contracts';
 
@@ -25,14 +26,14 @@ const section = (id: string, type: string): SectionInstance => ({
     visible: true, locked: false, source: 'ai', props: {},
 } as SectionInstance);
 
-const input = (sections: SectionInstance[], props: Map<string, object>) => ({
+const input = (sections: SectionInstance[], props: Map<string, object>): AssembleInput => ({
     vertical: 'dental-clinic',
     profile,
     sections,
-    props,
+    props: props as AssembleInput['props'],
     title: 'Smile Dental',
     description: 'A dental clinic.',
-} as never);
+});
 
 describe('assemble', () => {
     it('pairs props to sections by id, not position', () => {
@@ -51,6 +52,16 @@ describe('assemble', () => {
         const c = assemble(input([section('s_01', 'hero')], new Map([['s_01', { a: 1 }]])));
         expect(c.schemaVersion).toBe(SCHEMA_VERSION);
         expect(c.artDirection.themeId).toBe('clinical-blue');
+    });
+
+    it('lets classified tone override the profile theme (FR-047)', () => {
+        const c = assemble({
+            ...input([section('s_01', 'hero')], new Map([['s_01', { a: 1 }]])),
+            tone: 'bold',
+        });
+        expect(c.artDirection.themeId).toBe('deep-luxury');
+        expect(c.artDirection.motionId).toBe('showcase');
+        expect(c.artDirection.radiusId).toBe('soft');
     });
 
     it('throws when a section has no content', () => {

@@ -166,7 +166,8 @@ describe('the job runner', () => {
         const { data } = await res.json();
         const job = await settled(data.job_id);
 
-        expect(job.status).toBe('failed');
+        expect(job.status).toBe('done');
+        expect(job.fallbackTemplateId).toBeTruthy();
         expect(job.events.map((e) => e.name)).toContain('fallback');
     });
 });

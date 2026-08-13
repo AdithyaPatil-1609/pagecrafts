@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { OpenAICompatGateway, retryAfterMs } from '@/lib/ai/gateway/openai-compat';
+import { setBackoffClock } from '@/lib/ai/gateway/backoff';
 import { resetAiConfig, type ProviderConfig } from '@/lib/ai/config';
 import type { CompleteRequest } from '@/lib/ai/gateway/provider';
 import { classifySchema } from '@/lib/ai/gateway/response-schemas';
@@ -33,7 +34,10 @@ const req = (over: Partial<CompleteRequest> = {}): CompleteRequest => ({
     tier: 'strong', job: 'generate', user: 'hello', ...over,
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+    setBackoffClock(null);
+    vi.restoreAllMocks();
+});
 
 describe('OpenAICompatGateway', () => {
     it('D5: labels the reply with its provider and model', async () => {
@@ -151,10 +155,13 @@ describe('OpenAICompatGateway', () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it('maps HTTP 429 to a retryable rate_limited error', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => new Response('slow down', { status: 429 })));
+    it('maps a persistent HTTP 429 to a retryable rate_limited error after backoff', async () => {
+        setBackoffClock({ sleep: async () => {}, jitter: () => 0 });
+        const fetchMock = vi.fn(async () => new Response('slow down', { status: 429 }));
+        vi.stubGlobal('fetch', fetchMock);
         await expect(new OpenAICompatGateway('groq', cfg()).complete(req()))
             .rejects.toMatchObject({ code: 'rate_limited', retryable: true });
+        expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
     it('maps HTTP 401 to a non-retryable unauthorized error', async () => {

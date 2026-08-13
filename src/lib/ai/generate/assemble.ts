@@ -1,7 +1,8 @@
 import { SCHEMA_VERSION, MAX_SECTIONS } from '@/lib/contracts';
 import type {
-    Composition, SectionInstance, SectionProps, VerticalProfile,
+    Composition, SectionInstance, SectionProps, Tone, VerticalProfile,
 } from '@/lib/contracts';
+import { applyTone } from '../art-direction';
 
 export interface AssembleInput {
     vertical: string;
@@ -10,6 +11,8 @@ export interface AssembleInput {
     props: Map<string, SectionProps>;
     title: string;
     description: string;
+    /** Classified tone; overrides the profile's theme/motion when set (FR-047). */
+    tone?: Tone;
 }
 
 export class AssemblyError extends Error { }
@@ -34,7 +37,7 @@ export function assemble(input: AssembleInput): Composition {
     return {
         schemaVersion: SCHEMA_VERSION,
         vertical: input.vertical,
-        artDirection: input.profile.artDirection,
+        artDirection: applyTone(input.profile.artDirection, input.tone),
         meta: {
             title: input.title,
             description: input.description,

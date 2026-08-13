@@ -2,8 +2,9 @@ import 'server-only';
 
 import { z } from 'zod';
 import { withRoute } from '@/lib/kernel/with-route';
-import { ok } from '@/lib/errors/respond';
+import { ok, ApiError } from '@/lib/errors/respond';
 import { proposeEdit } from '@/lib/ai/edit/propose';
+import { editStore, nextEditId } from '@/lib/ai/edit/store';
 import { SECTION_KEYS, type SectionInstance } from '@/lib/contracts';
 
 export const runtime = 'nodejs';
@@ -28,7 +29,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     auth: 'required',
     limit: 'ai',
     schema,
-    handler: async ({ body }) => {
+    handler: async ({ body, params, userId }) => {
         const section: SectionInstance = {
             ...body.section,
             visible: true,
@@ -37,6 +38,15 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         } as SectionInstance;
 
         const { data } = await proposeEdit(section, body.instruction);
-        return ok(data);
+        const stored = await editStore().put({
+            ...data,
+            id: nextEditId(),
+            projectId: params.id,
+            userId,
+            preProps: { ...section.props },
+            consumed: false,
+        });
+
+        return ok({ ...data, edit_id: stored.id });
     },
 });
