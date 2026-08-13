@@ -81,19 +81,39 @@ describe("recordCommit", () => {
         ).resolves.toMatchObject({ sha: SHA, author: "ai_edit" });
 
         const write = fake.queries[0]!;
-        expect(write.op).toBe("upsert");
+        // insert, not upsert: upsert is INSERT ... ON CONFLICT DO UPDATE, and Postgres wants
+        // UPDATE privilege for it even when nothing conflicts. This table grants select and
+        // insert only, on purpose, so upsert was refused outright by the real database
+        // (R3 — "permission denied for table commits", found by verify-core-loop).
+        expect(write.op).toBe("insert");
         expect(write.payload).toMatchObject({ project_id: PROJECT_ID, sha: SHA });
     });
 
     it("is safe to call twice with the same sha — a publish retry must not duplicate history", async () => {
-        const fake = fakeSupabase({ commits: row(commitRow()) });
-        const commit = { sha: SHA, message: "Save", author: "user" as const };
+        const first = await recordCommit(
+            fakeSupabase({ commits: row(commitRow()) }).client,
+            PROJECT_ID,
+            { sha: SHA, message: "Save", author: "user" },
+        );
 
-        const first = await recordCommit(fake.client, PROJECT_ID, commit);
-        const second = await recordCommit(fake.client, PROJECT_ID, commit);
+        // The second call is what the database does on a retry: the unique index on
+        // (project_id, sha) rejects the insert with 23505, and the existing row is read back
+        // rather than the call failing. Idempotent, and without needing UPDATE privilege.
+        const retry = fakeSupabase({
+            commits: (query) =>
+                query.op === "insert"
+                    ? { data: null, error: { message: "duplicate key value", code: "23505" } }
+                    : { data: commitRow(), error: null },
+        });
+
+        const second = await recordCommit(retry.client, PROJECT_ID, {
+            sha: SHA,
+            message: "Save",
+            author: "user",
+        });
 
         expect(second).toEqual(first);
-        expect(fake.queries.every((q) => q.op === "upsert")).toBe(true);
+        expect(retry.queries.some((q) => q.op === "update" || q.op === "delete")).toBe(false);
     });
 
     it("treats an RLS refusal as not_found rather than a silent success", async () => {

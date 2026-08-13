@@ -22,7 +22,17 @@ export interface Query {
     shape: "single" | "maybeSingle" | "many";
 }
 
-export type TableResponder = (query: Query) => { data: unknown; error: { message: string } | null };
+/**
+ * `code` is the SQLSTATE PostgREST passes through, and some paths branch on it — a
+ * unique_violation (23505) on the commit mirror means "already recorded", not "failed". A
+ * fake that only carried a message could not express that difference.
+ */
+export interface DbError {
+    message: string;
+    code?: string;
+}
+
+export type TableResponder = (query: Query) => { data: unknown; error: DbError | null };
 
 /** Answer every read of this table with one row (and echo writes back). */
 export function row(value: unknown): TableResponder {
@@ -47,8 +57,8 @@ export const none: TableResponder = (query) => ({
 });
 
 /** The database refused: a constraint, a trigger, a dead connection. */
-export function dbError(message: string): TableResponder {
-    return () => ({ data: null, error: { message } });
+export function dbError(message: string, code?: string): TableResponder {
+    return () => ({ data: null, error: code ? { message, code } : { message } });
 }
 
 /** One supabase.rpc() call, as the handler made it. */
@@ -57,9 +67,7 @@ export interface RpcCall {
     args: Record<string, unknown>;
 }
 
-export type RpcResponder = (
-    args: Record<string, unknown>,
-) => { data: unknown; error: { message: string } | null };
+export type RpcResponder = (args: Record<string, unknown>) => { data: unknown; error: DbError | null };
 
 export interface FakeSupabase {
     client: SupabaseClient;
