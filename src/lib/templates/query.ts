@@ -1,7 +1,7 @@
 import type { Category, Template, TemplateTier } from "@/lib/contracts";
 import { previewOf, type TemplatePreview } from "@/lib/discovery/preview";
 import { toCategory } from "@/lib/discovery/categories";
-import { COLOURS, FEATURES, LAYOUTS, TIERS } from "@/lib/discovery/filters";
+import { COLOURS, FEATURES, LAYOUTS, TIERS, narrowingFeatures } from "@/lib/discovery/filters";
 import { toIntent, type IntentQuery } from "@/lib/discovery/ranking";
 import { toSort, type SortKey } from "@/lib/discovery/sort";
 import { rankTemplates } from "@/lib/ai/rank";
@@ -242,4 +242,20 @@ function sortItems(items: TemplateSummary[], query: TemplateQuery): TemplateSumm
                 ? sorted.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
                 : sorted;
     }
+}
+
+/**
+ * The feature chips worth showing, for this library as it stands (R2 D14 follow-up).
+ *
+ * Memoised because the answer cannot change while the process is alive — the library is a
+ * module — and working it out means deriving a preview for all 115 designs, which is not
+ * something a filter row should do on every render.
+ */
+let narrowing: Feature[] | null = null;
+
+export function narrowingLibraryFeatures(): Feature[] {
+    narrowing ??= narrowingFeatures(
+        source().map((template) => ({ features: featuresOf(template, previewOf(template)) })),
+    );
+    return narrowing;
 }
