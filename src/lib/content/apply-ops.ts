@@ -28,11 +28,8 @@ export function checkScalar(field: Field, value: unknown): string | null {
       }
       return null;
     case "image":
-      // The URL of an asset created through POST /assets, or null/"" to clear the slot. The
-      // URL rather than the id, because the published page is static HTML on someone else's
-      // hosting: an `<img src>` is the only reference it can carry, and there is no server
-      // of ours in that path to turn an id into one. Provenance lives on the `assets` row.
-      if (value !== null && typeof value !== "string") return "Expected an image address or null.";
+      // An asset id, or null to clear the slot.
+      if (value !== null && typeof value !== "string") return "Expected an asset id or null.";
       return null;
     case "color":
       if (typeof value !== "string" || !HEX_COLOR.test(value)) {
