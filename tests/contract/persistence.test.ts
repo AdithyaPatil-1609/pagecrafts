@@ -155,7 +155,6 @@ describe("the contract checker itself", () => {
                 contentSchema: { sections: [] },
                 siteMeta: {},
                 formEndpoint: null,
-                contentSchema: null,
             },
         };
         expect(validate(detail, body)).toEqual([]);
