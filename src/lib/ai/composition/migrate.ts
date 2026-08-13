@@ -62,6 +62,17 @@ function migrateSection(raw: unknown, index: number): SectionInstance {
  * written. Missing or older versions are filled with defaults so a site saved
  * before art-direction dials existed still opens (TC-128, R-NEW-F).
  */
+export function parseStoredComposition(raw: unknown): Composition {
+    if (typeof raw === 'string') {
+        try {
+            raw = JSON.parse(raw);
+        } catch {
+            throw new MigrationError('migrate: composition.json is not JSON.');
+        }
+    }
+    return migrateComposition(raw);
+}
+
 export function migrateComposition(raw: unknown): Composition {
     const obj = asRecord(raw, 'composition');
     const version = typeof obj.schemaVersion === 'number' ? obj.schemaVersion : 0;

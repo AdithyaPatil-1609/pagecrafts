@@ -8,7 +8,7 @@ import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
 import { CostLedger, type LedgerRow } from '../cost/ledger';
 import type { RankableTemplate } from '../rank';
-import type { IntentAttributes, SectionProps, Usage } from '@/lib/contracts';
+import type { Composition, IntentAttributes, SectionProps, Usage } from '@/lib/contracts';
 import { jobStore } from './store';
 import type { Job, JobEventName, JobStatus } from './types';
 
@@ -17,6 +17,10 @@ export interface RunnerDeps {
     templates?: readonly RankableTemplate[];
     /** Persist ledger rows; must not throw. */
     persistLedger?: (rows: readonly LedgerRow[]) => Promise<void>;
+    /** Write the finished composition to the project tree. */
+    persistComposition?: (composition: Composition) => Promise<void>;
+    /** Funnel event after the job settles. */
+    onSettled?: (job: Job) => void;
 }
 
 /**
@@ -140,8 +144,17 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             endedAt: Date.now(),
             ledger: [...ledger.all()],
         });
+        if (deps.persistComposition) {
+            try {
+                await deps.persistComposition(composition);
+            } catch (err) {
+                console.warn('[generate] persist composition', err instanceof Error ? err.message : err);
+            }
+        }
         await flush();
-        return (await store.get(job.id)) ?? job;
+        const done = (await store.get(job.id)) ?? job;
+        deps.onSettled?.(done);
+        return done;
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
 
@@ -169,7 +182,9 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         }
 
         await flush();
-        return (await store.get(job.id)) ?? job;
+        const ended = (await store.get(job.id)) ?? job;
+        deps.onSettled?.(ended);
+        return ended;
     }
 }
 

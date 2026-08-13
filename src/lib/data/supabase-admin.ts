@@ -12,3 +12,12 @@ export function supabaseAdmin() {
     },
   });
 }
+
+/** Null when env is missing — tests and local spikes must not throw. */
+export function supabaseAdminOrNull() {
+  try {
+    return supabaseAdmin();
+  } catch {
+    return null;
+  }
+}

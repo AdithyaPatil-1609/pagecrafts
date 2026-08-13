@@ -9,6 +9,12 @@ import { runJob } from '@/lib/ai/jobs/runner';
 import { checkGenerationBudget } from '@/lib/ai/jobs/budget';
 import { persistLedgerRows } from '@/lib/ai/cost/persist';
 import { TEMPLATES } from '@/lib/templates';
+import { putProjectFile } from '@/lib/data/project-files';
+import { recordGenerationUse } from '@/lib/ai/jobs/counters';
+import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
+import { setProfileStore } from '@/lib/ai/profile-cache';
+import { SupabaseProfileStore } from '@/lib/ai/profile/persist';
+import { track } from '@/lib/observability/analytics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +31,11 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     handler: async ({ body, params, userId, supabase }) => {
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
+
+        const admin = supabaseAdminOrNull();
+        if (admin) setProfileStore(new SupabaseProfileStore(admin));
+        await recordGenerationUse(userId, params.id);
+        track('EV-04', userId, { category: 'unknown', latency_bucket: 'queued' });
 
         const job = await jobStore().create({
             id: nextJobId(),
@@ -46,8 +57,38 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             persistLedger: (rows) => persistLedgerRows(supabase, {
                 userId, projectId: params.id, prompt: body.prompt,
             }, rows),
+            persistComposition: async (composition) => {
+                if (typeof supabase.from !== 'function') return;
+                try {
+                    await putProjectFile(
+                        supabase,
+                        params.id,
+                        'composition.json',
+                        JSON.stringify(composition, null, 2),
+                    );
+                } catch (err) {
+                    console.warn(
+                        '[generate] persist composition',
+                        err instanceof Error ? err.message : err,
+                    );
+                }
+            },
+            onSettled: (settled) => {
+                const elapsed = (settled.endedAt ?? Date.now()) - settled.startedAt;
+                track('EV-05', userId, {
+                    category: settled.composition?.vertical ? 'classified' : 'fallback',
+                    latency_bucket: latencyBucket(elapsed),
+                });
+            },
         }).catch((err) => console.error('[generate]', err));
 
         return ok({ job_id: job.id }, 202);
     },
 });
+
+function latencyBucket(ms: number): string {
+    if (ms < 15_000) return '0-15s';
+    if (ms < 30_000) return '15-30s';
+    if (ms < 45_000) return '30-45s';
+    return '45s+';
+}

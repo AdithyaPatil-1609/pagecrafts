@@ -98,6 +98,7 @@ export function parseTemplateQuery(params: {
     const q = params.get("q")?.trim().slice(0, MAX_Q);
     const intent = toIntent({
         intent: params.get("intent"),
+        vertical: params.get("vertical"),
         tone: params.get("tone"),
         palette: params.get("palette"),
     });

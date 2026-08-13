@@ -3,10 +3,10 @@ import 'server-only';
 import { z } from 'zod';
 import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
-import {
-    artDirection, composition as compositionSchema, sectionInstance,
-} from '@/lib/contracts/schemas/ai';
+import { artDirection, sectionInstance } from '@/lib/contracts/schemas/ai';
 import { applyOps, PatchError, type CompositionOp } from '@/lib/ai/composition/patch';
+import { MigrationError, parseStoredComposition } from '@/lib/ai/composition/migrate';
+import { getProjectFile } from '@/lib/data/project-files';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,7 +40,27 @@ const compositionOp = z.discriminatedUnion('op', [
 
 const schema = z.object({
     ops: z.array(compositionOp).min(1).max(20),
-    composition: compositionSchema,
+    composition: z.unknown(),
+});
+
+function migrated(raw: unknown) {
+    try {
+        return parseStoredComposition(raw);
+    } catch (err) {
+        if (err instanceof MigrationError) {
+            throw new ApiError('validation_failed', err.message);
+        }
+        throw err;
+    }
+}
+
+// GET /api/v1/projects/{id}/composition — the stored page, migrated to the current schema.
+export const GET = withRoute<undefined, Params>({
+    auth: 'required',
+    handler: async ({ params, supabase }) => {
+        const file = await getProjectFile(supabase, params.id, 'composition.json');
+        return ok({ composition: migrated(file.content) });
+    },
 });
 
 // PATCH /api/v1/projects/{id}/composition — deterministic structure ops.
@@ -50,7 +70,7 @@ export const PATCH = withRoute<z.infer<typeof schema>, Params>({
     schema,
     handler: async ({ body }) => {
         try {
-            const composition = applyOps(body.composition, body.ops as CompositionOp[]);
+            const composition = applyOps(migrated(body.composition), body.ops as CompositionOp[]);
             return ok({ composition });
         } catch (err) {
             if (err instanceof PatchError) {

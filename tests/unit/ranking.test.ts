@@ -6,6 +6,10 @@ import { intentParams, rankForIntent, toIntent } from "@/lib/discovery/ranking";
 import { queryTemplates } from "@/lib/templates/query";
 
 describe("toIntent", () => {
+  it("reads a vertical out of the URL", () => {
+    expect(toIntent({ vertical: "dental-clinic" })).toEqual({ vertical: "dental-clinic" });
+  });
+
   it("reads a full classification out of the URL", () => {
     expect(toIntent({ intent: "food", tone: "warm", palette: "dark" })).toEqual({
       category: "food",
@@ -39,6 +43,12 @@ describe("toIntent", () => {
 });
 
 describe("rankForIntent", () => {
+  it("an exact vertical match leads the gallery (TC-118)", () => {
+    const ranked = rankForIntent(TEMPLATES, { vertical: "dental-clinic" });
+    expect(ranked[0]!.id).toBe("dental-clinic");
+    expect(ranked[0]!.score).toBeGreaterThanOrEqual(100);
+  });
+
   it("leads with the design in the classified category", () => {
     const ranked = rankForIntent(TEMPLATES, { category: "fitness" });
     expect(ranked[0]!.category).toBe("fitness");

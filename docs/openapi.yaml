@@ -452,6 +452,133 @@ paths:
                 $ref: '#/components/schemas/RestoreResult'
         default:
           $ref: '#/components/responses/Error'
+  /projects/{projectId}/generate:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: generateProject
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+      responses:
+        '202':
+          description: Generation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateJobResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/edits:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: proposeScopedEdit
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProposeEditRequest'
+      responses:
+        '200':
+          description: Proposed section patch. Writes nothing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProposeEditResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/edits/apply:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    post:
+      operationId: applyScopedEdit
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyEditRequest'
+      responses:
+        '201':
+          description: Applied to exactly one section and wrote composition.json.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplyEditResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /projects/{projectId}/composition:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: getComposition
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Stored composition, migrated to the current schema.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompositionResult'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      operationId: patchComposition
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchCompositionRequest'
+      responses:
+        '200':
+          description: Deterministic structure ops. Zero provider calls.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompositionResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /jobs/{jobId}:
+    get:
+      operationId: getGenerationJob
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job progress.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects/{projectId}/edit:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -1317,6 +1444,136 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/ListCommitsResponse'
+    GenerateJobResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [job_id]
+          properties:
+            job_id:
+              type: string
+    ProposeEditRequest:
+      type: object
+      required: [instruction, section]
+      properties:
+        instruction:
+          type: string
+          minLength: 1
+          maxLength: 300
+        section:
+          type: object
+          additionalProperties: true
+    ProposeEditResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [edit_id, applied, patch, explanation]
+          properties:
+            edit_id:
+              type: string
+            applied:
+              const: false
+            patch:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+            explanation:
+              type: string
+            pre_commit_sha:
+              type: [string, 'null']
+            target_section_id:
+              type: string
+          additionalProperties: true
+    ApplyEditRequest:
+      type: object
+      required: [edit_id, composition]
+      properties:
+        edit_id:
+          type: string
+        composition:
+          type: object
+          additionalProperties: true
+    ApplyEditResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [applied, composition, edit_id]
+          properties:
+            applied:
+              const: true
+            edit_id:
+              type: string
+            composition:
+              type: object
+              additionalProperties: true
+    PatchCompositionRequest:
+      type: object
+      required: [ops, composition]
+      properties:
+        ops:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: object
+            additionalProperties: true
+        composition:
+          type: object
+          additionalProperties: true
+    CompositionResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [composition]
+          properties:
+            composition:
+              type: object
+              additionalProperties: true
+    JobStatusResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [status, sections_done, sections_total, elapsed_ms]
+          additionalProperties: true
+          properties:
+            status:
+              type: string
+            sections_done:
+              type: integer
+            sections_total:
+              type: integer
+            elapsed_ms:
+              type: integer
+            provider:
+              type: string
+            fallback_template_id:
+              type: string
+            error:
+              type: string
+            composition:
+              type: object
+              additionalProperties: true
     ErrorResult:
       type: object
       required: [ok, error]

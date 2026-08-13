@@ -17,6 +17,9 @@ const files = vi.hoisted(() => ({
     putProjectFile: vi.fn(async () => ({
         projectId: 'p_1', path: 'composition.json', dirty: true, updatedAt: 't',
     })),
+    getProjectFile: vi.fn(async () => ({
+        projectId: 'p_1', path: 'composition.json', content: '{}', updatedAt: 't',
+    })),
 }));
 vi.mock('@/lib/data/project-files', () => files);
 
@@ -24,7 +27,7 @@ import { redisMock as limits, resetRedisMock } from '../../support/redis-mock';
 import { setGateway, type Gateway } from '@/lib/ai/gateway';
 import { POST as EDITS } from '@/app/api/v1/projects/[id]/edits/route';
 import { POST as APPLY } from '@/app/api/v1/projects/[id]/edits/apply/route';
-import { PATCH as COMPOSITION } from '@/app/api/v1/projects/[id]/composition/route';
+import { PATCH as COMPOSITION, GET as COMPOSITION_GET } from '@/app/api/v1/projects/[id]/composition/route';
 import { setEditStore } from '@/lib/ai/edit/store';
 import { SCHEMA_VERSION, type Composition, type SectionInstance } from '@/lib/contracts';
 
@@ -189,5 +192,34 @@ describe('PATCH /composition — zero provider calls (TC-129)', () => {
             'utf8',
         );
         expect(src).not.toMatch(/from ['"]@\/lib\/ai\/gateway/);
+    });
+
+    it('migrates a v2 body before applying ops', async () => {
+        const v2 = JSON.parse(readFileSync(
+            join(process.cwd(), 'tests/fixtures/compositions/v2.json'), 'utf8'));
+        const res = await patch({
+            ops: [{ op: 'hide', sectionId: 's_01' }],
+            composition: v2,
+        });
+        const json = await res.json();
+        expect(res.status).toBe(200);
+        expect(json.data.composition.schemaVersion).toBe(SCHEMA_VERSION);
+        expect(json.data.composition.sections[0].visible).toBe(false);
+    });
+
+    it('GET migrates the stored file', async () => {
+        const v2 = readFileSync(
+            join(process.cwd(), 'tests/fixtures/compositions/v2.json'), 'utf8');
+        files.getProjectFile.mockResolvedValueOnce({
+            projectId: 'p_1', path: 'composition.json', content: v2, updatedAt: 't',
+        });
+        const res = await COMPOSITION_GET(
+            new Request('http://x/c') as never,
+            { params: Promise.resolve({ id: 'p_1' }) } as never,
+        );
+        const json = await res.json();
+        expect(res.status).toBe(200);
+        expect(json.data.composition.schemaVersion).toBe(SCHEMA_VERSION);
+        expect(json.data.composition.artDirection.themeId).toBe('clinical-blue');
     });
 });

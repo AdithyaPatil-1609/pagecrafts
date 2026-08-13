@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { migrateComposition, MigrationError } from '@/lib/ai/composition/migrate';
+import { migrateComposition, parseStoredComposition, MigrationError } from '@/lib/ai/composition/migrate';
 import { SCHEMA_VERSION } from '@/lib/contracts';
 
 const fixture = (name: string) =>
@@ -26,6 +26,11 @@ describe('migrateComposition (TC-128)', () => {
     it('refuses a future schema version rather than guessing', () => {
         expect(() => migrateComposition({ ...fixture('v3.json'), schemaVersion: 99 }))
             .toThrow(MigrationError);
+    });
+
+    it('parses a JSON string the same as an object', () => {
+        const raw = readFileSync(join(process.cwd(), 'tests/fixtures/compositions', 'v2.json'), 'utf8');
+        expect(parseStoredComposition(raw)).toEqual(migrateComposition(fixture('v2.json')));
     });
 
     it('refuses a value that is not an object', () => {

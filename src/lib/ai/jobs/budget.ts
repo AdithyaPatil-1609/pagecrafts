@@ -1,5 +1,6 @@
 import { aiConfig } from '../config';
 import type { ErrorCode } from '@/lib/contracts';
+import { upstashGenerationCounters } from './counters';
 
 export type BudgetVerdict =
     | { ok: true }
@@ -14,20 +15,13 @@ export interface GenerationCounters {
 }
 
 /**
- * Stub standing in for E1's M7.1 counters. Called behind this interface so the
- * three pre-checks exist in the route from the start rather than being retrofitted;
- * swap `setGenerationCounters` when the real ones land.
+ * Daily generation counters. Redis-backed in production; tests swap via
+ * `setGenerationCounters`.
  */
-const permissive: GenerationCounters = {
-    async userDailyUsed() { return 0; },
-    userDailyLimit() { return Number.MAX_SAFE_INTEGER; },
-    async projectBudgetExhausted() { return false; },
-};
-
-let counters: GenerationCounters = permissive;
+let counters: GenerationCounters = upstashGenerationCounters;
 
 export function setGenerationCounters(next: GenerationCounters | null): void {
-    counters = next ?? permissive;
+    counters = next ?? upstashGenerationCounters;
 }
 
 function estimateTokens(text: string): number {

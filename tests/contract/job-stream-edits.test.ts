@@ -132,6 +132,7 @@ describe('POST /api/v1/projects/{id}/edits', () => {
         expect(json.data.patch).toEqual([
             { op: 'replace', path: '/props/heading', value: 'New heading' },
         ]);
+        expect(json.data).toHaveProperty('pre_commit_sha');
     });
 
     it('R14: sanitises the proposal before returning it', async () => {

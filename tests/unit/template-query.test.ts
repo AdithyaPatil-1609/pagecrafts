@@ -122,6 +122,12 @@ describe("queryTemplates", () => {
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
   });
 
+  it("awards the vertical match from the URL (TC-118)", () => {
+    const items = run("vertical=dental-clinic").items;
+    expect(items[0]!.id).toBe("dental-clinic");
+    expect(items[0]!.score).toBeGreaterThanOrEqual(100);
+  });
+
   it("keeps the score on every item even when an explicit sort reorders them", () => {
     const items = run("intent=store&sort=name").items;
     expect(items.find((t) => t.id === "shop")!.score).toBeGreaterThan(0);
