@@ -1,6 +1,7 @@
 import type { Category, Template, TemplateTier } from "@/lib/contracts";
 import { previewOf, type TemplatePreview } from "@/lib/discovery/preview";
 import { toCategory } from "@/lib/discovery/categories";
+import { COLOURS, FEATURES, LAYOUTS, TIERS } from "@/lib/discovery/filters";
 import { toIntent, type IntentQuery } from "@/lib/discovery/ranking";
 import { toSort, type SortKey } from "@/lib/discovery/sort";
 import { rankTemplates } from "@/lib/ai/rank";
@@ -64,10 +65,12 @@ export interface TemplateListResponse {
     total: number;
 }
 
-const TIERS: readonly TemplateTier[] = ["free", "premium", "signature"];
-const COLOURS: readonly Colour[] = ["light", "dark"];
-const LAYOUTS: readonly Layout[] = ["split", "full-bleed", "centered", "showcase"];
-const FEATURES: readonly Feature[] = ["form", "list", "photo"];
+// The accepted values live with the labels the chips wear (R2 D7), so the list this parses
+// and the list a chip can produce are the same list. Two copies drift into a chip that sets
+// a parameter the parser silently drops — the chip lights up, the URL changes, the grid
+// does not move, and nothing reports a fault.
+//
+// The import is one-way at runtime: filters.ts takes only types from here, which erase.
 
 const MAX_Q = 100;
 

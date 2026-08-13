@@ -44,3 +44,9 @@ export function apiGet<T>(path: string): Promise<CallResult<T>> {
 export function apiPut<T>(path: string, payload: unknown): Promise<CallResult<T>> {
     return call<T>(path, { method: 'PUT', body: JSON.stringify(payload) });
 }
+export function apiPost<T>(path: string, payload: unknown): Promise<CallResult<T>> {
+    return call<T>(path, { method: 'POST', body: JSON.stringify(payload) });
+}
+export function apiPatch<T>(path: string, payload: unknown): Promise<CallResult<T>> {
+    return call<T>(path, { method: 'PATCH', body: JSON.stringify(payload) });
+}

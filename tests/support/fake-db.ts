@@ -285,6 +285,13 @@ export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
             );
             if (!project) return { data: null, error: { message: "project_not_found" } };
 
+            // The precondition, transcribed from the migration (R3 D6). Null means the
+            // caller did not ask for one, which is still last-writer-wins by design.
+            const expected = args.p_expected_updated_at as string | null | undefined;
+            if (expected != null && project.updated_at !== expected) {
+                return { data: null, error: { message: "stale_write" } };
+            }
+
             const now = new Date().toISOString();
             const paths = Object.keys(files);
 

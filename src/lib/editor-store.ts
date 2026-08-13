@@ -2,10 +2,13 @@
 import { create } from 'zustand';
 import { VFS } from '@/lib/vfs';
 import { validatePath, type PathError } from '@/lib/paths';
-import { loadProjectFiles, saveProjectFiles, pickEntryFile } from '@/lib/project-source';
+import { loadProjectFiles, saveProjectFiles, createCommit, pickEntryFile } from '@/lib/project-source';
 import { debounceTrigger } from '@/lib/debounce';
 import { compareText } from '@/lib/compare';
-import type { TreeNode } from '@/lib/contracts';
+import {
+    changeVariant, reorderSection, restyle, toggleLocked, toggleVisible,
+} from '@/lib/editor/section-action';
+import type { ArtDirection, Composition, TreeNode } from '@/lib/contracts';
 
 const vfs = new VFS();
 const AUTOSAVE_DELAY_MS = 1500;
@@ -35,7 +38,9 @@ interface EditorState {
     saving: boolean;
     saveError: string | null;
     lastSavedAt: string | null;
+    lastCommitSha: string | null;
     pendingChange: PendingChange | null;
+    composition: Composition | null;
     loadProject: (projectId: string) => Promise<void>;
     openFile: (path: string) => void;
     writeActive: (content: string) => void;
@@ -44,11 +49,32 @@ interface EditorState {
     createFile: (path: string) => PathError | null;
     renameFile: (from: string, to: string) => PathError | null;
     deleteFile: (path: string) => void;
-    saveProject: () => Promise<void>;
+    saveProject: (options?: { commit?: boolean }) => Promise<void>;
     flushPendingSave: () => void;
     proposeChange: (proposed: ProposedChange) => void;
     acceptChange: () => void;
     rejectChange: () => void;
+    loadComposition: (composition: Composition) => void;
+    moveSectionUp: (id: string) => void;
+    moveSectionDown: (id: string) => void;
+    toggleSectionVisible: (id: string) => void;
+    toggleSectionLocked: (id: string) => void;
+    setSectionVariant: (id: string, variant: string) => void;
+    restyleComposition: (art: Partial<ArtDirection>) => void;
+}
+
+function applyComposition(
+    get: () => EditorState,
+    set: (partial: Partial<EditorState>) => void,
+    change: (composition: Composition) => Composition,
+) {
+    const { vfs, composition } = get();
+    if (!composition) return;
+
+    const next = change(composition);
+    set({ composition: next });
+    vfs.write('composition.json', JSON.stringify(next, null, 2));
+    autosave.trigger();
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -63,7 +89,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     saving: false,
     saveError: null,
     lastSavedAt: null,
+    lastCommitSha: null,
     pendingChange: null,
+    composition: null,
 
     loadProject: async (projectId) => {
         autosave.cancel();
@@ -140,7 +168,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         autosave.flush();
     },
 
-    saveProject: async () => {
+    saveProject: async (options) => {
         const { vfs, projectId, saving, dirtyPaths } = get();
 
         if (saving || !projectId || dirtyPaths.length === 0) return;
@@ -156,6 +184,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
         vfs.markClean();
         set({ saving: false, lastSavedAt: updatedAt });
+
+        if (options?.commit) {
+            const { sha } = await createCommit(projectId, 'Saved changes');
+            if (sha) set({ lastCommitSha: sha });
+        }
     },
 
     flushPendingSave: () => autosave.flush(),
@@ -189,6 +222,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     },
 
     rejectChange: () => set({ pendingChange: null }),
+
+    loadComposition: (composition) => set({ composition }),
+    moveSectionUp: (id) => applyComposition(get, set, (c) => reorderSection(c, id, 'up')),
+    moveSectionDown: (id) => applyComposition(get, set, (c) => reorderSection(c, id, 'down')),
+    toggleSectionVisible: (id) => applyComposition(get, set, (c) => toggleVisible(c, id)),
+    toggleSectionLocked: (id) => applyComposition(get, set, (c) => toggleLocked(c, id)),
+    setSectionVariant: (id, variant) => applyComposition(get, set, (c) => changeVariant(c, id, variant)),
+    restyleComposition: (art) => applyComposition(get, set, (c) => restyle(c, art)),
 }));
 
 const autosave = debounceTrigger(() => {

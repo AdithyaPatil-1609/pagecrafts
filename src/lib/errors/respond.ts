@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { ApiResult, ErrorCode } from '@/lib/contracts';
 import { statusFor } from './codes';
+import { captureError } from '@/lib/observability/capture';
 
 export class ApiError extends Error {
     constructor(
@@ -29,7 +30,10 @@ export async function guard(handler: () => Promise<Response>): Promise<Response>
         return await handler();
     } catch (err) {
         if (err instanceof ApiError) return fail(err.code, err.message, err.detail);
+
+        captureError(err, { tags: { boundary: 'guard' } });
         console.error('[api]', err);
+
         return fail('internal', 'Something went wrong on our side.');
     }
 }
