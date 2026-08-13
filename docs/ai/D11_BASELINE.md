@@ -3,12 +3,16 @@
 Owner: Hanish (R5 · AI). The corpus, the grader and the ranking machinery for the
 30-vertical quality pass.
 
-> **Status: machinery landed, numbers not yet measured.**
+> **Status: run, and capacity-limited rather than quality-limited.**
 >
-> Every table below marked _(unmeasured)_ is waiting on one command and the
-> provider capacity to run it. Nothing in this file is estimated, inferred or
-> filled in from a mock — a baseline that was guessed is worse than no baseline,
-> because D12's before/after would be measured against fiction.
+> The corpus ran against Groq on 2026-08-12. **9 of 30 verticals completed the
+> pipeline; 7 of those 9 passed.** The other 21 never produced a page: the run
+> consumed 195,358 tokens against Groq's 200,000/day ceiling and the provider
+> stopped serving.
+>
+> **The 30% figure is not a quality result and must not be quoted as one** — 21
+> of the 30 are provider exhaustion, not bad output. The quality signal is the
+> 7 of 9, and it comes with one real defect: see "The defect reading found".
 
 ---
 
@@ -144,46 +148,124 @@ pinned the stale seventeen now pins the invariant instead.
 
 ---
 
+## What the run actually measured
+
+Run: `2026-08-12T18-00-38-385Z-baseline-full` · 163 requests · 195,358 tokens ·
+provider chain `groq,gemini`, prompts at v1.
+
+| | Count |
+|---|---|
+| Verticals attempted | 30 |
+| **Completed the pipeline** | **9** |
+| Of those, passed | **7 (78%)** |
+| Of those, correct category | 9 |
+| Of those, carrying an unfilled placeholder | **2** |
+| Of those, blank fields | **0** |
+| Of those, missing required sections | **0** |
+| Of those, forbidden sections | **0** |
+| Failed before producing a page | 21 |
+
+Section counts on the nine: `5, 6, 7, 7, 7, 7, 7, 7, 7` — no under-filling.
+
+### Every pipeline failure is the provider, not the model
+
+| Stage | Count |
+|---|---|
+| fill | 12 |
+| profile | 8 |
+| plan | 1 |
+
+The tail of the run failed at `profile` after a single request each — the
+signature of a provider that has stopped serving, not of a prompt producing bad
+output. None of these clusters is prompt-fixable.
+
+### The defect reading found
+
+Two of the nine shipped an unfilled placeholder, both in the `about` section:
+
+- hospital — *"Founded in [year], our 40-bed multi-speciality hospital…"*
+- dental-clinic — *"Founded in Koramangala by Dr. [Name] and his family…"*
+
+**The grader passed both.** It checked that fields were non-empty, and a slot is
+not empty. `placeholderFieldsIn()` now catches it and gates `passed`, which is
+what moved the result from 9/9 to 7/9.
+
+This is a pattern rather than two accidents, and it is the first genuinely
+prompt-level cluster the programme has produced: the `about` section invites
+biographical facts — a founding year, a founder's name — that the description
+does not supply, and v1 fills the gap with a slot instead of writing around it.
+
+**That is a real D12 input.** `prompts/guidance/about.md` already answers it
+("If it gives you none of that, write three honest sentences about what the
+business does and stop"), and that guidance only reaches the model under
+`fill-section.v2`, which this run did not use.
+
+Two further defects that are *not* machine-gradeable but are visible in
+`REVIEW.md`, and which the v2 guidance also targets:
+
+- **Invented phone numbers** — `+91 253 555 0199` and `+91 79 4001 2345`, neither
+  in any prompt.
+- **Invented named doctors with qualifications** — "Dr. Anil Deshmukh, MD, DM
+  (Cardiology), 15 years' experience" and two more, none named in the
+  description.
+
+A machine cannot know these are false. A person reading the page can, in
+seconds — which is the argument for the human columns, and why `npm run review`
+renders the copy for reading instead of leaving it inside `raw.json`.
+
+### The nine that completed, and what that is worth
+
+`hospital · law-firm · dental-clinic · veterinary-clinic · ngo · university ·
+architecture-studio · logistics · yoga-studio`
+
+Every one is a **no-template** vertical, and seven of nine passed. On the
+evidence available, the claim the corpus was built to test — that a business type
+nobody hand-authored a template for still gets a good page — holds 7 for 9, with
+both failures being the same fixable `about`-section defect.
+
+Two honest caveats:
+
+- **The control group never ran.** The corpus is ordered no-template first and
+  the run stopped before reaching the eight template verticals. That is a
+  methodology defect, now fixed: the runner interleaves the four groups by
+  default (`--order=file` restores the old behaviour).
+- **Nine is a small sample of similar businesses** — health, professional and
+  civic.
+
+### Diversity — R-NEW-C, across the nine that completed
+
+| Metric | Value | Limit | |
+|---|---|---|---|
+| Dominant theme share | `clinical-blue` 22% | ≤ 30% | passes |
+| Dominant motion share | `calm` 56% | ≤ 40% | **fails** |
+| Distinct variant sets | 8 of 9 | — | |
+
+**Art direction did not collapse**, which is the good news the pass rate hides.
+Motion clusters on `calm`, but all nine completions are health, professional and
+civic businesses where calm is defensible — appropriate clustering rather than
+collapse is the likelier reading, and the interleaving fix is what will tell.
+
+### Spend
+
+163 requests · 195,358 tokens. Groq served 145 calls (182,062 tokens); Gemini
+absorbed 18 (13,296) as fallback. `npm run cost` renders the full breakdown. It
+reports ₹0.00 — correct on a free tier, and flagged as *unpriced, not free*.
+
+---
+
 ## Results
 
-### Pass rate _(unmeasured)_
-
-| Group | Passed | Total | Rate |
-|---|---|---|---|
-| Overall | — | 30 | — |
-| **No template** (the claim under test) | — | 18 | — |
-| Template (control) | — | 8 | — |
-| Adversarial | — | 2 | — |
-| Non-Latin-script | — | 2 | — |
-
-### Diversity — R-NEW-C _(unmeasured)_
+### Thresholds, for reference
 
 Thresholds: no theme above 30% of the corpus, no motion above 40%. Looser than
 the 15/25 proposed for the curated catalogue, because thirty generations is a
 smaller sample.
-
-| Metric | Value | Limit |
-|---|---|---|
-| Dominant theme share | — | ≤ 0.30 |
-| Dominant motion share | — | ≤ 0.40 |
-| Distinct variant sets | — | — |
 
 **If `dominantThemeShare` comes back at 1.0, that is the headline finding of D11
 and it outranks the pass rate.** A product where every business gets the same
 look has a problem a good pass rate conceals rather than contradicts. The grader
 prints it as `HEADLINE:` for that reason, and D12's tuning shifts from copy to
 art direction.
-
-### Failure clusters _(unmeasured)_
-
-Ranked by count × impact. **The top three go into D12 and nothing else does** —
-capping the list is what stops D11 overrunning into D12's slot.
-
-| # | Stage | Symptom | Count | Verticals |
-|---|---|---|---|---|
-| 1 | — | — | — | — |
-| 2 | — | — | — | — |
-| 3 | — | — | — | — |
 
 ### Human columns _(unread)_
 
@@ -196,10 +278,7 @@ capping the list is what stops D11 overrunning into D12's slot.
 A blank sheet is written to the results directory on every run. Means stay `null`
 until a column is fully read.
 
-### Spend _(unmeasured)_
-
-| | Requests | Tokens |
-|---|---|---|
+---|---|---|
 | Baseline run | — | — |
 
 ---

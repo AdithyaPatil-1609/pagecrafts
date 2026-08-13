@@ -27,7 +27,8 @@
     "compare": "tsx evals/compare.ts",
     "deploy:leakcheck": "tsx --env-file=.env.local --conditions=react-server scripts/check-credential-leak.ts",
     "cost": "tsx scripts/cost-dashboard.ts",
-    "prompts:doc": "tsx scripts/prompt-library.ts"
+    "prompts:doc": "tsx scripts/prompt-library.ts",
+    "review": "tsx evals/grader/review.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
