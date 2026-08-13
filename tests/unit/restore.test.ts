@@ -20,7 +20,7 @@ function commitsTable(snapshot: unknown | undefined): TableResponder {
     let reads = 0;
 
     return (query: Query) => {
-        if (query.op === "upsert") {
+        if (query.op === "insert") {
             return {
                 data: { sha: SHA, message: `Restored to ${SHA.slice(0, 7)}`, author: "system", created_at: NOW },
                 error: null,
@@ -73,7 +73,7 @@ describe("restoreProject", () => {
 
         await restoreProject(fake.client, PROJECT_ID, SHA);
 
-        const mirrored = fake.queries.find((q) => q.table === "commits" && q.op === "upsert");
+        const mirrored = fake.queries.find((q) => q.table === "commits" && q.op === "insert");
         expect(mirrored?.payload).toMatchObject({
             project_id: PROJECT_ID,
             author: "system",
