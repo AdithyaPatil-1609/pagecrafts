@@ -18,7 +18,7 @@ export interface ApplyResult {
 
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
-function checkScalar(field: Field, value: unknown): string | null {
+export function checkScalar(field: Field, value: unknown): string | null {
   switch (field.type) {
     case "text":
     case "richtext":
@@ -28,8 +28,11 @@ function checkScalar(field: Field, value: unknown): string | null {
       }
       return null;
     case "image":
-      // An asset id, or null to clear the slot.
-      if (value !== null && typeof value !== "string") return "Expected an asset id or null.";
+      // The URL of an asset created through POST /assets, or null/"" to clear the slot. The
+      // URL rather than the id, because the published page is static HTML on someone else's
+      // hosting: an `<img src>` is the only reference it can carry, and there is no server
+      // of ours in that path to turn an id into one. Provenance lives on the `assets` row.
+      if (value !== null && typeof value !== "string") return "Expected an image address or null.";
       return null;
     case "color":
       if (typeof value !== "string" || !HEX_COLOR.test(value)) {
@@ -46,7 +49,7 @@ function checkScalar(field: Field, value: unknown): string | null {
   }
 }
 
-function checkList(field: Field, value: unknown): string | null {
+export function checkList(field: Field, value: unknown): string | null {
   if (!Array.isArray(value)) return "Expected an array of items.";
 
   const itemSchema = field.itemSchema ?? [];

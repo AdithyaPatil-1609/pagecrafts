@@ -5,12 +5,17 @@ import type { DeploymentState } from "./deploy";
 // "draft" = no deployment yet; otherwise it mirrors the latest deployment's state.
 export type ProjectStatus = "draft" | DeploymentState;
 
-// Editable site-wide settings (S-3, S-4). Asset ids point at rows in `assets`.
+// Editable site-wide settings (S-3, S-4). Asset ids point at rows in `assets`; the URLs
+// beside them are what actually goes into the published `<head>`, because a static site on
+// someone else's hosting has no way to resolve an id at serve time. Both are kept: the id is
+// the provenance record, the URL is the reference.
 export interface SiteMeta {
   title?: string;
   description?: string;
   faviconAssetId?: string;
+  faviconUrl?: string;
   ogImageAssetId?: string;
+  ogImageUrl?: string;
 }
 
 // Dashboard row (GET /projects). Carries the latest deployment status so a failed
@@ -34,6 +39,10 @@ export interface ProjectDetail extends ProjectSummary {
   contentSchema: ContentSchema;
   siteMeta: SiteMeta;
   formEndpoint: string | null; // null renders contact forms disabled (S-2)
+  // The template's content_schema, travelling with the project so the editor draws its
+  // panel from one fetch (C-07). Null for a project with no template — a generated site
+  // before its schema is written, or one whose design has been retired.
+  contentSchema: ContentSchema | null;
 }
 
 // POST /projects — fork a template (synchronous) or start a generation (async).

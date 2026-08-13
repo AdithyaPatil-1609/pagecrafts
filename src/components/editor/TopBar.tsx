@@ -10,7 +10,13 @@ function statusLine(saving: boolean, saveError: string | null, unsaved: number, 
     return null;
 }
 
-export default function TopBar({ projectId }: { projectId: string }) {
+interface TopBarProps {
+    projectId: string;
+    historyOpen: boolean;
+    onToggleHistory: () => void;
+}
+
+export default function TopBar({ projectId, historyOpen, onToggleHistory }: TopBarProps) {
     const advanced = useEditorStore((s) => s.advanced);
     const toggleAdvanced = useEditorStore((s) => s.toggleAdvanced);
     const dirtyPaths = useEditorStore((s) => s.dirtyPaths);
@@ -18,12 +24,15 @@ export default function TopBar({ projectId }: { projectId: string }) {
     const saving = useEditorStore((s) => s.saving);
     const saveError = useEditorStore((s) => s.saveError);
     const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
+    const projectName = useEditorStore((s) => s.projectName);
 
     const status = statusLine(saving, saveError, dirtyPaths.length, lastSavedAt);
 
     return (
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
-            <span className="text-sm font-medium">{projectId}</span>
+            <span className="truncate text-sm font-medium" title={projectName ?? projectId}>
+                {projectName ?? projectId}
+            </span>
             <div className="flex items-center gap-3">
                 {status && (
                     <span
@@ -37,6 +46,13 @@ export default function TopBar({ projectId }: { projectId: string }) {
                         {status.text}
                     </span>
                 )}
+                <button
+                    onClick={onToggleHistory}
+                    aria-pressed={historyOpen}
+                    className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
+                >
+                    Versions
+                </button>
                 <button
                     onClick={toggleAdvanced}
                     className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"

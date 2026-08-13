@@ -2,16 +2,51 @@
 import { create } from 'zustand';
 import { VFS } from '@/lib/vfs';
 import { validatePath, type PathError } from '@/lib/paths';
-import { loadProjectFiles, saveProjectFiles, createCommit, pickEntryFile } from '@/lib/project-source';
+import {
+    loadCommits,
+    loadProjectDetail,
+    loadProjectFiles,
+    restoreVersion,
+    saveProjectContent,
+    saveProjectFiles,
+    saveProjectSettings,
+    createCommit,
+    pickEntryFile,
+} from '@/lib/project-source';
 import { debounceTrigger } from '@/lib/debounce';
 import { compareText } from '@/lib/compare';
+import { checkFieldValue } from '@/lib/content/apply-ops';
+import {
+    applySlotValue,
+    emptyListItem,
+    fieldAt,
+    mergeContent,
+    readContentFromHtml,
+    type ListItem,
+} from '@/lib/content/slots';
+import { applySettingsToHtml } from '@/lib/content/site-meta';
 import {
     changeVariant, reorderSection, restyle, toggleLocked, toggleVisible,
 } from '@/lib/editor/section-action';
-import type { ArtDirection, Composition, TreeNode } from '@/lib/contracts';
+import type {
+    ArtDirection,
+    Commit,
+    Composition,
+    ContentOp,
+    ContentSchema,
+    PatchProjectRequest,
+    SiteMeta,
+    TreeNode,
+} from '@/lib/contracts';
 
 const vfs = new VFS();
 const AUTOSAVE_DELAY_MS = 1500;
+// Structured content goes to the server on its own beat: the markup is already updated
+// locally, so this is the canonical copy catching up rather than anything the person waits
+// for. Slower than autosave, because a batch of keystrokes is one op.
+const CONTENT_SYNC_DELAY_MS = 900;
+
+export type ContentValues = Record<string, Record<string, unknown>>;
 
 export interface PendingChange {
     path: string;
@@ -41,6 +76,20 @@ interface EditorState {
     lastCommitSha: string | null;
     pendingChange: PendingChange | null;
     composition: Composition | null;
+    projectName: string | null;
+    contentSchema: ContentSchema | null;
+    content: ContentValues;
+    contentIssues: Record<string, string>;
+    contentSyncing: boolean;
+    contentError: string | null;
+    siteMeta: SiteMeta;
+    formEndpoint: string | null;
+    settingsSaving: boolean;
+    settingsError: string | null;
+    history: Commit[];
+    historyLoading: boolean;
+    historyError: string | null;
+    restoringSha: string | null;
     loadProject: (projectId: string) => Promise<void>;
     openFile: (path: string) => void;
     writeActive: (content: string) => void;
@@ -61,6 +110,26 @@ interface EditorState {
     toggleSectionLocked: (id: string) => void;
     setSectionVariant: (id: string, variant: string) => void;
     restyleComposition: (art: Partial<ArtDirection>) => void;
+    setContentValue: (path: string, value: unknown) => void;
+    setListItemValue: (path: string, index: number, key: string, value: unknown) => void;
+    addListItem: (path: string) => void;
+    removeListItem: (path: string, index: number) => void;
+    moveListItem: (path: string, index: number, direction: 'up' | 'down') => void;
+    flushContentSync: () => void;
+    saveSettings: (patch: PatchProjectRequest) => Promise<void>;
+    loadHistory: () => Promise<void>;
+    restoreTo: (sha: string) => Promise<void>;
+}
+
+/** The page the content panel edits — the project's entry HTML, not whatever tab is open. */
+function entryPath(vfs: VFS): string | null {
+    return pickEntryFile(vfs.paths().filter((p) => /\.html?$/i.test(p))) ?? pickEntryFile(vfs.paths());
+}
+
+function listAt(content: ContentValues, path: string): ListItem[] {
+    const [sectionKey, fieldKey] = path.split('.');
+    const value = content[sectionKey]?.[fieldKey];
+    return Array.isArray(value) ? (value as ListItem[]) : [];
 }
 
 function applyComposition(
@@ -92,18 +161,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     lastCommitSha: null,
     pendingChange: null,
     composition: null,
+    projectName: null,
+    contentSchema: null,
+    content: {},
+    contentIssues: {},
+    contentSyncing: false,
+    contentError: null,
+    siteMeta: {},
+    formEndpoint: null,
+    settingsSaving: false,
+    settingsError: null,
+    history: [],
+    historyLoading: false,
+    historyError: null,
+    restoringSha: null,
 
     loadProject: async (projectId) => {
         autosave.cancel();
+        contentSync.cancel();
+        pendingOps.clear();
         set({
             loading: true,
             loadError: null,
             saveError: null,
             pendingChange: null,
+            contentError: null,
+            contentIssues: {},
+            content: {},
+            contentSchema: null,
+            history: [],
+            historyError: null,
             projectId,
         });
 
-        const { files, updatedAt, error } = await loadProjectFiles(projectId);
+        // The tree and the row are independent reads, so they go together. The tree is what
+        // the editor cannot open without; the row carries the schema the panel needs, and a
+        // project whose design has been retired still opens in the code view.
+        const [{ files, updatedAt, error }, { detail, error: detailError }] = await Promise.all([
+            loadProjectFiles(projectId),
+            loadProjectDetail(projectId),
+        ]);
 
         if (error) {
             set({ loading: false, loadError: error });
@@ -114,10 +211,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         vfs.reset();
         vfs.seed(files);
 
+        const schema = detail?.contentSchema ?? null;
+        const entry = entryPath(vfs);
+        const html = entry ? vfs.read(entry) : null;
+
         set({
             activeFile: pickEntryFile(vfs.paths()),
             lastSavedAt: updatedAt,
             loading: false,
+            projectName: detail?.name ?? null,
+            contentSchema: schema,
+            content:
+                schema && html !== null
+                    ? mergeContent(readContentFromHtml(html, schema), detail?.contentJson ?? {})
+                    : {},
+            siteMeta: detail?.siteMeta ?? {},
+            formEndpoint: detail?.formEndpoint ?? null,
+            // A project that opens but whose settings did not is worth saying; it is not
+            // worth refusing to open over.
+            contentError: detailError,
         });
     },
 
@@ -191,7 +303,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }
     },
 
-    flushPendingSave: () => autosave.flush(),
+    flushPendingSave: () => {
+        contentSync.flush();
+        autosave.flush();
+    },
 
     proposeChange: (proposed) => {
         const { vfs } = get();
@@ -230,7 +345,185 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     toggleSectionLocked: (id) => applyComposition(get, set, (c) => toggleLocked(c, id)),
     setSectionVariant: (id, variant) => applyComposition(get, set, (c) => changeVariant(c, id, variant)),
     restyleComposition: (art) => applyComposition(get, set, (c) => restyle(c, art)),
+
+    setContentValue: (path, value) => writeContent(get, set, path, value),
+
+    setListItemValue: (path, index, key, value) => {
+        const items = listAt(get().content, path).map((item, i) =>
+            i === index ? { ...item, [key]: value } : item,
+        );
+        writeContent(get, set, path, items);
+    },
+
+    addListItem: (path) => {
+        const { contentSchema } = get();
+        const field = contentSchema ? fieldAt(contentSchema, path) : undefined;
+        if (!field || field.type !== 'list') return;
+        writeContent(get, set, path, [...listAt(get().content, path), emptyListItem(field)]);
+    },
+
+    removeListItem: (path, index) => {
+        const items = listAt(get().content, path).filter((_, i) => i !== index);
+        writeContent(get, set, path, items);
+    },
+
+    moveListItem: (path, index, direction) => {
+        const items = [...listAt(get().content, path)];
+        const swapWith = direction === 'up' ? index - 1 : index + 1;
+        if (index < 0 || index >= items.length || swapWith < 0 || swapWith >= items.length) return;
+        [items[index], items[swapWith]] = [items[swapWith], items[index]];
+        writeContent(get, set, path, items);
+    },
+
+    flushContentSync: () => contentSync.flush(),
+
+    saveSettings: async (patch) => {
+        const { projectId, settingsSaving } = get();
+        if (!projectId || settingsSaving) return;
+
+        set({ settingsSaving: true, settingsError: null });
+        const { detail, error } = await saveProjectSettings(projectId, patch);
+
+        if (error || !detail) {
+            set({ settingsSaving: false, settingsError: error });
+            return;
+        }
+
+        set({
+            settingsSaving: false,
+            projectName: detail.name,
+            siteMeta: detail.siteMeta,
+            formEndpoint: detail.formEndpoint,
+        });
+
+        applySettings(get, detail.siteMeta, detail.formEndpoint);
+    },
+
+    loadHistory: async () => {
+        const { projectId } = get();
+        if (!projectId) return;
+
+        set({ historyLoading: true, historyError: null });
+        const { items, error } = await loadCommits(projectId);
+        set({ historyLoading: false, history: items, historyError: error });
+    },
+
+    /**
+     * Go back to a chosen version (V-1, FR-075).
+     *
+     * Unsaved work goes first, so restoring cannot quietly discard it, and the tree is then
+     * re-read from the server rather than patched locally — the server is what actually
+     * decided what the project now contains.
+     */
+    restoreTo: async (sha) => {
+        const { projectId, restoringSha } = get();
+        if (!projectId || restoringSha) return;
+
+        contentSync.flush();
+        await get().saveProject();
+
+        set({ restoringSha: sha, historyError: null });
+        const { error } = await restoreVersion(projectId, sha);
+
+        if (error) {
+            set({ restoringSha: null, historyError: error });
+            return;
+        }
+
+        await get().loadProject(projectId);
+        set({ restoringSha: null });
+        await get().loadHistory();
+    },
 }));
+
+/**
+ * One content edit, all the way through: validated, held in state, written into the page so
+ * the preview redraws, and queued for `content_json`.
+ *
+ * An invalid value is kept in state and marked, never written. The person keeps seeing what
+ * they typed and reads why it is refused, and the page they are building stays correct.
+ */
+function writeContent(
+    get: () => EditorState,
+    set: (partial: Partial<EditorState>) => void,
+    path: string,
+    value: unknown,
+) {
+    const { vfs, contentSchema, content, contentIssues } = get();
+    if (!contentSchema) return;
+
+    const field = fieldAt(contentSchema, path);
+    if (!field) return;
+
+    const [sectionKey, fieldKey] = path.split('.');
+    const nextContent: ContentValues = {
+        ...content,
+        [sectionKey]: { ...(content[sectionKey] ?? {}), [fieldKey]: value },
+    };
+
+    const issue = checkFieldValue(field, value);
+    const nextIssues = { ...contentIssues };
+    if (issue) nextIssues[path] = issue;
+    else delete nextIssues[path];
+
+    set({ content: nextContent, contentIssues: nextIssues });
+    if (issue) return;
+
+    const entry = entryPath(vfs);
+    const html = entry ? vfs.read(entry) : null;
+    if (entry && html !== null) {
+        const next = applySlotValue(html, contentSchema, path, value);
+        if (next !== html) {
+            vfs.write(entry, next);
+            autosave.trigger();
+        }
+    }
+
+    pendingOps.set(path, value);
+    contentSync.trigger();
+}
+
+/** Site settings into the page, the same way a content edit lands (S-2, S-3, S-4). */
+function applySettings(get: () => EditorState, meta: SiteMeta, formEndpoint: string | null) {
+    const { vfs } = get();
+    const entry = entryPath(vfs);
+    const html = entry ? vfs.read(entry) : null;
+    if (!entry || html === null) return;
+
+    const next = applySettingsToHtml(html, {
+        meta,
+        faviconUrl: meta.faviconUrl ?? null,
+        ogImageUrl: meta.ogImageUrl ?? null,
+        formEndpoint,
+    });
+
+    if (next !== html) {
+        vfs.write(entry, next);
+        autosave.trigger();
+    }
+}
+
+// Ops waiting for their trip to the server, one per slot: typing a headline twice before the
+// timer fires is one op, not two.
+const pendingOps = new Map<string, unknown>();
+
+const contentSync = debounceTrigger(() => {
+    void flushContentOps();
+}, CONTENT_SYNC_DELAY_MS);
+
+async function flushContentOps(): Promise<void> {
+    const store = useEditorStore.getState();
+    const { projectId } = store;
+
+    if (!projectId || pendingOps.size === 0) return;
+
+    const ops: ContentOp[] = [...pendingOps].map(([path, value]) => ({ path, value }));
+    pendingOps.clear();
+
+    useEditorStore.setState({ contentSyncing: true });
+    const { error } = await saveProjectContent(projectId, ops);
+    useEditorStore.setState({ contentSyncing: false, contentError: error });
+}
 
 const autosave = debounceTrigger(() => {
     useEditorStore.getState().saveProject();

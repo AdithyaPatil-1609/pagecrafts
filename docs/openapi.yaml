@@ -360,6 +360,39 @@ paths:
           $ref: '#/components/responses/Error'
   # The commit mirror (R3 D4). Read-only here: the explicit save (POST) and restore write
   # a real commit first and mirror it afterwards, and land with the workspace Git work.
+  /images/search:
+    get:
+      operationId: searchImages
+      description: >-
+        The photo library the content panel's image slots open (S-1). Search only —
+        it registers no download and creates no asset; choosing a result is
+        POST /projects/{projectId}/assets. The Unsplash access key stays server-side.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 80
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+      responses:
+        '200':
+          description: Matching photos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageSearchResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects/{projectId}/commits:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -630,6 +663,16 @@ components:
             $ref: '#/components/schemas/ContentField'
         maxLength:
           type: integer
+    ContentSectionSpec:
+      type: object
+      required: [key, label, fields]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentField'
     ContentSchema:
       type: object
       required: [sections]
@@ -637,15 +680,16 @@ components:
         sections:
           type: array
           items:
-            type: object
-            required: [key, label, fields]
-            properties:
-              key: { type: string }
-              label: { type: string }
-              fields:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ContentField'
+            $ref: '#/components/schemas/ContentSectionSpec'
+    # The same shape where a project may legitimately have no template to take one from.
+    NullableContentSchema:
+      type: [object, 'null']
+      required: [sections]
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentSectionSpec'
     TemplateFileEntry:
       type: object
       required: [path, bytes]
@@ -756,10 +800,18 @@ components:
           type: string
         description:
           type: string
+        # The id is the provenance record in `assets`; the URL beside it is what the
+        # published <head> references, since static hosting cannot resolve an id.
         faviconAssetId:
           type: string
+        faviconUrl:
+          type: string
+          format: uri
         ogImageAssetId:
           type: string
+        ogImageUrl:
+          type: string
+          format: uri
     ProjectSummary:
       type: object
       required: [id, name, status, liveUrl, thumbnailUrl, updatedAt]
@@ -801,6 +853,10 @@ components:
             formEndpoint:
               type: [string, 'null']
               format: uri
+            # The template's content_schema, travelling with the project so the content
+            # panel is drawn from one fetch (C-07). Null when the project has no template.
+            contentSchema:
+              $ref: '#/components/schemas/NullableContentSchema'
     CreateProjectRequest:
       type: object
       required: [name]
@@ -990,6 +1046,39 @@ components:
           description: Time-limited signed URL; the bucket itself is private.
         attribution:
           $ref: '#/components/schemas/AssetAttribution'
+    ImageSearchItem:
+      type: object
+      required: [id, description, thumbUrl, fullUrl, width, height, attribution]
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+          description: The photo's own alt text, or empty. Never invented on its behalf.
+        thumbUrl:
+          type: string
+          format: uri
+        fullUrl:
+          type: string
+          format: uri
+        width:
+          type: integer
+        height:
+          type: integer
+        attribution:
+          $ref: '#/components/schemas/AssetAttribution'
+    ImageSearchResponse:
+      type: object
+      required: [items, page, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageSearchItem'
+        page:
+          type: integer
+        totalPages:
+          type: integer
     CommitAuthor:
       type: string
       enum: [user, ai_edit, system]
@@ -1214,6 +1303,14 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/AssetResponse'
+    ImageSearchResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          $ref: '#/components/schemas/ImageSearchResponse'
     CommitListResult:
       type: object
       required: [ok, data]

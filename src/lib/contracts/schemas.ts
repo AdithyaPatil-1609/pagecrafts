@@ -14,10 +14,12 @@ export const patchProjectSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   siteMeta: z
     .object({
-      title: z.string().optional(),
-      description: z.string().optional(),
+      title: z.string().max(200).optional(),
+      description: z.string().max(500).optional(),
       faviconAssetId: z.string().optional(),
+      faviconUrl: z.string().url().optional(),
       ogImageAssetId: z.string().optional(),
+      ogImageUrl: z.string().url().optional(),
     })
     .optional(),
   formEndpoint: z

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  ContentSchema,
   DeploymentState,
   ProjectStatus,
   ContentSchema,
@@ -64,7 +65,7 @@ interface ProjectRow {
   deployments?: DeploymentRow[] | null;
 }
 
-function rowToDetail(row: ProjectRow): ProjectDetail {
+function rowToDetail(row: ProjectRow, contentSchema: ContentSchema | null = null): ProjectDetail {
   return {
     id: row.id,
     name: row.name,
@@ -77,6 +78,7 @@ function rowToDetail(row: ProjectRow): ProjectDetail {
     contentSchema: row.content_schema ?? { sections: [] },
     siteMeta: row.site_meta ?? {},
     formEndpoint: row.form_endpoint,
+    contentSchema,
   };
 }
 
@@ -124,7 +126,8 @@ export async function getProject(
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
-  return rowToDetail(data as unknown as ProjectRow);
+  const row = data as unknown as ProjectRow;
+  return rowToDetail(row, await loadProjectSchema(supabase, row.source_template_id));
 }
 
 /** How many sites this account already holds. Pro accounts are not capped. */
@@ -305,7 +308,8 @@ export async function patchProject(
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
-  return rowToDetail(data as unknown as ProjectRow);
+  const row = data as unknown as ProjectRow;
+  return rowToDetail(row, await loadProjectSchema(supabase, row.source_template_id));
 }
 
 // Removes our row only (RLS owner-scoped). A live site keeps serving until its hosting

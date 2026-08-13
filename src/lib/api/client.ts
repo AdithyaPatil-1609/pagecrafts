@@ -9,10 +9,16 @@ export interface CallResult<T> {
 async function call<T>(path: string, init?: RequestInit): Promise<CallResult<T>> {
     let response: Response;
 
+    // A multipart body carries its own content type, boundary and all. Setting one by hand
+    // makes the server unable to find the parts.
+    const isForm = typeof FormData !== 'undefined' && init?.body instanceof FormData;
+
     try {
         response = await fetch(path, {
             ...init,
-            headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
+            headers: isForm
+                ? { ...(init?.headers ?? {}) }
+                : { 'content-type': 'application/json', ...(init?.headers ?? {}) },
         });
     } catch {
         return { data: null, error: OFFLINE_MESSAGE };
@@ -49,4 +55,7 @@ export function apiPost<T>(path: string, payload: unknown): Promise<CallResult<T
 }
 export function apiPatch<T>(path: string, payload: unknown): Promise<CallResult<T>> {
     return call<T>(path, { method: 'PATCH', body: JSON.stringify(payload) });
+}
+export function apiUpload<T>(path: string, form: FormData): Promise<CallResult<T>> {
+    return call<T>(path, { method: 'POST', body: form });
 }

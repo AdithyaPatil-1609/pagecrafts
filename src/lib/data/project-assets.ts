@@ -14,7 +14,11 @@ import { clientFault } from "./pg-errors";
 export const MAX_ASSET_BYTES = 5_242_880;
 
 const BUCKET = "project-assets";
-const SIGNED_URL_SECONDS = 3600;
+// A published site is static HTML on someone else's hosting: the `<img src>` it carries is
+// the only thing that will ever fetch this file, and there is no server of ours in that path
+// to sign a fresh URL. So the signature has to outlive the editing session that made it.
+// The bucket stays private — this is a capability for one object, not a public folder.
+const SIGNED_URL_SECONDS = 10 * 365 * 24 * 60 * 60;
 
 // Mirrors the bucket's allowed_mime_types.
 const EXTENSION_BY_MIME: Record<string, string> = {
