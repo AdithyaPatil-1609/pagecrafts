@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { withRoute } from '@/lib/kernel/with-route';
 import { ok } from '@/lib/errors/respond';
 import { proposeEdit } from '@/lib/ai/edit/propose';
+import { rowFor } from '@/lib/ai/cost/ledger';
+import { persistLedger } from '@/lib/ai/cost/persist';
+import { nextJobId } from '@/lib/ai/jobs/store';
 import { SECTION_KEYS, type SectionInstance } from '@/lib/contracts';
 
 export const runtime = 'nodejs';
@@ -28,7 +31,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     auth: 'required',
     limit: 'ai',
     schema,
-    handler: async ({ body }) => {
+    handler: async ({ body, params, userId, supabase, recordUsage }) => {
         const section: SectionInstance = {
             ...body.section,
             visible: true,
@@ -36,7 +39,16 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             source: 'ai',
         } as SectionInstance;
 
-        const { data } = await proposeEdit(section, body.instruction);
+        const { data, usage } = await proposeEdit(section, body.instruction);
+        await Promise.all([
+            recordUsage(usage),
+            persistLedger(supabase, {
+                jobId: nextJobId(),
+                userId,
+                projectId: params.id,
+                prompt: body.instruction,
+            }, [rowFor('edit', usage, 'completed')]),
+        ]);
         return ok(data);
     },
 });

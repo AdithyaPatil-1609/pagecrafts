@@ -128,6 +128,14 @@ describe('cost per user — D20', () => {
         ]);
         expect(d.generations).toBe(2);
     });
+
+    it('uses the persisted job id instead of merging quick retries in one minute', () => {
+        const d = buildDashboard([
+            row({ generationId: 'job_1', createdAt: '2026-08-12T10:00:01.000Z' }),
+            row({ generationId: 'job_2', createdAt: '2026-08-12T10:00:02.000Z' }),
+        ]);
+        expect(d.generations).toBe(2);
+    });
 });
 
 describe('waste and failure', () => {
