@@ -1,6 +1,6 @@
 import type { ErrorCode } from '@/lib/contracts';
 import type { Provider, ProviderConfig } from '../config';
-import { maxOutputFor, type Tier } from './tiers';
+import { maxOutputFor, samplingFor, type Tier } from './tiers';
 import { toJsonSchema } from './json-schema';
 import { limiterFor } from './rate-limit';
 import {
@@ -75,10 +75,15 @@ export class OpenAICompatGateway implements NamedGateway {
             );
         }
 
+        const { temperature, topP } = samplingFor(req.job);
+
         const body: Record<string, unknown> = {
             model,
             messages,
             max_tokens: maxOutputFor(req.job),
+            // Omitted entirely when unconfigured, so the provider default stands.
+            ...(temperature === undefined ? {} : { temperature }),
+            ...(topP === undefined ? {} : { top_p: topP }),
         };
 
         if (req.schema) {

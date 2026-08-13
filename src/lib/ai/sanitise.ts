@@ -1,4 +1,12 @@
-const PATTERNS: ReadonlyArray<readonly [string, RegExp]> = [
+export type SanitiseRule = readonly [string, RegExp];
+
+/**
+ * Exported so the D13 weakening check (AC-F11-4) can build a deliberately
+ * broken sanitiser from the real rules and prove the injection suite notices.
+ * A rule that can be removed without turning a test red is a rule nothing is
+ * actually testing.
+ */
+export const SANITISE_RULES: ReadonlyArray<SanitiseRule> = [
     ['script', /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi],
     ['script-open', /<\/?script\b[^>]*>/gi],
     ['iframe', /<\/?iframe\b[^>]*>/gi],
@@ -7,16 +15,18 @@ const PATTERNS: ReadonlyArray<readonly [string, RegExp]> = [
     ['javascript-url', /\s(href|src|action)\s*=\s*(?:"|')?\s*javascript:[^"'>\s]*/gi],
 ];
 
+const PATTERNS = SANITISE_RULES;
+
 export interface SanitiseResult {
     clean: string;
     removed: string[];
 }
 
-export function sanitise(input: string): SanitiseResult {
+export function sanitise(input: string, rules: ReadonlyArray<SanitiseRule> = PATTERNS): SanitiseResult {
     const removed: string[] = [];
     let clean = input;
 
-    for (const [label, pattern] of PATTERNS) {
+    for (const [label, pattern] of rules) {
         pattern.lastIndex = 0;
         if (pattern.test(clean)) removed.push(label);
         pattern.lastIndex = 0;

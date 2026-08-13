@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { OpenAICompatGateway, retryAfterMs } from '@/lib/ai/gateway/openai-compat';
-import type { ProviderConfig } from '@/lib/ai/config';
+import { resetAiConfig, type ProviderConfig } from '@/lib/ai/config';
 import type { CompleteRequest } from '@/lib/ai/gateway/provider';
 import { classifySchema } from '@/lib/ai/gateway/response-schemas';
 
@@ -158,5 +158,63 @@ describe('OpenAICompatGateway', () => {
         await expect(new OpenAICompatGateway('groq', cfg({ apiKey: '' })).complete(req()))
             .rejects.toThrow(/no API key/);
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('D12 sampling — configured, not hard-coded', () => {
+    const send = async (env: Record<string, string | undefined>) => {
+        for (const [k, v] of Object.entries(env)) {
+            if (v === undefined) delete process.env[k];
+            else process.env[k] = v;
+        }
+        resetAiConfig();
+
+        const fetchMock = okFetch();
+        vi.stubGlobal('fetch', fetchMock);
+        await new OpenAICompatGateway('groq', cfg()).complete(req());
+        return bodyOf(fetchMock);
+    };
+
+    afterEach(() => {
+        delete process.env.AI_TEMPERATURE_GENERATE;
+        delete process.env.AI_TOP_P_GENERATE;
+        resetAiConfig();
+    });
+
+    /**
+     * Unset means "send nothing" rather than "send a default we picked". Every
+     * measurement up to D11 was taken under the provider's own default, and
+     * quietly introducing one would make the D12 before/after incomparable.
+     */
+    it('sends no sampling keys at all when nothing is configured', async () => {
+        const body = await send({
+            AI_TEMPERATURE_GENERATE: undefined,
+            AI_TOP_P_GENERATE: undefined,
+        });
+        expect(body).not.toHaveProperty('temperature');
+        expect(body).not.toHaveProperty('top_p');
+    });
+
+    it('sends temperature once configured', async () => {
+        const body = await send({ AI_TEMPERATURE_GENERATE: '0.2' });
+        expect(body.temperature).toBe(0.2);
+        expect(body).not.toHaveProperty('top_p');
+    });
+
+    it('sends top_p under its OpenAI name', async () => {
+        const body = await send({ AI_TEMPERATURE_GENERATE: '0.7', AI_TOP_P_GENERATE: '0.9' });
+        expect(body.temperature).toBe(0.7);
+        expect(body.top_p).toBe(0.9);
+    });
+
+    it('keeps sampling per operation — a generate setting does not touch classify', async () => {
+        process.env.AI_TEMPERATURE_GENERATE = '0.2';
+        resetAiConfig();
+
+        const fetchMock = okFetch();
+        vi.stubGlobal('fetch', fetchMock);
+        await new OpenAICompatGateway('groq', cfg()).complete(req({ job: 'classify' }));
+
+        expect(bodyOf(fetchMock)).not.toHaveProperty('temperature');
     });
 });

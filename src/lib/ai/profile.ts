@@ -1,4 +1,5 @@
 import { model, GatewayError } from './gateway';
+import { aiConfig } from './config';
 import { profileSchema as profileResponseSchema } from './gateway/response-schemas';
 import { loadTemplate, render } from './harness/templates';
 import { stripFences } from './sanitise';
@@ -21,7 +22,7 @@ export async function profile(vertical: string): Promise<AiResult<VerticalProfil
     const slug = normaliseSlug(vertical);
     if (!slug) throw new Error('profile: empty vertical slug.');
 
-    const tpl = loadTemplate('profile.v1');
+    const tpl = loadTemplate(aiConfig().prompts.profile);
 
     const reply = await model.strong.complete({
         job: 'generate',

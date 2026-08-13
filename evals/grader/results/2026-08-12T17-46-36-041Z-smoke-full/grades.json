@@ -1,0 +1,23 @@
+[
+  {
+    "id": "v03",
+    "vertical": "dental-clinic",
+    "hasTemplate": false,
+    "group": "no-template",
+    "requests": 10,
+    "tokens": 9019,
+    "latencyMs": 27364,
+    "completed": true,
+    "nonBlank": true,
+    "requiredSectionsPresent": true,
+    "forbiddenSectionsAbsent": true,
+    "categoryCorrect": true,
+    "sectionCount": 7,
+    "variantsDistinct": true,
+    "fallbackUsed": false,
+    "passed": true,
+    "blankFields": [],
+    "missingSections": [],
+    "forbiddenSections": []
+  }
+]

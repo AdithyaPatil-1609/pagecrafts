@@ -1,7 +1,7 @@
 import { GoogleGenAI, type Schema } from '@google/genai';
 import { aiConfig, type Provider, type ProviderConfig } from '../config';
 import type { ErrorCode } from '@/lib/contracts';
-import { timeoutFor, type Job, type Tier } from './tiers';
+import { timeoutFor, samplingFor, type Job, type Tier } from './tiers';
 
 export interface CompleteRequest {
     tier: Tier;
@@ -75,6 +75,8 @@ export class GeminiGateway implements NamedGateway {
         const model = this.modelFor(req.tier);
         const startedAt = Date.now();
 
+        const { temperature, topP } = samplingFor(req.job);
+
         const response = await this.sdk().models.generateContent({
             model,
             contents: req.user,
@@ -83,6 +85,9 @@ export class GeminiGateway implements NamedGateway {
                 ...(req.schema
                     ? { responseMimeType: 'application/json', responseSchema: req.schema }
                     : {}),
+                // Omitted entirely when unconfigured, so the provider default stands.
+                ...(temperature === undefined ? {} : { temperature }),
+                ...(topP === undefined ? {} : { topP }),
                 abortSignal: attemptSignal(req.job, req.signal),
             },
         });
