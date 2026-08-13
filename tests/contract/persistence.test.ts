@@ -177,6 +177,8 @@ describe("the spec and the frozen error codes agree", () => {
             "/projects/{projectId}/assets",
             "/projects/{projectId}/commits",
             "/projects/{projectId}/restore",
+            "/projects/{projectId}/publish",
+            "/deployments/{deploymentId}",
         ]) {
             expect(spec.paths[path], `${path} is undocumented`).toBeDefined();
         }

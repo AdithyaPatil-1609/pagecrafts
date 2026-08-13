@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DeploymentState } from "@/lib/contracts";
+import type { DeploymentResponse, DeploymentState } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 
@@ -50,6 +50,43 @@ export async function startDeployment(
     }
 
     return { id: data.id as string, state: "pending" };
+}
+
+/**
+ * One attempt, as the client polling it sees it (GET /deployments/{id}, R3 D15).
+ *
+ * The four in-flight states collapse to `pending`. The contract's status enum is
+ * pending | live | failed and was frozen on day one; the extra states exist so the
+ * dashboard can narrate progress from the row it already reads, not so this endpoint can
+ * invent values integrators were never told about. "Not finished yet" is the honest and
+ * complete answer to a poll.
+ */
+export async function getDeployment(
+    supabase: SupabaseClient,
+    deploymentId: string,
+): Promise<DeploymentResponse> {
+    const { data, error } = await supabase
+        .from("deployments")
+        .select("status, repo_url, live_url, commit_sha, error")
+        .eq("id", deploymentId)
+        .maybeSingle();
+
+    if (error) {
+        throw new ApiError("internal", "Could not read the deployment.", error.message);
+    }
+    // Someone else's deployment is invisible through RLS, and must read as absent rather
+    // than forbidden (SEC-14).
+    if (!data) throw new ApiError("not_found", "That deployment does not exist.");
+
+    const state = data.status as DeploymentState;
+
+    return {
+        status: state === "live" || state === "failed" ? state : "pending",
+        repoUrl: (data.repo_url as string | null) ?? null,
+        liveUrl: (data.live_url as string | null) ?? null,
+        commitSha: (data.commit_sha as string | null) ?? null,
+        error: (data.error as string | null) ?? null,
+    };
 }
 
 export interface DeploymentPatch {
@@ -119,12 +156,15 @@ export async function recordDeployment(
     supabase: SupabaseClient,
     projectId: string,
 ): Promise<{
+    /** The row's id — the publish route hands this back for the client to poll (R3 D15). */
+    id: string;
     onState: (state: DeploymentState) => void;
     finish: (result: { state: DeploymentState; liveUrl?: string | null; commitSha?: string | null; error?: string | null }) => Promise<void>;
 }> {
     const started = await startDeployment(supabase, projectId);
 
     return {
+        id: started.id,
         onState: (state) => {
             // Intermediate states only. The final one carries a URL or an error with it and
             // is written by finish(), which the caller awaits.
