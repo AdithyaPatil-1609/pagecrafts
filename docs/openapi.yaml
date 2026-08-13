@@ -360,6 +360,24 @@ paths:
           $ref: '#/components/responses/Error'
   # The commit mirror (R3 D4). Read-only here: the explicit save (POST) and restore write
   # a real commit first and mirror it afterwards, and land with the workspace Git work.
+  # The publish history behind screen 02 (R3 D13). Attempts, not successes: a failed
+  # publish is the row somebody debugging needs most.
+  /projects/{projectId}/deployments:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: listProjectDeployments
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Publish attempts, newest first, success and failure alike (V-7).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentListResult'
+        default:
+          $ref: '#/components/responses/Error'
   /projects/{projectId}/commits:
     parameters:
       - $ref: '#/components/parameters/ProjectId'
@@ -801,6 +819,39 @@ components:
             formEndpoint:
               type: [string, 'null']
               format: uri
+    Deployment:
+      type: object
+      required: [id, projectId, state, liveUrl, commitSha, error, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        state:
+          type: string
+          enum: [pending, provisioning, pushing, enabling_hosting, verifying, live, failed]
+        liveUrl:
+          type: [string, 'null']
+          format: uri
+          description: >-
+            Only ever set for an attempt that reached `live` (C-05) — never a URL that has
+            not been confirmed to respond.
+        commitSha: { type: [string, 'null'] }
+        error: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    DeploymentListResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Deployment'
     CreateProjectRequest:
       type: object
       required: [name]
