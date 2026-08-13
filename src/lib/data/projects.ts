@@ -3,7 +3,6 @@ import type {
   ContentSchema,
   DeploymentState,
   ProjectStatus,
-  ContentSchema,
   CreateProjectRequest,
   CreateProjectResponse,
   FileMap,
@@ -17,6 +16,7 @@ import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
+import { loadProjectSchema } from "./template-schema";
 import { contentFromFiles } from "@/lib/content/from-files";
 import { PROJECTS_PER_USER } from "@/lib/limits/config";
 // Shared with the publish gate (R3 D9), so fork and publish agree about what a live
@@ -75,10 +75,11 @@ function rowToDetail(row: ProjectRow, contentSchema: ContentSchema | null = null
     updatedAt: row.updated_at,
     sourceTemplateId: row.source_template_id,
     contentJson: row.content_json ?? {},
-    contentSchema: row.content_schema ?? { sections: [] },
+    // The project's own copy wins; the template is the fallback for rows written before
+    // that column existed.
+    contentSchema: row.content_schema ?? contentSchema ?? { sections: [] },
     siteMeta: row.site_meta ?? {},
     formEndpoint: row.form_endpoint,
-    contentSchema,
   };
 }
 

@@ -15,7 +15,7 @@ import {
 } from '@/lib/project-source';
 import { debounceTrigger } from '@/lib/debounce';
 import { compareText } from '@/lib/compare';
-import { checkFieldValue } from '@/lib/content/apply-ops';
+import { validateFieldValue } from '@/lib/content/apply-ops';
 import {
     applySlotValue,
     emptyListItem,
@@ -461,7 +461,7 @@ function writeContent(
         [sectionKey]: { ...(content[sectionKey] ?? {}), [fieldKey]: value },
     };
 
-    const issue = checkFieldValue(field, value);
+    const issue = validateFieldValue(field, value);
     const nextIssues = { ...contentIssues };
     if (issue) nextIssues[path] = issue;
     else delete nextIssues[path];

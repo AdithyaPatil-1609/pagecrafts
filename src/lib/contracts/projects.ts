@@ -33,16 +33,20 @@ export interface ProjectSummary {
 export interface ProjectDetail extends ProjectSummary {
   sourceTemplateId: string | null; // null for generated projects
   contentJson: Record<string, unknown>;
-  // The project's own copy, taken at fork (R3 D7). The content panel is generated from
-  // this and nothing else (C-07), so it has to travel with the project rather than being
-  // fetched from the template — which for a retired design no longer exists.
+  // The schema the content panel is generated from, travelling with the project so the
+  // editor draws its panel from one fetch (C-07).
+  //
+  // The project's own copy, taken at fork (R3 D7), is the source: read live from the
+  // template it would vanish when a design is retired, leaving somebody with a site they
+  // could no longer edit. The template is consulted only as a fallback, for rows that
+  // predate that column.
+  //
+  // Never null. A project with no schema at all — a generated site before one is written —
+  // gets an empty section list, which the panel already renders as "no editable fields"
+  // rather than as an error.
   contentSchema: ContentSchema;
   siteMeta: SiteMeta;
   formEndpoint: string | null; // null renders contact forms disabled (S-2)
-  // The template's content_schema, travelling with the project so the editor draws its
-  // panel from one fetch (C-07). Null for a project with no template — a generated site
-  // before its schema is written, or one whose design has been retired.
-  contentSchema: ContentSchema | null;
 }
 
 // POST /projects — fork a template (synchronous) or start a generation (async).

@@ -81,7 +81,7 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                     ) : (
                         <>
                             <section className="w-[420px] shrink-0 overflow-auto border-r border-border">
-                                {loading ? <PaneSkeleton /> : <ContentPanel projectId={projectId} />}
+                                {loading ? <PaneSkeleton /> : <ContentPanel />}
                             </section>
                             <section className="min-w-0 flex-1">
                                 {loading ? <PaneSkeleton /> : <PreviewPane />}
