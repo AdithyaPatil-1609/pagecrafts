@@ -62,3 +62,73 @@ jobs:
       - run: supabase db lint --local
       - if: always()
         run: supabase stop
+
+  # D13. The browser walk-through, against a Supabase started here rather than
+  # the shared project: `db reset --local` loads supabase/seed.sql, which is
+  # where the test users come from, and no run can touch anyone's real data.
+  #
+  # continue-on-error until the suite has proven itself over a few days. A
+  # browser test that fails intermittently must not be able to stop four other
+  # people merging; remove the flag once it has earned it (DEP-05).
+  e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.39.2
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Start Supabase and load the seed
+        run: |
+          supabase start
+          supabase db reset --local
+
+      # Upstash has no local equivalent, and serverEnv() requires both vars to be
+      # non-empty or the app will not boot. The placeholders let it start; the
+      # limiter then fails closed on every call, which is why the sign-in tests
+      # are gated behind E2E_WITH_AUTH and only the unauthenticated walk runs
+      # here. Point these at a throwaway Upstash database and set
+      # E2E_WITH_AUTH=1 to turn the rest on.
+      - name: Build against the local Supabase
+        run: |
+          {
+            echo "NEXT_PUBLIC_APP_URL=http://127.0.0.1:3100"
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(supabase status -o env | grep '^API_URL=' | cut -d= -f2- | tr -d '\"')"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(supabase status -o env | grep '^ANON_KEY=' | cut -d= -f2- | tr -d '\"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o env | grep '^SERVICE_ROLE_KEY=' | cut -d= -f2- | tr -d '\"')"
+            echo "UPSTASH_REDIS_REST_URL=${UPSTASH_URL:-http://127.0.0.1:1}"
+            echo "UPSTASH_REDIS_REST_TOKEN=${UPSTASH_TOKEN:-ci-placeholder}"
+            echo "HOSTING_API_BASE=https://api.github.com"
+            echo "HOSTING_ACCOUNT_ID=pagecraft-sites"
+            echo "HOSTING_CREDENTIAL_KEY_ID=test-key"
+            echo "PAGECRAFT_ROOT_DOMAIN=pagecrafts.in"
+          } > .env.local
+          npm run build
+        env:
+          UPSTASH_URL: ${{ secrets.E2E_UPSTASH_REDIS_REST_URL }}
+          UPSTASH_TOKEN: ${{ secrets.E2E_UPSTASH_REDIS_REST_TOKEN }}
+
+      - name: Run the browser walk-through
+        run: npm run e2e
+        env:
+          E2E_WITH_AUTH: ${{ secrets.E2E_UPSTASH_REDIS_REST_URL != '' && '1' || '' }}
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/.report
+            e2e/.results
+          retention-days: 7
+
+      - if: always()
+        run: supabase stop
