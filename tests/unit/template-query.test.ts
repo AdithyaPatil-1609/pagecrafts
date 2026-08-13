@@ -150,7 +150,12 @@ describe("a description is not a search", () => {
     expect(names("q=a%20small%20online%20shop").length).toBeLessThan(TEMPLATES.length);
   });
 
-  it("so the gallery hands the query layer `search`, and never the description", async () => {
+  // 20s rather than the default 5s. The import below pulls in the gallery page and, with
+  // it, the whole template library and its preview parser — cheap once warm and slow on a
+  // cold module graph. Under a full-suite run on a loaded machine it crossed 5s and failed
+  // this test intermittently, which taught everyone to re-run rather than to read it. The
+  // assertions are unchanged; only the patience is.
+  it("so the gallery hands the query layer `search`, and never the description", { timeout: 20_000 }, async () => {
     const page = await import("@/app/templates/page");
     expect(page.default).toBeTypeOf("function");
 

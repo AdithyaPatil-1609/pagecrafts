@@ -150,6 +150,9 @@ describe("the contract checker itself", () => {
                 updatedAt: NOW,
                 sourceTemplateId: null,
                 contentJson: {},
+                // Empty rather than absent: a generated project has no schema, but the
+                // field is still part of the shape every integrator is handed (R2 D8).
+                contentSchema: { sections: [] },
                 siteMeta: {},
                 formEndpoint: null,
                 contentSchema: null,

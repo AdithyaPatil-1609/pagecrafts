@@ -1,8 +1,9 @@
 import { classify } from '../classify';
-import { profile as fetchProfile } from '../profile';
+import { cachedProfile as fetchProfile } from '../profile-cache';
 import { plan } from '../generate/plan';
 import { fillSection } from '../generate/fill';
 import { assemble } from '../generate/assemble';
+import { validateComposition } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
 import { CostLedger } from '../cost/ledger';
@@ -94,7 +95,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         await advance('validating');
         await emit('validate');
 
-        const composition = assemble({
+        const assembled = assemble({
             vertical: intent.data.vertical,
             profile: p.data,
             sections: planned.data,
@@ -102,6 +103,22 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             title: p.data.label,
             description: job.prompt.slice(0, 160),
         });
+
+        // D16: motion budget and diversity, checked on the page about to be
+        // shown rather than on a corpus afterwards. A motion repair changes the
+        // art direction; a diversity finding is recorded and nothing more, since
+        // a samey page is still a page and refusing to ship it helps nobody.
+        const checked = validateComposition(assembled);
+        const composition = checked.composition;
+
+        if (checked.findings.length) {
+            await emit('validate', {
+                findings: checked.findings.map((f) => `${f.rule}: ${f.detail}`),
+            });
+            for (const f of checked.findings) {
+                console.warn(`[composition] ${f.severity} ${f.rule} — ${f.detail}`);
+            }
+        }
 
         await emit('done');
         await advance('done', {

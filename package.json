@@ -9,8 +9,11 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:injection": "vitest run tests/injection",
+    "verify:injection": "node scripts/verify-injection-suite.mjs",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "templates:normalise": "tsx scripts/normalise-template.ts",
+    "templates:seed": "tsx --env-file=.env.local scripts/seed-templates.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
     "pretypecheck": "node -e \"const fs=require('node:fs');for(const p of ['.next/types','.next/dev/types'])fs.rmSync(p,{recursive:true,force:true})\"",
     "typecheck": "tsc --noEmit",
@@ -19,7 +22,10 @@
     "deploy:spike": "tsx --env-file=.env.local --conditions=react-server scripts/provision-spike.ts",
     "deploy:publish": "tsx --env-file=.env.local --conditions=react-server scripts/publish-spike.ts",
     "spike": "tsx --env-file=.env.local evals/spike/run.ts",
-    "deploy:leakcheck": "tsx --env-file=.env.local --conditions=react-server scripts/check-credential-leak.ts"
+    "deploy:leakcheck": "tsx --env-file=.env.local --conditions=react-server scripts/check-credential-leak.ts",
+    "pay:check": "tsx --env-file=.env.local scripts/razorpay-check.ts",
+    "verify:loop": "tsx --env-file=.env.local scripts/verify-core-loop.ts",
+    "db:drift": "tsx --env-file=.env.local scripts/db-drift.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",

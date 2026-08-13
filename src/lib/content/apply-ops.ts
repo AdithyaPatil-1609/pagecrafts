@@ -80,11 +80,18 @@ export function checkList(field: Field, value: unknown): string | null {
 }
 
 /**
- * One value against one field. The content panel calls this on every keystroke to draw its
- * inline message, and the route calls it through `applyContentOps` before anything is
- * written — so what the panel refuses and what the server refuses cannot drift apart.
+ * Whether one value is allowed in one field, or why it is not (R2 D9).
+ *
+ * Exported so the content panel can say it before the request rather than after it: an edit
+ * that the server will refuse should be visible as you type, next to the field, not two
+ * seconds later as a message about "some edits".
+ *
+ * Deliberately the same function the write path uses rather than a second copy of the rules
+ * written for the client. Two validators are two answers to the same question, and they
+ * diverge in the direction that hurts — the panel accepting something the route rejects, so
+ * the person is told their work saved when it did not.
  */
-export function checkFieldValue(field: Field, value: unknown): string | null {
+export function validateFieldValue(field: Field, value: unknown): string | null {
   return field.type === "list" ? checkList(field, value) : checkScalar(field, value);
 }
 
@@ -101,7 +108,7 @@ function checkOp(schema: ContentSchema, op: ContentOp): string | null {
   const field = section.fields.find((f) => f.key === fieldKey);
   if (!field) return `No field "${fieldKey}" in section "${sectionKey}".`;
 
-  return checkFieldValue(field, op.value);
+  return validateFieldValue(field, op.value);
 }
 
 export function applyContentOps(

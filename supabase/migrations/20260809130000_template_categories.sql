@@ -1,5 +1,12 @@
 -- Bring template_category in line with the Category type.
 --
+-- Renumbered from 20260809120000, which it shared with the generations-ledger migration.
+-- Supabase records applied migrations keyed on the version alone, so two files carrying one
+-- version meant the second insert into schema_migrations hit a duplicate key and the whole
+-- run aborted — every CI job since these two landed failed here, before a single test ran.
+-- Re-applying this is harmless if some database already recorded the old version: every
+-- statement below is `add value if not exists`.
+--
 -- The enum has held the original ten since the initial schema, while the TypeScript
 -- Category grew twice: seven buckets in the R2 library refresh (fitness, food, photography,
 -- architecture, education, travel, business), and six more with designs 13-24, each because

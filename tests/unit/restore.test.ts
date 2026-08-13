@@ -61,7 +61,10 @@ describe("restoreProject", () => {
         expect(fake.rpcs).toHaveLength(1);
         expect(fake.rpcs[0]).toEqual({
             name: "replace_project_files",
-            args: { p_project_id: PROJECT_ID, p_files: TREE },
+            // No precondition: a restore is an explicit "make it look like this commit
+            // again", so it replaces whatever is in the tree rather than refusing when the
+            // tree has moved on (R3 D6).
+            args: { p_project_id: PROJECT_ID, p_files: TREE, p_expected_updated_at: null },
         });
     });
 

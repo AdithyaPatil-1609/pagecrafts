@@ -1,7 +1,9 @@
 import { model, GatewayError } from '../gateway';
+import { aiConfig } from '../config';
 import { planSchema } from '../gateway/response-schemas';
 import { loadTemplate, render } from '../harness/templates';
 import { stripFences } from '../sanitise';
+import { contain } from '../containment/envelope';
 import { generationPlan } from '@/lib/contracts/schemas/ai';
 import { normalisePlan } from '../composition/rules';
 import { variantMenu } from '../sections/contracts';
@@ -16,17 +18,24 @@ export async function plan(
     intent: IntentAttributes,
     profile: VerticalProfile,
 ): Promise<AiResult<SectionInstance[]>> {
-    const tpl = loadTemplate('plan.v1');
+    const tpl = loadTemplate(aiConfig().prompts.plan);
 
     const recipe = profile.recipe
         .map((r) => `${r.type}${r.required ? ' (required)' : ''}${r.note ? ` — ${r.note}` : ''}`)
         .join('\n');
 
+    // The description is the person's; the recipe is the profile stage's output.
+    // Neither is an instruction to this stage (FR-110).
+    const contained = contain(render(tpl.system), { prompt, recipe });
+
     const reply = await model.strong.complete({
         job: 'generate',
-        system: render(tpl.system),
+        system: contained.system,
         user: render(tpl.user, {
-            prompt, recipe, vertical: intent.vertical, tone: intent.tone,
+            prompt: contained.values.prompt,
+            recipe: contained.values.recipe,
+            vertical: intent.vertical,
+            tone: intent.tone,
         }),
         schema: planSchema,
     });

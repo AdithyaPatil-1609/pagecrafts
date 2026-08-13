@@ -82,7 +82,70 @@ the same evaluated set:
 
 ---
 
-## v2 — planned D12
+## v2 — written D12, not yet adopted
 
-Tuning against the 30-vertical corpus. Do not edit v1 in place; copy to `.v2`
-and record the before/after pass rate here.
+`plan.v2` and `fill-section.v2` sit alongside v1. **`AI_PROMPT_PLAN` and
+`AI_PROMPT_FILL` still default to v1**: v2 is switched on by config once a
+before/after comparison says it earns it, and that comparison needs D11's
+baseline, which has not been measured. See `docs/ai/D12_TUNING.md`.
+
+`classify`, `profile` and `edit` have no v2 — nothing recorded against them
+warranted one.
+
+### What changed, and the observation each answers
+
+Every change below answers a weakness recorded under "Known weaknesses" above,
+from the D5 Groq runs. Nothing was changed on taste, and nothing that needs D11's
+taxonomy has been written yet — expect a v3 for that.
+
+**`plan.v2`**
+
+- Asks plainly for one object with a top-level `sections` array, *not* an object
+  keyed by section type. The normaliser stays as the safety net.
+- An explicit ORDER block: hero first, footer last, fixed order in between. v1
+  said nothing, so ordering was arbitrary.
+- "Do not pad… do not under-fill either" — answers `yoga-studio` planning 5
+  sections where comparable verticals planned 7.
+- Variant guidance for all ten section types, up from three. Unguided variant
+  choice is what makes a page read as machine-assembled.
+- "Do not use the same variant twice in a row", which `normalisePlan` had been
+  silently repairing.
+- Briefs must name the specific thing this business says, with a worked bad/good
+  pair. A vague brief is the fill stage's only input for that section.
+
+**`fill-section.v2`**
+
+- **Per-section-type guidance**, via a new `{{guidance}}` variable. The blocks
+  live in `prompts/guidance/<type>.md`, one per section type, selected in
+  `fill.ts` — the harness has no conditionals, and keeping them as text means
+  tuning a section's voice is a text edit rather than a code change.
+- Exact field names, spelled as given — answers the fill stage returning `name`
+  for `title` and `description`/`text` for `body`.
+- Image fields are an object, never a bare string.
+- A no-invention rule on facts. `contact`, `team` and `testimonials` carry the
+  strong form: an invented phone number or a fabricated review is a false claim
+  published on a real business's site.
+
+### Before / after
+
+Not yet measured. The table lives in `docs/ai/D12_TUNING.md` and acceptance is
+not met until it shows the pass rate up with zero regressions.
+
+---
+
+## Changes made under v1 at D13 (not a version bump)
+
+These changed how a prompt is *assembled*, not what any file asks for. The five
+v1 files are byte-for-byte unchanged and hash-pinned in CI.
+
+- **Every untrusted value is now wrapped by `containment/envelope.ts` before it
+  is interpolated** (FR-110, M3.7). Each value goes inside a `<data-NONCE>` block
+  with a per-call random nonce, and the containment paragraph is attached to the
+  system message from one place. A rule that lives in five prompt files is a rule
+  waiting to be missed in the sixth.
+- `edit.v1`'s own containment paragraph stays where it is. It is now belt and
+  braces rather than the only copy, and a test still asserts its wording.
+
+**This changes the bytes sent to the provider.** The D5 and D8 measurements were
+taken without it, so figures from before D13 and after it do not belong in the
+same table. This is noted in `docs/ai/D11_BASELINE.md` too.

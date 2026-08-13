@@ -1,7 +1,10 @@
 import { model, GatewayError } from '../gateway';
+import { aiConfig } from '../config';
 import { loadTemplate, render } from '../harness/templates';
+import { guidanceFor } from '../harness/guidance';
 import { stripFences, sanitiseDeep } from '../sanitise';
 import { contractFor } from '../sections/contracts';
+import { contain } from '../containment/envelope';
 import type { SectionInstance, SectionProps, AiResult } from '@/lib/contracts';
 
 export interface FillContext {
@@ -17,23 +20,33 @@ export async function fillSection(
     repairContext?: string,
 ): Promise<AiResult<SectionProps>> {
     const contract = contractFor(instance.type);
-    const tpl = loadTemplate('fill-section.v1');
+    const tpl = loadTemplate(aiConfig().prompts.fill);
+
+    // The person's description and the planner's brief are both text this stage
+    // must write *about*, never text it takes orders from (FR-110).
+    const contained = contain(
+        render(tpl.system, {
+            vertical: context.vertical,
+            customerWord: context.customerWord,
+            // v1 does not name {{guidance}}; supplying it is harmless there and
+            // is what makes per-section-type voice possible in v2.
+            guidance: guidanceFor(instance.type),
+        }),
+        { prompt: context.prompt, brief: instance.brief },
+    );
 
     const user = render(tpl.user, {
         sectionKey: instance.type,
         variant: instance.variant,
-        brief: instance.brief,
+        brief: contained.values.brief,
         tone: context.tone,
         fields: contract.fieldList,
-        prompt: context.prompt,
+        prompt: contained.values.prompt,
     });
 
     const reply = await model.strong.complete({
         job: 'generate',
-        system: render(tpl.system, {
-            vertical: context.vertical,
-            customerWord: context.customerWord,
-        }),
+        system: contained.system,
         user: repairContext ? `${user}\n\n${repairContext}` : user,
         schema: contract.json,
     });

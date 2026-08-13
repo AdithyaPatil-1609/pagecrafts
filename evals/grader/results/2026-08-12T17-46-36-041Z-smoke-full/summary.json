@@ -1,0 +1,64 @@
+{
+  "summary": {
+    "overall": {
+      "passed": 1,
+      "total": 1,
+      "rate": 1
+    },
+    "noTemplate": {
+      "passed": 1,
+      "total": 1,
+      "rate": 1
+    },
+    "withTemplate": {
+      "passed": 0,
+      "total": 0,
+      "rate": 0
+    },
+    "byGroup": {
+      "no-template": {
+        "passed": 1,
+        "total": 1,
+        "rate": 1
+      }
+    },
+    "completedButFailed": 0,
+    "fallbackUsed": 0,
+    "categoryCorrect": 1,
+    "totalRequests": 10,
+    "totalTokens": 9019
+  },
+  "diversity": {
+    "themes": {
+      "calm-sage": 1
+    },
+    "motions": {
+      "calm": 1
+    },
+    "variantSets": 1,
+    "dominantTheme": "calm-sage",
+    "dominantMotion": "calm",
+    "dominantThemeShare": 1,
+    "dominantMotionShare": 1,
+    "passes": false,
+    "notes": [
+      "theme \"calm-sage\" is 100% of the corpus (limit 30%)",
+      "motion \"calm\" is 100% of the corpus (limit 40%)"
+    ]
+  },
+  "clusters": [],
+  "stages": [],
+  "human": {
+    "copySensible": null,
+    "sectionSelectionAppropriate": null,
+    "artDirectionAppropriate": null,
+    "unread": {
+      "copySensible": 1,
+      "sectionSelectionAppropriate": 1,
+      "artDirectionAppropriate": 1
+    },
+    "complete": false
+  },
+  "mode": "full",
+  "ranAt": "2026-08-12T17:46:36.042Z"
+}

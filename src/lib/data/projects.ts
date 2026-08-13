@@ -3,6 +3,7 @@ import type {
   ContentSchema,
   DeploymentState,
   ProjectStatus,
+  ContentSchema,
   CreateProjectRequest,
   CreateProjectResponse,
   FileMap,
@@ -10,15 +11,20 @@ import type {
   ProjectDetail,
   ProjectSummary,
   SiteMeta,
+  TemplateTier,
 } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
-import { loadProjectSchema } from "./template-schema";
+import { contentFromFiles } from "@/lib/content/from-files";
+import { PROJECTS_PER_USER } from "@/lib/limits/config";
+// Shared with the publish gate (R3 D9), so fork and publish agree about what a live
+// entitlement is — including that a lapsed one is not.
+import { hasPro } from "./entitlements";
 
 const DETAIL_COLUMNS =
-  "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at, " +
+  "id, name, source_template_id, content_json, content_schema, site_meta, form_endpoint, updated_at, " +
   "deployments(status, live_url, created_at)";
 
 const SUMMARY_COLUMNS = "id, name, updated_at, deployments(status, live_url, created_at)";
@@ -52,6 +58,7 @@ interface ProjectRow {
   name: string;
   source_template_id: string | null;
   content_json: Record<string, unknown>;
+  content_schema: ContentSchema | null;
   site_meta: SiteMeta;
   form_endpoint: string | null;
   updated_at: string;
@@ -68,6 +75,7 @@ function rowToDetail(row: ProjectRow, contentSchema: ContentSchema | null = null
     updatedAt: row.updated_at,
     sourceTemplateId: row.source_template_id,
     contentJson: row.content_json ?? {},
+    contentSchema: row.content_schema ?? { sections: [] },
     siteMeta: row.site_meta ?? {},
     formEndpoint: row.form_endpoint,
     contentSchema,
@@ -122,6 +130,37 @@ export async function getProject(
   return rowToDetail(row, await loadProjectSchema(supabase, row.source_template_id));
 }
 
+/** How many sites this account already holds. Pro accounts are not capped. */
+async function assertUnderQuota(
+  supabase: SupabaseClient,
+  userId: string,
+  pro: boolean,
+): Promise<void> {
+  if (pro) return;
+
+  // The ids rather than an exact count header: the cap is small by construction, so this is
+  // a handful of uuids either way, and it does not depend on PostgREST's counting options
+  // being modelled anywhere a test might run.
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("user_id", userId);
+
+  if (error) throw new ApiError("internal", "Could not check your sites.", error.message);
+
+  const count = (data ?? []).length;
+
+  if (count >= PROJECTS_PER_USER) {
+    // payment_required rather than rate_limited: waiting changes nothing, and the two ways
+    // out — delete a site, or upgrade — are both things the person can act on now.
+    throw new ApiError(
+      "payment_required",
+      `You have reached ${PROJECTS_PER_USER} sites. Delete one, or upgrade, to make another.`,
+      `projects=${count}`,
+    );
+  }
+}
+
 // Fork a template (R3 D8).
 //
 // A person picks a design and expects to land in the editor looking at it. That means the
@@ -137,6 +176,11 @@ export async function createProject(
   userId: string,
   req: CreateProjectRequest,
 ): Promise<CreateProjectResponse> {
+  // Both gates are checked here rather than in the route, because they are facts about the
+  // database and the route only has the caller's word for anything (R3 D8).
+  const pro = await hasPro(supabase, userId);
+  await assertUnderQuota(supabase, userId, pro);
+
   const { data, error } = await supabase
     .from("projects")
     .insert({
@@ -162,7 +206,7 @@ export async function createProject(
   try {
     const { data: template, error: templateError } = await supabase
       .from("templates")
-      .select("name, files")
+      .select("name, description, files, content_schema, tier")
       .eq("id", req.sourceTemplateId)
       .maybeSingle();
 
@@ -171,8 +215,51 @@ export async function createProject(
     }
     if (!template) throw new ApiError("not_found", "That design does not exist.");
 
+    // Doc 22 P2/P3: a premium or signature design is paid for once, before the fork runs.
+    // The price is read from the row and never from the request — a paywall the caller is
+    // trusted to declare is not a paywall. Thrown inside the try, so the catch below removes
+    // the empty project rather than leaving a site nobody paid for sitting in a dashboard.
+    const tier = (template.tier ?? "free") as TemplateTier;
+    if (tier !== "free" && !pro) {
+      throw new ApiError(
+        "payment_required",
+        "This design needs to be paid for before you can use it.",
+        `tier=${tier}`,
+      );
+    }
+
     const files = (template.files ?? {}) as FileMap;
     await putProjectFiles(supabase, projectId, files);
+
+    // The schema is copied for the same reason the files are (R3 D7). Read live through
+    // source_template_id it was a reference, and a reference to a row that can be deleted
+    // (`on delete set null`) or re-normalised under the project's feet — either of which
+    // leaves someone holding a site they cannot edit.
+    //
+    // content_json is seeded from the markup at the same time, so the panel opens showing
+    // the words that are on the page instead of a column of blanks. See content/from-files.
+    const contentSchema = (template.content_schema ?? { sections: [] }) as ContentSchema;
+    const { error: seedError } = await supabase
+      .from("projects")
+      .update({
+        content_schema: contentSchema,
+        content_json: contentFromFiles(files, contentSchema),
+        // Enough for publish to emit a real <title> and description on day one (S-2). Both
+        // are the owner's to change from the settings panel; what they must not be is
+        // absent, because a site that publishes with no title is one nobody finds and the
+        // person has no reason to suspect it. The name is what they typed a moment ago;
+        // the description is the design's own, which at least describes the page they are
+        // looking at.
+        site_meta: {
+          title: req.name,
+          ...(template.description ? { description: template.description as string } : {}),
+        },
+      })
+      .eq("id", projectId);
+
+    if (seedError) {
+      throw new ApiError("internal", "Could not set up the project's content.", seedError.message);
+    }
 
     const { sha } = await createCommit(
       supabase,

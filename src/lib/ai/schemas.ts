@@ -1,21 +1,13 @@
-import { z } from 'zod';
-import type { Category } from '@/lib/contracts';
+import { CATEGORY_IDS } from '@/lib/contracts';
 
-export const CATEGORIES = [
-    'portfolio', 'restaurant', 'saas', 'blog', 'event',
-    'resume', 'agency', 'store', 'nonprofit', 'other',
-    'fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business',
-    'beauty', 'real_estate', 'healthcare', 'design', 'professional_services', 'entertainment',
-    'hospitality', 'automotive', 'media',
-    'sports', 'health_wellness', 'pets', 'arts_culture', 'retail', 'finance',
-    'wellness', 'health', 'creative', 'technology',
-    'professional', 'personal',
-] as const satisfies readonly Category[];
+/**
+ * The prompt's offer list, the provider's response schema and the contract
+ * validator must all name the same buckets — otherwise the model is invited to
+ * return a category that is then silently rewritten. All three now derive from
+ * `CATEGORY_IDS`; this module only re-exports it under its established name.
+ */
+export const CATEGORIES = CATEGORY_IDS;
 
-type MissingFromCategories = Exclude<Category, (typeof CATEGORIES)[number]>;
-const _categoriesAreExhaustive: MissingFromCategories extends never ? true : never = true;
-void _categoriesAreExhaustive;
-
-export const categorySchema = z.enum(CATEGORIES) satisfies z.ZodType<Category>;
+export { categorySchema } from '@/lib/contracts/schemas/ai';
 
 export const CATEGORY_LIST = CATEGORIES.join(', ');

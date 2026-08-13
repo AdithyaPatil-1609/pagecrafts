@@ -32,6 +32,10 @@ export const patchProjectSchema = z.object({
 
 export const putFilesSchema = z.object({
   files: z.record(z.string(), z.string()),
+  // The `updatedAt` the caller last read, echoed back so the write can be refused if the
+  // project has moved on since (R3 D6). Optional: a caller that means "replace whatever is
+  // there" — fork, a script — omits it and keeps the old last-writer-wins behaviour.
+  expectedUpdatedAt: z.string().datetime().optional(),
 });
 
 // PUT /projects/{id}/files/{path} — a single file write. The path itself arrives in the

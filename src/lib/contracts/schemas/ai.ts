@@ -2,14 +2,13 @@ import { z } from 'zod';
 import type { Category } from '@/lib/contracts';
 import {
     SECTION_KEYS, THEME_IDS, MOTION_IDS, RADIUS_IDS,
-    SPACING_IDS, IMAGERY_IDS, MAX_SECTIONS, TONE_IDS, PALETTE_IDS,
+    SPACING_IDS, IMAGERY_IDS, MAX_SECTIONS, TONE_IDS, PALETTE_IDS, CATEGORY_IDS,
 } from '@/lib/contracts';
 
-export const categorySchema = z.enum([
-    'portfolio', 'restaurant', 'saas', 'blog', 'event',
-    'resume', 'agency', 'store', 'nonprofit', 'other',
-    'fitness', 'food', 'photography', 'architecture', 'education', 'travel', 'business',
-]) satisfies z.ZodType<Category>;
+// Derived from the single list in template.ts rather than restated. A restated
+// enum is how this validator ended up seventeen buckets behind the type, quietly
+// coercing 21 of 38 categories to "other" (see CATEGORY_IDS).
+export const categorySchema = z.enum(CATEGORY_IDS) satisfies z.ZodType<Category>;
 
 export const toneSchema = z.enum(TONE_IDS);
 export const paletteSchema = z.enum(PALETTE_IDS);

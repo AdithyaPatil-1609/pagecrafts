@@ -223,6 +223,14 @@ paths:
               properties:
                 files:
                   $ref: '#/components/schemas/FileMap'
+                expectedUpdatedAt:
+                  type: string
+                  format: date-time
+                  description: >-
+                    The `updatedAt` this tree was read at. When present the write is refused
+                    with `conflict` if the project has changed since, so two editors open on
+                    one project cannot silently delete each other's work (R3 D6). Omit it to
+                    replace the tree unconditionally.
       responses:
         '200':
           description: Updated project working tree.
@@ -230,6 +238,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProjectFilesResult'
+        '409':
+          description: >-
+            `expectedUpdatedAt` no longer matches: someone saved between this caller's read
+            and its write. Nothing was written. Re-read the tree and merge before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResult'
         default:
           $ref: '#/components/responses/Error'
   # Per-path file access. Shipped R3 D3; documented here at D4 so the contract tests have
@@ -682,10 +698,17 @@ components:
         bytes: { type: integer }
     TemplateDetail:
       type: object
-      required: [id, name, description, category, tags, thumbnailUrl, contentSchema, files,
-                 preview, license, sourceUrl, tier, priceInr, editable]
+      required: [id, forkId, name, description, category, tags, thumbnailUrl, contentSchema,
+                 files, preview, license, sourceUrl, tier, priceInr, editable]
       properties:
         id: { type: string }
+        forkId:
+          type: string
+          format: uuid
+          description: >-
+            The `templates.id` this design occupies, derived from the slug (R3 D8). Fork
+            with this: `source_template_id` is a foreign key, so `POST /projects` needs the
+            uuid rather than the slug the URL carries.
         name: { type: string }
         description: { type: string }
         category:
@@ -812,7 +835,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/ProjectSummary'
         - type: object
-          required: [sourceTemplateId, contentJson, siteMeta, formEndpoint, contentSchema]
+          required: [sourceTemplateId, contentJson, contentSchema, siteMeta, formEndpoint]
           properties:
             sourceTemplateId:
               type: [string, 'null']
@@ -820,6 +843,11 @@ components:
             contentJson:
               type: object
               additionalProperties: true
+            contentSchema:
+              # The project's own copy, taken at fork (R3 D7). The content panel is
+              # generated from this and nothing else (C-07), so it travels with the project
+              # rather than being fetched from a template that may since have been retired.
+              $ref: '#/components/schemas/ContentSchema'
             siteMeta:
               $ref: '#/components/schemas/SiteMeta'
             formEndpoint:
@@ -1166,7 +1194,7 @@ components:
       properties:
         code:
           type: string
-          enum: [unauthorized, forbidden, not_found, rate_limited, spend_capped, validation_failed, payload_too_large, generation_failed, payment_required, hosting_error, service_unavailable, internal]
+          enum: [unauthorized, forbidden, not_found, conflict, rate_limited, spend_capped, validation_failed, payload_too_large, generation_failed, payment_required, hosting_error, service_unavailable, internal]
         message:
           type: string
         detail:

@@ -1,5 +1,6 @@
 import type { PreviewPalette, TemplatePreview as PreviewSpec } from "@/lib/discovery/preview";
 import { MOTIFS } from "@/lib/templates/motifs";
+import { atWidth, TILE_WIDTH, tileSrcSet } from "@/lib/discovery/image-size";
 import type { MotifId, MotifShape } from "@/lib/templates/motifs";
 
 // A miniature of the design, built from what the template itself declares — its
@@ -91,7 +92,11 @@ export function TemplatePreview({
     const art = heroImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-            src={heroImage}
+            // Asked for at tile size, not at the 1600px the design authors its hero at
+            // (R2 D14). The stored template is untouched; only this request narrows.
+            src={atWidth(heroImage, TILE_WIDTH)}
+            {...(tileSrcSet(heroImage) ? { srcSet: tileSrcSet(heroImage)! } : {})}
+            sizes={`${TILE_WIDTH}px`}
             alt=""
             aria-hidden
             width={640}

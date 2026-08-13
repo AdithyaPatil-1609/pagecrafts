@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { RestoreResponse } from "@/lib/contracts";
+import type { ContentSchema, RestoreResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { createCommit, getCommitSnapshot } from "./commits";
 import { putProjectFiles } from "./project-files";
+import { contentFromFiles, keepImages } from "@/lib/content/from-files";
 
 // Restore (R3 D7 · FR-075, BR-15).
 //
@@ -35,7 +36,42 @@ export async function restoreProject(
   // written before snapshots existed. Nothing has been written at this point.
   const snapshot = await getCommitSnapshot(supabase, projectId, sha);
 
+  // Read before writing, like the snapshot above: a project that cannot be read leaves the
+  // working tree alone rather than half-restored.
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("content_schema, content_json")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (projectError) {
+    throw new ApiError("internal", "Could not read the project.", projectError.message);
+  }
+  if (!project) throw new ApiError("not_found", "That project does not exist.");
+
   await putProjectFiles(supabase, projectId, snapshot);
+
+  // content_json has to come back with the files (R3 D7, S-1). Restoring only the tree left
+  // the two describing different versions of the site: the page said Monday and the content
+  // panel said Friday, and the first save afterwards would write Friday's words back over
+  // Monday's page. Images are carried across rather than rebuilt — see keepImages.
+  const schema = (project.content_schema ?? {}) as ContentSchema;
+  if (schema.sections?.length) {
+    const restored = keepImages(
+      (project.content_json ?? {}) as Record<string, unknown>,
+      contentFromFiles(snapshot, schema),
+      schema,
+    );
+
+    const { error: contentError } = await supabase
+      .from("projects")
+      .update({ content_json: restored })
+      .eq("id", projectId);
+
+    if (contentError) {
+      throw new ApiError("internal", "Could not restore the content.", contentError.message);
+    }
+  }
 
   const { sha: newSha } = await createCommit(
     supabase,

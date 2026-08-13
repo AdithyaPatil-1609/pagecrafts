@@ -33,6 +33,10 @@ export interface ProjectSummary {
 export interface ProjectDetail extends ProjectSummary {
   sourceTemplateId: string | null; // null for generated projects
   contentJson: Record<string, unknown>;
+  // The project's own copy, taken at fork (R3 D7). The content panel is generated from
+  // this and nothing else (C-07), so it has to travel with the project rather than being
+  // fetched from the template — which for a retired design no longer exists.
+  contentSchema: ContentSchema;
   siteMeta: SiteMeta;
   formEndpoint: string | null; // null renders contact forms disabled (S-2)
   // The template's content_schema, travelling with the project so the editor draws its
