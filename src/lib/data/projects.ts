@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  ContentSchema,
   DeploymentState,
   ProjectStatus,
   CreateProjectRequest,
@@ -14,6 +15,7 @@ import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
+import { loadProjectSchema } from "./template-schema";
 
 const DETAIL_COLUMNS =
   "id, name, source_template_id, content_json, site_meta, form_endpoint, updated_at, " +
@@ -56,7 +58,7 @@ interface ProjectRow {
   deployments?: DeploymentRow[] | null;
 }
 
-function rowToDetail(row: ProjectRow): ProjectDetail {
+function rowToDetail(row: ProjectRow, contentSchema: ContentSchema | null = null): ProjectDetail {
   return {
     id: row.id,
     name: row.name,
@@ -68,6 +70,7 @@ function rowToDetail(row: ProjectRow): ProjectDetail {
     contentJson: row.content_json ?? {},
     siteMeta: row.site_meta ?? {},
     formEndpoint: row.form_endpoint,
+    contentSchema,
   };
 }
 
@@ -115,7 +118,8 @@ export async function getProject(
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
-  return rowToDetail(data as unknown as ProjectRow);
+  const row = data as unknown as ProjectRow;
+  return rowToDetail(row, await loadProjectSchema(supabase, row.source_template_id));
 }
 
 // Fork a template (R3 D8).
@@ -217,7 +221,8 @@ export async function patchProject(
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
-  return rowToDetail(data as unknown as ProjectRow);
+  const row = data as unknown as ProjectRow;
+  return rowToDetail(row, await loadProjectSchema(supabase, row.source_template_id));
 }
 
 // Removes our row only (RLS owner-scoped). A live site keeps serving until its hosting

@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ContentOp, ContentSchema, PatchContentResponse } from "@/lib/contracts";
+import type { ContentOp, PatchContentResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { applyContentOps } from "@/lib/content/apply-ops";
+import { loadTemplateSchema } from "./template-schema";
 
 // PATCH /projects/{id}/content (E-1). Ops mutate content_json under the template's
 // content_schema; the panel edits structure, never code (C-07). The saved project is
@@ -29,20 +30,11 @@ export async function patchProjectContent(
     );
   }
 
-  const { data: template, error: templateError } = await supabase
-    .from("templates")
-    .select("content_schema")
-    .eq("id", project.source_template_id)
-    .maybeSingle();
-
-  if (templateError) {
-    throw new ApiError("internal", "Could not read the template.", templateError.message);
-  }
-  if (!template) {
+  const schema = await loadTemplateSchema(supabase, project.source_template_id);
+  if (!schema) {
     throw new ApiError("validation_failed", "This project's template no longer exists.");
   }
 
-  const schema = template.content_schema as ContentSchema;
   const current = (project.content_json ?? {}) as Record<string, unknown>;
 
   const { next, issues } = applyContentOps(current, ops, schema);

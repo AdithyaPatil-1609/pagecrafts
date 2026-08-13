@@ -2,6 +2,7 @@ import type {
     ApiResult,
     Commit,
     ContentOp,
+    ContentSchema,
     ErrorCode,
     FileMap,
     GetProjectFilesResponse,
@@ -45,6 +46,29 @@ const STUB_COMMITS: Commit[] = [
         createdAt: "2026-08-08T08:00:00.000Z",
     },
 ];
+
+// The shape the content panel would be drawn from. It travels with the project row, so the
+// stub carries one too — a panel rendered against the stubs is the same panel.
+const STUB_SCHEMA: ContentSchema = {
+    sections: [
+        {
+            key: "hero",
+            label: "Hero",
+            fields: [
+                { key: "headline", label: "Headline", type: "text", maxLength: 60 },
+                { key: "subhead", label: "Subheading", type: "text", maxLength: 140 },
+            ],
+        },
+        {
+            key: "site",
+            label: "Site",
+            fields: [
+                { key: "name", label: "Site name", type: "text", maxLength: 40 },
+                { key: "footer", label: "Footer note", type: "text", maxLength: 120 },
+            ],
+        },
+    ],
+};
 
 const STUB_CONTENT: Record<string, unknown> = {
     hero: { headline: "Coffee worth walking for.", subhead: "Slow-roasted beans, bread baked at dawn." },
@@ -97,6 +121,7 @@ export function stubGetProject(): ApiResult<ProjectDetail> {
         contentJson: state.content,
         siteMeta: {},
         formEndpoint: null,
+        contentSchema: STUB_SCHEMA,
     });
 }
 

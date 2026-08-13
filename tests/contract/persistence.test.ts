@@ -152,6 +152,7 @@ describe("the contract checker itself", () => {
                 contentJson: {},
                 siteMeta: {},
                 formEndpoint: null,
+                contentSchema: null,
             },
         };
         expect(validate(detail, body)).toEqual([]);

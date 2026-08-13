@@ -1,5 +1,17 @@
-import { apiGet, apiPut } from '@/lib/api/client';
-import type { FileMap, GetProjectFilesResponse } from '@/lib/contracts';
+import { apiGet, apiPatch, apiPut, apiUpload } from '@/lib/api/client';
+import type {
+    AssetResponse,
+    Commit,
+    ContentOp,
+    FileMap,
+    ImageSearchResponse,
+    ListCommitsResponse,
+    RestoreResponse,
+    GetProjectFilesResponse,
+    PatchContentResponse,
+    PatchProjectRequest,
+    ProjectDetail,
+} from '@/lib/contracts';
 import { apiPost } from '@/lib/api/client';
 import type { CreateCommitResponse } from '@/lib/contracts';
 
@@ -64,6 +76,143 @@ export async function saveProjectFiles(
     }
 
     return { updatedAt: data.updatedAt, error: null };
+}
+
+export interface CommitListResult {
+    items: Commit[];
+    error: string | null;
+}
+
+/** The project's save points, newest first — read from the mirror, so it is one query. */
+export async function loadCommits(projectId: string): Promise<CommitListResult> {
+    const { data, error } = await apiGet<ListCommitsResponse>(
+        `${projectUrl(projectId)}/commits`,
+    );
+
+    if (error || !data) return { items: [], error: error ?? EMPTY_REPLY };
+    return { items: data.items, error: null };
+}
+
+/**
+ * Put the working tree back to a chosen version. Additive: this writes a new commit on top
+ * rather than erasing what came after, so changing your mind again is always possible.
+ */
+export async function restoreVersion(
+    projectId: string,
+    sha: string,
+): Promise<{ newSha: string | null; error: string | null }> {
+    const { data, error } = await apiPost<RestoreResponse>(`${projectUrl(projectId)}/restore`, {
+        sha,
+    });
+
+    if (error || !data) return { newSha: null, error: error ?? EMPTY_REPLY };
+    return { newSha: data.newSha, error: null };
+}
+
+export interface ProjectDetailResult {
+    detail: ProjectDetail | null;
+    error: string | null;
+}
+
+function projectUrl(projectId: string): string {
+    return `/api/v1/projects/${encodeURIComponent(projectId)}`;
+}
+
+/**
+ * The project row behind the editor: its name, its stored content, its site settings, and
+ * the content schema the panel is drawn from. One fetch, alongside the file tree.
+ */
+export async function loadProjectDetail(projectId: string): Promise<ProjectDetailResult> {
+    const { data, error } = await apiGet<ProjectDetail>(projectUrl(projectId));
+
+    if (error || !data) return { detail: null, error: error ?? EMPTY_REPLY };
+    return { detail: data, error: null };
+}
+
+/**
+ * Structured content through to `content_json`. The markup the person is looking at has
+ * already been updated locally — this is the canonical copy catching up, so a failure here
+ * is worth saying out loud but must never roll back what they typed.
+ */
+export async function saveProjectContent(
+    projectId: string,
+    ops: ContentOp[],
+): Promise<{ error: string | null }> {
+    if (ops.length === 0) return { error: null };
+
+    const { data, error } = await apiPatch<PatchContentResponse>(
+        `${projectUrl(projectId)}/content`,
+        { ops },
+    );
+
+    if (error || !data) return { error: error ?? EMPTY_REPLY };
+    return { error: null };
+}
+
+/** Site settings — name, meta tags, form endpoint (S-2, S-3, S-4). */
+export async function saveProjectSettings(
+    projectId: string,
+    patch: PatchProjectRequest,
+): Promise<ProjectDetailResult> {
+    const { data, error } = await apiPatch<ProjectDetail>(projectUrl(projectId), patch);
+
+    if (error || !data) return { detail: null, error: error ?? EMPTY_REPLY };
+    return { detail: data, error: null };
+}
+
+/* --------------------------------------------------------- the image library */
+
+export interface ImageSearchOutcome {
+    results: ImageSearchResponse | null;
+    error: string | null;
+}
+
+export async function searchImages(query: string, page = 1): Promise<ImageSearchOutcome> {
+    const search = new URLSearchParams({ q: query, page: String(page) });
+    const { data, error } = await apiGet<ImageSearchResponse>(`/api/v1/images/search?${search}`);
+
+    if (error || !data) return { results: null, error: error ?? EMPTY_REPLY };
+    return { results: data, error: null };
+}
+
+export interface AssetOutcome {
+    asset: AssetResponse | null;
+    error: string | null;
+}
+
+/**
+ * A chosen photo into the project (S-1). The server downloads it, registers the download
+ * with Unsplash and records the photographer — the browser never holds the access key and
+ * never has to be trusted to credit anyone.
+ */
+export async function pickUnsplashImage(
+    projectId: string,
+    unsplashId: string,
+    kind: 'image' | 'favicon' | 'og_image' = 'image',
+): Promise<AssetOutcome> {
+    const { data, error } = await apiPost<AssetResponse>(`${projectUrl(projectId)}/assets`, {
+        source: 'unsplash',
+        unsplashId,
+        kind,
+    });
+
+    if (error || !data) return { asset: null, error: error ?? EMPTY_REPLY };
+    return { asset: data, error: null };
+}
+
+export async function uploadProjectImage(
+    projectId: string,
+    file: File,
+    kind: 'image' | 'favicon' | 'og_image' = 'image',
+): Promise<AssetOutcome> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('kind', kind);
+
+    const { data, error } = await apiUpload<AssetResponse>(`${projectUrl(projectId)}/assets`, form);
+
+    if (error || !data) return { asset: null, error: error ?? EMPTY_REPLY };
+    return { asset: data, error: null };
 }
 
 export function pickEntryFile(paths: string[]): string | null {

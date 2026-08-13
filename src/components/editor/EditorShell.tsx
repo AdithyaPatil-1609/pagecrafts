@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import TopBar from './TopBar';
@@ -10,9 +10,11 @@ import CodePane from './CodePane';
 import { TreeSkeleton, PaneSkeleton } from './Skeletons';
 import ChangeSummary from './ChangeSummary';
 import SectionsPanel from './SectionsPanel';
+import VersionHistory from './VersionHistory';
 
 export default function EditorShell({ projectId }: { projectId: string }) {
     useUnsavedGuard();
+    const [historyOpen, setHistoryOpen] = useState(false);
     const advanced = useEditorStore((s) => s.advanced);
     const loading = useEditorStore((s) => s.loading);
     const loadError = useEditorStore((s) => s.loadError);
@@ -39,7 +41,11 @@ export default function EditorShell({ projectId }: { projectId: string }) {
 
     return (
         <div className="flex h-screen flex-col bg-background">
-            <TopBar projectId={projectId} />
+            <TopBar
+                projectId={projectId}
+                historyOpen={historyOpen}
+                onToggleHistory={() => setHistoryOpen((open) => !open)}
+            />
             {loadError ? (
                 <div className="flex flex-1 items-center justify-center p-8">
                     <div className="max-w-sm text-center">
@@ -81,6 +87,11 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                                 {loading ? <PaneSkeleton /> : <PreviewPane />}
                             </section>
                         </>
+                    )}
+                    {historyOpen && (
+                        <aside className="w-72 shrink-0 overflow-hidden border-l border-border">
+                            <VersionHistory />
+                        </aside>
                     )}
                     <ChangeSummary />
                 </main>

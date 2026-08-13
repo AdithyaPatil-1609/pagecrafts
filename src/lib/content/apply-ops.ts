@@ -18,7 +18,7 @@ export interface ApplyResult {
 
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
-function checkScalar(field: Field, value: unknown): string | null {
+export function checkScalar(field: Field, value: unknown): string | null {
   switch (field.type) {
     case "text":
     case "richtext":
@@ -28,8 +28,11 @@ function checkScalar(field: Field, value: unknown): string | null {
       }
       return null;
     case "image":
-      // An asset id, or null to clear the slot.
-      if (value !== null && typeof value !== "string") return "Expected an asset id or null.";
+      // The URL of an asset created through POST /assets, or null/"" to clear the slot. The
+      // URL rather than the id, because the published page is static HTML on someone else's
+      // hosting: an `<img src>` is the only reference it can carry, and there is no server
+      // of ours in that path to turn an id into one. Provenance lives on the `assets` row.
+      if (value !== null && typeof value !== "string") return "Expected an image address or null.";
       return null;
     case "color":
       if (typeof value !== "string" || !HEX_COLOR.test(value)) {
@@ -46,7 +49,7 @@ function checkScalar(field: Field, value: unknown): string | null {
   }
 }
 
-function checkList(field: Field, value: unknown): string | null {
+export function checkList(field: Field, value: unknown): string | null {
   if (!Array.isArray(value)) return "Expected an array of items.";
 
   const itemSchema = field.itemSchema ?? [];
@@ -76,6 +79,15 @@ function checkList(field: Field, value: unknown): string | null {
   return null;
 }
 
+/**
+ * One value against one field. The content panel calls this on every keystroke to draw its
+ * inline message, and the route calls it through `applyContentOps` before anything is
+ * written — so what the panel refuses and what the server refuses cannot drift apart.
+ */
+export function checkFieldValue(field: Field, value: unknown): string | null {
+  return field.type === "list" ? checkList(field, value) : checkScalar(field, value);
+}
+
 function checkOp(schema: ContentSchema, op: ContentOp): string | null {
   const segments = op.path.split(".");
   if (segments.length !== 2) {
@@ -89,7 +101,7 @@ function checkOp(schema: ContentSchema, op: ContentOp): string | null {
   const field = section.fields.find((f) => f.key === fieldKey);
   if (!field) return `No field "${fieldKey}" in section "${sectionKey}".`;
 
-  return field.type === "list" ? checkList(field, op.value) : checkScalar(field, op.value);
+  return checkFieldValue(field, op.value);
 }
 
 export function applyContentOps(

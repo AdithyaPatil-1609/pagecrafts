@@ -52,6 +52,11 @@ values
   )
 on conflict (id) do nothing;
 
+-- Every editable value in a template's markup carries `data-slot="<section>.<field>"`,
+-- matching a field in its content_schema — that attribute is what the content panel writes
+-- through. A repeatable list marks its container with `data-slot-list`, and a colour names
+-- the custom property it drives with `data-slot-var`. A template whose schema and markup
+-- disagree renders a panel whose edits go nowhere, so keep the two in step here.
 insert into public.templates (id, name, description, category, tags, thumbnail_url, files, content_schema, license, source_url)
 values
   (
@@ -62,7 +67,7 @@ values
     array['dark', 'one-page', 'warm'],
     'https://images.pagecraft.test/templates/ember.png',
     jsonb_build_object(
-      'index.html', '<!doctype html><html><head><meta charset="utf-8"><title>Ember</title><link rel="stylesheet" href="styles.css"></head><body><h1>Ember Kitchen</h1><p>Wood-fired, every evening.</p></body></html>',
+      'index.html', '<!doctype html><html><head><meta charset="utf-8"><title>Ember</title><link rel="stylesheet" href="styles.css"></head><body><h1 data-slot="hero.title">Ember Kitchen</h1><p data-slot="hero.tagline">Wood-fired, every evening.</p></body></html>',
       'styles.css', 'body{font-family:system-ui;background:#140f0d;color:#f5ede6;margin:0;padding:4rem 2rem}h1{color:#e07a3f}'
     ),
     jsonb_build_object(
@@ -88,7 +93,7 @@ values
     array['dark', 'minimal', 'one-page'],
     'https://images.pagecraft.test/templates/slate.png',
     jsonb_build_object(
-      'index.html', '<!doctype html><html><head><meta charset="utf-8"><title>Slate</title><link rel="stylesheet" href="styles.css"></head><body><h1>Your Name</h1><p>Photographer, based somewhere.</p></body></html>',
+      'index.html', '<!doctype html><html><head><meta charset="utf-8"><title>Slate</title><link rel="stylesheet" href="styles.css"></head><body data-slot="intro.accent" data-slot-var="--accent" style="--accent: #8ab4f8"><h1 data-slot="intro.name">Your Name</h1><p data-slot="intro.bio">Photographer, based somewhere.</p></body></html>',
       'styles.css', 'body{font-family:system-ui;background:#0f1115;color:#e7e9ee;margin:0;padding:4rem 2rem}h1{letter-spacing:-0.02em}'
     ),
     jsonb_build_object(
@@ -115,7 +120,7 @@ values
     array['light', 'marketing', 'multi-section'],
     'https://images.pagecraft.test/templates/ledger.png',
     jsonb_build_object(
-      'index.html', '<!doctype html><html><head><meta charset="utf-8"><title>Ledger</title><link rel="stylesheet" href="styles.css"></head><body><h1>Ship faster</h1><ul></ul></body></html>',
+      'index.html', '<!doctype html><html><head><meta charset="utf-8"><title>Ledger</title><link rel="stylesheet" href="styles.css"></head><body><h1 data-slot="hero.headline">Ship faster</h1><ul class="cards" data-slot-list="features.items"><li class="card"><h3 data-slot="features.items.0.title">Fast</h3><p data-slot="features.items.0.body">Ships on the day you decide to.</p></li></ul><form class="form" action="" method="post"><input type="email" name="email" placeholder="you@example.com" aria-label="Email" required /><button type="submit">Get in touch</button></form></body></html>',
       'styles.css', 'body{font-family:system-ui;background:#ffffff;color:#111827;margin:0;padding:4rem 2rem}h1{font-size:2.5rem}'
     ),
     jsonb_build_object(
