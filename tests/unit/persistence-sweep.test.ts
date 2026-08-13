@@ -67,8 +67,22 @@ describe("touching a project has something to set", () => {
 // bad request sends the caller to wait for a fix that is never coming.
 describe("a bad request is not reported as our failure", () => {
     it("a template that no longer exists is validation_failed, not internal", async () => {
+        // The insert is what fails; the reads before it must not. createProject counts the
+        // caller's existing sites first (the R3 D8 quota gate), and a fake that failed every
+        // projects operation alike would stop at the count and never reach the case this
+        // test is about.
         const fake = fakeSupabase({
-            projects: dbError('insert violates foreign key constraint "projects_source_template_id_fkey"'),
+            entitlements: () => ({ data: [], error: null }),
+            projects: (query) =>
+                query.op === "insert"
+                    ? {
+                          data: null,
+                          error: {
+                              message:
+                                  'insert violates foreign key constraint "projects_source_template_id_fkey"',
+                          },
+                      }
+                    : { data: [], error: null },
         });
 
         await expect(

@@ -12,4 +12,10 @@ if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
   exit 1
 fi
 
+root=$(git rev-parse --show-toplevel)
+
+if [ -f "$root/scripts/scan-secrets.mjs" ]; then
+  node "$root/scripts/scan-secrets.mjs" --staged || exit 1
+fi
+
 exit 0

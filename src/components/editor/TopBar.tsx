@@ -45,7 +45,7 @@ export default function TopBar({ projectId }: { projectId: string }) {
                 </button>
                 <button
                     disabled={dirtyPaths.length === 0 || saving}
-                    onClick={saveProject}
+                    onClick={() => saveProject({ commit: true })}
                     className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground disabled:opacity-40"
                 >
                     {saving ? 'Saving…' : 'Save'}

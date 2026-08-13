@@ -1,4 +1,10 @@
--- Rollback for 20260809120000_template_categories.sql
+-- Rollback for 20260809130000_template_categories.sql
+--
+-- Renumbered from 20260809120000. It shared that version with
+-- 20260809120000_generations_ledger_columns.sql, and supabase keys applied migrations on
+-- the version alone — so the second of the pair failed with a duplicate-key error on
+-- schema_migrations_pkey and took every CI run down with it. Renumbering the later-sorting
+-- of the two keeps the original apply order.
 --
 -- Postgres cannot drop a value from an enum. Reversing this means rebuilding the type,
 -- which is only safe once no row uses any of the added values:

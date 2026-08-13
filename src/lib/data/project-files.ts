@@ -39,6 +39,7 @@ export async function putProjectFiles(
     supabase: SupabaseClient,
     projectId: string,
     files: FileMap,
+    expectedUpdatedAt?: string,
 ): Promise<GetProjectFilesResponse> {
     const issues = validateFileMap(files);
     if (issues.length > 0) {
@@ -57,14 +58,29 @@ export async function putProjectFiles(
     // deleted and none of the new ones written, which is a site that no longer renders. The
     // delete also built its path list by pasting file names into a string, so a name
     // carrying a comma or a quote would have changed which rows it matched.
+    // `p_expected_updated_at` carries the precondition into the same statement (R3 D6). It
+    // is checked in there rather than here for a reason: reading updated_at over one round
+    // trip and writing over the next leaves a gap in which the other tab commits, so the
+    // check would pass against a value that was already stale by the time it was compared.
     const { data, error } = await supabase.rpc('replace_project_files', {
         p_project_id: projectId,
         p_files: files,
+        p_expected_updated_at: expectedUpdatedAt ?? null,
     });
 
     if (error) {
         if (/project_not_found/.test(error.message)) {
             throw new ApiError('not_found', 'That project does not exist.');
+        }
+        // Someone saved between this caller's read and its write. A 409 rather than a 422:
+        // nothing about the request is malformed, and it would have succeeded a moment ago.
+        // The editor's move is to re-read the tree and merge, which the message says.
+        if (/stale_write/.test(error.message)) {
+            throw new ApiError(
+                'conflict',
+                'This project changed since you opened it. Reload to get the latest files before saving.',
+                `expectedUpdatedAt=${expectedUpdatedAt}`,
+            );
         }
         // The per-project file and byte ceilings are trigger-raised, and validateFileMap
         // checked the request against the same numbers first — so reaching this means the

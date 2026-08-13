@@ -8,6 +8,7 @@ import type { TemplatePreview as PreviewSpec } from "@/lib/discovery/preview";
 import { CATEGORY_LABELS } from "@/lib/discovery/categories";
 import { madeOfLine, priceLine, type TemplateDetail } from "@/lib/templates/detail";
 import { Badge } from "@/components/ui/badge";
+import { UseDesignButton } from "./UseDesignButton";
 import { buttonVariants } from "@/components/ui/button";
 import {
     Dialog,
@@ -253,12 +254,11 @@ export function TemplateDetailModal({
                                     </span>
                                 </span>
                             ) : null}
-                            <Link
-                                href={`/new?template=${encodeURIComponent(detail.id)}`}
-                                className={cn(buttonVariants({ variant: "brand", size: "lg" }))}
-                            >
-                                Use this design
-                            </Link>
+                            <UseDesignButton
+                                forkId={detail.forkId}
+                                name={detail.name}
+                                tier={detail.tier}
+                            />
                         </div>
                     </div>
                 ) : null}

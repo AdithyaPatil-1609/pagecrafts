@@ -2,6 +2,7 @@ import type {
     ApiResult,
     Commit,
     ContentOp,
+    ContentSchema,
     ErrorCode,
     FileMap,
     GetProjectFilesResponse,
@@ -51,6 +52,34 @@ const STUB_CONTENT: Record<string, unknown> = {
     site: { name: "Kettle & Co.", footer: "Built with PageCraft." },
 };
 
+// The schema the content panel is generated from (R2 D8). It describes exactly the content
+// above, because a stub that disagrees with itself teaches the panel to tolerate a state the
+// real API never produces. Every FieldType the panel renders appears at least once, so the
+// stubbed editor exercises each control rather than only the text ones.
+const STUB_SCHEMA: ContentSchema = {
+    sections: [
+        {
+            key: "hero",
+            label: "Hero",
+            fields: [
+                { key: "headline", label: "Headline", type: "text", maxLength: 60 },
+                { key: "subhead", label: "Subheading", type: "richtext", maxLength: 140 },
+                { key: "image", label: "Photo", type: "image" },
+            ],
+        },
+        {
+            key: "site",
+            label: "Site",
+            fields: [
+                { key: "name", label: "Site name", type: "text", maxLength: 40 },
+                { key: "footer", label: "Footer", type: "text", maxLength: 120 },
+                { key: "accent", label: "Accent colour", type: "color" },
+                { key: "layout", label: "Layout", type: "select", options: ["split", "full-bleed", "centered"] },
+            ],
+        },
+    ],
+};
+
 interface StubState {
     files: FileMap;
     content: Record<string, unknown>;
@@ -95,6 +124,7 @@ export function stubGetProject(): ApiResult<ProjectDetail> {
         updatedAt: STUB_TIME,
         sourceTemplateId: STUB_TEMPLATE_ID,
         contentJson: state.content,
+        contentSchema: STUB_SCHEMA,
         siteMeta: {},
         formEndpoint: null,
     });

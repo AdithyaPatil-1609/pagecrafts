@@ -1,0 +1,171 @@
+import { describe, expect, it } from "vitest";
+
+import { assertCanPublish, checkEntitlement, hasPro } from "@/lib/data/entitlements";
+import { createFakeDb } from "../support/fake-db";
+
+// R3 D9 — the check publish makes before a site goes live (A-5, Doc 22 §6).
+//
+// The table has existed since D5 and nothing read it until D8. What matters here is not the
+// query but the two properties around it: the answer comes from the database rather than
+// the request, and asking is free, so a retried publish finds the grant the first attempt
+// was made under instead of reaching for a payment already taken.
+
+const HOUR = 3600_000;
+const iso = (offsetMs: number) => new Date(Date.now() + offsetMs).toISOString();
+
+function account() {
+    const db = createFakeDb({ users: [{ id: "u1" }] });
+    const project = db.insert("projects", { user_id: "u1", name: "Kettle & Co.", content_json: {} });
+    return { db, projectId: project.id as string };
+}
+
+describe("a grant for one project", () => {
+    it("lets that project publish", async () => {
+        const { db, projectId } = account();
+        db.insert("entitlements", {
+            user_id: "u1",
+            project_id: projectId,
+            kind: "publish",
+            source: "paid",
+            status: "active",
+        });
+
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).resolves.toMatchObject({
+            granted: true,
+            source: "paid",
+        });
+    });
+
+    it("does not let a different project publish on it", async () => {
+        // Paying for one site is paying for one site.
+        const { db, projectId } = account();
+        const other = db.insert("projects", { user_id: "u1", name: "Other", content_json: {} });
+        db.insert("entitlements", {
+            user_id: "u1",
+            project_id: projectId,
+            kind: "publish",
+            source: "paid",
+            status: "active",
+        });
+
+        await expect(
+            assertCanPublish(db.asUser("u1"), "u1", other.id as string),
+        ).rejects.toMatchObject({ code: "payment_required" });
+    });
+
+    it("refuses when nothing has been paid, and says why", async () => {
+        const { db, projectId } = account();
+
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).rejects.toMatchObject({
+            code: "payment_required",
+        });
+    });
+});
+
+describe("a lapsed grant is not a grant", () => {
+    it("ignores a row whose expiry has passed even though it still reads active", async () => {
+        // status and expires_at are separate columns and nothing sweeps them, so a
+        // subscription that ended at midnight still says 'active'. Trusting status alone
+        // would keep a lapsed account publishing indefinitely.
+        const { db, projectId } = account();
+        db.insert("entitlements", {
+            user_id: "u1",
+            project_id: projectId,
+            kind: "publish",
+            source: "paid",
+            status: "active",
+            expires_at: iso(-HOUR),
+        });
+
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).rejects.toMatchObject({
+            code: "payment_required",
+        });
+    });
+
+    it("accepts one that has not expired yet", async () => {
+        const { db, projectId } = account();
+        db.insert("entitlements", {
+            user_id: "u1",
+            project_id: projectId,
+            kind: "publish",
+            source: "paid",
+            status: "active",
+            expires_at: iso(HOUR),
+        });
+
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).resolves.toMatchObject({
+            granted: true,
+        });
+    });
+
+    it("ignores a revoked row", async () => {
+        const { db, projectId } = account();
+        db.insert("entitlements", {
+            user_id: "u1",
+            project_id: projectId,
+            kind: "publish",
+            source: "paid",
+            status: "revoked",
+        });
+
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).rejects.toMatchObject({
+            code: "payment_required",
+        });
+    });
+});
+
+describe("pro", () => {
+    it("covers publishing without a per-project grant", async () => {
+        const { db, projectId } = account();
+        db.insert("entitlements", { user_id: "u1", kind: "pro", source: "pro", status: "active" });
+
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).resolves.toMatchObject({
+            granted: true,
+            source: "pro",
+        });
+    });
+
+    it("is still distinguishable from a one-off purchase", async () => {
+        // The caller can tell a subscription from a payment, which matters for anything that
+        // reports on revenue or decides what to say when it ends.
+        const { db, projectId } = account();
+        db.insert("entitlements", { user_id: "u1", kind: "pro", source: "pro", status: "active" });
+
+        const check = await checkEntitlement(db.asUser("u1"), "u1", projectId, "publish");
+        expect(check.source).toBe("pro");
+    });
+
+    it("lapses like anything else", async () => {
+        const { db } = account();
+        db.insert("entitlements", {
+            user_id: "u1",
+            kind: "pro",
+            source: "pro",
+            status: "active",
+            expires_at: iso(-HOUR),
+        });
+
+        expect(await hasPro(db.asUser("u1"), "u1")).toBe(false);
+    });
+});
+
+describe("asking twice", () => {
+    it("grants twice and changes nothing", async () => {
+        // What makes a retried publish safe: the check is a read. If it charged, or consumed
+        // the grant, the second attempt after a network blip would cost the person again.
+        const { db, projectId } = account();
+        db.insert("entitlements", {
+            user_id: "u1",
+            project_id: projectId,
+            kind: "publish",
+            source: "paid",
+            status: "active",
+        });
+
+        await assertCanPublish(db.asUser("u1"), "u1", projectId);
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).resolves.toMatchObject({
+            granted: true,
+        });
+        expect(db.rows("entitlements")).toHaveLength(1);
+    });
+});

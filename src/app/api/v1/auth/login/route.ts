@@ -4,6 +4,7 @@ import { supabaseRouteClient } from "@/lib/auth/server";
 import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
+import { readJson } from "@/lib/kernel/body";
 import { consume, type LimitResult } from "@/lib/limits/rate-limit";
 import { clientIp, UNKNOWN_IP } from "@/lib/limits/client-ip";
 import { LOGIN_PER_IP, LOGIN_PER_EMAIL } from "@/lib/limits/config";
@@ -36,11 +37,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let body: unknown;
+    const body = await readJson(request);
 
-    try {
-      body = await request.json();
-    } catch {
+    if (body === null) {
       return fail("validation_failed", "Send a JSON body with email and password.");
     }
 

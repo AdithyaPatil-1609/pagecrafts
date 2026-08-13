@@ -4,6 +4,7 @@ import { acquireSlot, type Slot } from "@/lib/limits/concurrency";
 import { clientIp, UNKNOWN_IP } from "@/lib/limits/client-ip";
 import { AI_PER_USER_HOUR, AI_PER_IP_HOUR } from "@/lib/limits/config";
 import { fail } from "@/lib/errors/respond";
+import { codeFor, messageFor, reportUpstream } from "@/lib/errors/upstream";
 import { killSwitch } from "@/lib/limits/kill-switch";
 import { checkSpend, recordSpend, costInCents, pricing } from "@/lib/limits/spend";
 import type { Usage } from "@/lib/contracts";
@@ -66,7 +67,15 @@ export async function guardAiRequest(
 
   if (!budget.allowed) {
     if (budget.degraded) {
-      console.error("[ai-guard] rate limiter unavailable, refusing request", { userId });
+      reportUpstream("cache", new Error("rate limiter unavailable"), { userId });
+
+      return {
+        ok: false,
+        response: withRetryAfter(
+          fail(codeFor("cache"), messageFor("cache")),
+          budget.retryAfterSeconds,
+        ),
+      };
     }
 
     return {
@@ -79,7 +88,12 @@ export async function guardAiRequest(
 
   if (!slot.acquired) {
     if (slot.degraded) {
-      console.error("[ai-guard] concurrency guard unavailable, refusing request", { userId });
+      reportUpstream("cache", new Error("concurrency guard unavailable"), { userId });
+
+      return {
+        ok: false,
+        response: withRetryAfter(fail(codeFor("cache"), messageFor("cache")), 5),
+      };
     }
 
     return {

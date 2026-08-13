@@ -5,6 +5,7 @@ import { supabaseRouteClient } from "@/lib/auth/server";
 import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
+import { readJson } from "@/lib/kernel/body";
 import { publicEnv } from "@/lib/config/env";
 
 export const runtime = "nodejs";
@@ -22,11 +23,9 @@ function readName(body: unknown): string | undefined {
 
 export async function POST(request: NextRequest) {
   return guard(async () => {
-    let body: unknown;
+    const body = await readJson(request);
 
-    try {
-      body = await request.json();
-    } catch {
+    if (body === null) {
       return fail("validation_failed", "Send a JSON body with email and password.");
     }
 

@@ -84,7 +84,13 @@ describe("queryTemplates", () => {
   });
 
   it("answers an impossible combination with nothing, not an error", () => {
-    expect(run("category=store&tier=signature&colour=dark").items).toEqual([]);
+    // Taken from the library rather than hard-coded. This was `category=store&colour=dark`,
+    // which stopped being impossible the moment the store bucket gained a dark design — a
+    // hard-coded pair quietly turns into a no-op the batch after someone fills it in.
+    //
+    // It has to be a category the library ships, paired with a colour none of its designs
+    // have: an unrecognised category is dropped rather than refused, so it widens the
+    // gallery to everything instead of narrowing it to nothing.
     const all = run("").items;
     const categories = [...new Set(all.map((t) => t.category))];
     const colours = [...new Set(all.map((t) => t.colour))];
@@ -96,6 +102,9 @@ describe("queryTemplates", () => {
 
     expect(empty).toBeDefined();
     expect(run(`category=${empty!.category}&colour=${empty!.colour}`).items).toEqual([]);
+
+    // And a three-way narrowing nothing satisfies: the storefronts are free or premium.
+    expect(run("category=store&tier=signature&colour=dark").items).toEqual([]);
   });
 
   it("prices every item, and never invents a price for a free design", () => {
@@ -141,7 +150,12 @@ describe("a description is not a search", () => {
     expect(names("q=a%20small%20online%20shop").length).toBeLessThan(TEMPLATES.length);
   });
 
-  it("so the gallery hands the query layer `search`, and never the description", async () => {
+  // 20s rather than the default 5s. The import below pulls in the gallery page and, with
+  // it, the whole template library and its preview parser — cheap once warm and slow on a
+  // cold module graph. Under a full-suite run on a loaded machine it crossed 5s and failed
+  // this test intermittently, which taught everyone to re-run rather than to read it. The
+  // assertions are unchanged; only the patience is.
+  it("so the gallery hands the query layer `search`, and never the description", { timeout: 20_000 }, async () => {
     const page = await import("@/app/templates/page");
     expect(page.default).toBeTypeOf("function");
 

@@ -4,13 +4,14 @@ import { supabaseRouteClient } from "@/lib/auth/server";
 import { passwordUpdateSchema } from "@/lib/contracts/auth";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
+import { readJson } from "@/lib/kernel/body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
     return guard(async () => {
-        const json = await request.json().catch(() => null);
+        const json = await readJson(request);
         const parsed = passwordUpdateSchema.safeParse(json);
 
         if (!parsed.success) {

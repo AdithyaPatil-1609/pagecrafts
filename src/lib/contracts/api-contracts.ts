@@ -30,6 +30,8 @@ export interface GetProjectFilesResponse {
 
 export interface PutProjectFilesRequest {
   files: FileMap;
+  /** The `updatedAt` this tree was read at. Omit to overwrite unconditionally (R3 D6). */
+  expectedUpdatedAt?: string;
 }
 
 export interface EditProjectRequest {
