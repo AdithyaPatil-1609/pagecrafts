@@ -847,16 +847,14 @@ components:
               # The project's own copy, taken at fork (R3 D7). The content panel is
               # generated from this and nothing else (C-07), so it travels with the project
               # rather than being fetched from a template that may since have been retired.
+              # A generated project with no template gets an empty schema ({ sections: [] }),
+              # never null — see rowToDetail in src/lib/data/projects.ts.
               $ref: '#/components/schemas/ContentSchema'
             siteMeta:
               $ref: '#/components/schemas/SiteMeta'
             formEndpoint:
               type: [string, 'null']
               format: uri
-            # The template's content_schema, travelling with the project so the content
-            # panel is drawn from one fetch (C-07). Null when the project has no template.
-            contentSchema:
-              $ref: '#/components/schemas/NullableContentSchema'
     CreateProjectRequest:
       type: object
       required: [name]

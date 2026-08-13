@@ -3,7 +3,6 @@ import type {
   ContentSchema,
   DeploymentState,
   ProjectStatus,
-  ContentSchema,
   CreateProjectRequest,
   CreateProjectResponse,
   FileMap,
@@ -65,7 +64,7 @@ interface ProjectRow {
   deployments?: DeploymentRow[] | null;
 }
 
-function rowToDetail(row: ProjectRow, contentSchema: ContentSchema | null = null): ProjectDetail {
+function rowToDetail(row: ProjectRow): ProjectDetail {
   return {
     id: row.id,
     name: row.name,
@@ -78,7 +77,6 @@ function rowToDetail(row: ProjectRow, contentSchema: ContentSchema | null = null
     contentSchema: row.content_schema ?? { sections: [] },
     siteMeta: row.site_meta ?? {},
     formEndpoint: row.form_endpoint,
-    contentSchema,
   };
 }
 
@@ -127,7 +125,7 @@ export async function getProject(
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
   const row = data as unknown as ProjectRow;
-  return rowToDetail(row, await loadProjectSchema(supabase, row.source_template_id));
+  return rowToDetail(row);
 }
 
 /** How many sites this account already holds. Pro accounts are not capped. */
@@ -309,7 +307,7 @@ export async function patchProject(
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
   const row = data as unknown as ProjectRow;
-  return rowToDetail(row, await loadProjectSchema(supabase, row.source_template_id));
+  return rowToDetail(row);
 }
 
 // Removes our row only (RLS owner-scoped). A live site keeps serving until its hosting
