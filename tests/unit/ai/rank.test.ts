@@ -15,6 +15,30 @@ describe('rankTemplates', () => {
         )).toBe(51);
     });
 
+    it('puts an exact vertical above a broad category match', () => {
+        const exact = {
+            id: 'dental',
+            vertical: 'dental-clinic',
+            category: 'healthcare' as const,
+            tags: ['calm'],
+        };
+        const broad = {
+            id: 'medical',
+            category: 'healthcare' as const,
+            tags: ['calm', 'minimal', 'has-gallery'],
+        };
+
+        const ranked = rankTemplates({
+            vertical: 'dental-clinic',
+            category: 'healthcare',
+            tone: 'minimal',
+            sections: ['gallery'],
+        }, [broad, exact]);
+
+        expect(ranked.map((template) => template.id)).toEqual(['dental', 'medical']);
+        expect(ranked[0].score).toBe(130);
+    });
+
     it('returns a deterministic order with id tie-breaks', () => {
         const ranked = rankTemplates({ category: 'portfolio', palette: 'dark' }, templates);
         expect(ranked.map((t) => t.id)).toEqual(['a', 'b', 'c']);

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 // What the classifier told us about a description, in the form the gallery can rank with.
 interface Classified {
   category: Category;
+  vertical?: string;
   tone?: Tone;
   palette?: Palette;
 }
@@ -44,7 +45,13 @@ async function classifyText(text: string): Promise<Classified | null> {
       (json as { ok: boolean }).ok
     ) {
       const data = (json as {
-        data?: { category?: string; tone?: string; palette?: string; fallback?: boolean };
+        data?: {
+          category?: string;
+          vertical?: string;
+          tone?: string;
+          palette?: string;
+          fallback?: boolean;
+        };
       }).data;
 
       // A fallback classification is the route's safe default, not something learned:
@@ -52,6 +59,7 @@ async function classifyText(text: string): Promise<Classified | null> {
       if (data?.category && !data.fallback) {
         return {
           category: data.category as Category,
+          ...(data.vertical ? { vertical: data.vertical } : {}),
           ...(data.tone ? { tone: data.tone as Tone } : {}),
           ...(data.palette ? { palette: data.palette as Palette } : {}),
         };
@@ -90,6 +98,7 @@ export function IntentCapture({
     const params = new URLSearchParams();
     if (classified) {
       params.set("intent", classified.category);
+      if (classified.vertical) params.set("vertical", classified.vertical);
       if (classified.tone) params.set("tone", classified.tone);
       if (classified.palette) params.set("palette", classified.palette);
     }

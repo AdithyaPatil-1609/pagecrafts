@@ -7,7 +7,8 @@ import { validateComposition } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
 import { CostLedger } from '../cost/ledger';
-import type { RankableTemplate } from '../rank';
+import type { LedgerRow } from '../cost/ledger';
+import type { RankableTemplate, RankAttributes } from '../rank';
 import type { SectionProps, Usage } from '@/lib/contracts';
 import { jobStore } from './store';
 import type { Job, JobEventName, JobStatus } from './types';
@@ -15,6 +16,12 @@ import type { Job, JobEventName, JobStatus } from './types';
 export interface RunnerDeps {
     /** Candidates for the last-resort template fallback. */
     templates?: readonly RankableTemplate[];
+    /** Records the request's aggregate token spend in the shared daily cap. */
+    recordUsage?: (usage: Pick<Usage, 'inputTokens' | 'outputTokens'>) => Promise<void>;
+    /** Persists the completed request's invocation-level ledger. */
+    persistLedger?: (rows: readonly LedgerRow[]) => Promise<void>;
+    /** Releases resources held for the full lifetime of this detached job. */
+    release?: () => Promise<void>;
 }
 
 /**
@@ -27,6 +34,7 @@ export interface RunnerDeps {
 export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
     const store = jobStore();
     const ledger = new CostLedger();
+    let fallbackAttrs: RankAttributes = {};
 
     const emit = async (name: JobEventName, data?: Record<string, unknown>) => {
         const current = await store.get(job.id);
@@ -48,12 +56,20 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
 
         const intent = await classify(job.prompt);
         const provider = bill('classify', intent.usage);
+        fallbackAttrs = {
+            vertical: intent.data.vertical,
+            category: intent.data.category,
+            tone: intent.data.tone,
+            palette: intent.data.palette,
+            sections: intent.data.sections,
+        };
 
         const p = await fetchProfile(intent.data.vertical);
         bill('profile', p.usage);
 
         const planned = await plan(job.prompt, intent.data, p.data);
         bill('plan', planned.usage);
+        fallbackAttrs.sections = planned.data.map((section) => section.type);
 
         await emit('plan', { sections: planned.data.length });
         await advance('streaming', {
@@ -131,7 +147,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         const message = err instanceof Error ? err.message : String(err);
 
         const fallback = nearestTemplate(
-            { category: undefined, sections: [] },
+            fallbackAttrs,
             deps.templates ?? [],
             message,
         );
@@ -154,6 +170,33 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         }
 
         return (await store.get(job.id)) ?? job;
+    } finally {
+        const rows = [...ledger.all()];
+        const usage = rows.reduce(
+            (total, row) => ({
+                inputTokens: total.inputTokens + row.inputTokens,
+                outputTokens: total.outputTokens + row.outputTokens,
+            }),
+            { inputTokens: 0, outputTokens: 0 },
+        );
+
+        try {
+            if (rows.length) await deps.recordUsage?.(usage);
+        } catch (error) {
+            console.error('[generation-spend] could not record usage', error);
+        }
+
+        try {
+            await deps.persistLedger?.(rows);
+        } catch (error) {
+            console.error('[generation-ledger] could not persist rows', error);
+        } finally {
+            try {
+                await deps.release?.();
+            } catch (error) {
+                console.error('[generation-guard] could not release concurrency slot', error);
+            }
+        }
     }
 }
 

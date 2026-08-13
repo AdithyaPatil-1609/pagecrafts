@@ -1,9 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const auth = vi.hoisted(() => ({ requireUser: vi.fn() }));
+const ledger = vi.hoisted(() => ({ persist: vi.fn() }));
 vi.mock('@/lib/auth/session', () => ({
     requireUser: auth.requireUser,
     supabaseRoute: async () => ({}),
+}));
+vi.mock('@/lib/ai/cost/persist', () => ({
+    persistLedger: ledger.persist,
 }));
 
 vi.mock('@/lib/limits/redis', async () => {
@@ -47,6 +51,7 @@ async function settled(id: string) {
 
 beforeEach(() => {
     auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
+    ledger.persist.mockReset().mockResolvedValue(undefined);
     resetRedisMock();
     limits.evalMock.mockImplementation(async (_s: string, keys: string[]) =>
         keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0]);
@@ -158,6 +163,17 @@ describe('the job runner', () => {
 
         expect(job.ledger.length).toBeGreaterThanOrEqual(job.sectionsTotal + 3);
         expect(job.ledger.every((r) => !!r.provider)).toBe(true);
+        expect(ledger.persist).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                jobId: job.id,
+                userId: 'u_1',
+                projectId: 'p_1',
+            }),
+            job.ledger,
+        );
+        expect(limits.hincrbyMock).toHaveBeenCalled();
+        expect(limits.zremMock).toHaveBeenCalled();
     });
 
     it('falls back rather than failing when generation is abandoned', async () => {

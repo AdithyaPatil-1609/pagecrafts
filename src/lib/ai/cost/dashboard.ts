@@ -14,6 +14,7 @@ import type { GenerationStatus } from './ledger';
 
 /** One priced model call, as `public.generations` stores it. */
 export interface GenerationRow {
+    generationId?: string;
     userId: string | null;
     provider: Provider | 'unknown';
     model: string;
@@ -100,7 +101,7 @@ export interface CostDashboard {
  * same minute is rare enough not to distort a spend figure.
  */
 function generationKey(row: GenerationRow): string {
-    return `${row.userId ?? 'anon'}:${row.createdAt.slice(0, 16)}`;
+    return row.generationId ?? `${row.userId ?? 'anon'}:${row.createdAt.slice(0, 16)}`;
 }
 
 export function buildDashboard(rows: GenerationRow[]): CostDashboard {

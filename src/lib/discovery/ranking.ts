@@ -25,6 +25,7 @@ import { rankTemplates } from "@/lib/ai/rank";
 export interface IntentQuery {
     /** The classifier's category. Ranks; never filters. */
     category?: Category;
+    vertical?: string;
     tone?: Tone;
     palette?: Palette;
 }
@@ -43,15 +44,20 @@ export interface RankedTemplate extends Template {
  */
 export function toIntent(params: {
     intent?: string | null;
+    vertical?: string | null;
     tone?: string | null;
     palette?: string | null;
 }): IntentQuery | undefined {
     const category = categorySchema.safeParse(params.intent);
     const tone = toneSchema.safeParse(params.tone);
     const palette = paletteSchema.safeParse(params.palette);
+    const vertical = params.vertical?.trim().toLowerCase();
 
     const intent: IntentQuery = {
         ...(category.success ? { category: category.data } : {}),
+        ...(vertical && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(vertical)
+            ? { vertical: vertical.slice(0, 80) }
+            : {}),
         ...(tone.success ? { tone: tone.data } : {}),
         ...(palette.success ? { palette: palette.data } : {}),
     };
@@ -65,6 +71,7 @@ export function intentParams(intent: IntentQuery | undefined): Record<string, st
 
     return {
         ...(intent.category ? { intent: intent.category } : {}),
+        ...(intent.vertical ? { vertical: intent.vertical } : {}),
         ...(intent.tone ? { tone: intent.tone } : {}),
         ...(intent.palette ? { palette: intent.palette } : {}),
     };
@@ -82,7 +89,12 @@ export function rankForIntent(
     intent: IntentQuery,
 ): RankedTemplate[] {
     return rankTemplates(
-        { category: intent.category, tone: intent.tone, palette: intent.palette },
+        {
+            vertical: intent.vertical,
+            category: intent.category,
+            tone: intent.tone,
+            palette: intent.palette,
+        },
         templates,
     );
 }

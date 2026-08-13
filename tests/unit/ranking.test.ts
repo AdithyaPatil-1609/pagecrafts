@@ -28,9 +28,23 @@ describe("toIntent", () => {
   });
 
   it("round-trips through URL params", () => {
-    const intent = toIntent({ intent: "fitness", tone: "bold", palette: "dark" });
-    expect(intentParams(intent)).toEqual({ intent: "fitness", tone: "bold", palette: "dark" });
+    const intent = toIntent({
+      intent: "fitness",
+      vertical: "personal-trainer",
+      tone: "bold",
+      palette: "dark",
+    });
+    expect(intentParams(intent)).toEqual({
+      intent: "fitness",
+      vertical: "personal-trainer",
+      tone: "bold",
+      palette: "dark",
+    });
     expect(toIntent(intentParams(intent))).toEqual(intent);
+  });
+
+  it("drops a malformed vertical rather than letting arbitrary URL text into ranking", () => {
+    expect(toIntent({ vertical: "../dental clinic" })).toBeUndefined();
   });
 
   it("carries nothing when there is no intent", () => {
