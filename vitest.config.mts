@@ -9,7 +9,15 @@ export default defineConfig({
         // once against a different commit — and the second copy's failures read
         // as failures here. Excluded so a worktree open in the background cannot
         // change what `npm test` reports.
-        exclude: [...configDefaults.exclude, '**/.claude/worktrees/**', '**/.next/**'],
+        // e2e/ belongs to Playwright. Vitest's default glob picks up *.spec.ts,
+        // so without this `npm test` tries to run the browser tests and dies on
+        // the @playwright/test import.
+        exclude: [
+            ...configDefaults.exclude,
+            '**/.claude/worktrees/**',
+            '**/.next/**',
+            'e2e/**',
+        ],
         env: {
             HOSTING_API_BASE: 'https://api.github.com',
             HOSTING_ACCOUNT_ID: 'pagecraft-sites',

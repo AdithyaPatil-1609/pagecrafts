@@ -83,28 +83,50 @@ export async function recordCommit(
   projectId: string,
   commit: { sha: string; message: string; author: CommitAuthor; snapshot?: FileMap },
 ): Promise<Commit> {
+  // Insert, never upsert. `upsert` compiles to INSERT ... ON CONFLICT DO UPDATE, and
+  // Postgres demands UPDATE privilege for that statement whether or not a row actually
+  // conflicts. This table grants select and insert only — deliberately, because history is
+  // append-only — so every write through upsert came back "permission denied for table
+  // commits" against the real database, while passing every test, since the fakes model
+  // policies but not grants. Found by scripts/verify-core-loop.ts (R3).
   const { data, error } = await supabase
     .from("commits")
-    .upsert(
-      {
-        project_id: projectId,
-        sha: commit.sha,
-        message: commit.message,
-        author: commit.author,
-        ...(commit.snapshot ? { snapshot: commit.snapshot } : {}),
-      },
-      { onConflict: "project_id,sha", ignoreDuplicates: false },
-    )
+    .insert({
+      project_id: projectId,
+      sha: commit.sha,
+      message: commit.message,
+      author: commit.author,
+      ...(commit.snapshot ? { snapshot: commit.snapshot } : {}),
+    })
     .select("sha, message, author, created_at")
     .maybeSingle();
 
-  if (error) {
+  if (!error) {
+    // RLS refused the insert: the project is not this caller's to write history for.
+    if (!data) throw new ApiError("not_found", "That project does not exist.");
+    return rowToCommit(data as CommitRow);
+  }
+
+  // 23505, unique_violation on (project_id, sha): this commit is already mirrored. That is
+  // the idempotency this function promises — a publish retry and a second identical save
+  // both land here — so read back what is already recorded rather than failing.
+  if (error.code !== "23505") {
     throw new ApiError("internal", "Could not record the commit.", error.message);
   }
-  // RLS refused the insert: the project is not this caller's to write history for.
-  if (!data) throw new ApiError("not_found", "That project does not exist.");
 
-  return rowToCommit(data as CommitRow);
+  const { data: existing, error: readError } = await supabase
+    .from("commits")
+    .select("sha, message, author, created_at")
+    .eq("project_id", projectId)
+    .eq("sha", commit.sha)
+    .maybeSingle();
+
+  if (readError) {
+    throw new ApiError("internal", "Could not record the commit.", readError.message);
+  }
+  if (!existing) throw new ApiError("not_found", "That project does not exist.");
+
+  return rowToCommit(existing as CommitRow);
 }
 
 /**

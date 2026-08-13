@@ -123,10 +123,14 @@ async function main() {
     sourceTemplateId: design.id as string,
   }).catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
+    // ApiError carries the database's own words in `detail`. Without them a failure here
+    // reads as "Could not record the commit." and says nothing about why.
+    const detail = (error as { detail?: string })?.detail;
+
     if (/paid for/i.test(message)) {
       bail("the first design in the catalogue is a paid one", "seed a free design, or grant this user pro");
     }
-    bail("createProject failed", message);
+    bail("createProject failed", detail ? `${message} — ${detail}` : message);
   });
 
   const projectId = forked.id;

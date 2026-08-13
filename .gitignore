@@ -45,3 +45,9 @@ evals/results/*
 client_secret_*.json
 
 .claude/
+
+e2e/.results/
+e2e/.report/
+playwright-report/
+test-results/
+backup-*.sql

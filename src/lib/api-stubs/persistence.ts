@@ -47,7 +47,6 @@ const STUB_COMMITS: Commit[] = [
     },
 ];
 
-
 const STUB_CONTENT: Record<string, unknown> = {
     hero: { headline: "Coffee worth walking for.", subhead: "Slow-roasted beans, bread baked at dawn." },
     site: { name: "Kettle & Co.", footer: "Built with PageCraft." },

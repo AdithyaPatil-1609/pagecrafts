@@ -1,5 +1,4 @@
 'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AssetKind, ContentSchema, Field, SiteMeta } from '@/lib/contracts';
 import { applyContentToFiles } from '@/lib/content/to-files';

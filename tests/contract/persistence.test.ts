@@ -581,7 +581,7 @@ describe("POST /projects/{projectId}/commits", () => {
             project_files: rows([{ path: "index.html", content: TREE["index.html"] }]),
             commits: ((): TableResponder => {
                 return (query) =>
-                    query.op === "upsert"
+                    query.op === "insert"
                         ? { data: { sha: "a".repeat(40), message: "m", author: "user", created_at: NOW }, error: null }
                         : { data: existing, error: null };
             })(),
@@ -607,7 +607,7 @@ describe("POST /projects/{projectId}/commits", () => {
 
         await POST(post({ message: "Save the hero" }), params as never);
 
-        const written = fake.queries.find((q) => q.table === "commits" && q.op === "upsert");
+        const written = fake.queries.find((q) => q.table === "commits" && q.op === "insert");
         expect((written?.payload as { snapshot: unknown }).snapshot).toEqual(TREE);
     });
 
@@ -661,7 +661,7 @@ describe("POST /projects/{projectId}/restore", () => {
         return {
             projects: row({ id: PROJECT_ID, updated_at: NOW }),
             commits: (query) => {
-                if (query.op === "upsert") {
+                if (query.op === "insert") {
                     return { data: { sha: "a".repeat(40), message: "m", author: "system", created_at: NOW }, error: null };
                 }
                 reads += 1;

@@ -25,7 +25,10 @@
     "deploy:leakcheck": "tsx --env-file=.env.local --conditions=react-server scripts/check-credential-leak.ts",
     "pay:check": "tsx --env-file=.env.local scripts/razorpay-check.ts",
     "verify:loop": "tsx --env-file=.env.local scripts/verify-core-loop.ts",
-    "db:drift": "tsx --env-file=.env.local scripts/db-drift.ts"
+    "db:drift": "tsx --env-file=.env.local scripts/db-drift.ts",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -68,7 +71,8 @@
     "tsx": "^4.23.9",
     "typescript": "^5",
     "vitest": "^4.1.10",
-    "wrangler": "^4.120.0"
+    "wrangler": "^4.120.0",
+    "@playwright/test": "^1.50.0"
   },
   "allowScripts": {}
 }

@@ -847,6 +847,8 @@ components:
               # The project's own copy, taken at fork (R3 D7). The content panel is
               # generated from this and nothing else (C-07), so it travels with the project
               # rather than being fetched from a template that may since have been retired.
+              # A generated project with no template gets an empty schema ({ sections: [] }),
+              # never null — see rowToDetail in src/lib/data/projects.ts.
               $ref: '#/components/schemas/ContentSchema'
             siteMeta:
               $ref: '#/components/schemas/SiteMeta'
