@@ -1,0 +1,16 @@
+export {
+    AboutSection,
+    CompositionView,
+    ContactSection,
+    FaqSection,
+    FooterSection,
+    GallerySection,
+    HeroSection,
+    MenuSection,
+    REGISTERED_TYPES,
+    SECTION_COMPONENTS,
+    ServicesSection,
+    TeamSection,
+    TestimonialsSection,
+    registeredComponent,
+} from './catalog';

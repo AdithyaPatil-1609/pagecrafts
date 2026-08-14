@@ -1,12 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { ArtDirection } from '@/lib/contracts';
 import { artDirectionCss } from './art-direction';
-
-const DIR = join(process.cwd(), 'src/lib/render');
-
-const motionCss = readFileSync(join(DIR, 'motion.css'), 'utf8');
-const motionJs = readFileSync(join(DIR, 'motion.js'), 'utf8');
+import { motionCss, motionJs } from './motion-assets';
 
 export interface ShellOptions {
     title: string;
