@@ -131,6 +131,7 @@ describe('failure path', () => {
 
         const cfg: ProviderConfig = {
             apiKey: 'k',
+            apiKeys: ['k'],
             models: { fast: 'f', strong: 's' },
             baseUrl: 'https://api.example.test/v1',
             quota: { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000, rpdHeadroomPct: 15, maxRequestTokens: 10 },

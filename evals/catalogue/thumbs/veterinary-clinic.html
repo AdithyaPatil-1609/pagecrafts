@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock business</title>
+<meta name="description" content="a website for a veterinary clinic">
+<script>document.documentElement.classList.remove('no-js')</script>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #111111;
+  --muted: #6b6b6b;
+  --accent: #111111;
+  --accent-ink: #ffffff;
+  --panel: #f5f5f5;
+  --rule: #dcdcdc;
+
+  --display-font: ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
+  --display-weight: 700;
+  --display-tracking: -0.02em;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --border-width: 1px;
+
+  --section-gap: 5rem;
+  --stack-gap: 1.5rem;
+  --measure: 68ch;
+
+  --image-filter: saturate(1.05) contrast(1.02);
+  --image-overlay: transparent;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+h1, h2, h3 {
+  font-family: var(--display-font);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  line-height: 1.15;
+  margin: 0 0 0.5em;
+}
+
+p { max-width: var(--measure); }
+a { color: inherit; }
+
+section { padding-block: var(--section-gap); }
+
+img {
+  max-width: 100%;
+  height: auto;
+  filter: var(--image-filter);
+  border-radius: var(--radius-md);
+}
+:root {
+  --motion-distance: 12px;
+  --motion-duration: 700ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-stagger: 60ms;
+  --motion-scale-from: 1;
+  --motion-blur-from: 0px;
+}
+
+[data-motion="none"] {
+  --motion-distance: 0px;
+  --motion-duration: 1ms;
+  --motion-stagger: 0ms;
+}
+
+[data-motion="whisper"] {
+  --motion-distance: 6px;
+  --motion-duration: 500ms;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-stagger: 40ms;
+}
+
+[data-motion="calm"] {
+  --motion-distance: 12px;
+  --motion-duration: 700ms;
+  --motion-stagger: 60ms;
+}
+
+[data-motion="editorial"] {
+  --motion-distance: 20px;
+  --motion-duration: 800ms;
+  --motion-stagger: 120ms;
+}
+
+[data-motion="kinetic"] {
+  --motion-distance: 28px;
+  --motion-duration: 400ms;
+  --motion-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-stagger: 80ms;
+  --motion-scale-from: 0.96;
+}
+
+[data-motion="showcase"] {
+  --motion-distance: 40px;
+  --motion-duration: 900ms;
+  --motion-stagger: 100ms;
+  --motion-blur-from: 6px;
+}
+
+[data-animate] {
+  opacity: 0;
+  transform: translateY(var(--motion-distance)) scale(var(--motion-scale-from));
+  filter: blur(var(--motion-blur-from));
+  transition:
+    opacity var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease),
+    filter var(--motion-duration) var(--motion-ease);
+  transition-delay: calc(var(--motion-stagger) * var(--i, 0));
+  will-change: opacity, transform;
+}
+
+[data-animate].in-view {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.no-js [data-animate] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-animate] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+</style>
+</head>
+<body data-motion="calm">
+<style>main { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; } .hero { display: grid; gap: var(--stack-gap); align-items: center; } .hero.split-image, .hero.media-split, .about.media-split, .contact.split-map { grid-template-columns: 1fr 1fr; } .hero.centred, .hero.minimal { text-align: center; justify-items: center; } .hero.image-bg { position: relative; min-height: 22rem; } .kicker { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; } .cta { display: inline-block; margin-top: 1rem; padding: 0.7rem 1.2rem; background: var(--accent); color: var(--accent-ink); border-radius: var(--radius-md); text-decoration: none; font-weight: 600; } .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--stack-gap); } .card, .quote, .faq-item, .menu-item, .person { background: var(--panel); border: var(--border-width) solid var(--rule); border-radius: var(--radius-md); padding: 1.25rem; } .ph { display: grid; place-items: center; min-height: 12rem; margin: 0; background: var(--panel); color: var(--muted); border-radius: var(--radius-md); border: var(--border-width) solid var(--rule); font-size: 0.85rem; text-align: center; padding: 1rem; } .footer { border-top: var(--border-width) solid var(--rule); color: var(--muted); } @media (max-width: 720px) { .hero.split-image, .hero.media-split, .about.media-split, .contact.split-map { grid-template-columns: 1fr; } }</style>
+<main>
+<section class="hero split-image" data-section="hero" data-index="0"><div><p class="kicker">Sample eyebrow</p><h1>Sample heading</h1><p>Sample subheading written by the mock gateway.</p><a class="cta" href="#contact">Sample button label</a></div><figure class="ph" aria-label="Office interior"><span>office interior</span></figure></section>
+<section class="services cards" data-section="services" data-index="1"><h2>Sample heading</h2><div class="grid"><article class="card"><h3>Sample title</h3><p>Sample description written by the mock gateway.</p></article></div></section>
+<section class="team grid" data-section="team" data-index="2"><h2>Sample heading</h2><div class="grid"><article class="person"><h3>Sample name</h3><p class="kicker">Sample role</p><p>Sample bio written by the mock gateway.</p></article></div></section>
+<section class="faq accordion" data-section="faq" data-index="3"><h2>Sample heading</h2><details class="faq-item"><summary>Sample question</summary><p>Sample answer written by the mock gateway.</p></details></section>
+<section class="contact split-map" data-section="contact" data-index="4"><h2>Sample heading</h2><p>Sample intro written by the mock gateway.</p><p>Sample address</p><p>Sample phone</p><p>Sample email</p><p>Sample opening hours</p></section>
+<section class="footer simple" data-section="footer" data-index="5"><p>Sample tagline</p></section>
+</main>
+<script>
+(function () {
+  document.documentElement.classList.remove('no-js');
+
+  const items = document.querySelectorAll('[data-animate]');
+  if (!items.length) return;
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(function (el) { el.classList.add('in-view'); });
+    return;
+  }
+
+  const io = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('in-view');
+        io.unobserve(entry.target);
+      });
+    },
+    { rootMargin: '0px 0px -12% 0px', threshold: 0.1 }
+  );
+
+  items.forEach(function (el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>

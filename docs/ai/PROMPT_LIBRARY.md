@@ -13,8 +13,8 @@ to change what a prompt asks for, add a version rather than editing one.
 |---|---|---|
 | classify | `classify.v1.md` | `AI_PROMPT_CLASSIFY` |
 | profile | `profile.v1.md` | `AI_PROMPT_PROFILE` |
-| plan | `plan.v1.md` | `AI_PROMPT_PLAN` |
-| fill-section | `fill-section.v1.md` | `AI_PROMPT_FILL` |
+| plan | `plan.v3.md` | `AI_PROMPT_PLAN` |
+| fill-section | `fill-section.v3.md` | `AI_PROMPT_FILL` |
 | edit | `edit.v1.md` | `AI_PROMPT_EDIT` |
 
 Switching a stage to another version is a config change, so an A/B is a
@@ -30,10 +30,12 @@ AI_PROMPT_PLAN=plan.v2 AI_PROMPT_FILL=fill-section.v2 npm run grade -- --label=v
 |---|---|---|---|---|---|
 | `classify.v1.md` ← | classify | v1 | fast | `363031886f11` | free text → category, vertical, tone, palette, sections |
 | `edit.v1.md` ← | edit | v1 | strong | `20f46ad7214a` | one section + instruction → changed fields |
-| `fill-section.v1.md` ← | fill-section | v1 | strong | `5418e9b0cf10` | one section → typed content fields |
+| `fill-section.v1.md` | fill-section | v1 | strong | `5418e9b0cf10` | one section → typed content fields |
 | `fill-section.v2.md` | fill-section | v2 | strong | `890073b7b30a` | one section → typed content fields |
-| `plan.v1.md` ← | plan | v1 | strong | `d67841ff84fd` | recipe + description → ordered sections with layout variants |
+| `fill-section.v3.md` ← | fill-section | v3 | strong | `bff0375a48dc` | one section → typed content fields |
+| `plan.v1.md` | plan | v1 | strong | `d67841ff84fd` | recipe + description → ordered sections with layout variants |
 | `plan.v2.md` | plan | v2 | strong | `938aa19e682b` | recipe + description → ordered sections with layout variants |
+| `plan.v3.md` ← | plan | v3 | strong | `41df361da65b` | recipe + description → ordered sections with layout variants |
 | `profile.v1.md` ← | profile | v1 | strong | `4bfa7d530f1c` | vertical → section recipe, art direction, vocabulary |
 
 ## Variables
@@ -49,8 +51,10 @@ prompt. A placeholder that is neither is a typo, and a test fails on it.
 | `edit.v1.md` | — | `content`, `instruction`, `sectionKey`, `variant` |
 | `fill-section.v1.md` | — | `brief`, `customerWord`, `fields`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
 | `fill-section.v2.md` | — | `brief`, `customerWord`, `fields`, `guidance`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
+| `fill-section.v3.md` | — | `brief`, `customerWord`, `fields`, `guidance`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
 | `plan.v1.md` | `sectionKeys`, `variantMenu` | `prompt`, `recipe`, `tone`, `vertical` |
 | `plan.v2.md` | `sectionKeys`, `variantMenu` | `prompt`, `recipe`, `tone`, `vertical` |
+| `plan.v3.md` | `sectionKeys`, `variantMenu` | `prompt`, `recipe`, `tone`, `vertical` |
 | `profile.v1.md` | `imagery`, `motions`, `radii`, `sectionKeys`, `spacings`, `themes` | `vertical` |
 
 ### Registry lists, and where they come from
@@ -72,16 +76,16 @@ the general rules in the prompt body and nothing more.
 
 | Section | File | Digest | First line |
 |---|---|---|---|
-| hero | `guidance/hero.md` | `eed1428e11b1` | A hero has seconds. Say what the business is and where, in the first line. |
-| about | `guidance/about.md` | `dd63ab925109` | Say who runs this and how long they have been doing it. Concrete beats warm. |
-| services | `guidance/services.md` | `fa69d5a29488` | One item per thing the business actually does, named the way the business names |
+| hero | `guidance/hero.md` | `5512ab42ab96` | A hero has seconds. Say what the business is and where, in the first line. |
+| about | `guidance/about.md` | `041022022785` | Say who runs this and how long they have been doing it. Concrete beats warm. |
+| services | `guidance/services.md` | `d3e2f632cc4b` | One item per thing the business actually does, named the way the business names |
 | menu | `guidance/menu.md` | `e84f3e70195e` | Real dishes with the names the kitchen uses. Regional names stay in their own |
 | gallery | `guidance/gallery.md` | `f9b2d753eb51` | Each image is a photo search, not a caption. |
-| team | `guidance/team.md` | `a20aa045b542` | Only name people the description names. If it does not name anyone, write roles |
-| testimonials | `guidance/testimonials.md` | `4b988a8b19a8` | These are quotes attributed to real customers, so they carry a risk the other |
+| team | `guidance/team.md` | `f424f945cacd` | Only name people the description names. If it does not name anyone, write roles |
+| testimonials | `guidance/testimonials.md` | `726d7d789280` | These are quotes attributed to real customers, so they carry a risk the other |
 | faq | `guidance/faq.md` | `b4c72d825a72` | Write questions a real customer would ask, in their words — cost, waiting time, |
-| contact | `guidance/contact.md` | `1c93673f32db` | This section is where a visitor acts, so nothing here may be invented. A wrong |
-| footer | `guidance/footer.md` | `48d97faa97e4` | One short line. The business name and what it is, or the place it serves. |
+| contact | `guidance/contact.md` | `52999cc01e34` | This section is where a visitor acts, so nothing here may be invented. A wrong |
+| footer | `guidance/footer.md` | `f5001076790e` | One short line. The business name and what it is, or the place it serves. |
 
 ## Containment
 
@@ -101,6 +105,83 @@ missed in the sixth.
 
 `edit.v1` also carries the containment paragraph inline. That is now belt
 and braces rather than the only copy, and a test still asserts its wording.
+
+## Section content contracts
+
+The fill stage is typed against these, not against free-form HTML. A field
+rename here is a schema change; the prompt lists the keys so the model and
+the contract cannot drift. Optional facts (phone, email, address, hours) may
+be empty — dummy placeholders are scrubbed, not published.
+
+| Section | Variants | Fields |
+|---|---|---|
+| hero | centred, split-image, image-bg, minimal | `eyebrow` (text), `heading` (text), `sub` (richtext), `ctaLabel` (text), `image` (image) |
+| about | text, media-split | `heading` (text), `body` (richtext), `image` (image) |
+| services | cards, grid, timeline | `heading` (text), `items` (list) |
+| menu | grouped, simple | `heading` (text), `items` (list) |
+| gallery | masonry, grid, carousel | `heading` (text), `images` (list) |
+| team | cards, grid | `heading` (text), `members` (list) |
+| testimonials | quotes, cards | `heading` (text), `items` (list) |
+| faq | accordion, two-column | `heading` (text), `items` (list) |
+| contact | split-map, simple, form | `heading` (text), `blurb` (richtext), `address?` (text), `phone?` (text), `email?` (text), `hours?` (text) |
+| footer | simple, columns | `tagline` (text) |
+
+## Art-direction dial vocabulary
+
+Five dials, chosen by the profile (constrained by classified tone) and
+applied at render as CSS custom properties. D14 wired them; D16 keeps a
+rolling sample from collapsing onto one look.
+
+### Themes (8)
+
+| Id | Label |
+|---|---|
+| `clinical-blue` | Clinical blue |
+| `warm-editorial` | Warm editorial |
+| `deep-luxury` | Deep luxury |
+| `vivid-energy` | Vivid energy |
+| `calm-sage` | Calm sage |
+| `mono-precision` | Mono precision |
+| `sunlit-craft` | Sunlit craft |
+| `tech-slate` | Tech slate |
+
+### Motion
+
+`none`, `whisper`, `calm`, `editorial`, `kinetic`, `showcase`
+
+### Radius / spacing / imagery
+
+| Radius | `sharp`, `soft`, `pill`, `organic`, `framed` |
+| Spacing | `tight`, `default`, `airy` |
+| Imagery | `bright-clean`, `warm-natural`, `bold-contrast`, `muted-duotone`, `documentary` |
+
+### Tone constraints
+
+Classified tone does not pin a single theme. It *constrains* the allowed
+set; the profile look stays when it already fits (the D11 48% collapse
+was `formal` → `clinical-blue` / `whisper`).
+
+| Tone | Themes | Motions |
+|---|---|---|
+| playful | vivid-energy, sunlit-craft, calm-sage | kinetic, showcase |
+| formal | clinical-blue, mono-precision, tech-slate, deep-luxury | whisper, calm, none |
+| minimal | mono-precision, calm-sage, tech-slate, clinical-blue | calm, whisper, none |
+| bold | deep-luxury, vivid-energy, sunlit-craft | showcase, kinetic, editorial |
+| warm | warm-editorial, sunlit-craft, calm-sage | editorial, calm, whisper |
+
+## Day-19 freeze
+
+A process freeze, not a code dump of the product. Frozen:
+
+- **v1 prompt files** — hash-pinned in `tests/unit/ai-templates.test.ts`.
+  Every eval on record was produced by those bytes. Add a version; do not
+  edit v1.
+- **Section content contract field names** — a rename is a schema change.
+- **Art-direction dial ids** — `THEME_IDS`, `MOTION_IDS`, `RADIUS_IDS`,
+  `SPACING_IDS`, `IMAGERY_IDS`.
+
+Not frozen: v3 prompts (switched via `AI_PROMPT_PLAN` / `AI_PROMPT_FILL`),
+the catalogue, or the rest of the product.
 
 ## Rules
 

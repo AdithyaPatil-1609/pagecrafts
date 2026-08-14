@@ -11,7 +11,7 @@ export interface AssembleInput {
     props: Map<string, SectionProps>;
     title: string;
     description: string;
-    /** Classified tone; overrides the profile's theme/motion when set (FR-047). */
+    /** Classified tone; constrains theme/motion when the profile look does not fit (FR-047). */
     tone?: Tone;
 }
 

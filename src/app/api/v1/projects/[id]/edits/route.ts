@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
 import { proposeEdit } from '@/lib/ai/edit/propose';
+import { recordEditOp } from '@/lib/ai/cost/edit-ops';
 import { storeFor, nextEditId } from '@/lib/ai/edit/store';
 import { createCommit } from '@/lib/data/commits';
 import { SECTION_KEYS, type SectionInstance } from '@/lib/contracts';
@@ -49,6 +50,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         } as SectionInstance;
 
         const { data } = await proposeEdit(section, body.instruction);
+        recordEditOp('provider', 'propose');
         const stored = await storeFor(supabase).put({
             ...data,
             id: nextEditId(),

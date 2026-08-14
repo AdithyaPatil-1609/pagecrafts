@@ -176,7 +176,7 @@ describe('plan (M3.3 stage one)', () => {
             sections: [{ type: 'hero', variant: 'centred', brief: 'x' }],
         })));
         const { usage } = await plan('x', intent, profile);
-        expect(usage.promptVersion).toBe('plan.v1');
+        expect(usage.promptVersion).toBe('plan.v3');
     });
 
     // A dispatched-but-failed call still cost tokens; usage rides on the error.

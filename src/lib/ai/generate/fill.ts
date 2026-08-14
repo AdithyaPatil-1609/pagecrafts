@@ -3,7 +3,7 @@ import { aiConfig } from '../config';
 import { loadTemplate, render } from '../harness/templates';
 import { guidanceFor } from '../harness/guidance';
 import { stripFences, sanitiseDeep, containsHtmlTag } from '../sanitise';
-import { contractFor } from '../sections/contracts';
+import { contractFor, scrubOptionalFields } from '../sections/contracts';
 import { contain } from '../containment/envelope';
 import type { SectionInstance, SectionProps, AiResult } from '@/lib/contracts';
 
@@ -113,6 +113,10 @@ export async function fillSection(
                 }
             }
         }
+    }
+
+    if (clean && typeof clean === 'object') {
+        scrubOptionalFields(clean as Record<string, unknown>, contract.fields);
     }
 
     const parsed = contract.fill.safeParse(clean);

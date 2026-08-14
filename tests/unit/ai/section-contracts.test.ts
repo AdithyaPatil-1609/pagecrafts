@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SECTION_CONTRACTS, contractFor, variantsFor } from '@/lib/ai/sections/contracts';
+import { SECTION_CONTRACTS, contractFor, variantsFor, isDummyFact, scrubOptionalFields } from '@/lib/ai/sections/contracts';
 import { SECTION_KEYS, type SectionKey } from '@/lib/contracts';
 
 const FROZEN_FIELD_TYPES = ['text', 'richtext', 'image', 'color', 'select', 'list'];
@@ -79,6 +79,50 @@ describe('section contracts', () => {
     it('requires at least one list item', () => {
         expect(contractFor('services').fill.safeParse({ heading: 'h', items: [] }).success)
             .toBe(false);
+    });
+
+    it('accepts empty contact facts — a missing phone is not a blank page', () => {
+        const out = contractFor('contact').fill.safeParse({
+            heading: 'Find us',
+            blurb: 'Call if you have the number.',
+            address: '',
+            phone: '',
+            email: '',
+            hours: '',
+        });
+        expect(out.success).toBe(true);
+    });
+
+    it('still rejects an empty contact heading', () => {
+        expect(contractFor('contact').fill.safeParse({
+            heading: '',
+            blurb: 'Hi',
+            address: '',
+            phone: '',
+            email: '',
+            hours: '',
+        }).success).toBe(false);
+    });
+
+    it('scrubs dummy contact labels to empty', () => {
+        const fields = contractFor('contact').fields;
+        const props = scrubOptionalFields({
+            heading: 'Find us',
+            blurb: 'Visit.',
+            address: 'Office address',
+            phone: '+91-XXXXXXXXXX',
+            email: 'Not listed',
+            hours: 'pending',
+        }, fields);
+        expect(props.address).toBe('');
+        expect(props.phone).toBe('');
+        expect(props.email).toBe('');
+        expect(props.hours).toBe('');
+        expect(props.heading).toBe('Find us');
+        expect(isDummyFact('Not provided')).toBe(true);
+        expect(isDummyFact('Add phone number here')).toBe(true);
+        expect(isDummyFact('Add email address here')).toBe(true);
+        expect(isDummyFact('080 1234')).toBe(false);
     });
 
     it("variantsFor returns only that type's variants", () => {

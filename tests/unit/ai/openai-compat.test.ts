@@ -1,18 +1,20 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { OpenAICompatGateway, retryAfterMs } from '@/lib/ai/gateway/openai-compat';
+import { OpenAICompatGateway, retryAfterMs, resetKeyPool } from '@/lib/ai/gateway/openai-compat';
 import { setBackoffClock } from '@/lib/ai/gateway/backoff';
 import { resetAiConfig, type ProviderConfig } from '@/lib/ai/config';
 import type { CompleteRequest } from '@/lib/ai/gateway/provider';
 import { classifySchema } from '@/lib/ai/gateway/response-schemas';
 
 function cfg(overrides: Partial<ProviderConfig> = {}): ProviderConfig {
+    const apiKey = overrides.apiKey ?? 'k';
     return {
-        apiKey: 'k',
         models: { fast: 'fast-model', strong: 'strong-model' },
         baseUrl: 'https://api.example.test/v1',
         quota: { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000, rpdHeadroomPct: 15, maxRequestTokens: 8000 },
         pricing: { inPerMTokCents: 0, outPerMTokCents: 0 },
         ...overrides,
+        apiKey,
+        apiKeys: overrides.apiKeys ?? (apiKey ? [apiKey] : []),
     };
 }
 
@@ -36,6 +38,7 @@ const req = (over: Partial<CompleteRequest> = {}): CompleteRequest => ({
 
 afterEach(() => {
     setBackoffClock(null);
+    resetKeyPool();
     vi.restoreAllMocks();
 });
 
@@ -162,6 +165,95 @@ describe('OpenAICompatGateway', () => {
         await expect(new OpenAICompatGateway('groq', cfg()).complete(req()))
             .rejects.toMatchObject({ code: 'rate_limited', retryable: true });
         expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('round-robins Authorization across Groq keys', async () => {
+        const fetchMock = okFetch();
+        vi.stubGlobal('fetch', fetchMock);
+        const gw = new OpenAICompatGateway('groq', cfg({
+            apiKey: 'k1',
+            apiKeys: ['k1', 'k2', 'k3'],
+        }));
+
+        await gw.complete(req());
+        await gw.complete(req());
+        await gw.complete(req());
+        await gw.complete(req());
+
+        const used = fetchMock.mock.calls.map((c) =>
+            (c[1] as RequestInit).headers as Record<string, string>);
+        expect(used.map((h) => h.authorization)).toEqual([
+            'Bearer k1', 'Bearer k2', 'Bearer k3', 'Bearer k1',
+        ]);
+    });
+
+    it('rotates to the next Groq key on 429 without waiting', async () => {
+        const sleep = vi.fn(async () => {});
+        setBackoffClock({ sleep, jitter: () => 0 });
+        const limited = new Response('slow down', { status: 429, headers: { 'retry-after': '30' } });
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(limited)
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const reply = await new OpenAICompatGateway('groq', cfg({
+            apiKeys: ['k1', 'k2'],
+        })).complete(req());
+
+        expect(reply.provider).toBe('groq');
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const second = (fetchMock.mock.calls[1][1] as RequestInit).headers as Record<string, string>;
+        expect(second.authorization).toBe('Bearer k2');
+        expect(sleep).not.toHaveBeenCalled();
+    });
+
+    it('skips a Groq key that hit the daily token cap', async () => {
+        const tpd = new Response(
+            JSON.stringify({ error: { message: 'Used 200000 / Limit 200000', type: 'tokens' } }),
+            { status: 429 },
+        );
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(tpd)
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }))
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const gw = new OpenAICompatGateway('groq', cfg({ apiKeys: ['spent', 'live'] }));
+        await gw.complete(req());
+        await gw.complete(req());
+
+        const used = fetchMock.mock.calls.map((c) =>
+            ((c[1] as RequestInit).headers as Record<string, string>).authorization);
+        expect(used).toEqual(['Bearer spent', 'Bearer live', 'Bearer live']);
+    });
+
+    it('does not treat a per-minute token 429 as a spent daily cap', async () => {
+        const tpm = new Response(
+            JSON.stringify({
+                error: { message: 'Rate limit reached. Limit 8000 TPM, Used 8000', type: 'tokens' },
+            }),
+            { status: 429 },
+        );
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(tpm)
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }))
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }))
+            .mockResolvedValueOnce(new Response(JSON.stringify(okBody), { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const gw = new OpenAICompatGateway('groq', cfg({ apiKeys: ['a', 'b'] }));
+        await gw.complete(req());
+        await gw.complete(req());
+        await gw.complete(req());
+
+        const used = fetchMock.mock.calls.map((c) =>
+            ((c[1] as RequestInit).headers as Record<string, string>).authorization);
+        // Call 1: a TPM-429s, rotate to b. Call 2: round-robin lands on b.
+        // Call 3: lands on a again — it was not marked daily-spent.
+        expect(used).toEqual(['Bearer a', 'Bearer b', 'Bearer b', 'Bearer a']);
     });
 
     it('maps HTTP 401 to a non-retryable unauthorized error', async () => {

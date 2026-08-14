@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-    validateComposition, motionSpanMs, motionsByCost, MOTION_BUDGET_MS,
+    validateComposition, checkAndRecord, motionSpanMs, motionsByCost, MOTION_BUDGET_MS,
 } from '@/lib/ai/composition/validate';
+import {
+    pickDiverseLook, memoryDiversityStore, THEME_SHARE_MAX, MOTION_SHARE_MAX,
+    type Look,
+} from '@/lib/ai/composition/diversity';
+import { TONE_THEMES, TONE_MOTIONS } from '@/lib/ai/art-direction/tone-map';
 import { motionTokens } from '@/lib/render/motion-tokens';
 import {
     SCHEMA_VERSION, MOTION_IDS,
@@ -186,8 +191,10 @@ describe('diversity — the per-composition half of R-NEW-C', () => {
 
     it('notices art direction that contradicts itself', () => {
         const mismatched = page(2, { themeId: 'vivid-energy', motionId: 'none' });
-        expect(validateComposition(mismatched).findings.some((f) => f.rule === 'motion-mismatch'))
-            .toBe(true);
+        const result = validateComposition(mismatched);
+        expect(result.findings.some((f) => f.rule === 'motion-mismatch')).toBe(true);
+        expect(result.composition.artDirection.motionId).not.toBe('none');
+        expect(result.findings.find((f) => f.rule === 'motion-mismatch')?.severity).toBe('repaired');
     });
 
     it('reports findings without rejecting the page', () => {
@@ -197,10 +204,40 @@ describe('diversity — the per-composition half of R-NEW-C', () => {
             section('s_02', 'team', 'cards'),
             section('s_03', 'testimonials', 'cards'),
         ]);
-        // A warn is a note for the eval, not a reason to fail a user's generation.
         const result = validateComposition(monotone);
         expect(result.composition.sections).toHaveLength(4);
-        expect(result.repaired).toBe(false);
+        expect(result.repaired).toBe(true);
+        expect(result.composition.artDirection.themeId).toBe('clinical-blue');
+    });
+
+    it('repairs variant monotony rather than only warning', () => {
+        const monotone = composition([
+            section('s_00', 'hero', 'centred'),
+            section('s_01', 'services', 'cards'),
+            section('s_02', 'team', 'cards'),
+            section('s_03', 'testimonials', 'cards'),
+        ]);
+        const result = validateComposition(monotone);
+        const finding = result.findings.find((f) => f.rule === 'variant-monotony');
+        expect(finding?.severity).toBe('repaired');
+        const middle = result.composition.sections.filter(
+            (s) => s.type !== 'hero' && s.type !== 'footer',
+        );
+        expect(new Set(middle.map((s) => s.variant)).size).toBeGreaterThan(1);
+    });
+
+    it('repairs an adjacent variant repeat', () => {
+        const repeat = composition([
+            section('s_00', 'hero', 'centred'),
+            section('s_01', 'services', 'cards'),
+            section('s_02', 'team', 'cards'),
+            section('s_03', 'faq', 'accordion'),
+        ]);
+        const result = validateComposition(repeat);
+        const finding = result.findings.find((f) => f.rule === 'variant-repeat');
+        expect(finding?.severity).toBe('repaired');
+        expect(result.composition.sections[1].variant)
+            .not.toBe(result.composition.sections[2].variant);
     });
 });
 
@@ -242,5 +279,97 @@ describe('motion ranking — derived, because it is not fixed', () => {
             const span = motionSpanMs(tokens[id], 14);
             if (span <= MOTION_BUDGET_MS) expect(chosenSpan).toBeGreaterThanOrEqual(span);
         }
+    });
+});
+
+describe('corpus diversity — rolling sample, repaired not refused', () => {
+    const look = (themeId: Look['themeId'] = 'clinical-blue', motionId: Look['motionId'] = 'whisper'): Look =>
+        ({ themeId, motionId });
+
+    const recentOf = (n: number, theme: Look['themeId'] = 'clinical-blue'): Look[] =>
+        Array.from({ length: n }, () => look(theme, 'whisper'));
+
+    it('does not restyle the first page of a run — 1/1 is not a collapse', () => {
+        const art = { ...ART, themeId: 'clinical-blue' as const, motionId: 'whisper' as const };
+        const picked = pickDiverseLook(art, 'formal', []);
+        expect(picked.themeRepaired).toBe(false);
+        expect(picked.motionRepaired).toBe(false);
+        expect(picked.art.themeId).toBe('clinical-blue');
+    });
+
+    it('repairs a theme that would push the rolling window over 30%', () => {
+        const art = { ...ART, themeId: 'clinical-blue' as const, motionId: 'whisper' as const };
+        const picked = pickDiverseLook(art, 'formal', recentOf(20));
+        expect(picked.themeRepaired).toBe(true);
+        expect(picked.art.themeId).not.toBe('clinical-blue');
+        expect(picked.themeDetail).toContain('clinical-blue');
+    });
+
+    it('stays inside the tone allow-list when it restyles', () => {
+        const art = { ...ART, themeId: 'clinical-blue' as const, motionId: 'whisper' as const };
+        const picked = pickDiverseLook(art, 'formal', recentOf(20));
+        expect(TONE_THEMES.formal).toContain(picked.art.themeId);
+        expect(TONE_MOTIONS.formal).toContain(picked.art.motionId);
+        expect(picked.art.themeId).not.toBe('vivid-energy');
+    });
+
+    it('repairs a motion that would push the rolling window over 40%', () => {
+        const art = { ...ART, themeId: 'mono-precision' as const, motionId: 'whisper' as const };
+        const recent = Array.from({ length: 20 }, () => look('mono-precision', 'whisper'));
+        const picked = pickDiverseLook(art, 'formal', recent);
+        expect(picked.motionRepaired).toBe(true);
+        expect(picked.art.motionId).not.toBe('whisper');
+        expect(TONE_MOTIONS.formal).toContain(picked.art.motionId);
+    });
+
+    it('does not fail the composition — the job still ships a page', () => {
+        const result = validateComposition(
+            page(3, { themeId: 'clinical-blue', motionId: 'whisper' }),
+            { recent: recentOf(20), tone: 'formal' },
+        );
+        expect(result.composition.sections.length).toBeGreaterThan(0);
+        expect(result.findings.some((f) => f.rule === 'theme-share' && f.severity === 'repaired'))
+            .toBe(true);
+    });
+
+    it('records the look that actually shipped, so the next page sees the repair', () => {
+        const store = memoryDiversityStore();
+        const first = checkAndRecord(
+            page(3, { themeId: 'clinical-blue', motionId: 'whisper' }),
+            { store, tone: 'formal' },
+        );
+        expect(first.composition.artDirection.themeId).toBe('clinical-blue');
+
+        const second = checkAndRecord(
+            page(3, { themeId: 'clinical-blue', motionId: 'whisper' }),
+            { store, tone: 'formal' },
+        );
+        expect(second.composition.artDirection.themeId).not.toBe('clinical-blue');
+        expect(store.recent()).toHaveLength(2);
+        expect(store.recent()[1].themeId).toBe(second.composition.artDirection.themeId);
+    });
+
+    it('keeps a 50-site window under the same caps the grader uses', () => {
+        const store = memoryDiversityStore();
+        for (let i = 0; i < 50; i += 1) {
+            checkAndRecord(
+                page(3, { themeId: 'clinical-blue', motionId: 'whisper' }),
+                { store, tone: 'formal' },
+            );
+        }
+        const recent = store.recent();
+        expect(recent).toHaveLength(50);
+
+        const themes = recent.reduce<Record<string, number>>((acc, l) => {
+            acc[l.themeId] = (acc[l.themeId] ?? 0) + 1;
+            return acc;
+        }, {});
+        const motions = recent.reduce<Record<string, number>>((acc, l) => {
+            acc[l.motionId] = (acc[l.motionId] ?? 0) + 1;
+            return acc;
+        }, {});
+        const n = recent.length;
+        expect(Math.max(...Object.values(themes)) / n).toBeLessThanOrEqual(THEME_SHARE_MAX + 1e-9);
+        expect(Math.max(...Object.values(motions)) / n).toBeLessThanOrEqual(MOTION_SHARE_MAX + 1e-9);
     });
 });

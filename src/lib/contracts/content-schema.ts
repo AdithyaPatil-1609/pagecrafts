@@ -7,6 +7,8 @@ export interface Field {
   options?: string[];
   itemSchema?: Field[];
   maxLength?: number;
+  /** Empty is legal. Used for facts the description may not give (phone, email). */
+  optional?: boolean;
 }
 
 export interface ContentSection {

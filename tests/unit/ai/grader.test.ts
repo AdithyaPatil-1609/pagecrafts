@@ -208,6 +208,23 @@ describe('grader — blank fields', () => {
         })]);
         expect(blankFieldsIn(bad)).toContain('s_01.image');
     });
+
+    it('does not treat an empty contact phone as a blank page', () => {
+        const page = composition([
+            section('s_01', 'hero', 'split-image', HERO_PROPS),
+            section('s_02', 'services', 'cards', SERVICES_PROPS),
+            section('s_03', 'contact', 'simple', {
+                heading: 'Find us',
+                blurb: 'We will add a number.',
+                address: '',
+                phone: '',
+                email: '',
+                hours: '',
+            }),
+        ]);
+        expect(blankFieldsIn(page)).toEqual([]);
+        expect(grade(ITEM, ok(page)).passed).toBe(true);
+    });
 });
 
 // ── diversity ──────────────────────────────────────────────────────────────

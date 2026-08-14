@@ -1,5 +1,6 @@
 import type { Provider } from '../config';
 import type { GenerationStatus } from './ledger';
+import { editShare as measureEditShare, type EditOpRecord, type EditShare } from './edit-ops';
 
 /**
  * D17 — the cost dashboard, and D20's "cost-per-user is a known number".
@@ -82,6 +83,15 @@ export interface CostDashboard {
     wastedCents: number;
 
     /**
+     * Spend attributed to each user id. The D20 number is the mean; this is
+     * the query that produces it, so a single user's cost is also answerable.
+     */
+    byUser: Record<string, Slice>;
+
+    /** D17 — share of edit ops that never called a provider. */
+    editOps: EditShare;
+
+    /**
      * Providers that burned tokens and were priced at nothing.
      *
      * On a free tier that is the truth. After billing is enabled it means the
@@ -103,7 +113,10 @@ function generationKey(row: GenerationRow): string {
     return `${row.userId ?? 'anon'}:${row.createdAt.slice(0, 16)}`;
 }
 
-export function buildDashboard(rows: GenerationRow[]): CostDashboard {
+export function buildDashboard(
+    rows: GenerationRow[],
+    edits: readonly EditOpRecord[] = [],
+): CostDashboard {
     const total = rows.reduce(add, EMPTY());
 
     const users = new Set(rows.map((r) => r.userId).filter((id): id is string => Boolean(id)));
@@ -145,6 +158,8 @@ export function buildDashboard(rows: GenerationRow[]): CostDashboard {
         failureRate: rows.length ? total.failed / rows.length : 0,
         wastedCents,
         unpricedProviders,
+        byUser: groupBy(attributed, (r) => r.userId as string),
+        editOps: measureEditShare(edits),
     };
 }
 
@@ -203,6 +218,16 @@ export function reconcile(
 
 const rupees = (cents: number) => `₹${(cents / 100).toFixed(2)}`;
 
+function editShareLabel(share: EditShare): string {
+    if (share.share === null) return '— (no edit ops recorded)';
+    return `${(share.share * 100).toFixed(0)}% (${share.zeroRequest}/${share.total})`;
+}
+
+/** Attributed spend for one user. The D20 query, not a made-up rupee figure. */
+export function costForUser(rows: GenerationRow[], userId: string): number {
+    return round(rows.filter((r) => r.userId === userId).reduce((s, r) => s + r.costCents, 0));
+}
+
 function sliceTable(title: string, slices: Record<string, Slice>): string[] {
     const rows = Object.entries(slices).sort((a, b) => b[1].costCents - a[1].costCents);
     if (rows.length === 0) return [];
@@ -234,6 +259,7 @@ export function renderDashboard(d: CostDashboard): string {
         `| Failure rate | ${(d.failureRate * 100).toFixed(1)}% |`,
         `| Spend on failed calls | ${rupees(d.wastedCents)} |`,
         `| Unattributed calls | ${d.unattributedCalls} |`,
+        `| Zero-request edit share | ${editShareLabel(d.editOps)} |`,
         ...(d.unpricedProviders.length ? [
             '',
             `> **Unpriced, not free.** ${d.unpricedProviders.join(', ')} spent tokens at a rate`
@@ -242,6 +268,7 @@ export function renderDashboard(d: CostDashboard): string {
             + ' stay at zero while looking finished.',
         ] : []),
         ...sliceTable('By provider', d.byProvider),
+        ...sliceTable('By user', d.byUser),
         ...sliceTable('By stage', d.byStage),
         ...sliceTable('By model', d.byModel),
         ...sliceTable('By prompt version', d.byPromptVersion),

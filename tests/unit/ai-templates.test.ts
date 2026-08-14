@@ -107,6 +107,17 @@ describe('prompt versions — v1 is frozen, v2 sits alongside', () => {
         expect(listTemplates()).toContain('fill-section.v2.md');
     });
 
+    it('ships v3 driven by the D11 taxonomy, not by taste', () => {
+        expect(listTemplates()).toContain('plan.v3.md');
+        expect(listTemplates()).toContain('fill-section.v3.md');
+        expect(loadTemplate('plan.v3').system).toMatch(/drop testimonials, team or faq/i);
+        expect(loadTemplate('plan.v3').system).toMatch(/The page does the verb/i);
+        expect(loadTemplate('plan.v3').system).toMatch(/resume-writing/i);
+        expect(loadTemplate('fill-section.v3').system).toMatch(/empty optional field is correct/i);
+        expect(loadTemplate('fill-section.v3').system).toMatch(/Never "Add/i);
+        expect(loadTemplate('fill-section.v3').system).not.toMatch(/Add a customer quote here/);
+    });
+
     it('keeps the containment paragraph out of nothing — v2 fill still forbids HTML', () => {
         expect(loadTemplate('fill-section.v2').system).toMatch(/never write HTML/i);
     });

@@ -5,6 +5,7 @@ import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
 import { artDirection, sectionInstance } from '@/lib/contracts/schemas/ai';
 import { applyOps, PatchError, type CompositionOp } from '@/lib/ai/composition/patch';
+import { recordEditOp } from '@/lib/ai/cost/edit-ops';
 import { MigrationError, parseStoredComposition } from '@/lib/ai/composition/migrate';
 import { getProjectFile } from '@/lib/data/project-files';
 
@@ -71,6 +72,7 @@ export const PATCH = withRoute<z.infer<typeof schema>, Params>({
     handler: async ({ body }) => {
         try {
             const composition = applyOps(migrated(body.composition), body.ops as CompositionOp[]);
+            for (const op of body.ops) recordEditOp('zero-request', op.op);
             return ok({ composition });
         } catch (err) {
             if (err instanceof PatchError) {

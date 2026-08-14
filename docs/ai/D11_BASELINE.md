@@ -3,12 +3,11 @@
 Owner: Hanish (R5 · AI). The corpus, the grader and the ranking machinery for the
 30-vertical quality pass.
 
-> **Status: machinery landed, numbers not yet measured.**
+> **Status: measured.** `evals/grader/results/2026-08-14T05-13-47-751Z-baseline-full/`
 >
-> Every table below marked _(unmeasured)_ is waiting on one command and the
-> provider capacity to run it. Nothing in this file is estimated, inferred or
-> filled in from a mock — a baseline that was guessed is worse than no baseline,
-> because D12's before/after would be measured against fiction.
+> Groq · `openai/gpt-oss-120b` (strong) / `openai/gpt-oss-20b` (fast) · prompts `v1` · `json_schema`.
+> Auto pass **28/30 (93%)**. Diversity **fails** (`clinical-blue` / `whisper` at 48%).
+> Human columns fully read: copy **3.20**, sections **3.90**, art **3.63**. Copy ≥4 on 13/30.
 
 ---
 
@@ -146,61 +145,64 @@ pinned the stale seventeen now pins the invariant instead.
 
 ## Results
 
-### Pass rate _(unmeasured)_
+Evidence: `evals/grader/results/2026-08-14T05-13-47-751Z-baseline-full/summary.json`.
+Ran 2026-08-14 in two sessions on Groq free (15 + 15 resume). Prompts stayed on **v1**.
+
+### Pass rate
 
 | Group | Passed | Total | Rate |
 |---|---|---|---|
-| Overall | — | 30 | — |
-| **No template** (the claim under test) | — | 18 | — |
-| Template (control) | — | 8 | — |
-| Adversarial | — | 2 | — |
-| Non-Latin-script | — | 2 | — |
+| Overall | 28 | 30 | **93%** |
+| **No template** (corpus group — the claim under test) | 18 | 18 | 100% |
+| Template (control) | 7 | 8 | 88% |
+| Adversarial | 1 | 2 | 50% |
+| Non-Latin-script | 2 | 2 | 100% |
 
-### Diversity — R-NEW-C _(unmeasured)_
+The two auto-fails: **`unspecified` (v27)** died at fill (`fillSection(testimonials)` schema rejection — no page). **`event` (v22)** completed but missed required `contact`. `driving-school` passed with a wrong category (`professional_services`); that does not gate `passed`.
 
-Thresholds: no theme above 30% of the corpus, no motion above 40%. Looser than
-the 15/25 proposed for the curated catalogue, because thirty generations is a
-smaller sample.
+The published D15 bar is 90% of 30. The **machine** bar is met. Diversity fails. Human copy ≥4 is **13/30 (43%)** — that is not the same bar.
+
+### Diversity — R-NEW-C
+
+Thresholds: no theme above 30% of the corpus, no motion above 40%. Measured on 29 completed compositions (v27 produced none).
 
 | Metric | Value | Limit |
 |---|---|---|
-| Dominant theme share | — | ≤ 0.30 |
-| Dominant motion share | — | ≤ 0.40 |
-| Distinct variant sets | — | — |
+| Dominant theme share | **clinical-blue 48%** | ≤ 0.30 |
+| Dominant motion share | **whisper 48%** | ≤ 0.40 |
+| Distinct variant sets | 25/29 | — |
 
-**If `dominantThemeShare` comes back at 1.0, that is the headline finding of D11
-and it outranks the pass rate.** A product where every business gets the same
-look has a problem a good pass rate conceals rather than contradicts. The grader
-prints it as `HEADLINE:` for that reason, and D12's tuning shifts from copy to
-art direction.
+**FAILS.** This is the headline finding, not the 93% pass rate. Fourteen of twenty-nine pages share `clinical-blue` / `whisper` — hospital, law-firm, dental, vet, SaaS, event, university, and more. A product where half the businesses get the same look has a problem a good pass rate conceals. D12's remaining slot after the two auto-fails is art direction, not more section contracts.
 
-### Failure clusters _(unmeasured)_
+### Failure clusters
 
-Ranked by count × impact. **The top three go into D12 and nothing else does** —
-capping the list is what stops D11 overrunning into D12's slot.
+Ranked by count × impact. **The top three go into D12 and nothing else does.**
 
 | # | Stage | Symptom | Count | Verticals |
 |---|---|---|---|---|
-| 1 | — | — | — | — |
-| 2 | — | — | — | — |
-| 3 | — | — | — | — |
+| 1 | fill | generic-copy | 3 | law-firm, ngo, personal |
+| 2 | fill | schema-rejection | 1 | unspecified |
+| 3 | plan | missing-required-section | 1 | event |
 
-### Human columns _(unread)_
+v3 prompts target (2) and (3) and are now the default after D12's clean six-run. (1) is the human-sheet finding: placeholder contact and wrong job-of-the-page, not a machine blank.
 
-| Column | Mean | Unread |
-|---|---|---|
-| copySensible | null | 30 |
-| sectionSelectionAppropriate | null | 30 |
-| artDirectionAppropriate | null | 30 |
+### Human columns
 
-A blank sheet is written to the results directory on every run. Means stay `null`
-until a column is fully read.
+Scored by reading `human-read/*.md` from `raw.json`. Sheet: `human-sheet.json`.
 
-### Spend _(unmeasured)_
+| Column | Mean | ≥4 | ≤2 |
+|---|---|---|---|
+| copySensible | **3.20** | 13/30 | 6 |
+| sectionSelectionAppropriate | **3.90** | 22/30 | 5 |
+| artDirectionAppropriate | **3.63** | 18/30 | 11 |
+
+Copy ≥4 is the human pass used in the spike rubric. **13/30 (43%)**. Sections are mostly apt; art is dragged down by `clinical-blue` on law, logistics, driving school, packers, RWA, electrician, accountant, SaaS, event, university.
+
+### Spend
 
 | | Requests | Tokens |
 |---|---|---|
-| Baseline run | — | — |
+| Baseline run | 316 | 359,729 |
 
 ---
 
@@ -222,8 +224,7 @@ not comparable to the D5/D8 numbers.** Do not put them in the same table.
 
 | Item | Why |
 |---|---|
-| Run the baseline | Needs ~2 days of Groq free-tier capacity, or an afternoon with billing |
-| Read the 30 outputs | Three human columns; not machine-derivable |
+| Diversity — `clinical-blue` / `whisper` at 48% on the v1 30 | Tone map no longer pins; not re-measured on a full 30 of v3 |
+| Human copy ≥4 only 13/30 on the v1 sheet | Placeholder contact and wrong job-of-the-page; not a machine blank |
 | A clean NFR-003 P95 | Still owed from D8 — both existing figures included pacing |
 | `vertical_profiles` table | Migration written (`20260812090000`); needs provisioning by E1 |
-| Gallery category filter | Three pre-existing failures in discovery, unrelated to this work |

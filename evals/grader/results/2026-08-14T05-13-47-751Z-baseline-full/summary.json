@@ -1,0 +1,133 @@
+{
+  "summary": {
+    "overall": {
+      "passed": 28,
+      "total": 30,
+      "rate": 0.9333333333333333
+    },
+    "noTemplate": {
+      "passed": 19,
+      "total": 20,
+      "rate": 0.95
+    },
+    "withTemplate": {
+      "passed": 9,
+      "total": 10,
+      "rate": 0.9
+    },
+    "byGroup": {
+      "no-template": {
+        "passed": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "template": {
+        "passed": 7,
+        "total": 8,
+        "rate": 0.875
+      },
+      "adversarial": {
+        "passed": 1,
+        "total": 2,
+        "rate": 0.5
+      },
+      "non-english": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1
+      }
+    },
+    "completedButFailed": 1,
+    "fallbackUsed": 0,
+    "categoryCorrect": 28,
+    "totalRequests": 316,
+    "totalTokens": 359729
+  },
+  "diversity": {
+    "themes": {
+      "clinical-blue": 14,
+      "warm-editorial": 8,
+      "mono-precision": 6,
+      "deep-luxury": 1
+    },
+    "motions": {
+      "whisper": 14,
+      "editorial": 8,
+      "calm": 6,
+      "showcase": 1
+    },
+    "variantSets": 25,
+    "dominantTheme": "clinical-blue",
+    "dominantMotion": "whisper",
+    "dominantThemeShare": 0.4827586206896552,
+    "dominantMotionShare": 0.4827586206896552,
+    "passes": false,
+    "notes": [
+      "theme \"clinical-blue\" is 48% of the corpus (limit 30%)",
+      "motion \"whisper\" is 48% of the corpus (limit 40%)"
+    ]
+  },
+  "clusters": [
+    {
+      "stage": "fill",
+      "symptom": "generic-copy",
+      "count": 3,
+      "verticals": [
+        "law-firm",
+        "ngo",
+        "personal"
+      ],
+      "exampleOutput": "Contact is literal placeholders (Office address / Phone number). Years of practice contradict. clinical-blue on a law firm reads as a clinic.",
+      "score": 9
+    },
+    {
+      "stage": "fill",
+      "symptom": "schema-rejection",
+      "count": 1,
+      "verticals": [
+        "unspecified"
+      ],
+      "exampleOutput": "fillSection(testimonials): model output failed validation",
+      "score": 4
+    },
+    {
+      "stage": "plan",
+      "symptom": "missing-required-section",
+      "count": 1,
+      "verticals": [
+        "event"
+      ],
+      "exampleOutput": "expected contact; planned hero, about, services, gallery, team, testimonials, faq",
+      "score": 4
+    },
+    {
+      "stage": "classify",
+      "symptom": "wrong-category",
+      "count": 1,
+      "verticals": [
+        "driving-school"
+      ],
+      "exampleOutput": "got \"professional_services\"",
+      "score": 1
+    }
+  ],
+  "stages": [
+    {
+      "stage": "fill",
+      "failures": 1
+    }
+  ],
+  "human": {
+    "copySensible": 3.2,
+    "sectionSelectionAppropriate": 3.9,
+    "artDirectionAppropriate": 3.6333333333333333,
+    "unread": {
+      "copySensible": 0,
+      "sectionSelectionAppropriate": 0,
+      "artDirectionAppropriate": 0
+    },
+    "complete": true
+  },
+  "mode": "full",
+  "ranAt": "2026-08-14T06:43:08.518Z"
+}

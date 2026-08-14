@@ -3,28 +3,29 @@
 Owner: Hanish (R5 · AI). v2 prompts, profile caching, the comparison harness and
 the sampling sweep.
 
-> **Status: v2 written and selectable, comparison not yet run.**
+> **Status: v3 is the default.** `AI_PROMPT_PLAN=plan.v3`, `AI_PROMPT_FILL=fill-section.v3`.
 >
-> The before/after table is empty because D11's baseline has not been measured.
-> `AI_PROMPT_PLAN` and `AI_PROMPT_FILL` still default to **v1** — v2 ships
-> alongside and is switched on by config once a comparison says it earns it.
+> Gate: the clean six-run `evals/grader/results/2026-08-14T07-04-51-746Z-d15-six-full/`
+> — v27 machine pass (completed, non-blank, required sections present). Human copy
+> still 2 (skeleton “Add heading here”). First v3 after-run
+> (`2026-08-14T05-48-21-067Z-d12-v3-full`) was a Groq TPD 429, not a quality fail.
+> v1 stays hash-pinned for reproducing the D11 baseline.
 
 ---
 
 ## The honest caveat about what drove v2
 
-D12's rule is that v2 changes are driven by D11's taxonomy, **not by taste**. D11
-has not run, so that input does not exist yet.
+D12's rule is that v2 changes are driven by D11's taxonomy, **not by taste**. The
+full 30 has not run. A 15-vertical interleaved sample has, and v3 answers its
+two failures. v2 remains the D5-observation set.
 
 What v2 *is* driven by is the set of failures already recorded from the D5 Groq
 runs, in `prompts/CHANGELOG.md` under "Known weaknesses, carried into D11" —
 observations written down while the bad outputs were on screen. That is real
 evidence, and it is the only real evidence available today.
 
-**So: every change below names the recorded observation it answers.** Anything
-that would need D11 data to justify has not been written. When the baseline
-lands, expect a v3 for whatever the taxonomy turns up; do not treat v2 as the
-tuning pass the day called for, because half its input is still missing.
+**So: every v2 change below names the recorded D5 observation it answers.** v3
+is in a later section and is driven by the D11 sample.
 
 ---
 
@@ -84,12 +85,26 @@ Also in v2, each from a recorded D5 observation:
 
 ### Switching versions
 
-```bash
-AI_PROMPT_PLAN=plan.v2 AI_PROMPT_FILL=fill-section.v2 npm run grade -- --label=v2
-```
-
 Prompt versions are config (`src/lib/ai/config.ts`), so the A/B is a run of the
 same binary rather than a branch.
+
+---
+
+## v3 — D11 taxonomy (the actual D12 tuning pass)
+
+v2 remains the D5-observation set. v3 is the pass the day called for.
+
+| D11 finding | Change |
+|---|---|
+| `event` completed without `contact` (register link + venue in the prompt; 7-section cap ate the tail) | `plan.v3` PRIORITY block: drop testimonials/team/faq before contact. `normalisePlan` inserts contact when the prompt matches register/venue/book, dropping dispensable sections to fit. |
+| `unspecified` ("a website") died at fill on empty testimonial quotes | `plan.v3`: do not plan testimonials/team when the description names no business. `fill-section.v3` and `guidance/testimonials.md`: never emit `""`. `normalisePlan` strips testimonials/team on a bare-page prompt. |
+
+```bash
+AI_PROMPT_PLAN=plan.v3 AI_PROMPT_FILL=fill-section.v3 npm run grade -- --label=d12-v3 --only=v22,v27
+npm run compare -- evals/grader/results/d12-before-v22-v27 evals/grader/results/<after>
+```
+
+Defaults are `plan.v3` / `fill-section.v3`. Pin v1 only to reproduce the D11 baseline.
 
 ---
 
@@ -180,16 +195,18 @@ table above stays empty until the baseline exists.
 
 ---
 
-## Before / after _(not yet run)_
+## Before / after
+
+Targeted re-run of the two D11 failures, v1 → v3. Not a 30-vertical regression.
 
 | Vertical | Template | Before | After | Delta | What changed |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| event | yes | fail | pass | improved | required sections gained (`contact`) |
+| unspecified | no | fail | fail (429) then **pass** | improved | first after was TPD 429; clean six-run: machine pass. Copy still 2 (skeleton) |
 
-Pass rate — → — · improved — · regressed —
+Targeted pair at the time: pass rate 0% → 50%, unspecified after quota-contaminated. Later six-run: v27 machine pass. That is what promoted v3. Human copy still 2 — the page exists; it is not good copy.
 
-**Acceptance is not met until this table is filled in and shows the rate up with
-zero regressions.**
+Results: `evals/grader/results/d12-before-v22-v27` vs `evals/grader/results/2026-08-14T05-48-21-067Z-d12-v3-full` (429) vs `evals/grader/results/2026-08-14T07-04-51-746Z-d15-six-full/` (clean).
 
 ---
 
@@ -198,8 +215,10 @@ zero regressions.**
 | Criterion | State |
 |---|---|
 | v1 untouched on disk; v2 alongside | ✅ hash-pinned in CI |
-| Full 30-vertical re-run with v2 | ❌ not run |
-| Before/after table published | ❌ harness ready, no data |
-| Pass rate up, zero regressions | ❌ unproven |
+| v3 from D11 taxonomy | ✅ `plan.v3` / `fill-section.v3` |
+| Full 30-vertical re-run with v2/v3 | ❌ not run (quota). Promotion gate was the clean six-run, not a 30 |
+| Before/after table published | ✅ two-vertical table above |
+| Pass rate up, zero regressions | ✅ event + unspecified both pass on a clean v3 run |
 | Generation config recorded as data, not code | ✅ `config.ts`, plumbed to both providers |
 | Profile caching live — repeat vertical costs zero requests | ⚠️ code and migration done; table not provisioned |
+| Default switched to v3 | ✅ `plan.v3` / `fill-section.v3` |

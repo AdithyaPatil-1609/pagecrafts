@@ -3,7 +3,7 @@ import { cachedProfile as fetchProfile } from '../profile-cache';
 import { plan } from '../generate/plan';
 import { fillSection } from '../generate/fill';
 import { assemble } from '../generate/assemble';
-import { validateComposition } from '../composition/validate';
+import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
 import { CostLedger, type LedgerRow } from '../cost/ledger';
@@ -122,11 +122,11 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             tone: intent.data.tone,
         });
 
-        // D16: motion budget and diversity, checked on the page about to be
-        // shown rather than on a corpus afterwards. A motion repair changes the
-        // art direction; a diversity finding is recorded and nothing more, since
-        // a samey page is still a page and refusing to ship it helps nobody.
-        const checked = validateComposition(assembled);
+        // D16: motion budget and diversity, repaired on the page about to be
+        // shown rather than scored on a corpus afterwards. A samey page is
+        // still a page — we restyle it; we never fail the job for looking
+        // like its neighbours.
+        const checked = checkAndRecord(assembled, { tone: intent.data.tone });
         const composition = checked.composition;
 
         if (checked.findings.length) {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     buildDashboard, reconcile, renderDashboard, renderReconciliation,
-    RECONCILE_TOLERANCE_PCT, type GenerationRow,
+    RECONCILE_TOLERANCE_PCT, costForUser, type GenerationRow,
 } from '@/lib/ai/cost/dashboard';
 
 const row = (over: Partial<GenerationRow> = {}): GenerationRow => ({
@@ -208,5 +208,43 @@ describe('rendering', () => {
 
     it('does not pretend to reconcile without an invoice', () => {
         expect(renderReconciliation([])).toContain('No invoice supplied');
+    });
+});
+
+describe('zero-request edit share — D17', () => {
+    it('is null when no edit ops have been recorded — not 0%', () => {
+        const d = buildDashboard([row()]);
+        expect(d.editOps.share).toBeNull();
+        expect(renderDashboard(d)).toContain('no edit ops recorded');
+    });
+
+    it('reports the proportion of edits that never called a provider', () => {
+        const d = buildDashboard([row()], [
+            { kind: 'zero-request', op: 'reorder', at: '2026-08-14T10:00:00.000Z' },
+            { kind: 'zero-request', op: 'hide', at: '2026-08-14T10:00:01.000Z' },
+            { kind: 'zero-request', op: 'restyle', at: '2026-08-14T10:00:02.000Z' },
+            { kind: 'provider', op: 'propose', at: '2026-08-14T10:00:03.000Z' },
+        ]);
+
+        expect(d.editOps.total).toBe(4);
+        expect(d.editOps.zeroRequest).toBe(3);
+        expect(d.editOps.share).toBe(0.75);
+        expect(renderDashboard(d)).toContain('75% (3/4)');
+    });
+});
+
+describe('cost for one user — D20 query', () => {
+    it('answers what one user cost, not only the mean', () => {
+        const rows = [
+            row({ userId: 'u1', costCents: 4 }),
+            row({ userId: 'u1', costCents: 6 }),
+            row({ userId: 'u2', costCents: 100 }),
+        ];
+        const d = buildDashboard(rows);
+
+        expect(d.byUser.u1.costCents).toBe(10);
+        expect(d.byUser.u2.costCents).toBe(100);
+        expect(costForUser(rows, 'u1')).toBe(10);
+        expect(costForUser(rows, 'nobody')).toBe(0);
     });
 });

@@ -12,6 +12,12 @@ describe('buildGateway / chainFor', () => {
         expect(buildGateway(cfg)).not.toBeInstanceOf(FallbackGateway);
     });
 
+    it('D1: only GROQ_API_KEYS set — groq is still configured', () => {
+        const cfg = loadAiConfig({ GROQ_API_KEYS: 'g1,g2' });
+        expect(chainFor(cfg).map((g) => g.name)).toEqual(['groq']);
+        expect(buildGateway(cfg)).not.toBeInstanceOf(FallbackGateway);
+    });
+
     it('wraps two configured providers in a FallbackGateway, in order', () => {
         const cfg = loadAiConfig({ GROQ_API_KEY: 'g', GEMINI_API_KEY: 'x' });
         expect(chainFor(cfg).map((g) => g.name)).toEqual(['groq', 'gemini']);

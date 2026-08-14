@@ -23,7 +23,148 @@ export interface NormalisedPlan {
 const KNOWN_TYPES = new Set<string>(SECTION_KEYS);
 const isSectionKey = (t: string): t is SectionKey => KNOWN_TYPES.has(t);
 
-export function normalisePlan(sections: PlannedSection[]): NormalisedPlan {
+/** Social-proof and extras — drop these before contact when the page is full. */
+const DISPENSABLE: readonly SectionKey[] = [
+    'testimonials', 'team', 'faq', 'gallery', 'menu',
+];
+
+/**
+ * D11 v22: "register link" / venue still produced a 7-section page with no
+ * contact, because ORDER puts contact last and the cap slices the tail.
+ */
+const CONTACT_HINT =
+    /\b(register|sign[- ]?up|book|booking|venue|address|phone|email|whatsapp|contact|reach|rsvp)\b/i;
+
+/**
+ * D11 v27: the prompt was "a website". The plan still spent a slot on
+ * testimonials, then fill emitted empty quotes and died at validation.
+ */
+const BARE_PAGE = /^(a |the )?(website|site|page|webpage)\.?$/i;
+
+/** "just the posts and an about" — extras the library likes to add anyway. */
+const SCOPED_ASK =
+    /\b(just|only|nothing (else|flashy)|keep it minimal)\b/i;
+
+const WRITING_ASK = /\b(posts?|articles?|writing|blog)\b/i;
+
+/**
+ * D15 v23: "personal site for myself, what i do where i have worked" was
+ * planned as a resume-writing shop with priced packages. First-person about
+ * a person is not a client-services business.
+ */
+const PERSONAL_SITE =
+    /\b(personal site|for myself|what i do\b.{0,40}\bwhere i( have|'ve)? worked)\b/i;
+const RESUME_SHOP =
+    /\b(resume.?writ|cv.?writ|resume service|for (clients|customers)|career coach)\b/i;
+
+const ABOUT_ME = /\b(a bit about me|about me)\b/i;
+const DONATE_ASK = /\b(donat|volunteer)/i;
+
+const PERSONAL_EXTRAS: readonly SectionKey[] = [
+    'testimonials', 'team', 'gallery', 'faq', 'menu',
+];
+const BARE_EXTRAS: readonly SectionKey[] = [
+    'testimonials', 'team', 'gallery', 'faq', 'menu', 'services',
+];
+
+const WRITING_BRIEF =
+    'recent posts about the topics in the description, with real titles and one-line descriptions — never "Add a post title here"';
+const PERSONAL_WORK_BRIEF =
+    'roles and places they have worked — a timeline of their jobs, not resume packages, not prices, not a service sold to clients';
+const PERSONAL_HERO_BRIEF =
+    'first person: what this person does and where they have worked — never a resume-writing shop, never "Your Name", never packages for clients';
+const PERSONAL_ABOUT_BRIEF =
+    'first person, their own work history in a few sentences. Not a mission to help clients. Do not invent employers or years';
+const BARE_HERO_BRIEF =
+    'a short generic site in real sentences — heading names the page, never "Add heading here" or "Your Name"';
+const TEAM_BRIEF =
+    'job titles this practice needs, one role per row — never "Attorney Name" or a dummy name; years of practice only if the description gives a number';
+const ABOUT_ME_BRIEF =
+    'first person about the person who asked — training, why they started, how they teach. Not "our studio"';
+
+export interface NormalisePlanOptions {
+    prompt?: string;
+    required?: readonly SectionKey[];
+}
+
+export function needsContact(prompt: string): boolean {
+    return CONTACT_HINT.test(prompt);
+}
+
+export function isUnderspecified(prompt: string): boolean {
+    const t = prompt.trim();
+    return t.length < 24 || BARE_PAGE.test(t);
+}
+
+export function isBarePage(prompt: string): boolean {
+    return BARE_PAGE.test(prompt.trim());
+}
+
+/** A page about the writer, not a shop that sells that work to clients. */
+export function isPersonalSite(prompt: string): boolean {
+    return PERSONAL_SITE.test(prompt) && !RESUME_SHOP.test(prompt);
+}
+
+export function wantsFirstPersonAbout(prompt: string): boolean {
+    return isPersonalSite(prompt) || ABOUT_ME.test(prompt);
+}
+
+function rewriteBriefs(
+    sections: NormalisedSection[],
+    prompt: string,
+    repairs: string[],
+): void {
+    const personal = isPersonalSite(prompt);
+    const bare = isBarePage(prompt);
+    const firstPerson = wantsFirstPersonAbout(prompt);
+    const writing = WRITING_ASK.test(prompt);
+    const donate = DONATE_ASK.test(prompt);
+
+    for (const s of sections) {
+        const before = s.brief;
+
+        if (personal) {
+            if (s.type === 'hero') s.brief = PERSONAL_HERO_BRIEF;
+            else if (s.type === 'about') s.brief = PERSONAL_ABOUT_BRIEF;
+            else if (s.type === 'services') {
+                const timeline = variantsFor('services').find((v) => v === 'timeline');
+                if (timeline) s.variant = timeline;
+                s.brief = PERSONAL_WORK_BRIEF;
+            } else if (s.type === 'contact') {
+                s.brief = 'how to reach this person; leave phone, email, address and hours empty unless the description gives them';
+            } else if (s.type === 'footer') {
+                s.brief = 'one line about this person, not a business selling to clients';
+            }
+        } else if (bare) {
+            if (s.type === 'hero') s.brief = BARE_HERO_BRIEF;
+            else if (s.type === 'about') {
+                s.brief = 'three honest sentences about a simple website; do not invent a company, a history, or a mission';
+            } else if (s.type === 'contact') {
+                s.brief = 'how to get in touch; phone, email, address and hours stay empty';
+            } else if (s.type === 'footer') {
+                s.brief = 'one real sentence about this page, not "trusted partner"';
+            } else if (s.type === 'services') {
+                s.brief = 'two or three generic things a simple site might list, in real words, never "Add a title here"';
+            }
+        } else {
+            if (firstPerson && s.type === 'about') s.brief = ABOUT_ME_BRIEF;
+            if (writing && s.type === 'services') s.brief = WRITING_BRIEF;
+            if (donate && s.type === 'hero' && !/\b(donat|volunteer)/i.test(s.brief)) {
+                s.brief = `${s.brief.replace(/\s*\.?\s*$/, '')} — primary CTA is Donate or Volunteer, not Enroll`;
+            }
+            if (s.type === 'team') s.brief = TEAM_BRIEF;
+        }
+
+        if (s.brief !== before) {
+            repairs.push(`rewrote ${s.type} brief — copy must match the job in the description`);
+        }
+    }
+}
+
+export function normalisePlan(
+    sections: PlannedSection[],
+    opts: NormalisePlanOptions = {},
+): NormalisedPlan {
     const repairs: string[] = [];
 
     const valid: NormalisedSection[] = [];
@@ -44,12 +185,100 @@ export function normalisePlan(sections: PlannedSection[]): NormalisedPlan {
     const hero = valid.find((s) => s.type === 'hero');
     const footer = valid.find((s) => s.type === 'footer');
 
-    const middle = valid
+    let middle = valid
         .filter((s) => s.type !== 'hero' && s.type !== 'footer')
         .filter((s, i, arr) =>
             i === 0 || !(arr[i - 1].type === s.type && arr[i - 1].variant === s.variant));
 
     const reserved = (hero ? 1 : 0) + (footer ? 1 : 0);
+    const prompt = opts.prompt ?? '';
+    const wantContact = (opts.required ?? []).includes('contact')
+        || (prompt !== '' && needsContact(prompt));
+
+    if (prompt && isUnderspecified(prompt)) {
+        const drop = isBarePage(prompt) ? BARE_EXTRAS : (['testimonials', 'team'] as const);
+        const before = middle.length;
+        middle = middle.filter((s) => !(drop as readonly string[]).includes(s.type));
+        if (middle.length < before) {
+            repairs.push(isBarePage(prompt)
+                ? 'dropped extras — a bare "website" has nothing to catalogue or quote'
+                : 'dropped testimonials/team — description names no business to quote');
+        }
+    }
+
+    if (prompt && isPersonalSite(prompt)) {
+        const before = middle.length;
+        middle = middle.filter((s) => !PERSONAL_EXTRAS.includes(s.type));
+        if (middle.length < before) {
+            repairs.push('dropped extras — this is a page about the person, not a client-services shop');
+        }
+    }
+
+    if (prompt && SCOPED_ASK.test(prompt)) {
+        const before = middle.length;
+        middle = middle.filter((s) =>
+            s.type !== 'testimonials' && s.type !== 'faq' && s.type !== 'menu');
+        if (middle.length < before) {
+            repairs.push('dropped extras — description asked for a short page');
+        }
+    }
+
+    if (prompt && WRITING_ASK.test(prompt)
+        && !middle.some((s) => s.type === 'services' || s.type === 'menu')) {
+        const budget = MAX_SECTIONS - reserved - (wantContact ? 1 : 0);
+        if (middle.length < budget) {
+            middle.push({
+                type: 'services',
+                variant: 'cards',
+                brief: WRITING_BRIEF,
+            });
+            repairs.push('inserted services as posts — description asked for writing, not testimonials');
+        }
+    }
+
+    if (prompt && isPersonalSite(prompt)
+        && !middle.some((s) => s.type === 'services')) {
+        const budget = MAX_SECTIONS - reserved - (wantContact ? 1 : 0);
+        if (middle.length < budget) {
+            middle.push({
+                type: 'services',
+                variant: 'timeline',
+                brief: PERSONAL_WORK_BRIEF,
+            });
+            repairs.push('inserted services as work history — description asked what they have done, not a shop');
+        }
+    }
+
+    if (wantContact && !middle.some((s) => s.type === 'contact')) {
+        const budget = MAX_SECTIONS - reserved - 1;
+        while (middle.length > budget) {
+            let i = -1;
+            for (const type of DISPENSABLE) {
+                i = middle.findLastIndex((s) => s.type === type);
+                if (i >= 0) break;
+            }
+            if (i < 0) break;
+            repairs.push(`dropped ${middle[i].type} to keep contact`);
+            middle.splice(i, 1);
+        }
+        if (middle.length <= budget) {
+            const variant = variantsFor('contact')[0] ?? 'simple';
+            middle.push({
+                type: 'contact',
+                variant,
+                brief: 'how to register, reach, or find this place',
+            });
+            repairs.push('inserted contact — description asked how to reach or register');
+        }
+    }
+
+    if (prompt) {
+        rewriteBriefs(
+            [...(hero ? [hero] : []), ...middle, ...(footer ? [footer] : [])],
+            prompt,
+            repairs,
+        );
+    }
 
     const out = [
         ...(hero ? [hero] : []),

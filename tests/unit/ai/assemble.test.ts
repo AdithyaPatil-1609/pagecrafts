@@ -54,14 +54,27 @@ describe('assemble', () => {
         expect(c.artDirection.themeId).toBe('clinical-blue');
     });
 
-    it('lets classified tone override the profile theme (FR-047)', () => {
+    it('lets classified tone constrain an incompatible profile theme (FR-047)', () => {
         const c = assemble({
             ...input([section('s_01', 'hero')], new Map([['s_01', { a: 1 }]])),
             tone: 'bold',
         });
         expect(c.artDirection.themeId).toBe('deep-luxury');
-        expect(c.artDirection.motionId).toBe('showcase');
+        expect(['showcase', 'kinetic', 'editorial']).toContain(c.artDirection.motionId);
         expect(c.artDirection.radiusId).toBe('soft');
+    });
+
+    it('keeps a profile theme that already fits the classified tone', () => {
+        const c = assemble({
+            ...input([section('s_01', 'hero')], new Map([['s_01', { a: 1 }]])),
+            profile: {
+                ...profile,
+                artDirection: { ...profile.artDirection, themeId: 'tech-slate', motionId: 'calm' },
+            },
+            tone: 'formal',
+        });
+        expect(c.artDirection.themeId).toBe('tech-slate');
+        expect(c.artDirection.motionId).toBe('calm');
     });
 
     it('throws when a section has no content', () => {

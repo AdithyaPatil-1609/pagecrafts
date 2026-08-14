@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalisePlan, type NormalisedPlan } from '@/lib/ai/composition/rules';
+import { normalisePlan, isPersonalSite, wantsFirstPersonAbout, type NormalisedPlan } from '@/lib/ai/composition/rules';
 import { MAX_SECTIONS } from '@/lib/contracts';
 
 const show = (p: NormalisedPlan) => p.sections.map((s) => `${s.type}/${s.variant}`);
@@ -82,7 +82,152 @@ describe('normalisePlan', () => {
         expect(show(out)).toEqual(['about/text', 'contact/form']);
     });
 
-    it('returns an empty plan unchanged', () => {
-        expect(normalisePlan([])).toEqual({ sections: [], repairs: [] });
+    it('inserts contact and drops testimonials when the description asks to register (D11 v22)', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'split-image', brief: 'a' },
+            { type: 'about', variant: 'text', brief: 'b' },
+            { type: 'services', variant: 'cards', brief: 'c' },
+            { type: 'gallery', variant: 'masonry', brief: 'd' },
+            { type: 'team', variant: 'cards', brief: 'e' },
+            { type: 'testimonials', variant: 'quotes', brief: 'f' },
+            { type: 'faq', variant: 'accordion', brief: 'g' },
+        ], { prompt: 'two day design conference, venue and a register link' });
+
+        expect(out.sections.some((s) => s.type === 'contact')).toBe(true);
+        expect(out.sections).toHaveLength(MAX_SECTIONS);
+        expect(out.sections.some((s) => s.type === 'testimonials')).toBe(false);
+        expect(out.repairs.some((r) => /contact/i.test(r))).toBe(true);
+    });
+
+    it('drops testimonials for a bare "a website" prompt (D11 v27)', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'minimal', brief: 'a' },
+            { type: 'about', variant: 'text', brief: 'b' },
+            { type: 'services', variant: 'cards', brief: 'c' },
+            { type: 'testimonials', variant: 'quotes', brief: 'd' },
+            { type: 'contact', variant: 'simple', brief: 'e' },
+            { type: 'footer', variant: 'simple', brief: 'f' },
+        ], { prompt: 'a website' });
+
+        expect(out.sections.map((s) => s.type)).not.toContain('testimonials');
+        expect(out.sections.map((s) => s.type)).toContain('contact');
+    });
+
+    it('does not rewrite a full plan when the prompt has no contact hint', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'centred', brief: 'a' },
+            { type: 'about', variant: 'text', brief: 'b' },
+            { type: 'services', variant: 'cards', brief: 'c' },
+            { type: 'team', variant: 'grid', brief: 'd' },
+            { type: 'testimonials', variant: 'quotes', brief: 'e' },
+            { type: 'gallery', variant: 'masonry', brief: 'f' },
+            { type: 'footer', variant: 'columns', brief: 'g' },
+        ], { prompt: 'calm simple page for my yoga studio' });
+
+        expect(show(out)).toEqual([
+            'hero/centred', 'about/text', 'services/cards', 'team/grid',
+            'testimonials/quotes', 'gallery/masonry', 'footer/columns',
+        ]);
+    });
+
+    it('drops testimonials on a scoped "just the posts and an about" ask', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'minimal', brief: 'a' },
+            { type: 'about', variant: 'text', brief: 'b' },
+            { type: 'testimonials', variant: 'quotes', brief: 'c' },
+            { type: 'gallery', variant: 'grid', brief: 'd' },
+            { type: 'footer', variant: 'simple', brief: 'e' },
+        ], { prompt: 'personal blog, keep it minimal, just the posts and an about page' });
+
+        expect(out.sections.map((s) => s.type)).not.toContain('testimonials');
+        expect(out.sections.map((s) => s.type)).toContain('about');
+        expect(out.sections.map((s) => s.type)).toContain('services');
+        const posts = out.sections.find((s) => s.type === 'services');
+        expect(posts?.brief).toMatch(/never "Add a post title here"/i);
+    });
+
+    it('does not plan a resume-writing shop for a personal site about me (D15 v23)', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'centred', brief: 'Display name and a CTA to view the resume' },
+            { type: 'about', variant: 'text', brief: 'mission to help clients succeed' },
+            { type: 'services', variant: 'cards', brief: 'resume packages with pricing' },
+            { type: 'gallery', variant: 'grid', brief: 'stock photos of a person' },
+            { type: 'testimonials', variant: 'quotes', brief: 'client quotes' },
+            { type: 'contact', variant: 'form', brief: 'inquiries' },
+            { type: 'footer', variant: 'simple', brief: 'legal' },
+        ], { prompt: 'just a simple personal site for myself, what i do where i have worked and how to reach me, nothing flashy' });
+
+        const types = out.sections.map((s) => s.type);
+        expect(types).not.toContain('testimonials');
+        expect(types).not.toContain('gallery');
+        expect(types).toContain('about');
+        expect(types).toContain('contact');
+        const hero = out.sections.find((s) => s.type === 'hero');
+        const about = out.sections.find((s) => s.type === 'about');
+        const work = out.sections.find((s) => s.type === 'services');
+        expect(hero?.brief).toMatch(/first person/i);
+        expect(hero?.brief).toMatch(/never a resume-writing shop/i);
+        expect(about?.brief).toMatch(/first person/i);
+        expect(about?.brief).toMatch(/Not a mission to help clients/i);
+        expect(work?.brief).toMatch(/jobs/i);
+        expect(work?.brief).toMatch(/not resume packages/i);
+        expect(work?.variant).toBe('timeline');
+    });
+
+    it('does not treat a yoga studio with "about me" as a personal resume site', () => {
+        expect(isPersonalSite('calm simple page for my yoga studio, class timings, a bit about me and how to reach the place')).toBe(false);
+        expect(wantsFirstPersonAbout('calm simple page for my yoga studio, a bit about me')).toBe(true);
+
+        const out = normalisePlan([
+            { type: 'hero', variant: 'minimal', brief: 'a' },
+            { type: 'about', variant: 'text', brief: 'our studio story' },
+            { type: 'services', variant: 'cards', brief: 'classes' },
+            { type: 'contact', variant: 'simple', brief: 'find us' },
+            { type: 'footer', variant: 'simple', brief: 'd' },
+        ], { prompt: 'calm simple page for my yoga studio, class timings, a bit about me and how to reach the place' });
+
+        expect(out.sections.map((s) => s.type)).toContain('services');
+        expect(out.sections.find((s) => s.type === 'about')?.brief).toMatch(/first person/i);
+        expect(out.sections.find((s) => s.type === 'about')?.brief).toMatch(/not "our studio"/i);
+    });
+
+    it('rewrites a bare "a website" so fill cannot plan empty-quote testimonials or Add-heading briefs', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'minimal', brief: 'Show the brand name' },
+            { type: 'about', variant: 'text', brief: 'company history' },
+            { type: 'services', variant: 'cards', brief: 'products' },
+            { type: 'testimonials', variant: 'quotes', brief: 'reviews' },
+            { type: 'contact', variant: 'simple', brief: 'phone' },
+            { type: 'footer', variant: 'simple', brief: 'legal' },
+        ], { prompt: 'a website' });
+
+        const types = out.sections.map((s) => s.type);
+        expect(types).not.toContain('testimonials');
+        expect(types).not.toContain('services');
+        expect(types).toContain('contact');
+        expect(out.sections.find((s) => s.type === 'hero')?.brief).toMatch(/never "Add heading here"/i);
+        expect(out.sections.find((s) => s.type === 'about')?.brief).toMatch(/do not invent a company/i);
+    });
+
+    it('asks team for roles, not Attorney Name, when the prompt names nobody', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'centred', brief: 'a' },
+            { type: 'team', variant: 'grid', brief: 'photos, names, years of practice for each attorney' },
+            { type: 'footer', variant: 'columns', brief: 'c' },
+        ], { prompt: 'site for a small law firm doing property and family matters' });
+
+        expect(out.sections.find((s) => s.type === 'team')?.brief).toMatch(/never "Attorney Name"/i);
+        expect(out.sections.find((s) => s.type === 'team')?.brief).not.toMatch(/photos, names/i);
+    });
+
+    it('keeps Donate on the hero brief when the prompt asks for donations', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'split-image', brief: 'invite parents to enroll kids' },
+            { type: 'about', variant: 'text', brief: 'mission' },
+            { type: 'footer', variant: 'simple', brief: 'd' },
+        ], { prompt: 'page for our NGO that runs after school classes for kids, we need donations and volunteers to sign up' });
+
+        expect(out.sections.find((s) => s.type === 'hero')?.brief).toMatch(/Donate or Volunteer/i);
+        expect(out.sections.find((s) => s.type === 'hero')?.brief).toMatch(/not Enroll/i);
     });
 });

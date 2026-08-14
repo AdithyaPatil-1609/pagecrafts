@@ -5,8 +5,11 @@
  *
  *   npx tsx scripts/build-catalogue.ts
  *
- * Uses the mock gateway unless AI keys are configured. Writes
- * evals/catalogue/drafts/<vertical>.json
+ * Uses the mock gateway unless AI keys are configured. `--mock` forces
+ * fixtures so a thumbnail run does not compete with a live grade for quota.
+ * `--limit=N` caps how many new verticals are built (TC-131 is 10).
+ *
+ * Writes evals/catalogue/drafts/<vertical>.json
  */
 import { mkdirSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -15,6 +18,10 @@ import { MockGateway } from '../src/lib/ai/gateway/mock';
 import { Budget, generateSpike } from '../evals/spike/pipeline';
 
 const ROOT = join(process.cwd(), 'evals/catalogue/drafts');
+
+function arg(name: string): string | undefined {
+    return process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=').slice(1).join('=');
+}
 
 function verticals(): string[] {
     const corpus = JSON.parse(
@@ -25,12 +32,14 @@ function verticals(): string[] {
 
 async function main(): Promise<void> {
     mkdirSync(ROOT, { recursive: true });
-    if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
-        setGateway(new MockGateway());
-    }
+    const mock = process.argv.includes('--mock')
+        || (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY);
+    if (mock) setGateway(new MockGateway());
 
-    const list = verticals();
-    console.log(`catalogue: ${list.length} verticals`);
+    const cap = Number(arg('limit') ?? 0);
+    let list = verticals();
+    if (cap > 0) list = list.slice(0, cap);
+    console.log(`catalogue: ${list.length} verticals${mock ? ' (mock)' : ''}`);
 
     for (const vertical of list) {
         const dest = join(ROOT, `${vertical}.json`);
@@ -43,7 +52,7 @@ async function main(): Promise<void> {
             vertical,
             prompt: `a website for a ${vertical.replace(/-/g, ' ')}`,
             hasTemplate: false,
-            mode: process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY ? 'full' : 'mock',
+            mode: mock ? 'mock' : 'full',
             budget: new Budget(50),
         });
 

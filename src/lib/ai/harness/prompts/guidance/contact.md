@@ -12,4 +12,5 @@ email ....... only if given. Otherwise leave it empty.
 hours ....... only if given. "Open till 11pm" and "Sundays too" are facts from
               the description; a full seven-day table you made up is not.
 
-An empty field the owner fills in is correct. A plausible invented one is not.
+Never write "Add phone number here" or "Add address here". An empty field the
+owner fills in is correct. A plausible invented one is not.

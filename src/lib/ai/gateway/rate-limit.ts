@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Provider, ProviderQuota } from '../config';
+import type { ProviderQuota } from '../config';
 
 const MINUTE_MS = 60_000;
 
@@ -104,8 +104,9 @@ export class RateLimiter {
 const CACHE_DIR = join(process.cwd(), 'node_modules/.cache/pagecrafts');
 
 /** Kept in the build cache. Fail-soft: unreadable state just means no pacing. */
-export function fileWindowStore(provider: Provider): WindowStore {
-    const file = join(CACHE_DIR, `rate-limit-${provider}.json`);
+export function fileWindowStore(slot: string): WindowStore {
+    const safe = slot.replace(/[^a-z0-9:_-]+/gi, '-');
+    const file = join(CACHE_DIR, `rate-limit-${safe}.json`);
     return {
         load(): Spend[] {
             try {
@@ -133,19 +134,22 @@ export function fileWindowStore(provider: Provider): WindowStore {
 }
 
 /** Persist store state only outside Next.js runtime / test environments. */
-function defaultStore(provider: Provider): WindowStore | undefined {
+function defaultStore(slot: string): WindowStore | undefined {
     if (process.env.NEXT_RUNTIME || process.env.VITEST) return undefined;
-    return fileWindowStore(provider);
+    return fileWindowStore(slot);
 }
 
-const limiters = new Map<Provider, RateLimiter>();
+const limiters = new Map<string, RateLimiter>();
 
-/** One limiter per provider, shared across gateway instances in the process. */
-export function limiterFor(provider: Provider, quota: ProviderQuota): RateLimiter {
-    let limiter = limiters.get(provider);
+/**
+ * One limiter per slot. Groq keys each get `groq:0`, `groq:1`, … so five orgs
+ * are paced as five free tiers, not one shared 8k TPM.
+ */
+export function limiterFor(slot: string, quota: ProviderQuota): RateLimiter {
+    let limiter = limiters.get(slot);
     if (!limiter) {
-        limiter = new RateLimiter(quota, { store: defaultStore(provider) });
-        limiters.set(provider, limiter);
+        limiter = new RateLimiter(quota, { store: defaultStore(slot) });
+        limiters.set(slot, limiter);
     }
     return limiter;
 }

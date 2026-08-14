@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { setGateway } from '@/lib/ai/gateway';
 import { MockGateway } from '@/lib/ai/gateway/mock';
 import { generateSpike, Budget, BudgetExceeded } from './pipeline';
+import { resetDiversityStore } from '@/lib/ai/composition/diversity';
 import type { Mode, SpikeResult } from './pipeline';
 import { reportFor, indexFor } from './report';
 import { blankScoresheet, passRate } from './rubric';
@@ -45,6 +46,7 @@ async function main() {
     const { mode, budget: limit, only } = args();
 
     if (mode === 'mock') setGateway(new MockGateway());
+    resetDiversityStore();
 
     const corpus: CorpusItem[] = JSON.parse(
         readFileSync(join(process.cwd(), 'evals/corpus.json'), 'utf8'),

@@ -16,10 +16,17 @@ const MODEL_FILLABLE: ReadonlySet<Field['type']> = new Set([
     'text', 'richtext', 'image', 'select', 'list',
 ]);
 
+function textZod(f: Field, fallbackMax: number): z.ZodTypeAny {
+    const max = f.maxLength ?? fallbackMax;
+    // Optional facts (phone, email) may be "". min(1) is what forced
+    // "Not listed" / "XXXXXXXXXX" and then failed the human sheet.
+    return f.optional ? z.string().max(max) : z.string().min(1).max(max);
+}
+
 function zodForField(f: Field): z.ZodTypeAny {
     switch (f.type) {
-        case 'text': return z.string().min(1).max(f.maxLength ?? 120);
-        case 'richtext': return z.string().min(1).max(f.maxLength ?? 900);
+        case 'text': return textZod(f, 120);
+        case 'richtext': return textZod(f, 900);
         case 'image': return z.object({
             query: z.string().min(1).max(80),
             alt: z.string().min(1).max(120),
@@ -63,6 +70,8 @@ function jsonForField(f: Field): Schema {
 
 function jsonForFields(fields: Field[]): Schema {
     const usable = fields.filter((f) => MODEL_FILLABLE.has(f.type));
+    // Keys stay in `required` even when optional: Groq json_schema strict
+    // rejects missing properties. Optional means the string may be "".
     return {
         type: Type.OBJECT,
         properties: Object.fromEntries(usable.map((f) => [f.key, jsonForField(f)])),
@@ -83,10 +92,10 @@ function define(
     };
 }
 
-const t = (key: string, label: string, maxLength?: number): Field =>
-    ({ key, label, type: 'text', ...(maxLength ? { maxLength } : {}) });
-const rt = (key: string, label: string, maxLength?: number): Field =>
-    ({ key, label, type: 'richtext', ...(maxLength ? { maxLength } : {}) });
+const t = (key: string, label: string, maxLength?: number, optional = false): Field =>
+    ({ key, label, type: 'text', ...(maxLength ? { maxLength } : {}), ...(optional ? { optional } : {}) });
+const rt = (key: string, label: string, maxLength?: number, optional = false): Field =>
+    ({ key, label, type: 'richtext', ...(maxLength ? { maxLength } : {}), ...(optional ? { optional } : {}) });
 const img = (key: string, label: string): Field => ({ key, label, type: 'image' });
 const list = (key: string, label: string, itemSchema: Field[], maxLength: number): Field =>
     ({ key, label, type: 'list', itemSchema, maxLength });
@@ -134,8 +143,8 @@ export const SECTION_CONTRACTS: Record<SectionKey, SectionContract> = {
     ]),
     contact: define('contact', 'Contact', ['split-map', 'simple', 'form'], [
         t('heading', 'Heading'), rt('blurb', 'Intro', 240),
-        t('address', 'Address', 200), t('phone', 'Phone', 40),
-        t('email', 'Email', 80), t('hours', 'Opening hours', 200),
+        t('address', 'Address', 200, true), t('phone', 'Phone', 40, true),
+        t('email', 'Email', 80, true), t('hours', 'Opening hours', 200, true),
     ]),
     footer: define('footer', 'Footer', ['simple', 'columns'], [
         t('tagline', 'Tagline', 120),
@@ -150,6 +159,37 @@ export function contractFor(type: SectionKey): SectionContract {
 
 export function variantsFor(type: SectionKey): string[] {
     return contractFor(type).variants;
+}
+
+/**
+ * Dummy labels the model writes when it is not allowed to invent a fact and
+ * used to be forbidden from returning "". Empty is now legal on optional
+ * fields; these strings are not a phone number.
+ */
+export function isDummyFact(value: string): boolean {
+    const t = value.trim();
+    if (!t) return true;
+    if (/^\[.*]$/.test(t)) return true;
+    if (/^(n\/?a|none|not (listed|provided|available)|pending|on request|tbd)$/i.test(t)) {
+        return true;
+    }
+    if (/^(phone number|office address|studio address|your name)$/i.test(t)) return true;
+    if (/^add .{0,60} here\.?$/i.test(t)) return true;
+    const compact = t.replace(/[\s\-().+]/g, '');
+    return /^(?:\+?\d*)?x{6,}$/i.test(compact);
+}
+
+/** Mutates `props` in place: optional text facts that are dummy become "". */
+export function scrubOptionalFields(
+    props: Record<string, unknown>,
+    fields: Field[],
+): Record<string, unknown> {
+    for (const f of fields) {
+        if (!f.optional || (f.type !== 'text' && f.type !== 'richtext')) continue;
+        const v = props[f.key];
+        if (typeof v === 'string' && isDummyFact(v)) props[f.key] = '';
+    }
+    return props;
 }
 
 /** The variant menu, generated from the registry so the prompt can never drift from it. */
