@@ -2,6 +2,8 @@
 import { useEditorStore } from '@/lib/editor-store';
 import { variantsFor } from '@/lib/ai/sections/contracts';
 import { sectionLabel } from '@/lib/editor/section-registry';
+import { LOOK_DIALS } from '@/lib/editor/look';
+import type { ArtDirection } from '@/lib/contracts';
 
 export default function SectionsPanel() {
     const composition = useEditorStore((s) => s.composition);
@@ -12,8 +14,11 @@ export default function SectionsPanel() {
     const toggleSectionVisible = useEditorStore((s) => s.toggleSectionVisible);
     const toggleSectionLocked = useEditorStore((s) => s.toggleSectionLocked);
     const setSectionVariant = useEditorStore((s) => s.setSectionVariant);
+    const restyleComposition = useEditorStore((s) => s.restyleComposition);
 
     if (!composition) return null;
+
+    const look = composition.artDirection;
 
     return (
         <div className="flex h-full flex-col">
@@ -21,6 +26,31 @@ export default function SectionsPanel() {
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Sections
                 </h2>
+            </div>
+
+            <div className="shrink-0 space-y-2 border-b border-border px-3 py-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Look
+                </h3>
+                {LOOK_DIALS.map((dial) => (
+                    <label key={dial.key} className="flex flex-col gap-1">
+                        <span className="text-[11px] text-muted-foreground">{dial.label}</span>
+                        <select
+                            value={look[dial.key]}
+                            onChange={(e) =>
+                                restyleComposition({ [dial.key]: e.target.value } as Partial<ArtDirection>)
+                            }
+                            aria-label={dial.label}
+                            className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                        >
+                            {dial.options.map((option) => (
+                                <option key={option.id} value={option.id}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                ))}
             </div>
 
             {composition.sections.length === 0 ? (

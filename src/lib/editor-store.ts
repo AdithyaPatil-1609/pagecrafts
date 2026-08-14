@@ -16,7 +16,7 @@ import {
 } from '@/lib/project-source';
 import { parseComposition } from '@/lib/editor/parse-composition';
 import { applyEditPatch } from '@/lib/editor/apply-patch';
-import { writeCompositionFiles } from '@/lib/editor/sync-site';
+import { writeCompositionFiles, writeRenderedSite } from '@/lib/editor/sync-site';
 import { sanitise } from '@/lib/ai/sanitise';
 import { sectionVariants } from '@/lib/editor/section-registry';
 import { debounceTrigger } from '@/lib/debounce';
@@ -294,6 +294,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                     composition: parsed,
                     selectedSectionId: still ? selected : parsed.sections[0]?.id ?? null,
                 });
+                writeRenderedSite(vfs, parsed);
             }
         }
         autosave.trigger();
@@ -403,6 +404,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }
 
         set({ pendingChange: null });
+        autosave.trigger();
     },
 
     rejectChange: () => set({ pendingChange: null }),
