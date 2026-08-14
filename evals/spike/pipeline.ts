@@ -5,11 +5,12 @@ import { fillSection } from '@/lib/ai/generate/fill';
 import { assemble } from '@/lib/ai/generate/assemble';
 import { checkAndRecord } from '@/lib/ai/composition/validate';
 import type { CompositionFinding } from '@/lib/ai/composition/validate';
+import { compositionToFiles } from '@/lib/ai/generate/to-files';
 import { GatewayError } from '@/lib/ai/gateway';
 import { CostLedger, type GenerationStatus, type LedgerRow } from '@/lib/ai/cost/ledger';
 import { withOneRepair } from '@/lib/ai/generate/repair';
 import type {
-    Composition, IntentAttributes, SectionInstance, SectionProps, Usage, VerticalProfile,
+    Composition, FileMap, IntentAttributes, SectionInstance, SectionProps, Usage, VerticalProfile,
 } from '@/lib/contracts';
 
 export type Mode = 'mock' | 'plan-only' | 'full';
@@ -35,6 +36,8 @@ export interface SpikeResult {
     error?: string;
     detail?: unknown;
     composition?: Composition;
+    /** Generated file tree, when the run produced a site. */
+    files?: FileMap;
     /** What the classifier decided. Present whenever the classify stage returned. */
     intent?: IntentAttributes;
     partial?: {
@@ -215,13 +218,14 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             description: prompt.slice(0, 160),
             tone: intent.data.tone,
         });
-
         const checked = checkAndRecord(assembled, { tone: intent.data.tone });
+        const files = mode === 'plan-only' ? undefined : compositionToFiles(checked.composition);
 
         return {
             ...base,
             ok: true,
             composition: checked.composition,
+            files,
             findings: checked.findings,
             intent: intentData,
             calls,

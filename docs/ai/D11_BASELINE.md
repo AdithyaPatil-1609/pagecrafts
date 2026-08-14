@@ -226,5 +226,5 @@ not comparable to the D5/D8 numbers.** Do not put them in the same table.
 |---|---|
 | Diversity — `clinical-blue` / `whisper` at 48% on the v1 30 | v3 30 **passes** (clinical-blue 23%, calm 40%) — `2026-08-14T07-58-07-237Z-d15-sensible-full` |
 | Human copy ≥4 only 13/30 on the v1 sheet | v3 30: **28/30** — `docs/ai/D15_STATUS.md`. Remaining 3s (v21 phone, v29 Hindi) have code fixes in `947aad4`, not a second 30 |
-| A clean NFR-003 P95 | Still owed from D8 — both existing figures included pacing |
+| A clean NFR-003 P95 | 12 Aug sample of 9 completed: P95 **27.4s**. A 30-vertical P95 is still owed; D8's 10-run figures included pacing |
 | `vertical_profiles` table | Migration written (`20260812090000`); needs provisioning by E1 |

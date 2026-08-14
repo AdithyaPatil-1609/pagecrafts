@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { LedgerRow, GenerationStatus } from './ledger';
 import type { GenerationRow } from './dashboard';
@@ -5,6 +6,14 @@ import type { GenerationRow } from './dashboard';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface PersistContext {
+    userId: string;
+    projectId: string;
+    prompt: string;
+    jobId?: string;
+}
+
+export interface LedgerContext {
+    jobId: string;
     userId: string;
     projectId: string;
     prompt: string;
@@ -27,11 +36,14 @@ export async function persistLedgerRows(
     const userId = UUID.test(ctx.userId) ? ctx.userId : null;
     const projectId = UUID.test(ctx.projectId) ? ctx.projectId : null;
     const prompt = ctx.prompt.slice(0, 4_000);
+    const promptHash = createHash('sha256').update(ctx.prompt).digest('hex');
 
     const payload = rows.map((r) => ({
         user_id: userId,
         project_id: projectId,
         prompt,
+        prompt_hash: promptHash,
+        ...(ctx.jobId ? { job_id: ctx.jobId } : {}),
         model: r.model.slice(0, 120),
         input_tokens: r.inputTokens,
         output_tokens: r.outputTokens,
@@ -45,6 +57,43 @@ export async function persistLedgerRows(
 
     const { error } = await supabase.from('generations').insert(payload);
     if (error) console.warn('[ledger] persist failed:', error.message);
+}
+
+/**
+ * Persists one row per provider invocation without retaining the user's prompt.
+ *
+ * The authenticated client is intentional: the generations RLS policy only
+ * permits rows for the current user, so a detached job cannot accidentally
+ * attribute spend to somebody else.
+ */
+export async function persistLedger(
+    supabase: SupabaseClient,
+    context: LedgerContext,
+    rows: readonly LedgerRow[],
+): Promise<void> {
+    if (rows.length === 0) return;
+    if (!supabase || typeof supabase.from !== 'function') return;
+
+    const promptHash = createHash('sha256').update(context.prompt).digest('hex');
+    const payload = rows.map((row) => ({
+        job_id: context.jobId,
+        user_id: context.userId,
+        project_id: context.projectId,
+        prompt_hash: promptHash,
+        provider: row.provider,
+        model: row.model,
+        stage: row.stage,
+        prompt_version: row.promptVersion ?? null,
+        input_tokens: row.inputTokens,
+        output_tokens: row.outputTokens,
+        cost_cents: row.costCents,
+        status: row.status,
+        latency_ms: row.latencyMs,
+        created_at: row.createdAt,
+    }));
+
+    const { error } = await supabase.from('generations').insert(payload);
+    if (error) throw new Error(`Could not persist the AI cost ledger: ${error.message}`);
 }
 
 interface GenerationTableRow {

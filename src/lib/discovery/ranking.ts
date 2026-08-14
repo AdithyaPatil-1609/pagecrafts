@@ -49,13 +49,13 @@ export function toIntent(params: {
     palette?: string | null;
 }): IntentQuery | undefined {
     const category = categorySchema.safeParse(params.intent);
-    const vertical = slug.safeParse(params.vertical);
     const tone = toneSchema.safeParse(params.tone);
     const palette = paletteSchema.safeParse(params.palette);
+    const verticalParsed = slug.safeParse(params.vertical);
 
     const intent: IntentQuery = {
         ...(category.success ? { category: category.data } : {}),
-        ...(vertical.success ? { vertical: vertical.data } : {}),
+        ...(verticalParsed.success ? { vertical: verticalParsed.data } : {}),
         ...(tone.success ? { tone: tone.data } : {}),
         ...(palette.success ? { palette: palette.data } : {}),
     };
@@ -88,8 +88,8 @@ export function rankForIntent(
 ): RankedTemplate[] {
     return rankTemplates(
         {
-            category: intent.category,
             vertical: intent.vertical,
+            category: intent.category,
             tone: intent.tone,
             palette: intent.palette,
         },

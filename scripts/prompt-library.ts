@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { loadTemplate, listTemplates } from '@/lib/ai/harness/templates';
 import { registryVars } from '@/lib/ai/harness/registry-vars';
-import { guidanceFor } from '@/lib/ai/harness/guidance';
 import { aiConfig } from '@/lib/ai/config';
 import {
     SECTION_KEYS, THEME_IDS, MOTION_IDS, RADIUS_IDS, SPACING_IDS, IMAGERY_IDS, TONE_IDS,

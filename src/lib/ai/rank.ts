@@ -30,7 +30,10 @@ const WEIGHT = {
 
 export function scoreTemplate(attrs: RankAttributes, tpl: RankableTemplate): number {
     let score = 0;
-    if (attrs.vertical && attrs.vertical === tpl.vertical) score += WEIGHT.vertical;
+    if (
+        attrs.vertical
+        && (attrs.vertical === tpl.vertical || tpl.tags.includes(attrs.vertical))
+    ) score += WEIGHT.vertical;
     if (attrs.category && attrs.category === tpl.category) score += WEIGHT.category;
     if (attrs.palette && tpl.tags.includes(attrs.palette)) score += WEIGHT.palette;
     if (attrs.tone && tpl.tags.includes(attrs.tone)) score += WEIGHT.tone;

@@ -7,7 +7,8 @@ import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
 import { jobStore, nextJobId } from '@/lib/ai/jobs/store';
 import { runJob } from '@/lib/ai/jobs/runner';
 import { checkGenerationBudget } from '@/lib/ai/jobs/budget';
-import { persistLedgerRows } from '@/lib/ai/cost/persist';
+import { persistLedger } from '@/lib/ai/cost/persist';
+import { guardAiRequest } from '@/lib/limits/ai-guard';
 import { TEMPLATES } from '@/lib/templates';
 import { putProjectFile } from '@/lib/data/project-files';
 import { recordGenerationUse } from '@/lib/ai/jobs/counters';
@@ -26,9 +27,8 @@ const schema = z.object({ prompt: z.string().min(1).max(MAX_CLASSIFY_CHARS) });
 // POST /api/v1/projects/{id}/generate — 202 with a job id; the work runs after.
 export const POST = withRoute<z.infer<typeof schema>, Params>({
     auth: 'required',
-    limit: 'ai',
     schema,
-    handler: async ({ body, params, userId, supabase }) => {
+    handler: async ({ body, params, userId, req, supabase }) => {
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
 
@@ -37,52 +37,67 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         await recordGenerationUse(userId, params.id);
         track('EV-04', userId, { category: 'unknown', latency_bucket: 'queued' });
 
-        const job = await jobStore().create({
-            id: nextJobId(),
-            projectId: params.id,
-            userId,
-            prompt: body.prompt,
-            status: 'queued',
-            sectionsDone: 0,
-            sectionsTotal: 0,
-            startedAt: Date.now(),
-            events: [],
-            ledger: [],
-        });
+        // This route returns before generation finishes, so withRoute's ordinary
+        // request-scoped AI guard would release its concurrency slot too early.
+        // Acquire it here and hand its lifecycle to the detached runner instead.
+        const guard = await guardAiRequest(userId, req.headers);
+        if (!guard.ok) return guard.response;
 
-        // Not awaited: the caller polls GET /jobs/{id} rather than holding the request
-        // open for the ~40s a generation takes.
-        void runJob(job, {
-            templates: TEMPLATES,
-            persistLedger: (rows) => persistLedgerRows(supabase, {
-                userId, projectId: params.id, prompt: body.prompt,
-            }, rows),
-            persistComposition: async (composition) => {
-                if (typeof supabase.from !== 'function') return;
-                try {
-                    await putProjectFile(
-                        supabase,
-                        params.id,
-                        'composition.json',
-                        JSON.stringify(composition, null, 2),
-                    );
-                } catch (err) {
-                    console.warn(
-                        '[generate] persist composition',
-                        err instanceof Error ? err.message : err,
-                    );
-                }
-            },
-            onSettled: (settled) => {
-                const elapsed = (settled.endedAt ?? Date.now()) - settled.startedAt;
-                track('EV-05', userId, {
-                    category: settled.composition?.vertical ? 'classified' : 'fallback',
-                    latency_bucket: latencyBucket(elapsed),
-                });
-            },
-        }).catch((err) => console.error('[generate]', err));
+        let handedToRunner = false;
+        try {
+            const job = await jobStore().create({
+                id: nextJobId(),
+                projectId: params.id,
+                userId,
+                prompt: body.prompt,
+                status: 'queued',
+                sectionsDone: 0,
+                sectionsTotal: 0,
+                startedAt: Date.now(),
+                events: [],
+                ledger: [],
+            });
 
-        return ok({ job_id: job.id }, 202);
+            void runJob(job, {
+                templates: TEMPLATES,
+                recordUsage: guard.recordUsage,
+                persistLedger: (rows) => persistLedger(supabase, {
+                    jobId: job.id,
+                    userId,
+                    projectId: params.id,
+                    prompt: body.prompt,
+                }, rows),
+                persistComposition: async (composition) => {
+                    if (typeof supabase.from !== 'function') return;
+                    try {
+                        await putProjectFile(
+                            supabase,
+                            params.id,
+                            'composition.json',
+                            JSON.stringify(composition, null, 2),
+                        );
+                    } catch (err) {
+                        console.warn(
+                            '[generate] persist composition',
+                            err instanceof Error ? err.message : err,
+                        );
+                    }
+                },
+                release: guard.release,
+                onSettled: (settled) => {
+                    const elapsed = (settled.endedAt ?? Date.now()) - settled.startedAt;
+                    track('EV-05', userId, {
+                        category: settled.composition?.vertical ? 'classified' : 'fallback',
+                        latency_bucket: latencyBucket(elapsed),
+                    });
+                },
+            }).catch((err) => console.error('[generate]', err));
+            handedToRunner = true;
+
+            return ok({ job_id: job.id }, 202);
+        } finally {
+            if (!handedToRunner) await guard.release();
+        }
     },
 });
 

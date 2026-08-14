@@ -7,6 +7,9 @@ import { proposeEdit } from '@/lib/ai/edit/propose';
 import { recordEditOp } from '@/lib/ai/cost/edit-ops';
 import { storeFor, nextEditId } from '@/lib/ai/edit/store';
 import { createCommit } from '@/lib/data/commits';
+import { rowFor } from '@/lib/ai/cost/ledger';
+import { persistLedger } from '@/lib/ai/cost/persist';
+import { nextJobId } from '@/lib/ai/jobs/store';
 import { SECTION_KEYS, type SectionInstance } from '@/lib/contracts';
 
 export const runtime = 'nodejs';
@@ -31,7 +34,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     auth: 'required',
     limit: 'ai',
     schema,
-    handler: async ({ body, params, userId, supabase }) => {
+    handler: async ({ body, params, userId, supabase, recordUsage }) => {
         let preCommitSha: string | null = null;
         if (typeof supabase.from === 'function') {
             try {
@@ -49,8 +52,17 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             source: 'ai',
         } as SectionInstance;
 
-        const { data } = await proposeEdit(section, body.instruction);
+        const { data, usage } = await proposeEdit(section, body.instruction);
         recordEditOp('provider', 'propose');
+        await Promise.all([
+            recordUsage(usage),
+            persistLedger(supabase, {
+                jobId: nextJobId(),
+                userId,
+                projectId: params.id,
+                prompt: body.instruction,
+            }, [rowFor('edit', usage, 'completed')]),
+        ]);
         const stored = await storeFor(supabase).put({
             ...data,
             id: nextEditId(),

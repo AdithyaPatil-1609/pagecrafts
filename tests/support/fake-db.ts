@@ -58,6 +58,11 @@ export interface FakeDb {
 
 export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
     const tables: Record<string, Row[]> = {};
+    // Postgres timestamps distinguish sequential inserts. A test can perform
+    // several inserts inside one JavaScript millisecond, so give the fake a
+    // monotonic clock instead of making "newest" depend on a random UUID tie.
+    let logicalTime = Date.now();
+    const timestamp = () => new Date(logicalTime++).toISOString();
     for (const [name, rows] of Object.entries(seed)) {
         tables[name] = rows.map((row) => ({ ...row }));
     }
@@ -122,7 +127,7 @@ export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
             };
 
             const write = (): Result => {
-                const now = new Date().toISOString();
+                const now = timestamp();
 
                 if (op === "insert" || op === "upsert") {
                     const incoming = (Array.isArray(payload) ? payload : [payload]).map((r) => ({ ...r }));
@@ -335,7 +340,7 @@ export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
         asUser: client,
         rows: (name: string) => table(name),
         insert: (name: string, row: Row) => {
-            const created: Row = { id: randomUUID(), created_at: new Date().toISOString(), ...row };
+            const created: Row = { id: randomUUID(), created_at: timestamp(), ...row };
             table(name).push(created);
             return created;
         },

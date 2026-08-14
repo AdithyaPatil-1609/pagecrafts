@@ -30,6 +30,7 @@ export const GET = withRoute<undefined, Params>({
             ...(job.fallbackTemplateId ? { fallback_template_id: job.fallbackTemplateId } : {}),
             ...(job.error ? { error: job.error } : {}),
             ...(job.composition ? { composition: job.composition } : {}),
+            files_ready: Boolean(job.files && Object.keys(job.files).length),
         });
     },
 });
