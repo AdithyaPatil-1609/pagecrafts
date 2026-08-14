@@ -105,7 +105,7 @@ The PRD promises the user's site content is *never used for training*. The free-
 
 Without that line, someone changes `AI_PROVIDER_ORDER` in Week 3 and the go/no-go silently stops being true.
 
-**Closed on D6.** Every call in `raw.json` now carries `provider`, `model`, `promptVersion` and `structuredOutput`. The D5 evidence in `docs/ai/D5_GO_NO_GO.md` is labelled:
+**Closed on D6.** Every call in `raw.json` now carries `provider`, `model`, `promptVersion` and `structuredOutput`. The D5 evidence is labelled:
 
 > Groq · `openai/gpt-oss-120b` (strong) / `openai/gpt-oss-20b` (fast) · prompts `v1` · `json_schema`
 
