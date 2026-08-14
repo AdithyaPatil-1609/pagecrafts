@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 3,
+  "vertical": "law-firm",
+  "artDirection": {
+    "themeId": "mono-precision",
+    "motionId": "calm",
+    "radiusId": "soft",
+    "spacingId": "default",
+    "imageryId": "bright-clean"
+  },
+  "meta": {
+    "title": "Mock business",
+    "description": "a website for a law firm",
+    "lang": "en"
+  },
+  "sections": [
+    {
+      "id": "s_01",
+      "type": "hero",
+      "variant": "split-image",
+      "brief": "welcome the visitor",
+      "visible": true,
+      "locked": false,
+      "source": "ai",
+      "props": {
+        "eyebrow": "Sample eyebrow",
+        "heading": "Sample heading",
+        "sub": "Sample subheading written by the mock gateway.",
+        "ctaLabel": "Sample button label",
+        "image": {
+          "query": "office interior",
+          "alt": "Office interior"
+        }
+      }
+    },
+    {
+      "id": "s_02",
+      "type": "services",
+      "variant": "cards",
+      "brief": "what we offer",
+      "visible": true,
+      "locked": false,
+      "source": "ai",
+      "props": {
+        "heading": "Sample heading",
+        "items": [
+          {
+            "title": "Sample title",
+            "body": "Sample description written by the mock gateway."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s_03",
+      "type": "team",
+      "variant": "grid",
+      "brief": "who works here",
+      "visible": true,
+      "locked": false,
+      "source": "ai",
+      "props": {
+        "heading": "Sample heading",
+        "members": [
+          {
+            "name": "Sample name",
+            "role": "Sample role",
+            "bio": "Sample bio written by the mock gateway."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s_04",
+      "type": "faq",
+      "variant": "accordion",
+      "brief": "common questions",
+      "visible": true,
+      "locked": false,
+      "source": "ai",
+      "props": {
+        "heading": "Sample heading",
+        "items": [
+          {
+            "question": "Sample question",
+            "answer": "Sample answer written by the mock gateway."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s_05",
+      "type": "contact",
+      "variant": "split-map",
+      "brief": "how to reach us",
+      "visible": true,
+      "locked": false,
+      "source": "ai",
+      "props": {
+        "heading": "Sample heading",
+        "blurb": "Sample intro written by the mock gateway.",
+        "address": "Sample address",
+        "phone": "Sample phone",
+        "email": "Sample email",
+        "hours": "Sample opening hours"
+      }
+    },
+    {
+      "id": "s_06",
+      "type": "footer",
+      "variant": "simple",
+      "brief": "closing line",
+      "visible": true,
+      "locked": false,
+      "source": "ai",
+      "props": {
+        "tagline": "Sample tagline"
+      }
+    }
+  ]
+}

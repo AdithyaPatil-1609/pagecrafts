@@ -6,6 +6,10 @@ import { intentParams, rankForIntent, toIntent } from "@/lib/discovery/ranking";
 import { queryTemplates } from "@/lib/templates/query";
 
 describe("toIntent", () => {
+  it("reads a vertical out of the URL", () => {
+    expect(toIntent({ vertical: "dental-clinic" })).toEqual({ vertical: "dental-clinic" });
+  });
+
   it("reads a full classification out of the URL", () => {
     expect(toIntent({ intent: "food", tone: "warm", palette: "dark" })).toEqual({
       category: "food",
@@ -28,9 +32,23 @@ describe("toIntent", () => {
   });
 
   it("round-trips through URL params", () => {
-    const intent = toIntent({ intent: "fitness", tone: "bold", palette: "dark" });
-    expect(intentParams(intent)).toEqual({ intent: "fitness", tone: "bold", palette: "dark" });
+    const intent = toIntent({
+      intent: "fitness",
+      vertical: "personal-trainer",
+      tone: "bold",
+      palette: "dark",
+    });
+    expect(intentParams(intent)).toEqual({
+      intent: "fitness",
+      vertical: "personal-trainer",
+      tone: "bold",
+      palette: "dark",
+    });
     expect(toIntent(intentParams(intent))).toEqual(intent);
+  });
+
+  it("drops a malformed vertical rather than letting arbitrary URL text into ranking", () => {
+    expect(toIntent({ vertical: "../dental clinic" })).toBeUndefined();
   });
 
   it("carries nothing when there is no intent", () => {
@@ -39,6 +57,12 @@ describe("toIntent", () => {
 });
 
 describe("rankForIntent", () => {
+  it("an exact vertical match leads the gallery (TC-118)", () => {
+    const ranked = rankForIntent(TEMPLATES, { vertical: "dental-clinic" });
+    expect(ranked[0]!.id).toBe("dental-clinic");
+    expect(ranked[0]!.score).toBeGreaterThanOrEqual(100);
+  });
+
   it("leads with the design in the classified category", () => {
     const ranked = rankForIntent(TEMPLATES, { category: "fitness" });
     expect(ranked[0]!.category).toBe("fitness");

@@ -1,5 +1,7 @@
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { createClient } from '@supabase/supabase-js';
+import { editOpStore } from '@/lib/ai/cost/edit-ops';
 import {
     buildDashboard, reconcile, renderDashboard, renderReconciliation,
     type GenerationRow,
@@ -10,11 +12,10 @@ import type { SpikeResult } from '../evals/spike/pipeline';
 /**
  * D17 — the cost dashboard.
  *
- * Reads priced calls from wherever they are. Today that is the eval runs on
- * disk, because the `generations` table is not yet carrying rows; the shape it
- * builds is the same either way, so pointing it at the table later is a change
- * of source, not of dashboard.
+ * Reads production rows by default. Explicit result directories keep eval
+ * spend available for quality work without mixing it into cost-per-user.
  *
+ *   npm run cost
  *   npm run cost -- evals/grader/results/<run>
  *   npm run cost -- <run> --invoice=groq:120,gemini:0
  */
@@ -27,6 +28,7 @@ function rowsFromRun(dir: string): GenerationRow[] {
 
     return results.flatMap((result) =>
         (result.ledger ?? []).map((r: LedgerRow): GenerationRow => ({
+            generationId: undefined,
             // An eval run has no user, and saying so keeps it out of the
             // cost-per-user figure rather than depressing it.
             userId: null,
@@ -43,6 +45,69 @@ function rowsFromRun(dir: string): GenerationRow[] {
         })));
 }
 
+interface DatabaseRow {
+    job_id: string | null;
+    user_id: string | null;
+    provider: GenerationRow['provider'];
+    model: string;
+    stage: string | null;
+    prompt_version: string | null;
+    input_tokens: number;
+    output_tokens: number;
+    cost_cents: number | string;
+    status: GenerationRow['status'];
+    latency_ms: number;
+    created_at: string;
+}
+
+async function rowsFromDatabase(): Promise<GenerationRow[]> {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+        throw new Error(
+            'Cost dashboard needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, '
+            + 'or an eval results directory.',
+        );
+    }
+
+    const client = createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const rows: DatabaseRow[] = [];
+    const pageSize = 1_000;
+
+    for (let from = 0; ; from += pageSize) {
+        const { data, error } = await client
+            .from('generations')
+            .select(
+                'job_id,user_id,provider,model,stage,prompt_version,input_tokens,'
+                + 'output_tokens,cost_cents,status,latency_ms,created_at',
+            )
+            .order('created_at', { ascending: true })
+            .range(from, from + pageSize - 1);
+
+        if (error) throw new Error(`Could not read generations: ${error.message}`);
+        const page = (data ?? []) as unknown as DatabaseRow[];
+        rows.push(...page);
+        if (page.length < pageSize) break;
+    }
+
+    return rows.map((row) => ({
+        generationId: row.job_id ?? undefined,
+        userId: row.user_id,
+        provider: row.provider ?? 'unknown',
+        model: row.model,
+        stage: row.stage ?? undefined,
+        promptVersion: row.prompt_version ?? undefined,
+        inputTokens: row.input_tokens,
+        outputTokens: row.output_tokens,
+        costCents: Number(row.cost_cents),
+        status: row.status,
+        latencyMs: row.latency_ms,
+        createdAt: row.created_at,
+    }));
+}
+
 function parseInvoice(arg: string | undefined): Record<string, number> {
     if (!arg) return {};
     return Object.fromEntries(
@@ -53,7 +118,7 @@ function parseInvoice(arg: string | undefined): Record<string, number> {
     );
 }
 
-function main(): void {
+async function main(): Promise<void> {
     const argv = process.argv.slice(2);
     const flags = argv.filter((a) => a.startsWith('--'));
     const paths = argv.filter((a) => !a.startsWith('--'));
@@ -61,34 +126,33 @@ function main(): void {
 
     const RESULTS = join(process.cwd(), 'evals/grader/results');
 
-    // No path given: every run on disk, which is the closest thing to a
-    // programme-to-date total until the table is live.
+    const useEval = flags.includes('--eval') || paths.length > 0;
     const dirs = paths.length
         ? paths
-        : (existsSync(RESULTS)
+        : (useEval && existsSync(RESULTS)
             ? readdirSync(RESULTS)
                 .map((d) => join(RESULTS, d))
                 .filter((d) => existsSync(join(d, 'raw.json')))
             : []);
 
-    if (dirs.length === 0) {
+    if (useEval && dirs.length === 0) {
         console.error('No priced calls found. Run `npm run grade` first, or pass a results directory.');
         process.exit(2);
     }
 
-    const rows = dirs.flatMap(rowsFromRun);
+    const rows = useEval ? dirs.flatMap(rowsFromRun) : await rowsFromDatabase();
 
     if (rows.length === 0) {
-        console.error(`No ledger rows in: ${dirs.join(', ')}`);
-        console.error('A mock run prices nothing — the rate card is zero for a mock provider.');
+        console.error(useEval ? `No ledger rows in: ${dirs.join(', ')}` : 'No production ledger rows.');
         process.exit(2);
     }
 
-    const dashboard = buildDashboard(rows);
+    const dashboard = buildDashboard(rows, editOpStore().all());
     const markdown = renderDashboard(dashboard);
 
     console.log(markdown);
-    console.log(`\n_Sources: ${dirs.length} run(s)._`);
+    const source = useEval ? `${dirs.length} eval run(s)` : 'public.generations';
+    console.log(`\n_Source: ${source}._`);
 
     const invoice = parseInvoice(get('invoice'));
     let reconciliation = '';
@@ -104,9 +168,12 @@ function main(): void {
 
     const out = get('out');
     if (out) {
-        writeFileSync(out, `${markdown}\n\n_Sources: ${dirs.length} run(s)._${reconciliation}\n`);
+        writeFileSync(out, `${markdown}\n\n_Source: ${source}._${reconciliation}\n`);
         console.log(`\nsaved -> ${out}`);
     }
 }
 
-main();
+main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+});

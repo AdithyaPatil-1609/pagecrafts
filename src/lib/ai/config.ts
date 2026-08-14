@@ -9,8 +9,10 @@ const KNOWN_PROVIDERS: readonly Provider[] = ['gemini', 'groq', 'cerebras'] as c
 
 const envSchema = z.object({
     // Tried left to right; a provider with no key is skipped. Cerebras is
-    // supported but omitted while its account is unfunded (402).
-    AI_PROVIDER_ORDER: z.string().default('groq,gemini'),
+    // supported in code but omitted: unfunded, and Gate 1 was not recorded
+    // for it (docs/ai/GATE1_GROQ_TRAINING.md). Do not add it back without
+    // a terms re-read.
+    AI_PROVIDER_ORDER: z.string().default('groq'),
 
     // Per-operation output ceilings (FR-103). Shared across providers; sent as max_tokens.
     AI_OUTPUT_CLASSIFY_TOKENS: z.coerce.number().int().positive().default(1_024),
@@ -29,12 +31,13 @@ const envSchema = z.object({
     AI_TOP_P_EDIT: z.coerce.number().min(0).max(1).optional(),
 
     // Which prompt version each stage runs. A version number marks a decision,
-    // so switching v1 → v2 is a config change with a before/after behind it,
-    // not an edit to a file.
+    // so switching v1 → v3 is a config change with a before/after behind it,
+    // not an edit to a file. Plan/fill default to v3 after unspecified had a
+    // clean after-run (not a 429).
     AI_PROMPT_CLASSIFY: z.string().default('classify.v1'),
     AI_PROMPT_PROFILE: z.string().default('profile.v1'),
-    AI_PROMPT_PLAN: z.string().default('plan.v1'),
-    AI_PROMPT_FILL: z.string().default('fill-section.v1'),
+    AI_PROMPT_PLAN: z.string().default('plan.v3'),
+    AI_PROMPT_FILL: z.string().default('fill-section.v3'),
     AI_PROMPT_EDIT: z.string().default('edit.v1'),
 
     // Per-operation timeouts. Shared across providers.
@@ -58,6 +61,14 @@ const envSchema = z.object({
 
     // ── Groq (first priority) ────────────────────────────────────────────────
     GROQ_API_KEY: z.string().default(''),
+    // Extra orgs, round-robined with GROQ_API_KEY. Comma or whitespace
+    // separated, and/or GROQ_API_KEY_2..6 so six secrets need not share a line.
+    GROQ_API_KEYS: z.string().default(''),
+    GROQ_API_KEY_2: z.string().default(''),
+    GROQ_API_KEY_3: z.string().default(''),
+    GROQ_API_KEY_4: z.string().default(''),
+    GROQ_API_KEY_5: z.string().default(''),
+    GROQ_API_KEY_6: z.string().default(''),
     // gpt-oss-* support strict json_schema on Groq; the llama-3.x models do not.
     GROQ_MODEL_FAST: z.string().default('openai/gpt-oss-20b'),
     GROQ_MODEL_STRONG: z.string().default('openai/gpt-oss-120b'),
@@ -104,7 +115,10 @@ export interface ProviderPricing {
 }
 
 export interface ProviderConfig {
+    /** First key; empty means this provider is skipped. */
     apiKey: string;
+    /** Every key for this provider, de-duped. Groq round-robins these. */
+    apiKeys: string[];
     models: { fast: string; strong: string };
     /** OpenAI-compatible base URL. Empty for Gemini (it uses the native SDK). */
     baseUrl: string;
@@ -176,6 +190,22 @@ function parseOrder(raw: string): Provider[] {
     return [...seen];
 }
 
+/** Split, trim, drop empties, de-dupe. First occurrence wins, so GROQ_API_KEY stays head. */
+export function parseApiKeys(...raw: Array<string | undefined>): string[] {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const chunk of raw) {
+        if (!chunk) continue;
+        for (const key of chunk.split(/[\s,]+/)) {
+            const trimmed = key.trim();
+            if (!trimmed || seen.has(trimmed)) continue;
+            seen.add(trimmed);
+            out.push(trimmed);
+        }
+    }
+    return out;
+}
+
 export function loadAiConfig(env: Record<string, string | undefined> = process.env,): AiConfig {
     const parsed = envSchema.safeParse(env);
 
@@ -186,10 +216,20 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
 
     const v = parsed.data;
     const order = parseOrder(v.AI_PROVIDER_ORDER);
+    const groqKeys = parseApiKeys(
+        v.GROQ_API_KEY,
+        v.GROQ_API_KEYS,
+        v.GROQ_API_KEY_2,
+        v.GROQ_API_KEY_3,
+        v.GROQ_API_KEY_4,
+        v.GROQ_API_KEY_5,
+        v.GROQ_API_KEY_6,
+    );
 
     const providers: Record<Provider, ProviderConfig> = {
         gemini: {
             apiKey: v.GEMINI_API_KEY,
+            apiKeys: parseApiKeys(v.GEMINI_API_KEY),
             models: { fast: v.GEMINI_MODEL_FAST, strong: v.GEMINI_MODEL_STRONG },
             baseUrl: '',
             quota: {
@@ -206,7 +246,8 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
             },
         },
         groq: {
-            apiKey: v.GROQ_API_KEY,
+            apiKey: groqKeys[0] ?? '',
+            apiKeys: groqKeys,
             models: { fast: v.GROQ_MODEL_FAST, strong: v.GROQ_MODEL_STRONG },
             baseUrl: v.GROQ_BASE_URL,
             quota: {
@@ -224,6 +265,7 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
         },
         cerebras: {
             apiKey: v.CEREBRAS_API_KEY,
+            apiKeys: parseApiKeys(v.CEREBRAS_API_KEY),
             models: { fast: v.CEREBRAS_MODEL_FAST, strong: v.CEREBRAS_MODEL_STRONG },
             baseUrl: v.CEREBRAS_BASE_URL,
             quota: {

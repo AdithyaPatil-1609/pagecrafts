@@ -1,0 +1,212 @@
+[
+  {
+    "id": "v01",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Nashik, three departments, named doctors, emergency in about + 24×7 hours. clinical-blue/whisper fits a hospital."
+  },
+  {
+    "id": "v19",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Jayanagar South-Indian breakfast, real menu and timings. Phone is +91 XXXXXXXXXX; every price is 'Varies'."
+  },
+  {
+    "id": "v27",
+    "copySensible": 1,
+    "sectionSelectionAppropriate": 1,
+    "artDirectionAppropriate": 1,
+    "notes": "No page. fillSection(testimonials) failed validation — nothing to read."
+  },
+  {
+    "id": "v29",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "मिठास स्वीट्स on the hero, named sweets, Old Delhi, photos, a phone. Contact heading misspells मीठास; two different phone numbers."
+  },
+  {
+    "id": "v02",
+    "copySensible": 2,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 2,
+    "notes": "Contact is literal placeholders (Office address / Phone number). Years of practice contradict. clinical-blue on a law firm reads as a clinic."
+  },
+  {
+    "id": "v20",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Projects, skills, Hire Me. Every contact field is 'not listed' — unusable for someone looking for work."
+  },
+  {
+    "id": "v28",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 4,
+    "notes": "Adversarial 'something modern and cool' recovered as a generic consultancy. Anytown USA / info@example.com. mono-precision is the right kind of modern."
+  },
+  {
+    "id": "v30",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "கோமளா சில்க்ஸ் kept on the page, Kanchipuram, three generations, collection gallery. Phone/email/hours all 'on request'."
+  },
+  {
+    "id": "v03",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Koramangala, check-ups/root canals/braces, booking CTA. Saturday hours disagree between FAQ and contact."
+  },
+  {
+    "id": "v21",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 2,
+    "artDirectionAppropriate": 2,
+    "notes": "Stock-tracking copy is fine. Prompt asked for a pricing table — none. clinical-blue is hospital, not SaaS."
+  },
+  {
+    "id": "v04",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 4,
+    "notes": "Dogs/cats/birds, vaccinations/surgery/boarding, Sundays. Hero has a booking number; contact is 'Not provided'."
+  },
+  {
+    "id": "v22",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 2,
+    "artDirectionAppropriate": 2,
+    "notes": "Hyderabad + Register exist. Dated Nov 2024. Schedule is three cards, not a schedule. No contact section. clinical-blue on a design conference."
+  },
+  {
+    "id": "v05",
+    "copySensible": 2,
+    "sectionSelectionAppropriate": 2,
+    "artDirectionAppropriate": 4,
+    "notes": "Prompt asked for donations and volunteer signup. Page is after-school enrolment ('Enroll Now'). Contact is [Center address] placeholders."
+  },
+  {
+    "id": "v23",
+    "copySensible": 2,
+    "sectionSelectionAppropriate": 3,
+    "artDirectionAppropriate": 4,
+    "notes": "Heading is 'Your Name'. About restates the prompt. Contact is N/A. Gallery of a personal website. Art is quietly right."
+  },
+  {
+    "id": "v06",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 2,
+    "notes": "Coimbatore, engineering + management, campus gallery, admissions CTA. Placements only in the contact blurb. clinical-blue again."
+  },
+  {
+    "id": "v07",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Ahmedabad, residential + small commercial, drawings and site photos in the gallery. Phone is +91-XXXXXXXXXX."
+  },
+  {
+    "id": "v08",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 2,
+    "notes": "Surat, FTL/part-load/warehousing, fleet gallery. clinical-blue/whisper on a trucking company."
+  },
+  {
+    "id": "v09",
+    "copySensible": 2,
+    "sectionSelectionAppropriate": 3,
+    "artDirectionAppropriate": 3,
+    "notes": "Class timings exist. About is \"our studio\", not the teacher. Contact is literal Studio address / Phone number. USD pricing."
+  },
+  {
+    "id": "v10",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Jayanagar, guitar+keyboard, kids and adults, weekend batches, studio photos. Fees are \"contact us\". Hours say Sunday closed while batches are on weekends."
+  },
+  {
+    "id": "v11",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 2,
+    "notes": "Thane, car and two-wheeler, 21-day course, fees listed in USD. Contact phone is Not available. clinical-blue again."
+  },
+  {
+    "id": "v12",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 2,
+    "notes": "Noida, house/office/car, quote CTA and a number. FAQ says clients pack themselves; the prompt said we pack everything. clinical-blue."
+  },
+  {
+    "id": "v13",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 3,
+    "artDirectionAppropriate": 2,
+    "notes": "180 flats in Bengaluru, committee names, maintenance. No notices board despite View Notices. Phone 080-XXXX-XXXX. clinical-blue on an RWA."
+  },
+  {
+    "id": "v14",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Bandra, sports/back/post-surgery, home visits, Book Appointment. Phone not listed. clinical-blue actually fits a clinic."
+  },
+  {
+    "id": "v15",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Vijayanagar, 8th–10th maths/science, batches of 10, parent quotes and results. Email is tutoringexample.com."
+  },
+  {
+    "id": "v16",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Jaipur, venue/décor/catering/photo, gallery. Packages are service cards with no prices. About restates the brief. Contact not listed."
+  },
+  {
+    "id": "v17",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 2,
+    "notes": "Kochi, wiring/fan/inverter, emergency CTA with a big number. Footer number contradicts the hero. clinical-blue on a tradesperson."
+  },
+  {
+    "id": "v18",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 2,
+    "notes": "Indore CA, GST/ITR/company registration, formal team bios. Theme is clinical-blue, not trustworthy-formal."
+  },
+  {
+    "id": "v24",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Soaps and candles, India shipping, product photos, INR prices. Cart is a Shop Now label. Contact all pending."
+  },
+  {
+    "id": "v25",
+    "copySensible": 2,
+    "sectionSelectionAppropriate": 2,
+    "artDirectionAppropriate": 4,
+    "notes": "Asked for posts + about, minimal. Got testimonials, Anytown USA, example.com, a gallery of stock book photos — no actual posts."
+  },
+  {
+    "id": "v26",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Gurgaon, SEO/social/paid, case-study gallery and logo collage. Phone +91-XXXXXXXXXX. deep-luxury/showcase is actually sharp."
+  }
+]

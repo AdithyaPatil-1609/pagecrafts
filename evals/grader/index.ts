@@ -125,6 +125,8 @@ export function blankFieldsIn(composition: Composition): string[] {
             if (field.type === 'color') continue;
             const value = props[field.key];
 
+            if (field.optional) continue;
+
             if (isEmpty(value)) {
                 blanks.push(`${section.id}.${field.key}`);
                 continue;

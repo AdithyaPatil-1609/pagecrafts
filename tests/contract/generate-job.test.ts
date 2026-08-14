@@ -1,9 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const auth = vi.hoisted(() => ({ requireUser: vi.fn() }));
+const ledger = vi.hoisted(() => ({ persist: vi.fn() }));
 vi.mock('@/lib/auth/session', () => ({
     requireUser: auth.requireUser,
     supabaseRoute: async () => ({}),
+}));
+vi.mock('@/lib/ai/cost/persist', () => ({
+    persistLedger: ledger.persist,
 }));
 
 vi.mock('@/lib/limits/redis', async () => {
@@ -15,6 +19,7 @@ import { redisMock as limits, resetRedisMock } from '../support/redis-mock';
 import { setGateway } from '@/lib/ai/gateway';
 import { MockGateway } from '@/lib/ai/gateway/mock';
 import { setGenerationCounters } from '@/lib/ai/jobs/budget';
+import { resetDiversityStore } from '@/lib/ai/composition/diversity';
 import { jobStore, setJobStore } from '@/lib/ai/jobs/store';
 import { POST } from '@/app/api/v1/projects/[id]/generate/route';
 import { GET } from '@/app/api/v1/jobs/[id]/route';
@@ -47,11 +52,13 @@ async function settled(id: string) {
 
 beforeEach(() => {
     auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
+    ledger.persist.mockReset().mockResolvedValue(undefined);
     resetRedisMock();
     limits.evalMock.mockImplementation(async (_s: string, keys: string[]) =>
         keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0]);
     setJobStore(null);
     setGenerationCounters(null);
+    resetDiversityStore();
     setGateway(new MockGateway());
 });
 
@@ -120,6 +127,7 @@ describe('the job runner', () => {
         const job = await settled(data.job_id);
         expect(job.status).toBe('done');
         expect(job.composition).toBeDefined();
+        expect(job.files?.['index.html']).toMatch(/^<!doctype html>/i);
         expect(job.sectionsDone).toBe(job.sectionsTotal);
         expect(job.sectionsTotal).toBeGreaterThan(0);
     });
@@ -158,6 +166,17 @@ describe('the job runner', () => {
 
         expect(job.ledger.length).toBeGreaterThanOrEqual(job.sectionsTotal + 3);
         expect(job.ledger.every((r) => !!r.provider)).toBe(true);
+        expect(ledger.persist).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                jobId: job.id,
+                userId: 'u_1',
+                projectId: 'p_1',
+            }),
+            job.ledger,
+        );
+        expect(limits.hincrbyMock).toHaveBeenCalled();
+        expect(limits.zremMock).toHaveBeenCalled();
     });
 
     it('falls back rather than failing when generation is abandoned', async () => {
@@ -166,7 +185,8 @@ describe('the job runner', () => {
         const { data } = await res.json();
         const job = await settled(data.job_id);
 
-        expect(job.status).toBe('failed');
+        expect(job.status).toBe('done');
+        expect(job.fallbackTemplateId).toBeTruthy();
         expect(job.events.map((e) => e.name)).toContain('fallback');
     });
 });
@@ -187,6 +207,7 @@ describe('GET /api/v1/jobs/{id}', () => {
             sections_total: expect.any(Number),
             provider: expect.any(String),
             elapsed_ms: expect.any(Number),
+            files_ready: true,
         });
     });
 

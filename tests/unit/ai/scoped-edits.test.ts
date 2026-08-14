@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setGateway, type Gateway } from '@/lib/ai/gateway';
 import { proposeEdit } from '@/lib/ai/edit/propose';
+import { applyPatch, ApplyError } from '@/lib/ai/edit/apply';
 import type { SectionInstance } from '@/lib/contracts';
 
 function fake(reply: string): Gateway {
@@ -89,5 +90,34 @@ describe('scoped edits (M3.5)', () => {
         for (const banned of ['writeFile', 'writeFileSync', 'appendFile', 'rm(', 'unlink', 'node:fs']) {
             expect(src).not.toContain(banned);
         }
+    });
+});
+
+const heroFull: SectionInstance = {
+    id: 's_01', type: 'hero', variant: 'centred', brief: 'welcome',
+    visible: true, locked: false, source: 'ai',
+    props: {
+        eyebrow: 'Koramangala',
+        heading: 'Old heading',
+        sub: 'Same-week appointments.',
+        ctaLabel: 'Book',
+        image: { query: 'clinic', alt: 'Clinic' },
+    },
+};
+
+describe('applyPatch', () => {
+    it('applies a heading replace against a complete hero', () => {
+        const next = applyPatch(heroFull, [
+            { op: 'replace', path: '/props/heading', value: 'Short heading' },
+        ]);
+        expect(next.props.heading).toBe('Short heading');
+        expect(next.props.ctaLabel).toBe('Book');
+        expect(next.source).toBe('user');
+    });
+
+    it('rejects a patch that would fail the content schema', () => {
+        expect(() => applyPatch(heroFull, [
+            { op: 'replace', path: '/props/heading', value: '' },
+        ])).toThrow(ApplyError);
     });
 });

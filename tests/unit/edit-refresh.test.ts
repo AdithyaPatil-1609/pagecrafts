@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditorStore } from '@/lib/editor-store';
 
-function fakeServer() {
-    let stored: Record<string, string> = { 'index.html': 'original' };
+function fakeServer(files: Record<string, string> = { 'index.html': 'original' }) {
+    let stored = files;
 
     return vi.fn(async (url: string, init?: RequestInit) => {
         if (String(url).includes('/commits')) {
@@ -39,5 +39,20 @@ describe('edits survive refresh', () => {
         await useEditorStore.getState().loadProject('p1');
 
         expect(useEditorStore.getState().vfs.read('index.html')).toBe('edited content');
+    });
+
+    it('migrates composition.json when the project opens', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { join } = await import('node:path');
+        const { SCHEMA_VERSION } = await import('@/lib/contracts');
+        const v2 = readFileSync(join(process.cwd(), 'tests/fixtures/compositions/v2.json'), 'utf8');
+
+        vi.stubGlobal('fetch', fakeServer({ 'index.html': '<h1/>', 'composition.json': v2 }));
+        await useEditorStore.getState().loadProject('p1');
+
+        const composition = useEditorStore.getState().composition;
+        expect(composition?.schemaVersion).toBe(SCHEMA_VERSION);
+        expect(composition?.artDirection.themeId).toBe('clinical-blue');
+        expect(useEditorStore.getState().vfs.read('composition.json')).toContain('"schemaVersion": 3');
     });
 });

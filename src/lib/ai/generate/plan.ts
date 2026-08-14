@@ -70,7 +70,10 @@ export async function plan(
         });
     }
 
-    const { sections: planned, repairs } = normalisePlan(parsed.data);
+    const { sections: planned, repairs } = normalisePlan(parsed.data, {
+        prompt,
+        required: profile.recipe.filter((r) => r.required).map((r) => r.type),
+    });
     if (repairs.length) console.warn(`[plan] ${repairs.join(' · ')}`);
 
     const sections: SectionInstance[] = planned.map((s, i) => ({

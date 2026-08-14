@@ -84,10 +84,9 @@ the same evaluated set:
 
 ## v2 — written D12, not yet adopted
 
-`plan.v2` and `fill-section.v2` sit alongside v1. **`AI_PROMPT_PLAN` and
-`AI_PROMPT_FILL` still default to v1**: v2 is switched on by config once a
-before/after comparison says it earns it, and that comparison needs D11's
-baseline, which has not been measured. See `docs/ai/D12_TUNING.md`.
+`plan.v2` and `fill-section.v2` sit alongside v1. They were never the default.
+Plan and fill now default to **v3** (`AI_PROMPT_PLAN` / `AI_PROMPT_FILL`).
+v1 stays on disk, hash-pinned, so a D11 figure remains reproducible.
 
 `classify`, `profile` and `edit` have no v2 — nothing recorded against them
 warranted one.
@@ -128,8 +127,7 @@ taxonomy has been written yet — expect a v3 for that.
 
 ### Before / after
 
-Not yet measured. The table lives in `docs/ai/D12_TUNING.md` and acceptance is
-not met until it shows the pass rate up with zero regressions.
+v2 itself was never measured. A later clean six-run is what promoted v3.
 
 ---
 
@@ -148,4 +146,42 @@ v1 files are byte-for-byte unchanged and hash-pinned in CI.
 
 **This changes the bytes sent to the provider.** The D5 and D8 measurements were
 taken without it, so figures from before D13 and after it do not belong in the
-same table. This is noted in `docs/ai/D11_BASELINE.md` too.
+same table.
+
+---
+
+## v3 — D11 taxonomy
+
+Driven by the 15-vertical D11 sample, not by taste. v1 and v2 are untouched.
+
+| Finding | Vertical | What v3 changes |
+|---|---|---|
+| Completed, missing `contact` | `event` (v22) | Plan: at the 7-section cap, drop testimonials/team/faq before contact. Contact is required when the description mentions register, venue, book. `normalisePlan` inserts it if the model still omits it. |
+| Fill died on empty quotes | `unspecified` (v27) | Plan: do not include testimonials/team when the prompt names no business. Fill: required fields never `""`; optional contact facts **are** empty when unknown. |
+
+v3 was amended after the D11 human sheet: empty contact facts are now legal in the schema, `applyTone` no longer pins `formal` to `clinical-blue`, and the JOB block stops substituting a neighbouring job (enrol vs donate, stock gallery vs posts).
+
+A later amendment (D15 copy bar) kills the remaining human-copy misses on the
+six-run: fill no longer recommends "Add … here" as a valid required-field value;
+plan JOB + `normalisePlan` treat a personal site as first-person work history,
+not a resume shop; a bare "a website" still gets real sentences; team briefs ask
+for roles, not "Attorney Name".
+
+A later amendment pins native-script names: fill must not transliterate a name
+the person wrote (D15 v29 मिठास स्वीट्स → "Mithaas Sweet Shop"). `preserveNativeFields`
+puts their spelling back on heading/tagline after fill; plan briefs name it exactly.
+
+A later amendment (D15 v21) kills invented contact and a missing pricing table:
+fill scrubs 555 / 1-800-555 / sales@example and any phone/email the description
+did not give; a "pricing table" / packages ask forces a services or menu section
+and fill must not say "see our pricing page".
+
+**Default as of 2026-08-14:** `plan.v3` / `fill-section.v3`. The first v3
+after-run died on a Groq TPD 429; a later clean six-run gated v27 as a
+machine pass. Human copy still 2 (skeleton).
+
+To reproduce the D11 baseline, pin v1:
+
+```bash
+AI_PROMPT_PLAN=plan.v1 AI_PROMPT_FILL=fill-section.v1 npm run grade -- --label=baseline
+```
