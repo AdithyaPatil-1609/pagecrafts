@@ -127,8 +127,7 @@ taxonomy has been written yet — expect a v3 for that.
 
 ### Before / after
 
-v2 itself was never measured. The v3 before/after lives in `docs/ai/D12_TUNING.md`;
-that clean six-run is what promoted v3.
+v2 itself was never measured. A later clean six-run is what promoted v3.
 
 ---
 
@@ -147,7 +146,7 @@ v1 files are byte-for-byte unchanged and hash-pinned in CI.
 
 **This changes the bytes sent to the provider.** The D5 and D8 measurements were
 taken without it, so figures from before D13 and after it do not belong in the
-same table. This is noted in `docs/ai/D11_BASELINE.md` too.
+same table.
 
 ---
 
@@ -177,10 +176,9 @@ fill scrubs 555 / 1-800-555 / sales@example and any phone/email the description
 did not give; a "pricing table" / packages ask forces a services or menu section
 and fill must not say "see our pricing page".
 
-**Default as of 2026-08-14:** `plan.v3` / `fill-section.v3`. First v3 after-run
-(`2026-08-14T05-48-21-067Z-d12-v3-full`) died on a Groq TPD 429. The clean
-six-run (`evals/grader/results/2026-08-14T07-04-51-746Z-d15-six-full/`) is the
-gate: v27 machine pass. Human copy still 2 (skeleton).
+**Default as of 2026-08-14:** `plan.v3` / `fill-section.v3`. The first v3
+after-run died on a Groq TPD 429; a later clean six-run gated v27 as a
+machine pass. Human copy still 2 (skeleton).
 
 To reproduce the D11 baseline, pin v1:
 

@@ -15,14 +15,14 @@ Recorded: 2026-08-14.
 
 ## Scope
 
-The chain in force is **Groq → Gemini**. Gate 1 asked for Groq and Cerebras.
+The chain in force is **Groq only**. Gate 1 asked for Groq and Cerebras.
 This record covers **Groq only**:
 
 | Provider | In `AI_PROVIDER_ORDER` | This record |
 |---|---|---|
-| Groq | yes — head of chain | read, quoted, closed |
+| Groq | yes — the default, and the only name in it | read, quoted, closed |
 | Cerebras | no — unfunded, not needed | out of scope. Re-open a terms check *before* adding it back |
-| Gemini | last resort | not this gate. Billing / Google data-use stays Adithya's |
+| Gemini | no — billing withdrawn; not in the default order | not this gate. Gateway code still exists if someone lists it |
 
 Solving a quota problem must not import a privacy problem. The production
 question is only: does Groq train on Inputs or Outputs? It does not.
@@ -87,7 +87,7 @@ The product calls chat completions only. We never hit `/batches` or
 |---|---|
 | Does Groq reserve a right to train on user content? | **No.** |
 | Is the answer different on the free / Developer tier? | **No.** Same agreement. |
-| Is Groq development-only? | **No.** Stays at the head of `AI_PROVIDER_ORDER`. |
+| Is Groq development-only? | **No.** It is `AI_PROVIDER_ORDER`. |
 | Does this close Gate 1? | **Yes**, for the provider in the chain. |
 | Cerebras | Not recorded. Not in the chain. Not needed. |
 | E1 sign-off | Not required. Gemini billing is withdrawn. |
