@@ -12,7 +12,7 @@ const envSchema = z.object({
     // supported in code but omitted: unfunded, and Gate 1 was not recorded
     // for it (docs/ai/GATE1_GROQ_TRAINING.md). Do not add it back without
     // a terms re-read.
-    AI_PROVIDER_ORDER: z.string().default('groq,gemini'),
+    AI_PROVIDER_ORDER: z.string().default('groq'),
 
     // Per-operation output ceilings (FR-103). Shared across providers; sent as max_tokens.
     AI_OUTPUT_CLASSIFY_TOKENS: z.coerce.number().int().positive().default(1_024),

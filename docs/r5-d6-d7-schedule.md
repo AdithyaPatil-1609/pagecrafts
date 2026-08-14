@@ -331,7 +331,7 @@ cat evals/spike/results/$D/raw.json | jq '.'
 
 | Person | Effect |
 |---|---|
-| **E1 · Adithya** | Gate 1 does not need his initials — closed by Hanish on Groq alone (`docs/ai/GATE1_GROQ_TRAINING.md`). Gemini billing remains his. His rate limiter and spend cap count the providers in the live chain. |
+| **E1 · Adithya** | Gate 1 does not need his initials — closed by Hanish on Groq alone (`docs/ai/GATE1_GROQ_TRAINING.md`). Gemini billing is withdrawn. His rate limiter and spend cap count the providers in the live chain (Groq). |
 | **E2 · Frontend** | Unchanged. The AI-edit view is built against the diff contract, which the provider move does not touch. Confirm scoped edits still propose-only before their Week-3 chat work. |
 | **E3 · Discovery** | Classification returning coerced defaults means their gallery ranking has been receiving `tone: 'minimal'` for every user. Tell them today — their filters may look broken for reasons that are not theirs. |
 | **E5 · Backend** | Generation timing changes with the provider. Their job runner and polling intervals were sized against Gemini. Share the D6 per-provider table. |

@@ -19,7 +19,11 @@ describe('buildGateway / chainFor', () => {
     });
 
     it('wraps two configured providers in a FallbackGateway, in order', () => {
-        const cfg = loadAiConfig({ GROQ_API_KEY: 'g', GEMINI_API_KEY: 'x' });
+        const cfg = loadAiConfig({
+            AI_PROVIDER_ORDER: 'groq,gemini',
+            GROQ_API_KEY: 'g',
+            GEMINI_API_KEY: 'x',
+        });
         expect(chainFor(cfg).map((g) => g.name)).toEqual(['groq', 'gemini']);
         expect(buildGateway(cfg)).toBeInstanceOf(FallbackGateway);
     });
@@ -33,8 +37,8 @@ describe('buildGateway / chainFor', () => {
         expect(chainFor(cfg).map((g) => g.name)).toEqual(['cerebras']);
     });
 
-    it('leaves cerebras out of the chain unless the order names it', () => {
+    it('leaves gemini and cerebras out of the chain unless the order names them', () => {
         const cfg = loadAiConfig({ GROQ_API_KEY: 'g', CEREBRAS_API_KEY: 'c', GEMINI_API_KEY: 'x' });
-        expect(chainFor(cfg).map((g) => g.name)).toEqual(['groq', 'gemini']);
+        expect(chainFor(cfg).map((g) => g.name)).toEqual(['groq']);
     });
 });

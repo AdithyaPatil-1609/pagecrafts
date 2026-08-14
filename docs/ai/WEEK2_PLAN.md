@@ -77,17 +77,17 @@ providers cannot stack three timeouts against that budget.
 | Adithya | Upstash counters, kill switch, jobs table | D6 |
 | Preethi | Section components, composition renderer | D6 |
 | Adhyay | Commit endpoint for auto-commit before edits | D8 |
-| Adithya | Gemini billing | D6 |
+| Adithya | Gemini billing | **withdrawn 2026-08-14** — Groq free only |
 | Hanish | A3 §6 Gate 1 — Groq training-data terms | **closed 2026-08-14** — `docs/ai/GATE1_GROQ_TRAINING.md` |
 
 ## Carried risks
 
-- **Free-tier data policy is now two policies in the live chain.** Groq does not
-  train on Inputs/Outputs (Gate 1 closed, `docs/ai/GATE1_GROQ_TRAINING.md`).
-  Cerebras is out of the order and was not recorded. Gemini data-use remains
-  Adithya's billing item, not this gate.
-- **The chain is two legs deep, not three.** Cerebras stays out of
-  `AI_PROVIDER_ORDER` — not funding it. A Groq outage falls to Gemini's 20 RPD.
+- **Free-tier data policy is Groq's.** Groq does not train on Inputs/Outputs
+  (Gate 1 closed, `docs/ai/GATE1_GROQ_TRAINING.md`). Cerebras and Gemini are out
+  of the default order. Gemini billing is withdrawn.
+- **The chain is one leg.** Cerebras stays out — not funding it. Gemini stays
+  out — we are not paying Google. A Groq outage falls to the template, not to
+  Gemini's 20 RPD.
 - **Quality evidence is provider-specific.** The D5 go/no-go names one provider and
   one model. Changing `AI_PROVIDER_ORDER` in week 2 silently invalidates it;
   re-run the corpus before relying on the old number.

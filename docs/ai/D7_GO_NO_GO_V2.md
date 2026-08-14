@@ -224,7 +224,7 @@ product. "We'll see" is not a posture.
 | Gate | Owner | State |
 |---|---|---|
 | **E2 / A3 §6 Gate 1 · Groq training-data terms** — recorded in `docs/ai/GATE1_GROQ_TRAINING.md`. Groq does not train on Inputs/Outputs. Cerebras is out of the chain and out of this record. | Hanish | **closed 2026-08-14** |
-| A3 §7 — Gemini billing | Adithya | open |
+| A3 §7 — Gemini billing | — | **withdrawn 2026-08-14** — Groq free; Gemini not in the order |
 | `generations.provider` column | Adithya | open |
 
 ---
@@ -236,7 +236,7 @@ product. "We'll see" is not a posture.
 | Re-run the corpus after the repair-scope fix and re-measure P95 model time against NFR-003 | Hanish | D8 |
 | Fill the rubric's 1–5 columns by reading the generated copy | Hanish | before the decision line |
 | Grow the corpus from 10 to 30 verticals | Hanish | before D11 |
-| Gemini's 20 RPD is exhausted by ~6 fallback calls — it cannot absorb a Groq outage at corpus scale | Adithya (billing) | D8 |
+| Gemini's 20 RPD is exhausted by ~6 fallback calls — it cannot absorb a Groq outage at corpus scale | — | **withdrawn** — Gemini is not in the chain |
 | Record Groq's training-data terms (E2 / Gate 1) | Hanish | **done 2026-08-14** — `docs/ai/GATE1_GROQ_TRAINING.md` |
 | `provider` column on `generations` | Adithya | D9 |
 | Share the capacity figures — job runner intervals were sized against Gemini | Hanish → E5 | D8 |

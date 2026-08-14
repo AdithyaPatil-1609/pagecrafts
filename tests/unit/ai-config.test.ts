@@ -47,8 +47,8 @@ describe('loadAiConfig', () => {
         expect(cfg.providers.gemini.models.strong).toBe('gemini-3.5-flash');
     });
 
-    it('defaults the provider order to groq, gemini', () => {
-        expect(loadAiConfig(base).order).toEqual(['groq', 'gemini']);
+    it('defaults the provider order to groq only', () => {
+        expect(loadAiConfig(base).order).toEqual(['groq']);
         expect(loadAiConfig(base).provider).toBe('groq');
     });
 

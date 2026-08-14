@@ -16,9 +16,9 @@ Owner: Hanish (R5 · AI). The corpus, the grader and the ranking machinery for t
 The schedule's errata puts a hard gate before D11: Gemini billing, or the corpus
 shrinks to ~2 verticals and the *90% of 30* metric is renegotiated.
 
-**That arithmetic is against the wrong provider.** `AI_PROVIDER_ORDER` is
-`groq,gemini` — Gemini is the *last* fallback, not the head of the chain. The
-gate is real but much softer than written:
+**That arithmetic is against the wrong provider.** Default `AI_PROVIDER_ORDER` is
+`groq`. Gemini is not in the chain. The gate was Gemini-sized; the work ran on
+Groq:
 
 | | Requests/day | Tokens/day | Full generations/day | Binding limit |
 |---|---|---|---|---|
@@ -40,12 +40,8 @@ The whole three-day programme, in generations rather than requests:
 | D13 injection corpus | 0 | 0 — runs offline, see below |
 | **Total** | **~83** | **≈ 5 days** |
 
-**So D11 can run at the full 30 verticals without billing**, over about two days,
-and the *90% of 30* metric does not need renegotiating. Billing is still worth
-having — it collapses five days of waiting into an afternoon, and at the
-amendment's pricing the whole programme is a bit over a dollar — but it is a
-convenience, not a gate. The D5 escalation should be re-framed on that basis
-rather than as a blocker.
+**So D11 ran the full 30 on Groq free.** Gemini billing is withdrawn. Do not
+re-open it as a gate.
 
 Two further corrections to the errata's arithmetic:
 
@@ -160,7 +156,9 @@ Ran 2026-08-14 in two sessions on Groq free (15 + 15 resume). Prompts stayed on 
 
 The two auto-fails: **`unspecified` (v27)** died at fill (`fillSection(testimonials)` schema rejection — no page). **`event` (v22)** completed but missed required `contact`. `driving-school` passed with a wrong category (`professional_services`); that does not gate `passed`.
 
-The published D15 bar is 90% of 30. The **machine** bar is met. Diversity fails. Human copy ≥4 is **13/30 (43%)** — that is not the same bar.
+The published D15 bar is 90% of 30. Closed on v3 in `docs/ai/D15_STATUS.md`:
+machine **30/30**, copy ≥4 **28/30**, diversity **passes**. This v1 sheet stays
+the baseline (copy ≥4 **13/30**). Do not mix them.
 
 ### Diversity — R-NEW-C
 
@@ -227,6 +225,6 @@ not comparable to the D5/D8 numbers.** Do not put them in the same table.
 | Item | Why |
 |---|---|
 | Diversity — `clinical-blue` / `whisper` at 48% on the v1 30 | v3 30 **passes** (clinical-blue 23%, calm 40%) — `2026-08-14T07-58-07-237Z-d15-sensible-full` |
-| Human copy ≥4 only 13/30 on the v1 sheet | v3 30: **28/30**. Remaining: v21 invented phone, v29 Hindi not on the hero |
+| Human copy ≥4 only 13/30 on the v1 sheet | v3 30: **28/30** — `docs/ai/D15_STATUS.md`. Remaining 3s (v21 phone, v29 Hindi) have code fixes in `947aad4`, not a second 30 |
 | A clean NFR-003 P95 | Still owed from D8 — both existing figures included pacing |
 | `vertical_profiles` table | Migration written (`20260812090000`); needs provisioning by E1 |

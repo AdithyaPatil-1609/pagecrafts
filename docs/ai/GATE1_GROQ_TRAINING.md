@@ -90,7 +90,7 @@ The product calls chat completions only. We never hit `/batches` or
 | Is Groq development-only? | **No.** Stays at the head of `AI_PROVIDER_ORDER`. |
 | Does this close Gate 1? | **Yes**, for the provider in the chain. |
 | Cerebras | Not recorded. Not in the chain. Not needed. |
-| E1 sign-off | Not required. This is not the Gemini billing gate. |
+| E1 sign-off | Not required. Gemini billing is withdrawn. |
 
 If Groq's Services Agreement §4.2 is ever amended to permit training on Inputs
 or Outputs without an explicit grant, Groq becomes development-only the same
