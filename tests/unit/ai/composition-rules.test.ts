@@ -130,6 +130,18 @@ describe('normalisePlan', () => {
         ]);
     });
 
+    it('does not treat "post surgery" as a writing ask (D15 v14)', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'split-image', brief: 'a' },
+            { type: 'about', variant: 'text', brief: 'b' },
+            { type: 'services', variant: 'cards', brief: 'sports, back pain, post-surgery rehab' },
+            { type: 'footer', variant: 'simple', brief: 'd' },
+        ], { prompt: 'physio clinic in bandra, sports injuries back pain and post surgery rehab' });
+
+        expect(out.sections.find((s) => s.type === 'services')?.brief).not.toMatch(/post title/i);
+        expect(out.sections.find((s) => s.type === 'services')?.brief).toMatch(/sports, back pain/i);
+    });
+
     it('drops testimonials on a scoped "just the posts and an about" ask', () => {
         const out = normalisePlan([
             { type: 'hero', variant: 'minimal', brief: 'a' },
@@ -229,5 +241,16 @@ describe('normalisePlan', () => {
 
         expect(out.sections.find((s) => s.type === 'hero')?.brief).toMatch(/Donate or Volunteer/i);
         expect(out.sections.find((s) => s.type === 'hero')?.brief).toMatch(/not Enroll/i);
+    });
+
+    it('tells contact not to invent a phone the description did not give', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'centred', brief: 'a' },
+            { type: 'contact', variant: 'form', brief: 'phone 1-800-555-0123 and sales@example.com' },
+            { type: 'footer', variant: 'simple', brief: 'c' },
+        ], { prompt: 'landing page for a tool that helps small shops track stock' });
+
+        expect(out.sections.find((s) => s.type === 'contact')?.brief)
+            .toMatch(/empty unless the description gives them/i);
     });
 });

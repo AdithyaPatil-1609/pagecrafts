@@ -198,6 +198,8 @@ Scored by reading `human-read/*.md` from `raw.json`. Sheet: `human-sheet.json`.
 
 Copy ≥4 is the human pass used in the spike rubric. **13/30 (43%)**. Sections are mostly apt; art is dragged down by `clinical-blue` on law, logistics, driving school, packers, RWA, electrician, accountant, SaaS, event, university.
 
+D15 remeasured the same 30 on **v3** (not this v1 sheet): copy ≥4 is **28/30** in `evals/grader/results/2026-08-14T07-58-07-237Z-d15-sensible-full/`. The two misses are v21 (invented 1-800) and v29 (Hindi name not on the hero). Do not mix the two sheets.
+
 ### Spend
 
 | | Requests | Tokens |
@@ -224,7 +226,7 @@ not comparable to the D5/D8 numbers.** Do not put them in the same table.
 
 | Item | Why |
 |---|---|
-| Diversity — `clinical-blue` / `whisper` at 48% on the v1 30 | Tone map no longer pins; not re-measured on a full 30 of v3 |
-| Human copy ≥4 only 13/30 on the v1 sheet | Placeholder contact and wrong job-of-the-page; not a machine blank |
+| Diversity — `clinical-blue` / `whisper` at 48% on the v1 30 | v3 30 **passes** (clinical-blue 23%, calm 40%) — `2026-08-14T07-58-07-237Z-d15-sensible-full` |
+| Human copy ≥4 only 13/30 on the v1 sheet | v3 30: **28/30**. Remaining: v21 invented phone, v29 Hindi not on the hero |
 | A clean NFR-003 P95 | Still owed from D8 — both existing figures included pacing |
 | `vertical_profiles` table | Migration written (`20260812090000`); needs provisioning by E1 |

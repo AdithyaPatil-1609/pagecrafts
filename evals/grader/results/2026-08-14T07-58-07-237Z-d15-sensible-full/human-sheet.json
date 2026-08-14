@@ -1,0 +1,212 @@
+[
+  {
+    "id": "v01",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Nashik, three specialties, Book appointment. Team is role titles not dummy names. Contact empty (no number given). clinical-blue fits a hospital."
+  },
+  {
+    "id": "v02",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 4,
+    "notes": "Property + family, consultation CTA. Team is Senior Property Solicitor / Family Law Solicitor — not Attorney Name. Contact empty. tech-slate, not clinical-blue."
+  },
+  {
+    "id": "v03",
+    "copySensible": 5,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 4,
+    "notes": "Koramangala, check-ups/root canals/braces, Book an appointment. Contact empty. sunlit-craft is warmer than a clinic default."
+  },
+  {
+    "id": "v04",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Vashi, dogs/cats/birds, vaccinations/surgery/boarding. Call to book; phone empty (none given). Sunday mentioned in the prompt, not contradicted. warm-editorial."
+  },
+  {
+    "id": "v05",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Hero CTA is Donate. FAQ covers volunteer and donation. Invented weekday schedules for art/STEM. Contact empty. calm-sage."
+  },
+  {
+    "id": "v06",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 3,
+    "notes": "Coimbatore, engineering + management, Apply Now, campus gallery. 'Founded in Coimbatore' invents a founding. clinical-blue on a university."
+  },
+  {
+    "id": "v07",
+    "copySensible": 5,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Ahmedabad, residential + small commercial, drawings and site photos. Contact empty. mono-precision fits."
+  },
+  {
+    "id": "v08",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 4,
+    "notes": "Surat, FTL/part-load/warehousing, fleet in the gallery, quote CTA. tech-slate reads reliable."
+  },
+  {
+    "id": "v09",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "About is first person ('I studied yoga… I began teaching'). Class names exist. Invented 'pricing tiers' without numbers. Contact empty. calm-sage."
+  },
+  {
+    "id": "v10",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Jayanagar, guitar+keyboard, kids and adults, weekend batches. Enroll Now is the right verb. Fees not listed (none given). calm-sage."
+  },
+  {
+    "id": "v11",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 2,
+    "notes": "Thane, car and two-wheeler, 21-day course, licence help. No invented USD fees. clinical-blue on a driving school."
+  },
+  {
+    "id": "v12",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 3,
+    "notes": "Noida, house/office/car, we pack ourselves, Get a Quote. Contact empty. deep-luxury is a bit much for a mover."
+  },
+  {
+    "id": "v13",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 3,
+    "artDirectionAppropriate": 2,
+    "notes": "180 flats in Bengaluru, notices/committee/maintenance in the hero. No notices board as a section. Contact empty. clinical-blue on an RWA."
+  },
+  {
+    "id": "v14",
+    "copySensible": 5,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Bandra, sports/back/post-surgery, home visits, Book an appointment. Services are treatments not blog posts (fill ignored a bad brief; WRITING_ASK no longer matches 'post surgery')."
+  },
+  {
+    "id": "v15",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 4,
+    "notes": "Vijayanagar, 8th–10th maths/science, batches of 10, parent-facing. Contact empty."
+  },
+  {
+    "id": "v16",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Jaipur, venue/décor/catering/photo, gallery. Silver/Gold/Platinum packages with no prices (prompt asked for package options). Contact empty. warm-editorial."
+  },
+  {
+    "id": "v17",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 4,
+    "notes": "Kochi, wiring/fan/inverter, Emergency Call. Phone empty (none given) so the 'big number' is a button not a fake digit string."
+  },
+  {
+    "id": "v18",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Indore CA, GST/ITR/company registration. mono-precision, not clinical-blue."
+  },
+  {
+    "id": "v19",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 5,
+    "artDirectionAppropriate": 5,
+    "notes": "Jayanagar South-Indian breakfast, real menu. Prices are Varies (none given). Address is Jayanagar; phone empty. No XXXXXXXXX. warm-editorial."
+  },
+  {
+    "id": "v20",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 4,
+    "notes": "Freelance graphic designer, first person, projects and skills, Hire-adjacent CTA. Contact empty (legal). Not a resume shop."
+  },
+  {
+    "id": "v21",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 3,
+    "artDirectionAppropriate": 4,
+    "notes": "Stock-tracking copy is fine. Invented 1-800-555-0123 and sales@inventorytool.com. Prompt asked for a pricing table — none, FAQ waves at a pricing page. tech-slate, not clinical-blue. First attempt timed out at plan; this row is the retry."
+  },
+  {
+    "id": "v22",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 3,
+    "artDirectionAppropriate": 2,
+    "notes": "Hyderabad + Register exist. Schedule is two TBD cards. Contact present. clinical-blue on a design conference."
+  },
+  {
+    "id": "v23",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 3,
+    "notes": "First person, Work History not packages, no resume-writing shop. Timeline has one thin item. Contact empty. clinical-blue is cold for a personal page."
+  },
+  {
+    "id": "v24",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 3,
+    "notes": "Soaps and candles, India shipping, Shop now. Contact empty. mono-precision is a bit severe for craft."
+  },
+  {
+    "id": "v25",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 3,
+    "artDirectionAppropriate": 3,
+    "notes": "Real post titles (The Art of Reading Slowly, The Little Prince, Morning Routines). About is first person. Extra gallery despite 'just the posts and an about'. clinical-blue is cold."
+  },
+  {
+    "id": "v26",
+    "copySensible": 5,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Gurgaon, SEO/social/paid, case-study gallery. Contact empty. vivid-energy/showcase is sharp."
+  },
+  {
+    "id": "v27",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 4,
+    "notes": "Heading is 'A simple website', real sentences, not Add heading here. Contact facts empty. Four sections, no testimonials. Generic and that's the job."
+  },
+  {
+    "id": "v28",
+    "copySensible": 4,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 4,
+    "notes": "Adversarial 'something modern and cool' recovered as a generic modern shop in real sentences. Contact empty — no Anytown / example.com. deep-luxury/showcase."
+  },
+  {
+    "id": "v29",
+    "copySensible": 3,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "Old Delhi, named sweets, photos. Prompt asked for the Hindi name at the top; hero heading is 'Mithaas Sweet Shop'. About heading is मिठास स्वीट्स. Invented a chocolate eclair. sunlit-craft."
+  },
+  {
+    "id": "v30",
+    "copySensible": 5,
+    "sectionSelectionAppropriate": 4,
+    "artDirectionAppropriate": 5,
+    "notes": "கோமளா சில்க்ஸ் kept on the hero, Kanchipuram, three generations, collection gallery. Contact empty. warm-editorial."
+  }
+]

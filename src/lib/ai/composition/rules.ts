@@ -45,7 +45,7 @@ const BARE_PAGE = /^(a |the )?(website|site|page|webpage)\.?$/i;
 const SCOPED_ASK =
     /\b(just|only|nothing (else|flashy)|keep it minimal)\b/i;
 
-const WRITING_ASK = /\b(posts?|articles?|writing|blog)\b/i;
+const WRITING_ASK = /\b(posts|articles?|writing|blog)\b/i;
 
 /**
  * D15 v23: "personal site for myself, what i do where i have worked" was
@@ -153,6 +153,9 @@ function rewriteBriefs(
                 s.brief = `${s.brief.replace(/\s*\.?\s*$/, '')} — primary CTA is Donate or Volunteer, not Enroll`;
             }
             if (s.type === 'team') s.brief = TEAM_BRIEF;
+            if (s.type === 'contact' && !/empty unless/i.test(s.brief)) {
+                s.brief = `${s.brief.replace(/\s*\.?\s*$/, '')} — leave phone, email, address and hours empty unless the description gives them`;
+            }
         }
 
         if (s.brief !== before) {

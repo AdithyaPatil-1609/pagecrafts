@@ -3875,154 +3875,6 @@
     "repairs": []
   },
   {
-    "vertical": "saas",
-    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
-    "hasTemplate": true,
-    "mode": "full",
-    "calls": [
-      {
-        "stage": "classify",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "promptVersion": "classify.v1",
-        "structuredOutput": "json_schema",
-        "inputTokens": 912,
-        "outputTokens": 377,
-        "latencyMs": 825
-      },
-      {
-        "stage": "profile",
-        "provider": "groq",
-        "model": "openai/gpt-oss-120b",
-        "promptVersion": "profile.v1",
-        "structuredOutput": "json_schema",
-        "inputTokens": 923,
-        "outputTokens": 655,
-        "latencyMs": 1883
-      }
-    ],
-    "ok": false,
-    "error": "groq: request timed out",
-    "detail": {},
-    "intent": {
-      "category": "saas",
-      "vertical": "inventory-management",
-      "tone": "formal",
-      "palette": "light",
-      "sections": [
-        "hero",
-        "services",
-        "faq",
-        "contact",
-        "footer"
-      ],
-      "fallback": false
-    },
-    "partial": {
-      "profile": {
-        "slug": "inventory-management",
-        "label": "Inventory Management",
-        "aliases": [
-          "stock control",
-          "warehouse management",
-          "supply chain",
-          "inventory tracking",
-          "stock management"
-        ],
-        "recipe": [
-          {
-            "type": "hero",
-            "required": true,
-            "note": "Captures the core value proposition and primary call‑to‑action"
-          },
-          {
-            "type": "about",
-            "required": true,
-            "note": "Brief overview of the company and its mission"
-          },
-          {
-            "type": "services",
-            "required": true,
-            "note": "Key features such as real‑time tracking, analytics, and automation"
-          },
-          {
-            "type": "testimonials",
-            "required": true,
-            "note": "Quotes from satisfied enterprise clients"
-          },
-          {
-            "type": "faq",
-            "required": true,
-            "note": "Answers to common implementation and pricing questions"
-          },
-          {
-            "type": "contact",
-            "required": true,
-            "note": "Form and contact details for sales inquiries"
-          },
-          {
-            "type": "footer",
-            "required": true,
-            "note": "Legal links, social icons, and brief navigation"
-          }
-        ],
-        "artDirection": {
-          "themeId": "tech-slate",
-          "motionId": "calm",
-          "radiusId": "sharp",
-          "spacingId": "default",
-          "imageryId": "bright-clean"
-        },
-        "vocabulary": {
-          "customer": "client",
-          "purchase": "subscription"
-        },
-        "imageQueries": [
-          "warehouse shelves",
-          "barcode scanning",
-          "inventory software dashboard"
-        ]
-      }
-    },
-    "requests": 2,
-    "modelTimeMs": 2708,
-    "wallClockMs": 901863,
-    "ledger": [
-      {
-        "stage": "classify",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "promptVersion": "classify.v1",
-        "inputTokens": 912,
-        "outputTokens": 377,
-        "costCents": 0,
-        "status": "completed",
-        "latencyMs": 825,
-        "createdAt": "2026-08-14T08:10:38.525Z"
-      },
-      {
-        "stage": "profile",
-        "provider": "groq",
-        "model": "openai/gpt-oss-120b",
-        "promptVersion": "profile.v1",
-        "inputTokens": 923,
-        "outputTokens": 655,
-        "costCents": 0,
-        "status": "completed",
-        "latencyMs": 1883,
-        "createdAt": "2026-08-14T08:10:40.409Z"
-      }
-    ],
-    "spend": {
-      "calls": 2,
-      "inputTokens": 1835,
-      "outputTokens": 1032,
-      "costCents": 0,
-      "failed": 0
-    },
-    "repairs": []
-  },
-  {
     "vertical": "veterinary-clinic",
     "prompt": "vet clinic in vashi, dogs cats and small birds, vaccinations surgery and boarding, we are open on sundays too, need a booking number",
     "hasTemplate": false,
@@ -10916,5 +10768,2113 @@
     "repairs": [
       "contact: fillSection(contact): model output failed validation"
     ]
+  },
+  {
+    "vertical": "tuition-centre",
+    "prompt": "tuition classes for 8th to 10th std maths and science in vijayanagar, small batches of 10, want to show our results and what parents said",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 927,
+        "outputTokens": 722,
+        "latencyMs": 1247
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 923,
+        "outputTokens": 598,
+        "latencyMs": 1813
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1844,
+        "outputTokens": 1103,
+        "latencyMs": 2798
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1256,
+        "outputTokens": 478,
+        "latencyMs": 1902
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1119,
+        "outputTokens": 485,
+        "latencyMs": 2174
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1111,
+        "outputTokens": 542,
+        "latencyMs": 1686
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1070,
+        "outputTokens": 494,
+        "latencyMs": 1500
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1028,
+        "outputTokens": 820,
+        "latencyMs": 2213
+      },
+      {
+        "stage": "fill",
+        "section": "contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1144,
+        "outputTokens": 324,
+        "latencyMs": 1250
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 926,
+        "outputTokens": 290,
+        "latencyMs": 878
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "tutoring-center",
+      "artDirection": {
+        "themeId": "tech-slate",
+        "motionId": "none",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "warm-natural"
+      },
+      "meta": {
+        "title": "Tutoring Center",
+        "description": "tuition classes for 8th to 10th std maths and science in vijayanagar, small batches of 10, want to show our results and what parents said",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Highlight small‑batch 8th‑10th grade maths & science tuition in Vijayanagar with a compelling headline and CTA to enroll now.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Vijayanagar",
+            "heading": "Maths and Science Tuition for Grades 8‑10",
+            "sub": "Small batches, proven results, personalized attention",
+            "ctaLabel": "Enroll now",
+            "image": {
+              "query": "Vijayanagar tutoring maths science",
+              "alt": "Students in a small‑batch maths and science class in Vijayanagar"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Explain the centre’s mission to improve STEM performance, its history serving Vijayanagar students, and its focused tutoring approach.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Mission and History",
+            "body": "Our centre is dedicated to improving STEM performance for students in Vijayanagar. Since its inception, we have provided focused tutoring in mathematics and science for 8th to 10th standards, maintaining small batches of ten students to ensure personalized attention. This approach has consistently delivered strong results, earning positive feedback from parents.",
+            "image": {
+              "query": "tutoring center vijayanagar STEM",
+              "alt": "Students receiving STEM tutoring in Vijayanagar"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List maths and science subjects for grades 8‑10, offering both online and in‑person formats in batches of up to 10 students.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Tutoring Services",
+            "items": [
+              {
+                "title": "Mathematics (Grades 8-10)",
+                "body": "Online and in‑person classes covering the grade 8‑10 curriculum for small batches of up to 10 students."
+              },
+              {
+                "title": "Science (Grades 8-10)",
+                "body": "Online and in‑person classes covering the grade 8‑10 curriculum for small batches of up to 10 students."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Showcase parent and student success stories and measurable results achieved by the centre.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Student Success Stories",
+            "items": [
+              {
+                "quote": "My son’s math grade jumped from a C to an A after just three months of the small‑batch classes.",
+                "author": "Anita P."
+              },
+              {
+                "quote": "The science concepts finally clicked for my daughter thanks to the focused attention in a group of only ten students.",
+                "author": "Rohit, Vijayanagar"
+              },
+              {
+                "quote": "We saw a 15% increase in test scores across the board, and the confidence of the students really grew.",
+                "author": "Suman K."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Answer common queries on class schedules, pricing, batch size, online vs in‑person options, and cancellation policy.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "What are the class schedules?",
+                "answer": "Please contact us to learn about our class schedule."
+              },
+              {
+                "question": "How much do the classes cost?",
+                "answer": "Please contact us for detailed pricing information."
+              },
+              {
+                "question": "How many students are in each batch?",
+                "answer": "Each batch is limited to ten students to ensure personalized attention."
+              },
+              {
+                "question": "Do you offer online or in‑person classes?",
+                "answer": "We currently offer in‑person tutoring at our Vijayanagar centre; online options are not listed."
+              },
+              {
+                "question": "What is your cancellation policy?",
+                "answer": "Please refer to our cancellation policy, which will be provided at enrollment."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "simple",
+          "brief": "Provide phone number, email address, Vijayanagar address, and a brief inquiry form for enrollment.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Contact Us",
+            "blurb": "We’re available to answer your questions about enrollment.",
+            "address": "Vijayanagar",
+            "phone": "",
+            "email": "",
+            "hours": ""
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Include legal disclaimer links, social media icons, and quick navigation to home, services, and contact.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Tuition classes for 8th‑10th Std Maths & Science in Vijayanagar"
+          }
+        }
+      ]
+    },
+    "findings": [
+      {
+        "rule": "theme-share",
+        "severity": "repaired",
+        "detail": "theme \"clinical-blue\" would be 31% of the last 26 (limit 30%) — switched to \"tech-slate\""
+      },
+      {
+        "rule": "motion-share",
+        "severity": "repaired",
+        "detail": "motion \"calm\" would be 42% of the last 26 (limit 40%) — switched to \"none\""
+      }
+    ],
+    "intent": {
+      "category": "education",
+      "vertical": "tutoring-center",
+      "tone": "formal",
+      "palette": "light",
+      "sections": [
+        "hero",
+        "about",
+        "services",
+        "testimonials",
+        "contact",
+        "footer"
+      ],
+      "fallback": false
+    },
+    "requests": 10,
+    "modelTimeMs": 17461,
+    "wallClockMs": 126196,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 927,
+        "outputTokens": 722,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1247,
+        "createdAt": "2026-08-14T08:50:59.268Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 923,
+        "outputTokens": 598,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1813,
+        "createdAt": "2026-08-14T08:51:43.610Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "inputTokens": 1844,
+        "outputTokens": 1103,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2798,
+        "createdAt": "2026-08-14T08:51:48.067Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1256,
+        "outputTokens": 478,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1902,
+        "createdAt": "2026-08-14T08:51:59.912Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1119,
+        "outputTokens": 485,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2174,
+        "createdAt": "2026-08-14T08:52:02.087Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1111,
+        "outputTokens": 542,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1686,
+        "createdAt": "2026-08-14T08:52:45.295Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1070,
+        "outputTokens": 494,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1500,
+        "createdAt": "2026-08-14T08:52:49.566Z"
+      },
+      {
+        "stage": "fill:faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1028,
+        "outputTokens": 820,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2213,
+        "createdAt": "2026-08-14T08:52:51.780Z"
+      },
+      {
+        "stage": "fill:contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1144,
+        "outputTokens": 324,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1250,
+        "createdAt": "2026-08-14T08:53:03.335Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 926,
+        "outputTokens": 290,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 878,
+        "createdAt": "2026-08-14T08:53:04.215Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 11348,
+      "outputTokens": 5856,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "wedding-planner",
+    "prompt": "wedding planning in jaipur, we handle venue decor catering and photography coordination, want a gallery and package options",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 914,
+        "outputTokens": 431,
+        "latencyMs": 788
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 924,
+        "outputTokens": 792,
+        "latencyMs": 2124
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1815,
+        "outputTokens": 1036,
+        "latencyMs": 2709
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1233,
+        "outputTokens": 263,
+        "latencyMs": 1156
+      },
+      {
+        "stage": "fill",
+        "section": "about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1111,
+        "outputTokens": 504,
+        "latencyMs": 1584
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1097,
+        "outputTokens": 480,
+        "latencyMs": 1605
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1008,
+        "outputTokens": 468,
+        "latencyMs": 1734
+      },
+      {
+        "stage": "fill",
+        "section": "faq/two-column",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1026,
+        "outputTokens": 707,
+        "latencyMs": 2236
+      },
+      {
+        "stage": "fill",
+        "section": "contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1122,
+        "outputTokens": 516,
+        "latencyMs": 1552
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 912,
+        "outputTokens": 221,
+        "latencyMs": 1319
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "wedding-planning",
+      "artDirection": {
+        "themeId": "warm-editorial",
+        "motionId": "editorial",
+        "radiusId": "soft",
+        "spacingId": "airy",
+        "imageryId": "warm-natural"
+      },
+      "meta": {
+        "title": "Wedding Planning",
+        "description": "wedding planning in jaipur, we handle venue decor catering and photography coordination, want a gallery and package options",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Show a romantic Jaipur wedding scene with tagline \"Your Dream Jaipur Wedding, Perfectly Planned\" and a \"Start Planning\" button.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Jaipur Weddings",
+            "heading": "Wedding planning in Jaipur",
+            "sub": "Venue selection, décor, catering, and photography coordination",
+            "ctaLabel": "Start Planning",
+            "image": {
+              "query": "Jaipur wedding scene romantic",
+              "alt": "Romantic Jaipur wedding with floral décor and traditional attire"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Share the founders' passion for creating unforgettable Jaipur weddings, their mission to blend tradition and style, and introduce the core planning team.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Founders' Passion and Mission",
+            "body": "Our founders are dedicated to creating unforgettable Jaipur weddings, blending tradition and style. Their mission is to craft celebrations that reflect each couple's unique story while honoring local customs. The core planning team brings expertise in venue selection, decor, catering, and photography coordination.",
+            "image": {
+              "query": "Jaipur wedding planning",
+              "alt": "Warm, vibrant Jaipur wedding celebration with traditional décor"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Detail three packages—Silver (venue & decor), Gold (venue, decor, catering), Platinum (all services incl. photography coordination)—with pricing ranges.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Wedding Planning Packages",
+            "items": [
+              {
+                "title": "Silver Package",
+                "body": "Includes venue selection and décor design, tailored for couples seeking a beautiful setting."
+              },
+              {
+                "title": "Gold Package",
+                "body": "Adds full catering coordination to the venue and décor, providing a seamless dining experience."
+              },
+              {
+                "title": "Platinum Package",
+                "body": "Offers complete wedding planning with venue, décor, catering, and photography coordination for an all‑inclusive celebration."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "gallery",
+          "variant": "masonry",
+          "brief": "Display a masonry grid of recent Jaipur wedding photos showcasing décor, venues, and candid moments.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Jaipur Wedding Gallery",
+            "images": [
+              {
+                "query": "Jaipur wedding venue decorated",
+                "alt": "A beautifully decorated wedding venue in Jaipur with colorful drapes and floral arrangements."
+              },
+              {
+                "query": "Jaipur wedding floral arch",
+                "alt": "A lush floral arch framing the bride and groom during their ceremony in Jaipur."
+              },
+              {
+                "query": "Jaipur wedding candlelit dinner",
+                "alt": "An intimate candlelit dinner setting for a Jaipur wedding reception, with elegant table settings."
+              },
+              {
+                "query": "Jaipur wedding candid couple",
+                "alt": "A candid moment of the newlyweds sharing a laugh amidst the wedding celebrations in Jaipur."
+              },
+              {
+                "query": "Jaipur wedding traditional ceremony",
+                "alt": "Guests gathered around a traditional wedding altar in Jaipur, showcasing cultural décor."
+              },
+              {
+                "query": "Jaipur wedding reception lights",
+                "alt": "The reception hall illuminated by twinkling fairy lights and chandeliers, creating a warm ambience."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "faq",
+          "variant": "two-column",
+          "brief": "Answer common questions about booking timeline, vendor selection, payment schedule, and travel arrangements for out‑of‑town couples.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "How far in advance should we book our wedding planner?",
+                "answer": "Typically we recommend securing your date at least six months ahead to ensure venue and vendor availability."
+              },
+              {
+                "question": "Do we need to choose our own vendors?",
+                "answer": "We work with trusted local vendors and can recommend options, but you may also bring preferred vendors for us to coordinate."
+              },
+              {
+                "question": "What is the payment schedule for your services?",
+                "answer": "We require a deposit to lock the date, with the remaining balance payable in installments leading up to the wedding day."
+              },
+              {
+                "question": "Do you help with travel arrangements for out‑of‑town couples?",
+                "answer": "Yes, we can arrange accommodation, transport, and welcome kits for couples traveling to Jaipur."
+              },
+              {
+                "question": "When is the first meeting and what should we bring?",
+                "answer": "The initial consultation is scheduled at your convenience, and we ask you to bring inspiration photos, budget ideas, and a list of must‑have elements."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "form",
+          "brief": "Provide a simple inquiry form plus phone number and email for direct contact.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Contact Us",
+            "blurb": "Use the form below or email us to start planning your wedding.",
+            "address": "",
+            "phone": "",
+            "email": "",
+            "hours": ""
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "List legal links (privacy, terms), social media icons, and © 2024 Jaipur Wedding Planners.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Jaipur Wedding Planners – expert wedding planning in Jaipur."
+          }
+        }
+      ]
+    },
+    "findings": [],
+    "intent": {
+      "category": "event",
+      "vertical": "wedding-planning",
+      "tone": "warm",
+      "palette": "muted",
+      "sections": [
+        "hero",
+        "about",
+        "services",
+        "gallery",
+        "contact",
+        "footer"
+      ],
+      "fallback": false
+    },
+    "requests": 10,
+    "modelTimeMs": 16807,
+    "wallClockMs": 164760,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 914,
+        "outputTokens": 431,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 788,
+        "createdAt": "2026-08-14T08:53:46.081Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 924,
+        "outputTokens": 792,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2124,
+        "createdAt": "2026-08-14T08:53:51.689Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "inputTokens": 1815,
+        "outputTokens": 1036,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2709,
+        "createdAt": "2026-08-14T08:54:06.040Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1233,
+        "outputTokens": 263,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1156,
+        "createdAt": "2026-08-14T08:54:07.196Z"
+      },
+      {
+        "stage": "fill:about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1111,
+        "outputTokens": 504,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1584,
+        "createdAt": "2026-08-14T08:54:47.665Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1097,
+        "outputTokens": 480,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1605,
+        "createdAt": "2026-08-14T08:54:53.294Z"
+      },
+      {
+        "stage": "fill:gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1008,
+        "outputTokens": 468,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1734,
+        "createdAt": "2026-08-14T08:55:07.773Z"
+      },
+      {
+        "stage": "fill:faq/two-column",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1026,
+        "outputTokens": 707,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2236,
+        "createdAt": "2026-08-14T08:55:10.009Z"
+      },
+      {
+        "stage": "fill:contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1122,
+        "outputTokens": 516,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1552,
+        "createdAt": "2026-08-14T08:55:11.562Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 912,
+        "outputTokens": 221,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1319,
+        "createdAt": "2026-08-14T08:55:48.983Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 11162,
+      "outputTokens": 5418,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "electrician",
+    "prompt": "i'm an electrician in kochi, wiring work fan and light fitting inverter installation, i take emergency calls at night, number should be big",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 918,
+        "outputTokens": 353,
+        "latencyMs": 1235
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 922,
+        "outputTokens": 831,
+        "latencyMs": 2251
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1837,
+        "outputTokens": 1211,
+        "latencyMs": 2954
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1223,
+        "outputTokens": 578,
+        "latencyMs": 1698
+      },
+      {
+        "stage": "fill",
+        "section": "about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1113,
+        "outputTokens": 442,
+        "latencyMs": 2131
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1093,
+        "outputTokens": 466,
+        "latencyMs": 2641
+      },
+      {
+        "stage": "fill",
+        "section": "gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1006,
+        "outputTokens": 550,
+        "latencyMs": 1710
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1030,
+        "outputTokens": 690,
+        "latencyMs": 2272
+      },
+      {
+        "stage": "fill",
+        "section": "contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1140,
+        "outputTokens": 425,
+        "latencyMs": 1652
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 925,
+        "outputTokens": 163,
+        "latencyMs": 38008
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "electrician",
+      "artDirection": {
+        "themeId": "sunlit-craft",
+        "motionId": "editorial",
+        "radiusId": "sharp",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Electrician",
+        "description": "i'm an electrician in kochi, wiring work fan and light fitting inverter installation, i take emergency calls at night, number should be big",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Bold tagline highlighting expert electrical services in Kochi with a big emergency call button.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Kochi, India",
+            "heading": "Professional electrician in Kochi",
+            "sub": "Wiring, fan and light fitting, inverter installation, 24‑hour emergency service",
+            "ctaLabel": "Emergency Call",
+            "image": {
+              "query": "electrician wiring home",
+              "alt": "Electrician installing wiring inside a house"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Company history, certifications, and commitment to safety and reliable service in Kochi.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "About Our Electrical Services",
+            "body": "Based in Kochi, I provide wiring, fan and light fitting, and inverter installations for residential and commercial clients. I am certified in electrical safety and follow strict safety standards on every job. I also offer 24‑hour emergency service to ensure reliable power when you need it most.",
+            "image": {
+              "query": "electrician working on wiring in Kochi",
+              "alt": "Electrician installing wiring and lighting in a home"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Wiring, fan and light fitting, inverter installation, and 24‑hour emergency repairs.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Electrical Services",
+            "items": [
+              {
+                "title": "Wiring",
+                "body": "Full‑scale wiring for residential and commercial projects."
+              },
+              {
+                "title": "Fan and Light Fitting",
+                "body": "Installation of ceiling fans and lighting fixtures for homes and offices."
+              },
+              {
+                "title": "Inverter Installation",
+                "body": "Setup of power inverters to provide backup electricity."
+              },
+              {
+                "title": "24‑Hour Emergency Repairs",
+                "body": "Rapid response repairs for electrical issues any time of day."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "gallery",
+          "variant": "masonry",
+          "brief": "Showcase photos of recent wiring projects, fan/light installations, and inverter setups.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Recent Wiring & Installation Gallery",
+            "images": [
+              {
+                "query": "electrical wiring project residential kitchen",
+                "alt": "An electrician installing wiring in a modern kitchen for a client."
+              },
+              {
+                "query": "ceiling fan installation living room",
+                "alt": "Technician mounting a ceiling fan in a bright living room."
+              },
+              {
+                "query": "LED light fitting hallway",
+                "alt": "Professional fitting LED light fixtures in a hallway."
+              },
+              {
+                "query": "solar inverter installation rooftop",
+                "alt": "Electrician connecting a solar inverter on a rooftop."
+              },
+              {
+                "query": "emergency night call electrician",
+                "alt": "Electrician responding to an emergency call at night, vehicle lights on."
+              },
+              {
+                "query": "close-up electrical wiring connections",
+                "alt": "Close-up of neatly organized electrical wiring connections."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Answer common questions about wiring safety, service fees, emergency response times, and warranty.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "How do you ensure wiring safety?",
+                "answer": "We follow national electrical codes and inspect all connections before completing any job."
+              },
+              {
+                "question": "What are your service fees?",
+                "answer": "We provide a clear estimate based on the job scope before any work begins."
+              },
+              {
+                "question": "How quickly can you respond to an emergency call?",
+                "answer": "We aim to arrive as soon as possible, typically within the hour depending on location and traffic."
+              },
+              {
+                "question": "Do you offer a warranty on your work?",
+                "answer": "We include a warranty on parts and labor, with details explained during the service."
+              },
+              {
+                "question": "Do I need to book an appointment?",
+                "answer": "We accept both scheduled appointments and immediate emergency calls, so you can contact us as needed."
+              },
+              {
+                "question": "Will you come to my location?",
+                "answer": "We travel to the client’s address in Kochi for all wiring, fan, light fitting, and inverter installations."
+              },
+              {
+                "question": "What should I have ready for the first visit?",
+                "answer": "You only need to provide access to the work area and any relevant appliance information."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "simple",
+          "brief": "Prominent phone number for emergency calls, email address, and service‑area map of Kochi.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Contact us",
+            "blurb": "Reach us anytime for emergency calls, especially at night.",
+            "address": "Kochi",
+            "phone": "",
+            "email": "",
+            "hours": ""
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Legal disclaimer links, social media icons, and quick navigation to home, services, and contact.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Kochi electrician – wiring, fan and light fitting, inverter installation"
+          }
+        }
+      ]
+    },
+    "findings": [],
+    "intent": {
+      "category": "professional_services",
+      "vertical": "electrician",
+      "tone": "bold",
+      "palette": "muted",
+      "sections": [
+        "hero",
+        "about",
+        "services",
+        "testimonials",
+        "contact",
+        "footer"
+      ],
+      "fallback": false
+    },
+    "requests": 10,
+    "modelTimeMs": 56552,
+    "wallClockMs": 181173,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 918,
+        "outputTokens": 353,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1235,
+        "createdAt": "2026-08-14T08:55:54.529Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 922,
+        "outputTokens": 831,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2251,
+        "createdAt": "2026-08-14T08:56:10.024Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "inputTokens": 1837,
+        "outputTokens": 1211,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2954,
+        "createdAt": "2026-08-14T08:56:14.517Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1223,
+        "outputTokens": 578,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1698,
+        "createdAt": "2026-08-14T08:56:50.681Z"
+      },
+      {
+        "stage": "fill:about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1113,
+        "outputTokens": 442,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2131,
+        "createdAt": "2026-08-14T08:57:12.152Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1093,
+        "outputTokens": 466,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2641,
+        "createdAt": "2026-08-14T08:57:14.795Z"
+      },
+      {
+        "stage": "fill:gallery/masonry",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1006,
+        "outputTokens": 550,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1710,
+        "createdAt": "2026-08-14T08:57:16.505Z"
+      },
+      {
+        "stage": "fill:faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1030,
+        "outputTokens": 690,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2272,
+        "createdAt": "2026-08-14T08:57:18.778Z"
+      },
+      {
+        "stage": "fill:contact/simple",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1140,
+        "outputTokens": 425,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1652,
+        "createdAt": "2026-08-14T08:57:52.333Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 925,
+        "outputTokens": 163,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 38008,
+        "createdAt": "2026-08-14T08:58:50.160Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 11207,
+      "outputTokens": 5709,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "accountant",
+    "prompt": "chartered accountant practice in indore, gst filing income tax returns and company registration, want it to look trustworthy and formal",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 916,
+        "outputTokens": 404,
+        "latencyMs": 871
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 927,
+        "outputTokens": 584,
+        "latencyMs": 1673
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1816,
+        "outputTokens": 1040,
+        "latencyMs": 2703
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1230,
+        "outputTokens": 344,
+        "latencyMs": 136445
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1102,
+        "outputTokens": 356,
+        "latencyMs": 1664
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1094,
+        "outputTokens": 431,
+        "latencyMs": 2087
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1140,
+        "outputTokens": 378,
+        "latencyMs": 1906
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 916,
+        "outputTokens": 144,
+        "latencyMs": 1331
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "chartered-accountant-practice",
+      "artDirection": {
+        "themeId": "mono-precision",
+        "motionId": "calm",
+        "radiusId": "sharp",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Chartered Accountant Practice",
+        "description": "chartered accountant practice in indore, gst filing income tax returns and company registration, want it to look trustworthy and formal",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Present the practice as a trusted chartered accountant firm in Indore with a clear CTA to schedule a consultation.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Indore",
+            "heading": "Chartered accountant practice",
+            "sub": "GST filing, income tax returns, company registration",
+            "ctaLabel": "Schedule a consultation",
+            "image": {
+              "query": "chartered accountant office Indore",
+              "alt": "Chartered accountant team in Indore"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Summarize the firm's history, chartered accountant credentials, and commitment to professional integrity.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "About Us",
+            "body": "The practice is based in Indore and offers GST filing, income tax return preparation, and company registration services. All work is performed by a chartered accountant qualified under the Institute of Chartered Accountants of India. The firm adheres to strict professional integrity and confidentiality in every client engagement.",
+            "image": {
+              "query": "chartered accountant office indore",
+              "alt": "Chartered accountant practice in Indore"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List GST filing, income tax return preparation, and company registration services, highlighting expertise and compliance.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Services",
+            "items": [
+              {
+                "title": "GST Filing",
+                "body": "We prepare and submit GST returns for clients, ensuring full compliance with Indian tax regulations."
+              },
+              {
+                "title": "Income Tax Return Preparation",
+                "body": "We compile and file personal and corporate income tax returns, adhering to statutory requirements."
+              },
+              {
+                "title": "Company Registration",
+                "body": "We assist clients in registering new companies, handling documentation and regulatory approvals."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Provide the Indore office address with a map, phone number, email, and a contact form for inquiries.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Contact Us",
+            "blurb": "Call or email us to discuss your accounting requirements.",
+            "address": "",
+            "phone": "",
+            "email": "",
+            "hours": ""
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Display legal disclaimer, professional certifications, and links to privacy policy and terms of service.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Chartered Accountant Practice – Indore"
+          }
+        }
+      ]
+    },
+    "findings": [],
+    "intent": {
+      "category": "professional_services",
+      "vertical": "chartered-accountant-practice",
+      "tone": "formal",
+      "palette": "muted",
+      "sections": [
+        "hero",
+        "about",
+        "services",
+        "team",
+        "testimonials",
+        "faq",
+        "contact",
+        "footer"
+      ],
+      "fallback": false
+    },
+    "requests": 8,
+    "modelTimeMs": 148680,
+    "wallClockMs": 211425,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 916,
+        "outputTokens": 404,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 871,
+        "createdAt": "2026-08-14T08:58:51.044Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 927,
+        "outputTokens": 584,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1673,
+        "createdAt": "2026-08-14T08:58:52.722Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "inputTokens": 1816,
+        "outputTokens": 1040,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2703,
+        "createdAt": "2026-08-14T08:58:55.544Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1230,
+        "outputTokens": 344,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 136445,
+        "createdAt": "2026-08-14T09:02:06.606Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1102,
+        "outputTokens": 356,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1664,
+        "createdAt": "2026-08-14T09:02:08.271Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1094,
+        "outputTokens": 431,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2087,
+        "createdAt": "2026-08-14T09:02:10.359Z"
+      },
+      {
+        "stage": "fill:contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1140,
+        "outputTokens": 378,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1906,
+        "createdAt": "2026-08-14T09:02:12.265Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 916,
+        "outputTokens": 144,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1331,
+        "createdAt": "2026-08-14T09:02:21.596Z"
+      }
+    ],
+    "spend": {
+      "calls": 8,
+      "inputTokens": 9141,
+      "outputTokens": 3681,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  },
+  {
+    "vertical": "saas",
+    "prompt": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
+    "hasTemplate": true,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 906,
+        "outputTokens": 433,
+        "latencyMs": 1106
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 924,
+        "outputTokens": 633,
+        "latencyMs": 1700
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1824,
+        "outputTokens": 836,
+        "latencyMs": 2386
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1225,
+        "outputTokens": 533,
+        "latencyMs": 1747
+      },
+      {
+        "stage": "fill",
+        "section": "about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1106,
+        "outputTokens": 369,
+        "latencyMs": 1570
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1100,
+        "outputTokens": 480,
+        "latencyMs": 1409
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1064,
+        "outputTokens": 300,
+        "latencyMs": 206752
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1004,
+        "outputTokens": 693,
+        "latencyMs": 1993
+      },
+      {
+        "stage": "fill",
+        "section": "contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1129,
+        "outputTokens": 343,
+        "latencyMs": 1322
+      },
+      {
+        "stage": "fill",
+        "section": "footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "structuredOutput": "json_schema",
+        "inputTokens": 915,
+        "outputTokens": 137,
+        "latencyMs": 759
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "inventory-management-tool",
+      "artDirection": {
+        "themeId": "tech-slate",
+        "motionId": "calm",
+        "radiusId": "sharp",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Inventory Management Tool",
+        "description": "landing page for a tool that helps small shops track stock, clean and professional, pricing table",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Clear tagline highlighting fast, accurate stock tracking for small shops, with a prominent “Start Free Trial” button.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Small shops",
+            "heading": "Inventory management tool for small shops",
+            "sub": "Fast tracking, accurate data, easy setup",
+            "ctaLabel": "Start Free Trial",
+            "image": {
+              "query": "inventory management software screenshot",
+              "alt": "Stock tracking dashboard for a small shop"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "media-split",
+          "brief": "Brief overview stating the company’s mission to simplify inventory management for independent retailers with a clean, professional platform.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Mission",
+            "body": "We simplify inventory management for independent retailers by providing a clean, professional platform that tracks stock in real time. Our tool eliminates manual spreadsheets and reduces errors, giving clients clear insight into their inventory levels. By focusing on ease of use, we help small shops stay organized and focus on serving their customers.",
+            "image": {
+              "query": "inventory management dashboard for small retailer",
+              "alt": "Screenshot of the clean, professional inventory management platform showing stock levels and analytics"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Key features: real‑time stock updates, low‑stock alerts, barcode scanning, sales analytics, and multi‑location sync.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Key Features",
+            "items": [
+              {
+                "title": "Real-time Stock Updates",
+                "body": "Delivers instantaneous inventory counts so clients can see stock levels as they change."
+              },
+              {
+                "title": "Low-Stock Alerts",
+                "body": "Notifies clients when items fall below predefined thresholds to prevent stockouts."
+              },
+              {
+                "title": "Barcode Scanning",
+                "body": "Enables clients to capture product data quickly using barcode readers for efficient check‑ins."
+              },
+              {
+                "title": "Sales Analytics",
+                "body": "Offers clients detailed reports on sales trends and product performance."
+              },
+              {
+                "title": "Multi-Location Sync",
+                "body": "Keeps inventory data consistent across all client store locations."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Customer quotes from small shop owners praising how the tool reduced stock errors and saved time.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Customer Testimonials",
+            "items": [
+              {
+                "quote": "Since we started using the tool, stock errors have dropped dramatically and we’ve saved hours each week.",
+                "author": "Anna L."
+              },
+              {
+                "quote": "The inventory system is easy to set up and it’s cut our ordering time in half.",
+                "author": "Mark S."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Answers covering pricing plans, data security, integration with POS systems, and how to get started.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "How much does the inventory management tool cost?",
+                "answer": "Pricing plans vary based on the number of items you track; please refer to our pricing page for details."
+              },
+              {
+                "question": "Is my store’s data secure with your tool?",
+                "answer": "Data security is ensured through encrypted storage and regular backups to protect your inventory information."
+              },
+              {
+                "question": "Can the tool integrate with my existing POS system?",
+                "answer": "Integration with most POS systems is supported via standard APIs and simple setup steps."
+              },
+              {
+                "question": "How do I get started with the inventory management tool?",
+                "answer": "To begin, sign up online, follow the onboarding guide, and import your current stock data."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "form",
+          "brief": "Contact form for sales inquiries plus email address sales@inventorytool.com and phone 1‑800‑555‑0123.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Get in touch",
+            "blurb": "Reach us by email at sales@inventorytool.com or call 1‑800‑555‑0123.",
+            "address": "",
+            "phone": "1‑800‑555‑0123",
+            "email": "sales@inventorytool.com",
+            "hours": ""
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Legal links (privacy, terms), quick navigation (features, pricing, support) and social media icons.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "tagline": "Inventory Management Tool – simple stock tracking for small shops"
+          }
+        }
+      ]
+    },
+    "findings": [],
+    "intent": {
+      "category": "saas",
+      "vertical": "inventory-management-tool",
+      "tone": "formal",
+      "palette": "muted",
+      "sections": [
+        "hero",
+        "about",
+        "services",
+        "contact",
+        "footer"
+      ],
+      "fallback": false
+    },
+    "requests": 10,
+    "modelTimeMs": 220744,
+    "wallClockMs": 249773,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 906,
+        "outputTokens": 433,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1106,
+        "createdAt": "2026-08-14T09:13:08.021Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 924,
+        "outputTokens": 633,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1700,
+        "createdAt": "2026-08-14T09:13:09.726Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v3",
+        "inputTokens": 1824,
+        "outputTokens": 836,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2386,
+        "createdAt": "2026-08-14T09:13:12.115Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1225,
+        "outputTokens": 533,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1747,
+        "createdAt": "2026-08-14T09:13:13.866Z"
+      },
+      {
+        "stage": "fill:about/media-split",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1106,
+        "outputTokens": 369,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1570,
+        "createdAt": "2026-08-14T09:13:15.438Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1100,
+        "outputTokens": 480,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1409,
+        "createdAt": "2026-08-14T09:13:16.849Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1064,
+        "outputTokens": 300,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 206752,
+        "createdAt": "2026-08-14T09:17:12.603Z"
+      },
+      {
+        "stage": "fill:faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1004,
+        "outputTokens": 693,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1993,
+        "createdAt": "2026-08-14T09:17:14.598Z"
+      },
+      {
+        "stage": "fill:contact/form",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 1129,
+        "outputTokens": 343,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1322,
+        "createdAt": "2026-08-14T09:17:15.921Z"
+      },
+      {
+        "stage": "fill:footer/columns",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v3",
+        "inputTokens": 915,
+        "outputTokens": 137,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 759,
+        "createdAt": "2026-08-14T09:17:16.682Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 11197,
+      "outputTokens": 4757,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
   }
 ]

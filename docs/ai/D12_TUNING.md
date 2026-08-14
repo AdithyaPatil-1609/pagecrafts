@@ -216,7 +216,7 @@ Results: `evals/grader/results/d12-before-v22-v27` vs `evals/grader/results/2026
 |---|---|
 | v1 untouched on disk; v2 alongside | ✅ hash-pinned in CI |
 | v3 from D11 taxonomy | ✅ `plan.v3` / `fill-section.v3` |
-| Full 30-vertical re-run with v2/v3 | ❌ not run (quota). Promotion gate was the clean six-run, not a 30 |
+| Full 30-vertical re-run with v2/v3 | ✅ v3 30 in `evals/grader/results/2026-08-14T07-58-07-237Z-d15-sensible-full/` — machine 30/30 (v21 retried after a plan timeout), copy ≥4 **28/30**, diversity passes |
 | Before/after table published | ✅ two-vertical table above |
 | Pass rate up, zero regressions | ✅ event + unspecified both pass on a clean v3 run |
 | Generation config recorded as data, not code | ✅ `config.ts`, plumbed to both providers |

@@ -14,6 +14,7 @@ ctaLabel .... the action, in the words the business would use — "Book a check-
 
 Never write "Your Name", "Your Business", "Studio Name", or "Add heading here".
 If the description did not give a name, say what they do.
+If they wrote a name in another script, that spelling is the heading.
 
 If they asked only for "a website", the heading is a real sentence ("A simple
 website"), not a blank. If they asked for a site about themselves, the heading

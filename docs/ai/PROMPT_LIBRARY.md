@@ -76,7 +76,7 @@ the general rules in the prompt body and nothing more.
 
 | Section | File | Digest | First line |
 |---|---|---|---|
-| hero | `guidance/hero.md` | `5512ab42ab96` | A hero has seconds. Say what the business is and where, in the first line. |
+| hero | `guidance/hero.md` | `68d6b411daca` | A hero has seconds. Say what the business is and where, in the first line. |
 | about | `guidance/about.md` | `041022022785` | Say who runs this and how long they have been doing it. Concrete beats warm. |
 | services | `guidance/services.md` | `d3e2f632cc4b` | One item per thing the business actually does, named the way the business names |
 | menu | `guidance/menu.md` | `e84f3e70195e` | Real dishes with the names the kitchen uses. Regional names stay in their own |
