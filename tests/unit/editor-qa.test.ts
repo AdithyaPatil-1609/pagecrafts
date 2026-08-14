@@ -91,11 +91,64 @@ describe('editor QA (D16–D20)', () => {
         expect(useEditorStore.getState().vfs.read('composition.json')).toContain('"id": "s2"');
     });
 
+    it('restyles the page without a provider call', () => {
+        const composition = sample();
+        const { vfs } = useEditorStore.getState();
+        vfs.seed({
+            'index.html': '<h1>Hello</h1>',
+            'composition.json': JSON.stringify(composition),
+        });
+        useEditorStore.setState({ composition, selectedSectionId: 's1', projectId: 'p1' });
+
+        useEditorStore.getState().restyleComposition({ themeId: 'vivid-energy', motionId: 'kinetic' });
+
+        expect(useEditorStore.getState().composition?.artDirection.themeId).toBe('vivid-energy');
+        expect(useEditorStore.getState().composition?.artDirection.motionId).toBe('kinetic');
+        expect(useEditorStore.getState().vfs.read('index.html')).toContain('#e11d48');
+        expect(useEditorStore.getState().vfs.read('index.html')).toContain('data-motion="kinetic"');
+    });
+
+    it('rebuilds the site when composition.json is edited', () => {
+        const composition = sample();
+        const { vfs } = useEditorStore.getState();
+        vfs.seed({
+            'index.html': '<h1>Hello</h1>',
+            'composition.json': JSON.stringify(composition),
+        });
+        useEditorStore.setState({
+            composition,
+            selectedSectionId: 's1',
+            projectId: 'p1',
+            activeFile: 'composition.json',
+        });
+
+        const next = {
+            ...composition,
+            sections: [
+                { ...composition.sections[0], props: { heading: 'Edited heading' } },
+                composition.sections[1],
+            ],
+        };
+        useEditorStore.getState().writeActive(JSON.stringify(next));
+
+        expect(useEditorStore.getState().composition?.sections[0].props.heading).toBe('Edited heading');
+        expect(useEditorStore.getState().vfs.read('index.html')).toContain('Edited heading');
+        expect(useEditorStore.getState().vfs.read('composition.json')).toContain('Edited heading');
+    });
+
     it('keeps suggested-change copy in plain language', () => {
         const summary = readFileSync('src/components/editor/ChangeSummary.tsx', 'utf8');
         expect(summary).not.toMatch(/diff|patch|commit|hunk/i);
         expect(summary).toContain('Keep this change');
         expect(summary).toContain('Discard');
+    });
+
+    it('exposes restyle controls in the sections panel', () => {
+        const panel = readFileSync('src/components/editor/SectionsPanel.tsx', 'utf8');
+        expect(panel).toContain('restyleComposition');
+        expect(panel).toContain('LOOK_DIALS');
+        expect(panel).toContain('Look');
+        expect(panel).not.toMatch(/\bdiff\b|\bhunk\b|\bcommit\b/i);
     });
 
     it('turns off motion for people who asked for less of it', () => {
@@ -109,6 +162,12 @@ describe('editor QA (D16–D20)', () => {
         expect(shell).toContain('Skip to preview');
         expect(shell).toContain('#editor-preview');
         expect(shell).toContain('ChatPanel');
+    });
+
+    it('reserves a box for the preview so the layout does not jump', () => {
+        const preview = readFileSync('src/components/editor/PreviewPane.tsx', 'utf8');
+        expect(preview).toContain('min-h-[320px]');
+        expect(preview).toContain('absolute inset-0');
     });
 
     it('keeps the default editor as content plus your site', () => {

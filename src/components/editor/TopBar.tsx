@@ -39,6 +39,7 @@ export default function TopBar({
     const saveError = useEditorStore((s) => s.saveError);
     const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
     const projectName = useEditorStore((s) => s.projectName);
+    const contentError = useEditorStore((s) => s.contentError);
 
     const status = statusLine(saving, saveError, dirtyPaths.length, lastSavedAt);
 
@@ -58,6 +59,14 @@ export default function TopBar({
                         title={status.text}
                     >
                         {status.text}
+                    </span>
+                )}
+                {contentError && (
+                    <span
+                        className="max-w-xs truncate text-xs text-destructive"
+                        title={contentError}
+                    >
+                        {contentError}
                     </span>
                 )}
                 {hasComposition && (
