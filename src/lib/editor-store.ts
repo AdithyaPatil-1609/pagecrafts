@@ -245,7 +245,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const schema = detail?.contentSchema ?? null;
         const entry = entryPath(vfs);
         const html = entry ? vfs.read(entry) : null;
-        const composition = parseComposition(vfs.read('composition.json'));
 
         let composition: Composition | null = null;
         const stored = vfs.read('composition.json');
@@ -254,7 +253,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 composition = parseStoredComposition(stored);
                 vfs.write('composition.json', JSON.stringify(composition, null, 2));
             } catch {
-                composition = null;
+                composition = parseComposition(stored);
             }
         }
 
@@ -263,6 +262,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             lastSavedAt: updatedAt,
             loading: false,
             composition,
+            selectedSectionId: composition?.sections[0]?.id ?? null,
             projectName: detail?.name ?? null,
             contentSchema: schema,
             content:
@@ -271,8 +271,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                     : {},
             siteMeta: detail?.siteMeta ?? {},
             formEndpoint: detail?.formEndpoint ?? null,
-            composition,
-            selectedSectionId: composition?.sections[0]?.id ?? null,
             // A project that opens but whose settings did not is worth saying; it is not
             // worth refusing to open over.
             contentError: detailError,
