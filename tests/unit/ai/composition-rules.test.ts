@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalisePlan, isPersonalSite, wantsFirstPersonAbout, type NormalisedPlan } from '@/lib/ai/composition/rules';
+import { normalisePlan, isPersonalSite, wantsFirstPersonAbout, wantsPricing, type NormalisedPlan } from '@/lib/ai/composition/rules';
 import { MAX_SECTIONS } from '@/lib/contracts';
 
 const show = (p: NormalisedPlan) => p.sections.map((s) => `${s.type}/${s.variant}`);
@@ -252,5 +252,57 @@ describe('normalisePlan', () => {
 
         expect(out.sections.find((s) => s.type === 'contact')?.brief)
             .toMatch(/empty unless the description gives them/i);
+    });
+
+    it('pins a native-script name on the hero brief (D15 v29)', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'split-image', brief: 'Display the Hindi name' },
+            { type: 'about', variant: 'text', brief: 'the shop' },
+            { type: 'footer', variant: 'simple', brief: 'end' },
+        ], {
+            prompt: 'मिठास स्वीट्स — our sweet shop in old delhi, want the name in hindi at the top',
+        });
+
+        expect(out.sections.find((s) => s.type === 'hero')?.brief).toContain('मिठास स्वीट्स');
+        expect(out.sections.find((s) => s.type === 'hero')?.brief).toMatch(/never a transliteration/i);
+    });
+
+    it('rewrites services into a pricing table when the prompt asks for one (D15 v21)', () => {
+        const prompt = 'landing page for a tool that helps small shops track stock, clean and professional, pricing table';
+        expect(wantsPricing(prompt)).toBe(true);
+
+        const out = normalisePlan([
+            { type: 'hero', variant: 'split-image', brief: 'tagline' },
+            { type: 'about', variant: 'text', brief: 'mission' },
+            { type: 'services', variant: 'cards', brief: 'key features: alerts and barcode scanning' },
+            { type: 'testimonials', variant: 'quotes', brief: 'quotes' },
+            { type: 'faq', variant: 'accordion', brief: 'pricing plans and security' },
+            { type: 'contact', variant: 'form', brief: 'sales inquiries' },
+            { type: 'footer', variant: 'columns', brief: 'legal' },
+        ], { prompt });
+
+        const price = out.sections.find((s) => s.type === 'services' || s.type === 'menu');
+        expect(price).toBeTruthy();
+        expect(price?.brief).toMatch(/pricing table on this page/i);
+        expect(price?.brief).toMatch(/never "see our pricing page"/i);
+        expect(out.sections.find((s) => s.type === 'faq')?.brief).toMatch(/never "see our pricing page"/i);
+    });
+
+    it('inserts a price-capable section when the plan skipped it', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'centred', brief: 'a' },
+            { type: 'about', variant: 'text', brief: 'b' },
+            { type: 'testimonials', variant: 'quotes', brief: 'c' },
+            { type: 'footer', variant: 'simple', brief: 'd' },
+        ], { prompt: 'bold loud page for a boutique gym, class packages and pricing' });
+
+        const price = out.sections.find((s) => s.type === 'services' || s.type === 'menu');
+        expect(price).toBeTruthy();
+        expect(price?.brief).toMatch(/pricing table on this page/i);
+        expect(out.repairs.some((r) => /pricing/i.test(r))).toBe(true);
+    });
+
+    it('does not treat "post surgery" as a pricing ask', () => {
+        expect(wantsPricing('physio clinic in bandra, sports injuries back pain and post surgery rehab')).toBe(false);
     });
 });

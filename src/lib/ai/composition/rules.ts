@@ -1,5 +1,6 @@
 import { MAX_SECTIONS, SECTION_KEYS, type SectionKey } from '@/lib/contracts';
 import { variantsFor } from '../sections/contracts';
+import { nativeHeadingBrief, primaryNativeName } from './language';
 
 /** As proposed by the model; `type` is unvalidated. */
 export interface PlannedSection {
@@ -60,6 +61,13 @@ const RESUME_SHOP =
 const ABOUT_ME = /\b(a bit about me|about me)\b/i;
 const DONATE_ASK = /\b(donat|volunteer)/i;
 
+/**
+ * D15 v21: "pricing table" produced features + an FAQ that said "see our
+ * pricing page". The page is the table; a missing-page punt is not.
+ */
+const PRICING_ASK =
+    /\b(pricing table|price list|price table|pricing|packages?|priced plans?)\b/i;
+
 const PERSONAL_EXTRAS: readonly SectionKey[] = [
     'testimonials', 'team', 'gallery', 'faq', 'menu',
 ];
@@ -81,6 +89,10 @@ const TEAM_BRIEF =
     'job titles this practice needs, one role per row — never "Attorney Name" or a dummy name; years of practice only if the description gives a number';
 const ABOUT_ME_BRIEF =
     'first person about the person who asked — training, why they started, how they teach. Not "our studio"';
+const PRICING_BRIEF =
+    'pricing table on this page: named plans or packages. If the description gave no amounts, omit numbers or write Varies — never invent ₹ or $, never "see our pricing page"';
+const PRICING_FAQ_NOTE =
+    'answer pricing on this page; never "see our pricing page"';
 
 export interface NormalisePlanOptions {
     prompt?: string;
@@ -109,6 +121,11 @@ export function wantsFirstPersonAbout(prompt: string): boolean {
     return isPersonalSite(prompt) || ABOUT_ME.test(prompt);
 }
 
+/** A pricing table / packages / plans ask — the page must show prices, not punt. */
+export function wantsPricing(prompt: string): boolean {
+    return PRICING_ASK.test(prompt);
+}
+
 function rewriteBriefs(
     sections: NormalisedSection[],
     prompt: string,
@@ -119,6 +136,8 @@ function rewriteBriefs(
     const firstPerson = wantsFirstPersonAbout(prompt);
     const writing = WRITING_ASK.test(prompt);
     const donate = DONATE_ASK.test(prompt);
+    const pricing = wantsPricing(prompt) && !personal && !bare && !writing;
+    const nativeName = primaryNativeName(prompt);
 
     for (const s of sections) {
         const before = s.brief;
@@ -156,6 +175,24 @@ function rewriteBriefs(
             if (s.type === 'contact' && !/empty unless/i.test(s.brief)) {
                 s.brief = `${s.brief.replace(/\s*\.?\s*$/, '')} — leave phone, email, address and hours empty unless the description gives them`;
             }
+            if (pricing && (s.type === 'services' || s.type === 'menu')) {
+                s.brief = PRICING_BRIEF;
+                if (s.type === 'services') {
+                    const cards = variantsFor('services').find((v) => v === 'cards');
+                    if (cards) s.variant = cards;
+                } else {
+                    const grouped = variantsFor('menu').find((v) => v === 'grouped');
+                    if (grouped) s.variant = grouped;
+                }
+            }
+            if (pricing && s.type === 'faq' && !/see our pricing page/i.test(s.brief)) {
+                s.brief = `${s.brief.replace(/\s*\.?\s*$/, '')} — ${PRICING_FAQ_NOTE}`;
+            }
+        }
+
+        if (nativeName && (s.type === 'hero' || s.type === 'about' || s.type === 'footer')
+            && !s.brief.includes(nativeName)) {
+            s.brief = `${s.brief.replace(/\s*\.?\s*$/, '')} — ${nativeHeadingBrief(nativeName)}`;
         }
 
         if (s.brief !== before) {
@@ -249,6 +286,31 @@ export function normalisePlan(
                 brief: PERSONAL_WORK_BRIEF,
             });
             repairs.push('inserted services as work history — description asked what they have done, not a shop');
+        }
+    }
+
+    if (prompt && wantsPricing(prompt) && !isPersonalSite(prompt) && !isBarePage(prompt)
+        && !WRITING_ASK.test(prompt)
+        && !middle.some((s) => s.type === 'services' || s.type === 'menu')) {
+        const budget = MAX_SECTIONS - reserved - (wantContact ? 1 : 0) - 1;
+        while (middle.length > budget) {
+            let i = -1;
+            for (const type of DISPENSABLE) {
+                if (type === 'menu') continue;
+                i = middle.findLastIndex((s) => s.type === type);
+                if (i >= 0) break;
+            }
+            if (i < 0) break;
+            repairs.push(`dropped ${middle[i].type} to keep a pricing section`);
+            middle.splice(i, 1);
+        }
+        if (middle.length <= budget) {
+            middle.push({
+                type: 'services',
+                variant: 'cards',
+                brief: PRICING_BRIEF,
+            });
+            repairs.push('inserted services as pricing — description asked for a pricing table');
         }
     }
 

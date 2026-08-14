@@ -168,6 +168,15 @@ plan JOB + `normalisePlan` treat a personal site as first-person work history,
 not a resume shop; a bare "a website" still gets real sentences; team briefs ask
 for roles, not "Attorney Name".
 
+A later amendment pins native-script names: fill must not transliterate a name
+the person wrote (D15 v29 मिठास स्वीट्स → "Mithaas Sweet Shop"). `preserveNativeFields`
+puts their spelling back on heading/tagline after fill; plan briefs name it exactly.
+
+A later amendment (D15 v21) kills invented contact and a missing pricing table:
+fill scrubs 555 / 1-800-555 / sales@example and any phone/email the description
+did not give; a "pricing table" / packages ask forces a services or menu section
+and fill must not say "see our pricing page".
+
 **Default as of 2026-08-14:** `plan.v3` / `fill-section.v3`. First v3 after-run
 (`2026-08-14T05-48-21-067Z-d12-v3-full`) died on a Groq TPD 429. The clean
 six-run (`evals/grader/results/2026-08-14T07-04-51-746Z-d15-six-full/`) is the

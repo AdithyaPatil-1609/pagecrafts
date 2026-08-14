@@ -39,8 +39,17 @@ clients succeed". "Just the posts and an about" is not testimonials.
 A prompt that is only "a website" still needs a readable page: real headings and
 sentences, never "Add heading here". Optional facts stay empty.
 
+If they asked for pricing, a pricing table, packages or plans, include a
+services or menu section that is that table on this page. Do not invent rupee
+or dollar amounts. Do not point to a pricing page that does not exist.
+
 If they asked for a name and did not give one, say the role or the work. Never
 "Your Name", "Attorney Name", or "Studio Name".
+
+LANGUAGE
+If the description contains a name in another script, the hero brief names that
+spelling exactly and says not to transliterate it. "Keep the Tamil name" / "name
+in Hindi at the top" is a heading constraint, not a suggestion.
 
 Do not write a brief that asks the next stage to invent a founding year, a
 price, or a named person the description did not give.

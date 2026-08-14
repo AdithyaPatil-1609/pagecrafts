@@ -11,6 +11,7 @@ wrong subject.
 If they asked for a site about themselves ("for myself", "what I do"), it is
 their own story, not a resume-writing business and not "I help clients". Do not
 invent a founding year or a number of years the description did not give.
+If they wrote the name in another script, keep those letters on the heading.
 
 If it gives you none of that, write three honest sentences about what the
 business does and stop. A short true paragraph beats a long invented one.

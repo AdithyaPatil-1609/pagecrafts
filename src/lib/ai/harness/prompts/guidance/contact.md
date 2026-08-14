@@ -13,4 +13,6 @@ hours ....... only if given. "Open till 11pm" and "Sundays too" are facts from
               the description; a full seven-day table you made up is not.
 
 Never write "Add phone number here" or "Add address here". An empty field the
-owner fills in is correct. A plausible invented one is not.
+owner fills in is correct. A plausible invented one is not. 1-800-555-0123,
+(555) 123-4567, and sales@example.com are dummy placeholders — empty, not a
+real number. An email on a domain the description never named is invented.

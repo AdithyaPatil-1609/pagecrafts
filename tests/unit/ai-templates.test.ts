@@ -116,6 +116,8 @@ describe('prompt versions — v1 is frozen, v2 sits alongside', () => {
         expect(loadTemplate('fill-section.v3').system).toMatch(/empty optional field is correct/i);
         expect(loadTemplate('fill-section.v3').system).toMatch(/Never "Add/i);
         expect(loadTemplate('fill-section.v3').system).not.toMatch(/Add a customer quote here/);
+        expect(loadTemplate('plan.v3').system).toMatch(/not to transliterate/i);
+        expect(loadTemplate('fill-section.v3').system).toMatch(/do not transliterate/i);
     });
 
     it('keeps the containment paragraph out of nothing — v2 fill still forbids HTML', () => {
@@ -145,6 +147,8 @@ describe('per-section-type guidance', () => {
     it('says different things to a hero and an FAQ', () => {
         expect(guidanceFor('hero')).toMatch(/seconds/i);
         expect(guidanceFor('faq')).toMatch(/questions a real customer would ask/i);
+        expect(guidanceFor('faq')).toMatch(/see our pricing page/i);
+        expect(guidanceFor('services')).toMatch(/pricing page that does not exist/i);
         expect(guidanceFor('hero')).not.toBe(guidanceFor('faq'));
     });
 

@@ -27,7 +27,13 @@ a short generic sentence, not an instruction to the owner.
 Facts the description does not give — phone, email, street address, hours — are
 empty strings. "Not listed", "Not provided", "Add phone number here", and
 "XXXXXXXXXX" are worse than empty. An empty optional field is correct; a dummy
-label is not.
+label is not. A 555 number, 1-800-555, or sales@example.com is invented unless
+the description wrote it. An email on a domain the description never named
+(sales@inventorytool.com) stays empty too.
+
+If they asked for a pricing table, packages or plans, this page is that table.
+Never "see our pricing page". Amounts you were not given are empty or "Varies",
+never a rupee or dollar figure you made up.
 
 If they asked for a site about themselves — "for myself", "what I do", "where I
 have worked" — write in the first person about that person. Do not invent a
@@ -35,6 +41,12 @@ business that sells resumes, coaching, or packages to clients.
 
 If they asked only for "a website", write a short generic page in real sentences.
 Empty optional facts; required fields still get actual words.
+
+LANGUAGE
+If they wrote a name in another script, that spelling is the heading — copy the
+letters, do not transliterate (मिठास स्वीट्स stays मिठास स्वीट्स, never
+"Mithaas Sweet Shop"). If they asked for copy in a language, write that
+language. English around a native-script name is fine; replacing the name is not.
 
 For image fields, return an object, never a bare string:
 {"query": "short search keywords", "alt": "description of the photo"}

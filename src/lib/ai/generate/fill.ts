@@ -3,7 +3,8 @@ import { aiConfig } from '../config';
 import { loadTemplate, render } from '../harness/templates';
 import { guidanceFor } from '../harness/guidance';
 import { stripFences, sanitiseDeep, containsHtmlTag } from '../sanitise';
-import { contractFor, scrubOptionalFields } from '../sections/contracts';
+import { contractFor, scrubOptionalFields, coerceUngroundedPrices } from '../sections/contracts';
+import { preserveNativeFields } from '../composition/language';
 import { contain } from '../containment/envelope';
 import type { SectionInstance, SectionProps, AiResult } from '@/lib/contracts';
 
@@ -116,7 +117,14 @@ export async function fillSection(
     }
 
     if (clean && typeof clean === 'object') {
-        scrubOptionalFields(clean as Record<string, unknown>, contract.fields);
+        scrubOptionalFields(clean as Record<string, unknown>, contract.fields, context.prompt);
+        coerceUngroundedPrices(clean as Record<string, unknown>, contract.fields, context.prompt);
+        const maxByKey = Object.fromEntries(
+            contract.fields
+                .filter((f) => f.key === 'heading' || f.key === 'tagline')
+                .map((f) => [f.key, f.maxLength]),
+        );
+        preserveNativeFields(clean as Record<string, unknown>, context.prompt, maxByKey);
     }
 
     const parsed = contract.fill.safeParse(clean);
