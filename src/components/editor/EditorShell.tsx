@@ -15,6 +15,8 @@ import ChatPanel from './ChatPanel';
 export default function EditorShell({ projectId }: { projectId: string }) {
     useUnsavedGuard();
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [askOpen, setAskOpen] = useState(false);
+    const [sectionsOpen, setSectionsOpen] = useState(false);
     const advanced = useEditorStore((s) => s.advanced);
     const loading = useEditorStore((s) => s.loading);
     const loadError = useEditorStore((s) => s.loadError);
@@ -31,6 +33,10 @@ export default function EditorShell({ projectId }: { projectId: string }) {
     }, [projectId, loadProject, flushPendingSave]);
 
     useEffect(() => {
+        if (pendingChange) setAskOpen(true);
+    }, [pendingChange]);
+
+    useEffect(() => {
         function onKey(e: KeyboardEvent) {
             if ((e.metaKey || e.ctrlKey) && e.key === 's') {
                 e.preventDefault();
@@ -43,7 +49,9 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                     rejectChange();
                     return;
                 }
+                setAskOpen(false);
                 setHistoryOpen(false);
+                setSectionsOpen(false);
             }
         }
         window.addEventListener('keydown', onKey);
@@ -60,6 +68,11 @@ export default function EditorShell({ projectId }: { projectId: string }) {
             </a>
             <TopBar
                 projectId={projectId}
+                hasComposition={!!composition}
+                sectionsOpen={sectionsOpen}
+                onToggleSections={() => setSectionsOpen((open) => !open)}
+                askOpen={askOpen}
+                onToggleAsk={() => setAskOpen((open) => !open)}
                 historyOpen={historyOpen}
                 onToggleHistory={() => setHistoryOpen((open) => !open)}
             />
@@ -78,7 +91,7 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                 </div>
             ) : (
                 <main className="flex min-h-0 flex-1">
-                    {composition && (
+                    {sectionsOpen && composition && (
                         <aside className="w-64 shrink-0 overflow-auto border-r border-border">
                             {loading ? <TreeSkeleton /> : <SectionsPanel />}
                         </aside>
@@ -105,9 +118,11 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                             </section>
                         </>
                     )}
-                    <aside className="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border">
-                        {loading ? <PaneSkeleton /> : <ChatPanel />}
-                    </aside>
+                    {askOpen && (
+                        <aside className="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border">
+                            {loading ? <PaneSkeleton /> : <ChatPanel />}
+                        </aside>
+                    )}
                     {historyOpen && (
                         <aside className="w-72 shrink-0 overflow-hidden border-l border-border">
                             <VersionHistory />

@@ -110,4 +110,14 @@ describe('editor QA (D16–D20)', () => {
         expect(shell).toContain('#editor-preview');
         expect(shell).toContain('ChatPanel');
     });
+
+    it('keeps the default editor as content plus your site', () => {
+        const shell = readFileSync('src/components/editor/EditorShell.tsx', 'utf8');
+        expect(shell).toContain('ContentPanel');
+        expect(shell).toContain('askOpen &&');
+        expect(shell).toContain('sectionsOpen && composition');
+        const preview = readFileSync('src/components/editor/PreviewPane.tsx', 'utf8');
+        expect(preview).toContain('Your site');
+        expect(preview).toContain('Phone');
+    });
 });

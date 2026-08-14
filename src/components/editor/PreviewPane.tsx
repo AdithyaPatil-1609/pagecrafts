@@ -3,8 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
 import { withPreviewCsp } from '@/lib/preview-security';
+import { friendlyPreviewIssue } from '@/lib/editor/preview-copy';
 
 const DEBOUNCE_MS = 120;
+
+type Viewport = 'full' | 'phone';
 
 export default function PreviewPane() {
     const vfs = useEditorStore((s) => s.vfs);
@@ -12,6 +15,7 @@ export default function PreviewPane() {
     const tree = useEditorStore((s) => s.tree);
 
     const frame = useRef<HTMLIFrameElement>(null);
+    const [viewport, setViewport] = useState<Viewport>('full');
     const [preview, setPreview] = useState(() => {
         const r = assemblePreview(vfs.toMap());
         return { doc: withPreviewCsp(injectErrorHook(r.html)), warnings: r.warnings };
@@ -44,52 +48,92 @@ export default function PreviewPane() {
         return () => window.removeEventListener('message', onMessage);
     }, []);
 
-    const issues = [...preview.warnings, ...(runtimeError ? [runtimeError] : [])];
-    const showNotice = issues.length > 0 && !dismissed;
+    const issues = [...preview.warnings, ...(runtimeError ? [runtimeError] : [])]
+        .map(friendlyPreviewIssue);
+    const uniqueIssues = [...new Set(issues)];
+    const showNotice = uniqueIssues.length > 0 && !dismissed;
     const empty = !preview.doc.trim();
 
     return (
-        <div id="editor-preview" className="relative h-full min-h-0 w-full overflow-hidden">
-            {empty ? (
-                <div className="flex h-full min-h-[320px] items-center justify-center bg-white p-6">
-                    <p className="max-w-xs text-center text-sm text-neutral-600">
-                        {issues[0] ?? 'Nothing to preview yet. Add a page to see it here.'}
-                    </p>
+        <div id="editor-preview" className="flex h-full min-h-0 w-full flex-col bg-muted/40">
+            <header className="flex h-10 shrink-0 items-center justify-between border-b border-border px-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Your site
+                </h2>
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        aria-pressed={viewport === 'full'}
+                        onClick={() => setViewport('full')}
+                        className={`rounded-md px-2 py-0.5 text-xs ${
+                            viewport === 'full' ? 'bg-background text-foreground' : 'text-muted-foreground hover:bg-muted'
+                        }`}
+                    >
+                        Full
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={viewport === 'phone'}
+                        onClick={() => setViewport('phone')}
+                        className={`rounded-md px-2 py-0.5 text-xs ${
+                            viewport === 'phone' ? 'bg-background text-foreground' : 'text-muted-foreground hover:bg-muted'
+                        }`}
+                    >
+                        Phone
+                    </button>
                 </div>
-            ) : (
-                <iframe
-                    ref={frame}
-                    title="Preview"
-                    sandbox="allow-scripts"
-                    srcDoc={preview.doc}
-                    className="absolute inset-0 h-full w-full border-0 bg-white"
-                />
-            )}
+            </header>
 
-            {showNotice && !empty && (
+            <div className="relative min-h-0 flex-1 overflow-hidden p-3">
                 <div
-                    role="status"
-                    className="absolute inset-x-3 bottom-3 rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow-md backdrop-blur"
+                    className={
+                        viewport === 'phone'
+                            ? 'relative mx-auto h-full w-[min(100%,390px)] overflow-hidden rounded-xl border border-border bg-white shadow-lg'
+                            : 'relative h-full min-h-[320px] w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm'
+                    }
                 >
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                            <p className="font-medium">Preview issue</p>
-                            <ul className="mt-1 space-y-0.5 text-muted-foreground">
-                                {issues.slice(0, 3).map((m, i) => (
-                                    <li key={i} className="truncate">{m}</li>
-                                ))}
-                            </ul>
+                    {empty ? (
+                        <div className="flex h-full items-center justify-center p-6">
+                            <p className="max-w-xs text-center text-sm text-neutral-600">
+                                Your site will show up here as you edit.
+                            </p>
                         </div>
-                        <button
-                            onClick={() => setDismissed(true)}
-                            aria-label="Dismiss"
-                            className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted"
-                        >
-                            ✕
-                        </button>
-                    </div>
+                    ) : (
+                        <iframe
+                            ref={frame}
+                            title="Your site"
+                            sandbox="allow-scripts"
+                            srcDoc={preview.doc}
+                            className="absolute inset-0 h-full w-full border-0 bg-white"
+                        />
+                    )}
                 </div>
-            )}
+
+                {showNotice && !empty && (
+                    <div
+                        role="status"
+                        className="absolute inset-x-6 bottom-6 rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow-md backdrop-blur"
+                    >
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="font-medium">Could not show the whole page</p>
+                                <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                                    {uniqueIssues.slice(0, 2).map((m, i) => (
+                                        <li key={i} className="truncate">{m}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <button
+                                onClick={() => setDismissed(true)}
+                                aria-label="Dismiss"
+                                className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
