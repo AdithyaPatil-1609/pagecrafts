@@ -8,7 +8,7 @@ import { pollUntilLive } from '../verify';
 import { gh, HostingError } from './github-client';
 import { gitDataFor } from './github-git-data';
 
-const org = () => process.env.GITHUB_ORG ?? deployConfig.accountId;
+const org = () => process.env.GITHUB_ORG ?? deployConfig().accountId;
 
 async function repoExists(name: string): Promise<boolean> {
     try {
@@ -34,13 +34,13 @@ export const githubPagesAdapter: DeployProvider = {
         return {
             siteId: `${org()}/${subdomain}`,
             subdomain,
-            predictedUrl: `https://${subdomain}.${deployConfig.rootDomain}`,
+            predictedUrl: `https://${subdomain}.${deployConfig().rootDomain}`,
         };
     },
 
     async pushBuild(siteId: string, files: PublishFile[], message: string) {
         const [owner, repo] = siteId.split('/');
-        const domain = `${repo}.${deployConfig.rootDomain}`;
+        const domain = `${repo}.${deployConfig().rootDomain}`;
         const reserved = new Set(['CNAME', '.nojekyll']);
 
         const withDomain: PublishFile[] = [
@@ -60,7 +60,7 @@ export const githubPagesAdapter: DeployProvider = {
 
     async enableHosting(siteId: string): Promise<void> {
         const [owner, repo] = siteId.split('/');
-        const domain = `${repo}.${deployConfig.rootDomain}`;
+        const domain = `${repo}.${deployConfig().rootDomain}`;
 
         await gh('POST', `/repos/${owner}/${repo}/pages`, {
             source: { branch: 'main', path: '/' },
