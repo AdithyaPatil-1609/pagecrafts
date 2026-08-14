@@ -1,0 +1,41 @@
+import type { TemplateTier } from "@/lib/contracts";
+
+// What publishing a site costs (Doc 22 P1-P3, Amendment A1).
+//
+// One place, because a price that appears twice eventually disagrees with itself, and the
+// half a person is shown is not always the half they are charged.
+//
+// It appears twice today: TIER_LABELS in lib/discovery/filters.ts spells out "Rs 499" and
+// "Rs 999" for the tiles. That file belongs to discovery, so this does not reach into it —
+// but deriving those labels from here is the right follow-up, and until it happens a price
+// change has to be made in two files by someone who remembers both.
+//
+// The price follows the design, not the project: a free design publishes free, and a
+// premium one is paid for once, at publish. That is the gate the plan describes — everything
+// before publish is free, and the price is stated plainly at the one moment it applies.
+
+export const TIER_PRICE_INR: Record<TemplateTier, number> = {
+    free: 0,
+    premium: 499,
+    signature: 999,
+};
+
+/**
+ * Rupees as Razorpay wants them.
+ *
+ * Razorpay counts in paise, and the classic payments bug is being out by a hundred in
+ * either direction. It happens once, here, so nothing downstream has to remember.
+ */
+export function inrToPaise(rupees: number): number {
+    return Math.round(rupees * 100);
+}
+
+/** What this design costs to publish, in rupees. */
+export function publishPriceInr(tier: TemplateTier): number {
+    return TIER_PRICE_INR[tier] ?? TIER_PRICE_INR.free;
+}
+
+/** A free design needs no order, no checkout and no webhook — just the grant. */
+export function isFree(tier: TemplateTier): boolean {
+    return publishPriceInr(tier) === 0;
+}

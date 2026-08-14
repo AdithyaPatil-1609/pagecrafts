@@ -272,12 +272,17 @@ describe("the owner's full round trip", () => {
         expect(tree.json.data.files).toEqual(TEMPLATE_FILES);
 
         // 6. And going forward again is still possible: nothing was rewritten (BR-15).
+        //
+        // Both versions, not their order. History is ordered by (created_at desc, id desc),
+        // and every commit in this test is written inside the same millisecond — so the
+        // tiebreaker is a random uuid and the order is genuinely arbitrary here. What the
+        // step is proving is that restoring did not remove the version it moved away from;
+        // ordering is covered where timestamps actually differ, in commit-mirror.test.ts.
         signedInAs(OWNER);
         const history = await body(await commits.GET(url(`/api/v1/projects/${id}/commits`), params({ id })));
-        expect(history.json.data.items.map((c: { message: string }) => c.message)).toEqual([
-            "New heading",
-            "Created from Ember",
-        ]);
+        expect(
+            history.json.data.items.map((c: { message: string }) => c.message).sort(),
+        ).toEqual(["Created from Ember", "New heading"]);
 
         // 7. None of it is reachable by anyone else.
         signedInAs(STRANGER);
