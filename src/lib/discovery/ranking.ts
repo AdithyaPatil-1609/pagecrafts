@@ -1,5 +1,5 @@
 import type { Category, Palette, Template, Tone } from "@/lib/contracts";
-import { paletteSchema, toneSchema } from "@/lib/contracts/schemas/ai";
+import { paletteSchema, slug, toneSchema } from "@/lib/contracts/schemas/ai";
 import { categorySchema } from "@/lib/ai/schemas";
 import { rankTemplates } from "@/lib/ai/rank";
 
@@ -51,13 +51,11 @@ export function toIntent(params: {
     const category = categorySchema.safeParse(params.intent);
     const tone = toneSchema.safeParse(params.tone);
     const palette = paletteSchema.safeParse(params.palette);
-    const vertical = params.vertical?.trim().toLowerCase();
+    const verticalParsed = slug.safeParse(params.vertical);
 
     const intent: IntentQuery = {
         ...(category.success ? { category: category.data } : {}),
-        ...(vertical && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(vertical)
-            ? { vertical: vertical.slice(0, 80) }
-            : {}),
+        ...(verticalParsed.success ? { vertical: verticalParsed.data } : {}),
         ...(tone.success ? { tone: tone.data } : {}),
         ...(palette.success ? { palette: palette.data } : {}),
     };

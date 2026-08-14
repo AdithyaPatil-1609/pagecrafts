@@ -2,8 +2,11 @@ import 'server-only';
 
 import { z } from 'zod';
 import { withRoute } from '@/lib/kernel/with-route';
-import { ok } from '@/lib/errors/respond';
+import { ok, ApiError } from '@/lib/errors/respond';
 import { proposeEdit } from '@/lib/ai/edit/propose';
+import { recordEditOp } from '@/lib/ai/cost/edit-ops';
+import { storeFor, nextEditId } from '@/lib/ai/edit/store';
+import { createCommit } from '@/lib/data/commits';
 import { rowFor } from '@/lib/ai/cost/ledger';
 import { persistLedger } from '@/lib/ai/cost/persist';
 import { nextJobId } from '@/lib/ai/jobs/store';
@@ -32,6 +35,16 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     limit: 'ai',
     schema,
     handler: async ({ body, params, userId, supabase, recordUsage }) => {
+        let preCommitSha: string | null = null;
+        if (typeof supabase.from === 'function') {
+            try {
+                const { sha } = await createCommit(supabase, params.id, 'Before AI edit', 'system');
+                preCommitSha = sha;
+            } catch (err) {
+                if (!(err instanceof ApiError && err.code === 'not_found')) throw err;
+            }
+        }
+
         const section: SectionInstance = {
             ...body.section,
             visible: true,
@@ -40,6 +53,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         } as SectionInstance;
 
         const { data, usage } = await proposeEdit(section, body.instruction);
+        recordEditOp('provider', 'propose');
         await Promise.all([
             recordUsage(usage),
             persistLedger(supabase, {
@@ -49,6 +63,21 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 prompt: body.instruction,
             }, [rowFor('edit', usage, 'completed')]),
         ]);
-        return ok(data);
+        const stored = await storeFor(supabase).put({
+            ...data,
+            id: nextEditId(),
+            projectId: params.id,
+            userId,
+            preProps: { ...section.props },
+            consumed: false,
+            preCommitSha,
+        });
+
+        return ok({
+            ...data,
+            edit_id: stored.id,
+            pre_commit_sha: preCommitSha,
+            target_section_id: stored.targetSectionId,
+        });
     },
 });

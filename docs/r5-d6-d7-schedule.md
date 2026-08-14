@@ -242,7 +242,7 @@ One page, in `docs/`:
 - per-provider comparison table from D6 Block 5
 - the recommendation, and what would change it
 
-Plus **E2 from the worklist**, which is still open and gates beta: read and record Groq's and Cerebras' free-tier training-data terms. Any provider that reserves the right to train on user content is development-only and must be excluded from the production chain by config.
+Plus **E2 from the worklist** (A3 §6 Gate 1): read and record Groq's free-tier training-data terms. **Closed 2026-08-14** — `docs/ai/GATE1_GROQ_TRAINING.md`. Groq does not train on Inputs/Outputs. Cerebras is out of the chain and was not recorded. Any provider that later reserves the right to train on user content is development-only and must be excluded from the production chain by config.
 
 ## D7 exit condition
 
@@ -331,7 +331,7 @@ cat evals/spike/results/$D/raw.json | jq '.'
 
 | Person | Effect |
 |---|---|
-| **E1 · Adithya** | A3 §6 Gate 1 needs his initials. The billing-before-D6 gate changes reason but not timing. His rate limiter and spend cap now count three providers with three price tables — B4 is a prerequisite for his D6–D10 spend-cap work. |
+| **E1 · Adithya** | Gate 1 does not need his initials — closed by Hanish on Groq alone (`docs/ai/GATE1_GROQ_TRAINING.md`). Gemini billing is withdrawn. His rate limiter and spend cap count the providers in the live chain (Groq). |
 | **E2 · Frontend** | Unchanged. The AI-edit view is built against the diff contract, which the provider move does not touch. Confirm scoped edits still propose-only before their Week-3 chat work. |
 | **E3 · Discovery** | Classification returning coerced defaults means their gallery ranking has been receiving `tone: 'minimal'` for every user. Tell them today — their filters may look broken for reasons that are not theirs. |
 | **E5 · Backend** | Generation timing changes with the provider. Their job runner and polling intervals were sized against Gemini. Share the D6 per-provider table. |

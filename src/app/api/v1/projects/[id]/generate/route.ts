@@ -9,6 +9,13 @@ import { runJob } from '@/lib/ai/jobs/runner';
 import { checkGenerationBudget } from '@/lib/ai/jobs/budget';
 import { persistLedger } from '@/lib/ai/cost/persist';
 import { guardAiRequest } from '@/lib/limits/ai-guard';
+import { TEMPLATES } from '@/lib/templates';
+import { putProjectFile } from '@/lib/data/project-files';
+import { recordGenerationUse } from '@/lib/ai/jobs/counters';
+import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
+import { setProfileStore } from '@/lib/ai/profile-cache';
+import { SupabaseProfileStore } from '@/lib/ai/profile/persist';
+import { track } from '@/lib/observability/analytics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,6 +31,11 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     handler: async ({ body, params, userId, req, supabase }) => {
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
+
+        const admin = supabaseAdminOrNull();
+        if (admin) setProfileStore(new SupabaseProfileStore(admin));
+        await recordGenerationUse(userId, params.id);
+        track('EV-04', userId, { category: 'unknown', latency_bucket: 'queued' });
 
         // This route returns before generation finishes, so withRoute's ordinary
         // request-scoped AI guard would release its concurrency slot too early.
@@ -46,10 +58,8 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 ledger: [],
             });
 
-            // Not awaited: the caller polls GET /jobs/{id} rather than holding the request
-            // open for the ~40s a generation takes. The runner keeps the slot, spend counter
-            // and ledger alive until its terminal state.
             void runJob(job, {
+                templates: TEMPLATES,
                 recordUsage: guard.recordUsage,
                 persistLedger: (rows) => persistLedger(supabase, {
                     jobId: job.id,
@@ -57,7 +67,30 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                     projectId: params.id,
                     prompt: body.prompt,
                 }, rows),
+                persistComposition: async (composition) => {
+                    if (typeof supabase.from !== 'function') return;
+                    try {
+                        await putProjectFile(
+                            supabase,
+                            params.id,
+                            'composition.json',
+                            JSON.stringify(composition, null, 2),
+                        );
+                    } catch (err) {
+                        console.warn(
+                            '[generate] persist composition',
+                            err instanceof Error ? err.message : err,
+                        );
+                    }
+                },
                 release: guard.release,
+                onSettled: (settled) => {
+                    const elapsed = (settled.endedAt ?? Date.now()) - settled.startedAt;
+                    track('EV-05', userId, {
+                        category: settled.composition?.vertical ? 'classified' : 'fallback',
+                        latency_bucket: latencyBucket(elapsed),
+                    });
+                },
             }).catch((err) => console.error('[generate]', err));
             handedToRunner = true;
 
@@ -67,3 +100,10 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         }
     },
 });
+
+function latencyBucket(ms: number): string {
+    if (ms < 15_000) return '0-15s';
+    if (ms < 30_000) return '15-30s';
+    if (ms < 45_000) return '30-45s';
+    return '45s+';
+}

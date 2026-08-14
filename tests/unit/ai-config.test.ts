@@ -47,12 +47,14 @@ describe('loadAiConfig', () => {
         expect(cfg.providers.gemini.models.strong).toBe('gemini-3.5-flash');
     });
 
-    it('defaults the provider order to groq, gemini', () => {
-        expect(loadAiConfig(base).order).toEqual(['groq', 'gemini']);
+    it('defaults the provider order to groq only', () => {
+        expect(loadAiConfig(base).order).toEqual(['groq']);
         expect(loadAiConfig(base).provider).toBe('groq');
     });
 
     // Cerebras stays configurable — it is out of the default chain, not removed.
+    // Gate 1 was recorded for Groq only; do not put cerebras in production
+    // order without a terms re-read (docs/ai/GATE1_GROQ_TRAINING.md).
     it('still supports cerebras when it is named in the order', () => {
         const cfg = loadAiConfig({ ...base, AI_PROVIDER_ORDER: 'groq,cerebras,gemini' });
         expect(cfg.order).toEqual(['groq', 'cerebras', 'gemini']);
@@ -74,8 +76,27 @@ describe('loadAiConfig', () => {
     it('leaves groq and cerebras keys empty until provided', () => {
         const cfg = loadAiConfig(base);
         expect(cfg.providers.groq.apiKey).toBe('');
+        expect(cfg.providers.groq.apiKeys).toEqual([]);
         expect(cfg.providers.cerebras.apiKey).toBe('');
         expect(cfg.providers.gemini.apiKey).toBe('test-key');
+    });
+
+    it('reads extra Groq keys and de-dupes, keeping GROQ_API_KEY first', () => {
+        const cfg = loadAiConfig({
+            GROQ_API_KEY: 'k1',
+            GROQ_API_KEYS: 'k2, k1, k3',
+            GROQ_API_KEY_4: 'k4',
+            GROQ_API_KEY_5: 'k5',
+            GROQ_API_KEY_6: 'k6',
+        });
+        expect(cfg.providers.groq.apiKeys).toEqual(['k1', 'k2', 'k3', 'k4', 'k5', 'k6']);
+        expect(cfg.providers.groq.apiKey).toBe('k1');
+    });
+
+    it('accepts GROQ_API_KEYS alone', () => {
+        const cfg = loadAiConfig({ GROQ_API_KEYS: 'a b c' });
+        expect(cfg.providers.groq.apiKeys).toEqual(['a', 'b', 'c']);
+        expect(cfg.providers.groq.apiKey).toBe('a');
     });
 
     it('reads per-provider models and base urls', () => {

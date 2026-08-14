@@ -63,7 +63,7 @@ export function rowFor(
     };
 }
 
-/** Rows for one generation. In-memory until the `generations` table lands on D9. */
+/** Rows for one generation. Persist via `persistLedgerRows` (FR-026). */
 export class CostLedger {
     private readonly rows: LedgerRow[] = [];
 

@@ -1,6 +1,6 @@
 # Scope Amendment A3 — AI provider chain
 
-**Status:** In force on merge for the provider change. **One item requires E1 sign-off** — the Gemini billing gate (§6).
+**Status:** In force on merge for the provider change. **Gate 1 closed 2026-08-14** (Hanish — Groq terms recorded). **Gemini billing withdrawn 2026-08-14** — production is Groq free (`AI_PROVIDER_ORDER=groq`). Gemini stays in gateway code only if someone lists it.
 **Raised by:** Hanish (R5 · AI), Day 2.
 **Issued against:** the pre-development documentation pack v2.1, as amended by A1 and A2, and the D5 Capacity Errata.
 **Applies to:** Documents 7 (API Design §7.11 / §11.11), 12 (Technology Stack §12.6), 11 (Module Breakdown M3.1), the D5 Capacity Errata, and the R5 / AI role schedule.
@@ -86,16 +86,18 @@ The three measured figures are **unchanged and still correct for Gemini**. What 
 
 | Where | Superseded | Now reads |
 |---|---|---|
-| "Billing must be enabled before D6, not D18–19 … Owner: Adithya." | Gemini billing is the only route to a runnable quality plan | "Gemini billing is **no longer the blocking route** to the quality plan — the Groq and Cerebras free tiers carry D11, D12, D15 and D18. Gemini billing remains required before the first external user, for the training-data reason below, not the quota reason. Owner: Adithya. See A3 §6." |
+| "Billing must be enabled before D6, not D18–19 … Owner: Adithya." | Gemini billing is the only route to a runnable quality plan | **Withdrawn 2026-08-14.** Groq free carries D11–D18. Gemini is not in `AI_PROVIDER_ORDER`. Gate 1 is Groq terms, not a Google invoice. |
 | R-NEW · "Free-tier request ceiling makes the quality plan unexecutable — L5 × I4 = 20 · High" | — | "Likelihood reduced to L2 by A3; the ceiling is routed around rather than removed. Impact unchanged. New residual risk R-NEW-2: **three free tiers, three data-use policies** — see §6." |
 
-## 6 · The two open gates
+## 6 · The two gates
 
-**Gate 1 — training-data policy. Blocking before any external user. Owner: Hanish, with E1.**
+**Gate 1 — training-data policy. Blocking before any external user. Owner: Hanish.**
 
-The PRD promises the user's site content is *never used for training*. The free-tier argument that forced Gemini billing forward applies equally to Groq and Cerebras: their free-tier terms must be read and recorded before a real user's content is sent to either. If a free tier reserves the right to train, that provider is development-only and must be excluded from the production chain by config.
+The PRD promises the user's site content is *never used for training*. The free-tier argument that forced Gemini billing forward applies to every provider in the chain: terms must be read and recorded before a real user's content is sent. If a free tier reserves the right to train, that provider is development-only and must be excluded from the production chain by config.
 
 **Solving a quota problem must not import a privacy problem.** This gate is why A3 does not withdraw the billing decision, only re-labels its reason.
+
+**Closed on 2026-08-14 by Hanish.** Record: `docs/ai/GATE1_GROQ_TRAINING.md`. Groq's Services Agreement §4.2 does not permit using Inputs or Outputs to train or fine-tune models unless the customer grants permission. The same agreement covers fee-free Developer usage (§5.1). Groq stays at the head of `AI_PROVIDER_ORDER`. Cerebras is out of the chain and out of this record — a terms check must land before it is added back. E1 initials are not required; this is a provider-terms record, not the Gemini billing gate.
 
 **Gate 2 — the go/no-go must name the provider. Owner: Hanish, D5.**
 
@@ -109,18 +111,17 @@ Without that line, someone changes `AI_PROVIDER_ORDER` in Week 3 and the go/no-g
 
 The attribution is per call rather than per run, which matters more than expected: a Groq 429 mid-generation moved the `plan` stage to Gemini, and the record shows the switch rather than averaging over it.
 
-**Operational note (D6):** the chain in force is **Groq → Gemini**. Cerebras is supported in code and configured, but its account returns HTTP 402 (`param: "quota"`) on every model and it is out of `AI_PROVIDER_ORDER` until funded. This is a config change of the kind §5.1 already provides for, not a change to the decision — but it means the redundancy this amendment was written to buy is currently two legs deep, not three.
+**Operational note (D6, updated 2026-08-14):** the chain in force is **Groq only**. Gemini billing is withdrawn; Gemini is not in the default `AI_PROVIDER_ORDER`. Cerebras remains in the gateway code but stays out of the order — unfunded, and Gate 1 was not recorded for it. Adding either back is a §5.1 config change plus a terms re-read, not a default.
 
 ## 7 · Sign-off
 
 A3 §1–§5 take effect on merge; no INVARIANT is moved and the gateway abstraction was designed for exactly this.
 
-§6 Gate 1 changes the reason and timing of a decision owned by E1. It requires initials below.
+§6 Gate 1 is a terms record on the provider in the chain. It is owned and closed by R5. Gemini billing is withdrawn — Groq free is the production path.
 
 | Role | Name | Position | Date |
 |---|---|---|---|
-| E1 · Platform + Database | Adithya | | |
-| R5 · AI | Hanish | Raised | Day 2 |
+| R5 · AI | Hanish | Gate 1 closed — Groq recorded, Cerebras out of scope | 2026-08-14 |
 | Product Owner | | | |
 
 ---

@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import { editOpStore } from '@/lib/ai/cost/edit-ops';
 import {
     buildDashboard, reconcile, renderDashboard, renderReconciliation,
     type GenerationRow,
@@ -146,7 +147,7 @@ async function main(): Promise<void> {
         process.exit(2);
     }
 
-    const dashboard = buildDashboard(rows);
+    const dashboard = buildDashboard(rows, editOpStore().all());
     const markdown = renderDashboard(dashboard);
 
     console.log(markdown);

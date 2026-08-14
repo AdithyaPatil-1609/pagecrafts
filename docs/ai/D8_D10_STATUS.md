@@ -79,8 +79,8 @@ small number of terse prompts and to *require* that a vague one exists.
 | A clean NFR-003 measurement | Both existing P95 figures included pacing |
 | Re-run the corpus at 30 | Every published figure has a denominator of 10 |
 | Injection corpus, ≥25 cases | M3.7, must run on every PR |
-| Groq training-data terms | **Blocks beta**, open since D6 |
-| Cerebras funding | One line in `AI_PROVIDER_ORDER` once resolved |
+| Groq training-data terms | **Closed 2026-08-14.** `docs/ai/GATE1_GROQ_TRAINING.md` |
+| Cerebras | Out of the chain. Not funding. Not in Gate 1. |
 | `generations.provider` column | E1 |
 | Generated files → project | E5, joint |
 

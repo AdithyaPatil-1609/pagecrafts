@@ -299,11 +299,11 @@ Name one. "We'll see" is not a posture.
 
 | Action | Owner | By |
 |---|---|---|
-| Enable Gemini billing | Adithya | D6 |
-| Fund the Cerebras account, then add `cerebras` back to `AI_PROVIDER_ORDER` — key is valid, account has no inference quota (HTTP 402) | Hanish | D6 |
+| Enable Gemini billing | Adithya | **withdrawn 2026-08-14** — Groq free only |
+| Fund the Cerebras account, then add `cerebras` back to `AI_PROVIDER_ORDER` | Hanish | **dropped** — not needed; stays out of the chain |
 | Verify `gpt-oss-*` free-tier rate limits on Groq (one 429 seen under light load) | Hanish | D6 |
 | Errata: retired model names in §11.11 and §12.6 | Hanish | D6 |
 | Close OQ-5 limit values | Hanish + Adithya | D6 |
-| A3 §6 Gate 1 — Groq + Cerebras training-data terms, recorded | Hanish | before any external user |
-| A3 §7 — E1 initials on the billing gate | Adithya | D6 |
+| A3 §6 Gate 1 — Groq training-data terms, recorded | Hanish | **closed 2026-08-14** — `docs/ai/GATE1_GROQ_TRAINING.md`. Cerebras out of scope. |
+| A3 §7 — Gemini billing | Adithya | **withdrawn 2026-08-14** |
 | Section components for rendering | Preethi | W2 |

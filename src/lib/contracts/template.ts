@@ -101,6 +101,8 @@ export interface Template {
   name: string;
   description: string;
   category: Category;
+  /** Classifier vertical slug. Defaults to `id` so an exact match ranks +100 (TC-118). */
+  vertical: string;
   tags: string[];
   thumbnailUrl: string;
   files: FileMap;

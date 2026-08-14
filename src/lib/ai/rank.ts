@@ -4,7 +4,7 @@ export interface RankableTemplate {
     id: string;
     category: Category;
     tags: string[];
-    /** Specific business slug when the catalogue has one (for example dental-clinic). */
+    /** Curated vertical slug. Optional so the hand-authored library can rank without it. */
     vertical?: string;
 }
 
@@ -16,7 +16,17 @@ export interface RankAttributes {
     sections?: string[];
 }
 
-const WEIGHT = { vertical: 100, category: 30, palette: 10, tone: 10, section: 1 } as const;
+/**
+ * Vertical at 100 is the structural floor for TC-118: the maximum without a
+ * vertical match is category 30 + palette 10 + tone 10 + ~7 section tags = 57.
+ */
+const WEIGHT = {
+    vertical: 100,
+    category: 30,
+    palette: 10,
+    tone: 10,
+    section: 1,
+} as const;
 
 export function scoreTemplate(attrs: RankAttributes, tpl: RankableTemplate): number {
     let score = 0;

@@ -1,5 +1,8 @@
 import type { Composition } from '@/lib/contracts';
 import { variantSignature } from './index';
+import { THEME_SHARE_MAX, MOTION_SHARE_MAX } from '@/lib/ai/composition/diversity';
+
+export { THEME_SHARE_MAX, MOTION_SHARE_MAX };
 
 /**
  * R-NEW-C (scored 16, High): every business gets the same look.
@@ -28,8 +31,6 @@ export interface Diversity {
  * amendment, because thirty generations is a much smaller sample and a strict
  * threshold would fire on ordinary clustering.
  */
-export const THEME_SHARE_MAX = 0.30;
-export const MOTION_SHARE_MAX = 0.40;
 
 export interface DiversityRow {
     id: string;

@@ -176,7 +176,7 @@ describe('plan (M3.3 stage one)', () => {
             sections: [{ type: 'hero', variant: 'centred', brief: 'x' }],
         })));
         const { usage } = await plan('x', intent, profile);
-        expect(usage.promptVersion).toBe('plan.v1');
+        expect(usage.promptVersion).toBe('plan.v3');
     });
 
     // A dispatched-but-failed call still cost tokens; usage rides on the error.
@@ -204,7 +204,15 @@ describe('fillSection (M3.3 stage two)', () => {
         expect(JSON.stringify(data)).not.toContain('<');
     });
 
-    it('strips a script and an onerror handler (AC-F4-5)', async () => {
+    it('rejects a fill reply containing any HTML tag (TC-038)', async () => {
+        setGateway(fake(JSON.stringify({
+            eyebrow: 'a', heading: '<h1>Hi</h1>', sub: 'b',
+            ctaLabel: 'Book', image: { query: 'q', alt: 'a' },
+        })));
+        await expect(fillSection(section, fillContext)).rejects.toThrow(/HTML is not allowed/);
+    });
+
+    it('rejects a script tag rather than stripping it through (TC-038)', async () => {
         setGateway(fake(JSON.stringify({
             eyebrow: 'a',
             heading: 'Hi',
@@ -212,10 +220,7 @@ describe('fillSection (M3.3 stage two)', () => {
             ctaLabel: 'Book',
             image: { query: 'q', alt: 'a' },
         })));
-        const { data } = await fillSection(section, fillContext);
-        expect(data.sub).not.toContain('script');
-        expect(data.sub).not.toContain('onerror');
-        expect(data.sub).toContain('Same-week appointments.');
+        await expect(fillSection(section, fillContext)).rejects.toThrow(/HTML is not allowed/);
     });
 
     it('fails validation when a field is empty after sanitising', async () => {
@@ -232,6 +237,43 @@ describe('fillSection (M3.3 stage two)', () => {
     it('throws when a required field is missing', async () => {
         setGateway(fake(JSON.stringify({ heading: 'Hi' })));
         await expect(fillSection(section, fillContext)).rejects.toThrow(/hero/);
+    });
+
+    it('puts a native-script name back when fill transliterates it (D15 v29)', async () => {
+        setGateway(fake(JSON.stringify({
+            eyebrow: 'Old Delhi',
+            heading: 'Mithaas Sweet Shop',
+            sub: 'Fresh kaju katli daily',
+            ctaLabel: 'Order Now',
+            image: { query: 'sweets', alt: 'Sweets' },
+        })));
+        const { data } = await fillSection(section, {
+            ...fillContext,
+            prompt: 'मिठास स्वीट्स — our sweet shop in old delhi, want the name in hindi at the top',
+        });
+        expect(data.heading).toBe('मिठास स्वीट्स');
+    });
+
+    it('scrubs invented contact fill when the prompt gave no phone or email (D15 v21)', async () => {
+        const contact: SectionInstance = {
+            id: 's_02', type: 'contact', variant: 'form', brief: 'sales',
+            visible: true, locked: false, source: 'ai',
+            props: {},
+        };
+        setGateway(fake(JSON.stringify({
+            heading: 'Get in touch',
+            blurb: 'Reach us at sales@inventorytool.com or 1-800-555-0123',
+            address: '',
+            phone: '1-800-555-0123',
+            email: 'sales@inventorytool.com',
+            hours: '',
+        })));
+        const { data } = await fillSection(contact, {
+            ...fillContext,
+            prompt: 'landing page for a tool that helps small shops track stock, clean and professional, pricing table',
+        });
+        expect(data.phone).toBe('');
+        expect(data.email).toBe('');
     });
 });
 

@@ -15,6 +15,27 @@ describe('rankTemplates', () => {
         )).toBe(51);
     });
 
+    it('an exact vertical match outranks everything else combined (TC-118)', () => {
+        const attrs = {
+            vertical: 'dental-clinic',
+            category: 'restaurant' as const,
+            palette: 'dark',
+            tone: 'bold',
+            sections: ['hero', 'menu'],
+        };
+        const ranked = rankTemplates(attrs, [
+            {
+                id: 'a',
+                vertical: 'restaurant',
+                category: 'restaurant' as const,
+                tags: ['dark', 'bold', 'has-hero', 'has-menu'],
+            },
+            { id: 'b', vertical: 'dental-clinic', category: 'other' as const, tags: [] },
+        ]);
+        expect(ranked[0].id).toBe('b');
+        expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
+    });
+
     it('puts an exact vertical above a broad category match', () => {
         const exact = {
             id: 'dental',
@@ -37,6 +58,13 @@ describe('rankTemplates', () => {
 
         expect(ranked.map((template) => template.id)).toEqual(['dental', 'medical']);
         expect(ranked[0].score).toBe(130);
+    });
+
+    it('ranking is stable across processes (TC-119)', () => {
+        const attrs = { category: 'portfolio' as const, palette: 'dark' };
+        const once = rankTemplates(attrs, templates).map((t) => t.id);
+        const twice = rankTemplates(attrs, [...templates].reverse()).map((t) => t.id);
+        expect(twice).toEqual(once);
     });
 
     it('returns a deterministic order with id tie-breaks', () => {

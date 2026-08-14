@@ -48,4 +48,31 @@ describe('D19 — the prompt library reference', () => {
         expect(doc).toContain("the user's instruction");
         expect(doc).toContain('normalised slug');
     });
+
+    it('lists every section content contract and its fields', () => {
+        const doc = buildPromptLibrary();
+        expect(doc).toContain('## Section content contracts');
+        for (const key of SECTION_KEYS) {
+            expect(doc, key).toContain(`| ${key} |`);
+        }
+        expect(doc).toContain('`phone?`');
+        expect(doc).toContain('`heading` (text)');
+    });
+
+    it('publishes the art-direction dial vocabulary, including all eight themes', () => {
+        const doc = buildPromptLibrary();
+        expect(doc).toContain('## Art-direction dial vocabulary');
+        expect(doc).toContain('`clinical-blue`');
+        expect(doc).toContain('`tech-slate`');
+        expect(doc).toContain('### Tone constraints');
+        expect(doc).toContain('| formal |');
+    });
+
+    it('records the day-19 freeze as a process freeze, not a product freeze', () => {
+        const doc = buildPromptLibrary();
+        expect(doc).toContain('## Day-19 freeze');
+        expect(doc).toContain('process freeze');
+        expect(doc).toContain('hash-pinned');
+        expect(doc).not.toMatch(/freeze the (whole )?product/i);
+    });
 });

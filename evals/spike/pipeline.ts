@@ -3,8 +3,9 @@ import { cachedProfile as fetchProfile } from '@/lib/ai/profile-cache';
 import { plan } from '@/lib/ai/generate/plan';
 import { fillSection } from '@/lib/ai/generate/fill';
 import { assemble } from '@/lib/ai/generate/assemble';
+import { checkAndRecord } from '@/lib/ai/composition/validate';
+import type { CompositionFinding } from '@/lib/ai/composition/validate';
 import { compositionToFiles } from '@/lib/ai/generate/to-files';
-import { validateComposition } from '@/lib/ai/composition/validate';
 import { GatewayError } from '@/lib/ai/gateway';
 import { CostLedger, type GenerationStatus, type LedgerRow } from '@/lib/ai/cost/ledger';
 import { withOneRepair } from '@/lib/ai/generate/repair';
@@ -54,6 +55,8 @@ export interface SpikeResult {
     };
     /** Sections that needed their one permitted repair attempt (BR-09). */
     repairs?: string[];
+    /** D16 composition-validator findings (motion budget, diversity). */
+    findings?: CompositionFinding[];
 }
 
 export class BudgetExceeded extends Error { }
@@ -213,15 +216,17 @@ export async function generateSpike(input: SpikeInput): Promise<SpikeResult> {
             props,
             title: p.data.label,
             description: prompt.slice(0, 160),
+            tone: intent.data.tone,
         });
-        const composition = validateComposition(assembled).composition;
-        const files = mode === 'plan-only' ? undefined : compositionToFiles(composition);
+        const checked = checkAndRecord(assembled, { tone: intent.data.tone });
+        const files = mode === 'plan-only' ? undefined : compositionToFiles(checked.composition);
 
         return {
             ...base,
             ok: true,
-            composition,
+            composition: checked.composition,
             files,
+            findings: checked.findings,
             intent: intentData,
             calls,
             requests: calls.length,

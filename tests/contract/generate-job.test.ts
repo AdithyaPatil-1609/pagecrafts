@@ -19,6 +19,7 @@ import { redisMock as limits, resetRedisMock } from '../support/redis-mock';
 import { setGateway } from '@/lib/ai/gateway';
 import { MockGateway } from '@/lib/ai/gateway/mock';
 import { setGenerationCounters } from '@/lib/ai/jobs/budget';
+import { resetDiversityStore } from '@/lib/ai/composition/diversity';
 import { jobStore, setJobStore } from '@/lib/ai/jobs/store';
 import { POST } from '@/app/api/v1/projects/[id]/generate/route';
 import { GET } from '@/app/api/v1/jobs/[id]/route';
@@ -57,6 +58,7 @@ beforeEach(() => {
         keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0]);
     setJobStore(null);
     setGenerationCounters(null);
+    resetDiversityStore();
     setGateway(new MockGateway());
 });
 
@@ -183,7 +185,8 @@ describe('the job runner', () => {
         const { data } = await res.json();
         const job = await settled(data.job_id);
 
-        expect(job.status).toBe('failed');
+        expect(job.status).toBe('done');
+        expect(job.fallbackTemplateId).toBeTruthy();
         expect(job.events.map((e) => e.name)).toContain('fallback');
     });
 });

@@ -9,5 +9,6 @@ quote .... one or two sentences about one specific thing.
 author ... a first name and an initial, or a first name and the neighbourhood.
            Never a full invented name with a title.
 
-If the description names no customers, keep them few and generic enough that the
-owner can replace them — this is placeholder copy and should read as replaceable.
+If the description names no customers, write two short generic sentences a
+visitor can read ("The visit was straightforward and they explained each step.").
+Never "Add a customer quote here". Never an empty quote.

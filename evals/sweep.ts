@@ -8,6 +8,7 @@ import { Budget, BudgetExceeded, generateSpike, type Mode } from './spike/pipeli
 import { toOutcome } from './grader/adapt';
 import { grade, summarise, type CorpusItem } from './grader/index';
 import { measureDiversity, rowFor, type DiversityRow } from './grader/diversity';
+import { resetDiversityStore } from '@/lib/ai/composition/diversity';
 
 loadEnv({ path: '.env.local' });
 
@@ -84,6 +85,7 @@ export async function runSweep(
 
     for (const cfg of grid) {
         applyConfig(cfg, mode);
+        resetDiversityStore();
         process.stdout.write(`\n${cfg.label}\n`);
 
         const grades = [];

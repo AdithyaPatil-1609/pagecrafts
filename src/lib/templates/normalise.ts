@@ -20,6 +20,8 @@ export interface SourceTemplate {
     category?: Category;
     /** Declared tags. Topped up from the design's copy, palette and layout. */
     tags?: string[];
+    /** Classifier vertical. Defaults to `id`. */
+    vertical?: string;
     /** Defaults to `free`: a design is only priced when someone says so. */
     tier?: TemplateTier;
     /** Non-null, both of them. This is the C-06 gate. */
@@ -351,6 +353,7 @@ export function normaliseTemplate(source: SourceTemplate): NormaliseResult {
         name,
         description: source.description?.trim() || name,
         category,
+        vertical: source.vertical ?? id,
         tags,
         thumbnailUrl: `/templates/${id}/thumbnail.png`,
         files,

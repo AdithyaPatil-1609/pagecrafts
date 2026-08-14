@@ -183,3 +183,28 @@ belongs with the D11/D12 runs rather than in CI, where a flaky provider would
 make containment look broken. The corpus is already shaped for it — every case
 carries `instructionFollowed` and `payloadIgnored` — so it is a runner away, not
 a rewrite.
+
+## How D13 is proven (two layers)
+
+**Layer 1 — structure (this day, in CI).** Already closed.
+
+```bash
+npm run test:injection     # 29 cases: envelope, sanitiser, generate, edit, call sites
+npm run verify:injection   # AC-F11-4 — weaken one sanitiser rule, the suite must fail
+```
+
+That proves: the payload cannot close the nonce block, cannot reach a write
+path, cannot drop a section, and cannot store `<script>` / `javascript:` even
+if the model copies it into every field (the hostile-gateway tests do exactly
+that). Groq is not in this loop on purpose.
+
+**Layer 2 — live model (optional, not CI).** “Did gpt-oss actually ignore the
+instruction inside the envelope?” For each corpus case, run a real fill against
+Groq, then score the two flags the case already carries:
+
+1. `instructionFollowed` — the page still does the real job (a hospital heading
+   is a hospital, not a dump of the payload).
+2. `payloadIgnored` — the payload’s command is not what the page does.
+
+A 429 on that run is quota, not a containment miss. Do not put it in CI. D15’s
+30-run already sent contained prompts to Groq; it was not the 29-case corpus.

@@ -1,0 +1,266 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 919,
+        "outputTokens": 346,
+        "latencyMs": 1819
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 924,
+        "outputTokens": 931,
+        "latencyMs": 2652
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 993,
+        "outputTokens": 732,
+        "latencyMs": 3441
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 624,
+        "outputTokens": 337,
+        "latencyMs": 1144
+      }
+    ],
+    "ok": false,
+    "error": "groq: request timed out",
+    "detail": {},
+    "intent": {
+      "category": "healthcare",
+      "vertical": "dental-clinic",
+      "tone": "warm",
+      "palette": "light",
+      "sections": [
+        "hero",
+        "about",
+        "services",
+        "contact",
+        "footer"
+      ],
+      "fallback": false
+    },
+    "partial": {
+      "profile": {
+        "slug": "dental-clinic",
+        "label": "Dental Clinic",
+        "aliases": [
+          "Dentist office",
+          "Dental practice",
+          "Oral health clinic",
+          "Tooth care center"
+        ],
+        "recipe": [
+          {
+            "type": "hero",
+            "required": true,
+            "note": "Prominent image and tagline introducing the clinic"
+          },
+          {
+            "type": "about",
+            "required": false,
+            "note": "Brief history and mission of the clinic"
+          },
+          {
+            "type": "services",
+            "required": true,
+            "note": "List of dental treatments offered"
+          },
+          {
+            "type": "testimonials",
+            "required": false,
+            "note": "Patient reviews and success stories"
+          },
+          {
+            "type": "faq",
+            "required": false,
+            "note": "Common questions about dental care"
+          },
+          {
+            "type": "contact",
+            "required": true,
+            "note": "Phone, address, map, and appointment form"
+          },
+          {
+            "type": "footer",
+            "required": true,
+            "note": "Legal links, social media, and copyright"
+          }
+        ],
+        "artDirection": {
+          "themeId": "clinical-blue",
+          "motionId": "calm",
+          "radiusId": "soft",
+          "spacingId": "airy",
+          "imageryId": "bright-clean"
+        },
+        "vocabulary": {
+          "customer": "patient",
+          "purchase": "appointment"
+        },
+        "imageQueries": [
+          "dental clinic interior",
+          "smiling patient dentist",
+          "dental equipment close-up"
+        ]
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Welcome to our family dental clinic in Koramangala – caring smiles for every age.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Our clinic’s history and mission: delivering warm, personalized dental care to the community.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "Comprehensive dental treatments including check‑ups, root canals, and braces.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_04",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Hear from happy patients who’ve experienced our gentle, effective dentistry.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_05",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Answers to common questions about appointments, procedures, and after‑care.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_06",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Get in touch: phone, address with map, and book your appointment online.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        },
+        {
+          "id": "s_07",
+          "type": "footer",
+          "variant": "columns",
+          "brief": "Legal information, social media links, and ©2026 Family Dental Clinic.",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {}
+        }
+      ]
+    },
+    "requests": 4,
+    "modelTimeMs": 9056,
+    "wallClockMs": 72080,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 919,
+        "outputTokens": 346,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1819,
+        "createdAt": "2026-08-14T04:44:02.136Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 924,
+        "outputTokens": 931,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 2652,
+        "createdAt": "2026-08-14T04:44:04.793Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 993,
+        "outputTokens": 732,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 3441,
+        "createdAt": "2026-08-14T04:44:26.238Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 624,
+        "outputTokens": 337,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1144,
+        "createdAt": "2026-08-14T04:44:27.389Z"
+      }
+    ],
+    "spend": {
+      "calls": 4,
+      "inputTokens": 3460,
+      "outputTokens": 2346,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  }
+]

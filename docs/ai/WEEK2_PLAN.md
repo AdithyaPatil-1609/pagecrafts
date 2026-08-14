@@ -77,20 +77,21 @@ providers cannot stack three timeouts against that budget.
 | Adithya | Upstash counters, kill switch, jobs table | D6 |
 | Preethi | Section components, composition renderer | D6 |
 | Adhyay | Commit endpoint for auto-commit before edits | D8 |
-| Adithya | Gemini billing | **D6, blocking** |
-| Hanish | A3 §6 Gate 1 — free-tier training-data terms for Groq and Cerebras | before any external user |
+| Adithya | Gemini billing | **withdrawn 2026-08-14** — Groq free only |
+| Hanish | A3 §6 Gate 1 — Groq training-data terms | **closed 2026-08-14** — `docs/ai/GATE1_GROQ_TRAINING.md` |
 
 ## Carried risks
 
-- **Free-tier data policy is now three policies.** Any provider whose free tier
-  reserves the right to train on submitted content is development-only and must be
-  excluded from the production chain by config. Unresolved until Gate 1 is signed.
-- **The chain is two legs deep, not three.** Cerebras is unfunded (HTTP 402) and
-  out of `AI_PROVIDER_ORDER`, so a Groq outage falls straight to Gemini's 20 RPD.
-  Until Cerebras is funded or Gemini billing lands, the redundancy A3 was written
-  to buy is thinner than it reads.
+- **Free-tier data policy is Groq's.** Groq does not train on Inputs/Outputs
+  (Gate 1 closed, `docs/ai/GATE1_GROQ_TRAINING.md`). Cerebras and Gemini are out
+  of the default order. Gemini billing is withdrawn.
+- **The chain is one leg.** Cerebras stays out — not funding it. Gemini stays
+  out — we are not paying Google. A Groq outage falls to the template, not to
+  Gemini's 20 RPD.
 - **Quality evidence is provider-specific.** The D5 go/no-go names one provider and
   one model. Changing `AI_PROVIDER_ORDER` in week 2 silently invalidates it;
   re-run the corpus before relying on the old number.
-- **Art-direction diversity is unverified.** If D11 shows themes collapsing across
-  verticals, the fix is in the `profile` prompt and lands at D12.
+- **Art-direction diversity is enforced at generation time (D16).** A rolling
+  50-site sample restyles a page that would push theme share above ~30% or
+  motion above ~40%. D11's 48% `clinical-blue` collapse was the old `applyTone`
+  pin (fixed) plus no rolling counter (now `checkAndRecord`).

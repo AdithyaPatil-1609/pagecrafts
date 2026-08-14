@@ -38,6 +38,7 @@ import type {
     SiteMeta,
     TreeNode,
 } from '@/lib/contracts';
+import { parseStoredComposition } from '@/lib/ai/composition/migrate';
 
 const vfs = new VFS();
 const AUTOSAVE_DELAY_MS = 1500;
@@ -215,10 +216,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const entry = entryPath(vfs);
         const html = entry ? vfs.read(entry) : null;
 
+        let composition: Composition | null = null;
+        const stored = vfs.read('composition.json');
+        if (stored) {
+            try {
+                composition = parseStoredComposition(stored);
+                vfs.write('composition.json', JSON.stringify(composition, null, 2));
+            } catch {
+                composition = null;
+            }
+        }
+
         set({
             activeFile: pickEntryFile(vfs.paths()),
             lastSavedAt: updatedAt,
             loading: false,
+            composition,
             projectName: detail?.name ?? null,
             contentSchema: schema,
             content:

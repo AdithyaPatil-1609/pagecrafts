@@ -3,12 +3,11 @@
 Owner: Hanish (R5 · AI). The corpus, the grader and the ranking machinery for the
 30-vertical quality pass.
 
-> **Status: machinery landed, baseline measured on 12 Aug 2026.**
+> **Status: measured.** `evals/grader/results/2026-08-14T05-13-47-751Z-baseline-full/`
 >
-> The tables below are from `evals/grader/results/2026-08-12T18-00-38-385Z-baseline-full`.
-> Twenty-one of thirty verticals never reached a page — Groq 429 / timeout, then
-> Gemini's 20 RPD. The nine that completed all passed. That is a capacity
-> finding, not a quality finding, and the two must not be averaged together.
+> Groq · `openai/gpt-oss-120b` (strong) / `openai/gpt-oss-20b` (fast) · prompts `v1` · `json_schema`.
+> Auto pass **28/30 (93%)**. Diversity **fails** (`clinical-blue` / `whisper` at 48%).
+> Human columns fully read: copy **3.20**, sections **3.90**, art **3.63**. Copy ≥4 on 13/30.
 
 ---
 
@@ -17,9 +16,9 @@ Owner: Hanish (R5 · AI). The corpus, the grader and the ranking machinery for t
 The schedule's errata puts a hard gate before D11: Gemini billing, or the corpus
 shrinks to ~2 verticals and the *90% of 30* metric is renegotiated.
 
-**That arithmetic is against the wrong provider.** `AI_PROVIDER_ORDER` is
-`groq,gemini` — Gemini is the *last* fallback, not the head of the chain. The
-gate is real but much softer than written:
+**That arithmetic is against the wrong provider.** Default `AI_PROVIDER_ORDER` is
+`groq`. Gemini is not in the chain. The gate was Gemini-sized; the work ran on
+Groq:
 
 | | Requests/day | Tokens/day | Full generations/day | Binding limit |
 |---|---|---|---|---|
@@ -41,12 +40,8 @@ The whole three-day programme, in generations rather than requests:
 | D13 injection corpus | 0 | 0 — runs offline, see below |
 | **Total** | **~83** | **≈ 5 days** |
 
-**So D11 can run at the full 30 verticals without billing**, over about two days,
-and the *90% of 30* metric does not need renegotiating. Billing is still worth
-having — it collapses five days of waiting into an afternoon, and at the
-amendment's pricing the whole programme is a bit over a dollar — but it is a
-convenience, not a gate. The D5 escalation should be re-framed on that basis
-rather than as a blocker.
+**So D11 ran the full 30 on Groq free.** Gemini billing is withdrawn. Do not
+re-open it as a gate.
 
 Two further corrections to the errata's arithmetic:
 
@@ -146,88 +141,68 @@ pinned the stale seventeen now pins the invariant instead.
 
 ## Results
 
-Run: `evals/grader/results/2026-08-12T18-00-38-385Z-baseline-full`
-Provider order: Groq `openai/gpt-oss-120b` → Gemini `gemini-3.5-flash` · prompts v1.
+Evidence: `evals/grader/results/2026-08-14T05-13-47-751Z-baseline-full/summary.json`.
+Ran 2026-08-14 in two sessions on Groq free (15 + 15 resume). Prompts stayed on **v1**.
 
 ### Pass rate
 
 | Group | Passed | Total | Rate |
 |---|---|---|---|
-| Overall | 9 | 30 | 30% |
-| **Completed (the quality sample)** | **9** | **9** | **100%** |
-| **No template** (the claim under test) | 9 | 18 | 50% |
-| Template (control) | 0 | 8 | 0% |
-| Adversarial | 0 | 2 | 0% |
-| Non-Latin-script | 0 | 2 | 0% |
+| Overall | 28 | 30 | **93%** |
+| **No template** (corpus group — the claim under test) | 18 | 18 | 100% |
+| Template (control) | 7 | 8 | 88% |
+| Adversarial | 1 | 2 | 50% |
+| Non-Latin-script | 2 | 2 | 100% |
 
-The control group, the adversarial pair and the non-Latin pair all sit after the
-quota cliff. Interleaving (added after this run) exists so a partial re-run
-samples every group; this baseline did not have it, which is why every pass is
-a no-template vertical.
+The two auto-fails: **`unspecified` (v27)** died at fill (`fillSection(testimonials)` schema rejection — no page). **`event` (v22)** completed but missed required `contact`. `driving-school` passed with a wrong category (`professional_services`); that does not gate `passed`.
 
-`completedButFailed` is **0**. Every vertical that produced a page passed the
-objective bar without fallback.
+The published D15 bar is 90% of 30. Closed on v3 in `docs/ai/D15_STATUS.md`:
+machine **30/30**, copy ≥4 **28/30**, diversity **passes**. This v1 sheet stays
+the baseline (copy ≥4 **13/30**). Do not mix them.
 
 ### Diversity — R-NEW-C
 
-Measured on the nine completed pages only.
+Thresholds: no theme above 30% of the corpus, no motion above 40%. Measured on 29 completed compositions (v27 produced none).
 
 | Metric | Value | Limit |
 |---|---|---|
-| Dominant theme share | clinical-blue 22% | ≤ 0.30 |
-| Dominant motion share | **calm 56%** | ≤ 0.40 |
-| Distinct variant sets | 8 / 9 | — |
+| Dominant theme share | **clinical-blue 48%** | ≤ 0.30 |
+| Dominant motion share | **whisper 48%** | ≤ 0.40 |
+| Distinct variant sets | 25/29 | — |
 
-**Headline: motion collapsed, theme did not.** Five of eight themes appeared in
-nine pages. Motion failed the 40% cap because `calm` took half the corpus.
-That is the D12 input: if a tuning slot is spent on art direction, spend it on
-motion, not theme.
+**FAILS.** This is the headline finding, not the 93% pass rate. Fourteen of twenty-nine pages share `clinical-blue` / `whisper` — hospital, law-firm, dental, vet, SaaS, event, university, and more. A product where half the businesses get the same look has a problem a good pass rate conceals. D12's remaining slot after the two auto-fails is art direction, not more section contracts.
 
 ### Failure clusters
 
-Ranked by count × impact. Every cluster is a provider outage, not a prompt
-failure — D12 must not chase these.
+Ranked by count × impact. **The top three go into D12 and nothing else does.**
 
 | # | Stage | Symptom | Count | Verticals |
 |---|---|---|---|---|
-| 1 | fill | timeout | 11 | driving-school, packers-movers, residents-association, physiotherapy, tuition-centre, wedding-planner, electrician, accountant, restaurant, portfolio, saas |
-| 2 | profile | provider-error | 7 | shop, blog, agency, unspecified, vague-modern, sweet-shop, saree-shop |
-| 3 | plan | timeout | 1 | music-school |
+| 1 | fill | generic-copy | 3 | law-firm, ngo, personal |
+| 2 | fill | schema-rejection | 1 | unspecified |
+| 3 | plan | missing-required-section | 1 | event |
 
-### Human columns _(unread)_
+v3 prompts target (2) and (3) and are now the default after D12's clean six-run. (1) is the human-sheet finding: placeholder contact and wrong job-of-the-page, not a machine blank.
 
-| Column | Mean | Unread |
-|---|---|---|
-| copySensible | null | 30 |
-| sectionSelectionAppropriate | null | 30 |
-| artDirectionAppropriate | null | 30 |
+### Human columns
 
-A blank sheet is in the results directory. Means stay `null` until a column is
-fully read.
+Scored by reading `human-read/*.md` from `raw.json`. Sheet: `human-sheet.json`.
+
+| Column | Mean | ≥4 | ≤2 |
+|---|---|---|---|
+| copySensible | **3.20** | 13/30 | 6 |
+| sectionSelectionAppropriate | **3.90** | 22/30 | 5 |
+| artDirectionAppropriate | **3.63** | 18/30 | 11 |
+
+Copy ≥4 is the human pass used in the spike rubric. **13/30 (43%)**. Sections are mostly apt; art is dragged down by `clinical-blue` on law, logistics, driving school, packers, RWA, electrician, accountant, SaaS, event, university.
+
+D15 remeasured the same 30 on **v3** (not this v1 sheet): copy ≥4 is **28/30** in `evals/grader/results/2026-08-14T07-58-07-237Z-d15-sensible-full/`. The two misses are v21 (invented 1-800) and v29 (Hindi name not on the hero). Do not mix the two sheets.
 
 ### Spend
 
 | | Requests | Tokens |
 |---|---|---|
-| Baseline run | 163 | 195,358 |
-| Completed verticals only | 91 | 96,595 |
-
-### NFR-003 — first clean figure
-
-`latencyMs` on this run excludes pacing and Retry-After. On the nine completed
-verticals:
-
-| Figure | Value | Budget |
-|---|---|---|
-| Mean model time | 19.6s | 45s |
-| P95 model time | **27.4s** | 45s |
-| Max | 27.4s (hospital) | 45s |
-
-**Met**, on the sample that finished. It is not a 30-vertical P95. A third
-corpus run that actually completes 30 is still the number to publish; this is
-the first number that is allowed to be compared with the requirement at all.
-
----
+| Baseline run | 316 | 359,729 |
 
 ---
 
@@ -249,8 +224,7 @@ not comparable to the D5/D8 numbers.** Do not put them in the same table.
 
 | Item | Why |
 |---|---|
-| Finish the 30 | Quota, not quality — 9/9 completed passed; 21 never started a page |
-| Read the 30 outputs | Three human columns; not machine-derivable |
-| Motion diversity | `calm` at 56% — the one D12-shaped finding from this run |
+| Diversity — `clinical-blue` / `whisper` at 48% on the v1 30 | v3 30 **passes** (clinical-blue 23%, calm 40%) — `2026-08-14T07-58-07-237Z-d15-sensible-full` |
+| Human copy ≥4 only 13/30 on the v1 sheet | v3 30: **28/30** — `docs/ai/D15_STATUS.md`. Remaining 3s (v21 phone, v29 Hindi) have code fixes in `947aad4`, not a second 30 |
+| A clean NFR-003 P95 | 12 Aug sample of 9 completed: P95 **27.4s**. A 30-vertical P95 is still owed; D8's 10-run figures included pacing |
 | `vertical_profiles` table | Migration written (`20260812090000`); needs provisioning by E1 |
-| Gallery category filter | Three pre-existing failures in discovery, unrelated to this work |

@@ -1,0 +1,456 @@
+[
+  {
+    "vertical": "dental-clinic",
+    "prompt": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+    "hasTemplate": false,
+    "mode": "full",
+    "calls": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 919,
+        "outputTokens": 604,
+        "latencyMs": 1375
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 924,
+        "outputTokens": 671,
+        "latencyMs": 1815
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 1018,
+        "outputTokens": 1295,
+        "latencyMs": 3302
+      },
+      {
+        "stage": "fill",
+        "section": "hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 637,
+        "outputTokens": 246,
+        "latencyMs": 1061
+      },
+      {
+        "stage": "fill",
+        "section": "about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 606,
+        "outputTokens": 218,
+        "latencyMs": 1053
+      },
+      {
+        "stage": "fill",
+        "section": "services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 607,
+        "outputTokens": 262,
+        "latencyMs": 1044
+      },
+      {
+        "stage": "fill",
+        "section": "team/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 601,
+        "outputTokens": 324,
+        "latencyMs": 1165
+      },
+      {
+        "stage": "fill",
+        "section": "testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 589,
+        "outputTokens": 538,
+        "latencyMs": 1521
+      },
+      {
+        "stage": "fill",
+        "section": "faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 594,
+        "outputTokens": 405,
+        "latencyMs": 1582
+      },
+      {
+        "stage": "fill",
+        "section": "contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "structuredOutput": "json_schema",
+        "inputTokens": 612,
+        "outputTokens": 247,
+        "latencyMs": 1417
+      }
+    ],
+    "ok": true,
+    "composition": {
+      "schemaVersion": 3,
+      "vertical": "dental-clinic",
+      "artDirection": {
+        "themeId": "warm-editorial",
+        "motionId": "editorial",
+        "radiusId": "soft",
+        "spacingId": "default",
+        "imageryId": "bright-clean"
+      },
+      "meta": {
+        "title": "Dental Clinic",
+        "description": "a website for my family dental clinic in koramangala, we do check-ups root canals and braces, people should be able to book an appointment",
+        "lang": "en"
+      },
+      "sections": [
+        {
+          "id": "s_01",
+          "type": "hero",
+          "variant": "split-image",
+          "brief": "Prominent clinic name, warm tagline, and a button to book an appointment with a welcoming family photo background",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "eyebrow": "Family Dental Care in Koramangala",
+            "heading": "Koramangala Family Dental Clinic",
+            "sub": "Comprehensive check‑ups, root canals, and braces for every smile",
+            "ctaLabel": "Book Appointment",
+            "image": {
+              "query": "family dental clinic photo smiling patients",
+              "alt": "Welcoming family photo of the dental clinic staff"
+            }
+          }
+        },
+        {
+          "id": "s_02",
+          "type": "about",
+          "variant": "text",
+          "brief": "Brief overview of the clinic’s mission, history in Koramangala, and caring values",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "About Us",
+            "body": "At our family dental clinic in Koramangala, we blend decades of trusted care with a gentle, patient‑first approach. Founded to bring quality dental health to the neighbourhood, we focus on prevention, precise root canals, and confident smiles through braces. Our mission is simple: keep every patient healthy, comfortable, and smiling for life.",
+            "image": {
+              "query": "family dental clinic Koramangala interior",
+              "alt": "Warm, welcoming dental clinic interior with smiling staff and patients"
+            }
+          }
+        },
+        {
+          "id": "s_03",
+          "type": "services",
+          "variant": "cards",
+          "brief": "List of dental treatments such as check‑ups, root canals, and braces with short descriptions",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Our Services",
+            "items": [
+              {
+                "title": "Check‑ups",
+                "body": "Comprehensive exams to keep your smile healthy and catch issues early."
+              },
+              {
+                "title": "Root Canals",
+                "body": "Gentle treatment to relieve pain and save a damaged tooth."
+              },
+              {
+                "title": "Braces",
+                "body": "Custom orthodontic solutions for straight, confident teeth."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_04",
+          "type": "team",
+          "variant": "grid",
+          "brief": "Profiles of dentists and staff highlighting their expertise and friendly approach",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Meet Our Caring Team",
+            "members": [
+              {
+                "name": "Dr. Ananya Patel",
+                "role": "General Dentist",
+                "bio": "Dr. Patel provides comprehensive check‑ups and root canal treatments with a gentle, patient‑focused approach."
+              },
+              {
+                "name": "Dr. Rajesh Kumar",
+                "role": "Orthodontist",
+                "bio": "Specialist in braces and alignment, Dr. Kumar creates comfortable, confident smiles for every patient."
+              },
+              {
+                "name": "Maya Singh",
+                "role": "Dental Hygienist",
+                "bio": "Maya ensures thorough cleanings and educates patients on maintaining oral health at home."
+              },
+              {
+                "name": "Priya Nair",
+                "role": "Front Desk Coordinator",
+                "bio": "Priya greets every patient with a warm smile and helps schedule appointments smoothly."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_05",
+          "type": "testimonials",
+          "variant": "quotes",
+          "brief": "Patient reviews and success stories sharing positive experiences",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Patient Stories",
+            "items": [
+              {
+                "quote": "The team at the clinic made my root canal painless and quick. I felt cared for every step of the way.",
+                "author": "Ravi, patient"
+              },
+              {
+                "quote": "My kids love coming for check‑ups; the staff are friendly and the office is spotless.",
+                "author": "Anita, patient"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_06",
+          "type": "faq",
+          "variant": "accordion",
+          "brief": "Common questions about dental care, appointments, and procedures with clear answers",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Frequently Asked Questions",
+            "items": [
+              {
+                "question": "What dental services does your clinic provide?",
+                "answer": "We offer routine check‑ups, cleanings, fillings, root canals, and orthodontic treatments such as braces."
+              },
+              {
+                "question": "How do I book an appointment?",
+                "answer": "You can schedule a visit online through our booking portal or call our front desk during business hours."
+              },
+              {
+                "question": "What are your clinic hours?",
+                "answer": "We are open Monday to Saturday, 9 am – 7 pm. Sunday is closed."
+              },
+              {
+                "question": "Do you accept dental insurance?",
+                "answer": "Yes, we work with most major dental insurance plans and can help you file claims."
+              },
+              {
+                "question": "What should I expect during a root canal procedure?",
+                "answer": "The tooth will be numbed, the infected pulp removed, and the canal cleaned and sealed. Most patients report minimal discomfort and can resume normal activities the same day."
+              },
+              {
+                "question": "How long does orthodontic treatment with braces take?",
+                "answer": "Treatment duration varies, but most patients wear braces for 12 – 24 months, followed by a retention phase."
+              }
+            ]
+          }
+        },
+        {
+          "id": "s_07",
+          "type": "contact",
+          "variant": "split-map",
+          "brief": "Address, phone, email, and an appointment booking form with a map of the clinic location",
+          "visible": true,
+          "locked": false,
+          "source": "ai",
+          "props": {
+            "heading": "Contact Us",
+            "blurb": "We’re here to help you keep your smile healthy. Reach out or book an appointment anytime.",
+            "address": "Koramangala, Bangalore",
+            "phone": "(555) 123‑4567",
+            "email": "info@familydentalkoramangala.com",
+            "hours": "Mon‑Fri 9 am‑6 pm"
+          }
+        }
+      ]
+    },
+    "intent": {
+      "category": "healthcare",
+      "vertical": "dental-clinic",
+      "tone": "warm",
+      "palette": "muted",
+      "sections": [
+        "hero",
+        "about",
+        "services",
+        "contact",
+        "footer"
+      ],
+      "fallback": false
+    },
+    "requests": 10,
+    "modelTimeMs": 15335,
+    "wallClockMs": 112357,
+    "ledger": [
+      {
+        "stage": "classify",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "promptVersion": "classify.v1",
+        "inputTokens": 919,
+        "outputTokens": 604,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1375,
+        "createdAt": "2026-08-14T05:10:11.632Z"
+      },
+      {
+        "stage": "profile",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "profile.v1",
+        "inputTokens": 924,
+        "outputTokens": 671,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1815,
+        "createdAt": "2026-08-14T05:10:13.450Z"
+      },
+      {
+        "stage": "plan",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "plan.v1",
+        "inputTokens": 1018,
+        "outputTokens": 1295,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 3302,
+        "createdAt": "2026-08-14T05:10:34.755Z"
+      },
+      {
+        "stage": "fill:hero/split-image",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 637,
+        "outputTokens": 246,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1061,
+        "createdAt": "2026-08-14T05:11:05.820Z"
+      },
+      {
+        "stage": "fill:about/text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 606,
+        "outputTokens": 218,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1053,
+        "createdAt": "2026-08-14T05:11:17.875Z"
+      },
+      {
+        "stage": "fill:services/cards",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 607,
+        "outputTokens": 262,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1044,
+        "createdAt": "2026-08-14T05:11:18.921Z"
+      },
+      {
+        "stage": "fill:team/grid",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 601,
+        "outputTokens": 324,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1165,
+        "createdAt": "2026-08-14T05:11:20.088Z"
+      },
+      {
+        "stage": "fill:testimonials/quotes",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 589,
+        "outputTokens": 538,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1521,
+        "createdAt": "2026-08-14T05:11:21.609Z"
+      },
+      {
+        "stage": "fill:faq/accordion",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 594,
+        "outputTokens": 405,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1582,
+        "createdAt": "2026-08-14T05:11:46.193Z"
+      },
+      {
+        "stage": "fill:contact/split-map",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "promptVersion": "fill-section.v1",
+        "inputTokens": 612,
+        "outputTokens": 247,
+        "costCents": 0,
+        "status": "completed",
+        "latencyMs": 1417,
+        "createdAt": "2026-08-14T05:12:02.612Z"
+      }
+    ],
+    "spend": {
+      "calls": 10,
+      "inputTokens": 7107,
+      "outputTokens": 4810,
+      "costCents": 0,
+      "failed": 0
+    },
+    "repairs": []
+  }
+]
