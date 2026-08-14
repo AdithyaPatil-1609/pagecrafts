@@ -193,7 +193,6 @@ export function queryTemplates(query: TemplateQuery): TemplateListResponse {
                   {
                       vertical: query.intent.vertical,
                       category: query.intent.category,
-                      vertical: query.intent.vertical,
                       tone: query.intent.tone,
                       palette: query.intent.palette,
                   },
