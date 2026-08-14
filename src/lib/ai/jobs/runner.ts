@@ -3,18 +3,29 @@ import { cachedProfile as fetchProfile } from '../profile-cache';
 import { plan } from '../generate/plan';
 import { fillSection } from '../generate/fill';
 import { assemble } from '../generate/assemble';
-import { validateComposition } from '../composition/validate';
+import { compositionToFiles } from '../generate/to-files';
+import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
-import { CostLedger } from '../cost/ledger';
-import type { RankableTemplate } from '../rank';
-import type { SectionProps, Usage } from '@/lib/contracts';
+import { CostLedger, type LedgerRow } from '../cost/ledger';
+import type { RankableTemplate, RankAttributes } from '../rank';
+import type { Composition, SectionProps, Usage } from '@/lib/contracts';
 import { jobStore } from './store';
 import type { Job, JobEventName, JobStatus } from './types';
 
 export interface RunnerDeps {
     /** Candidates for the last-resort template fallback. */
     templates?: readonly RankableTemplate[];
+    /** Persist ledger rows; must not throw. */
+    persistLedger?: (rows: readonly LedgerRow[]) => Promise<void>;
+    /** Write the finished composition to the project tree. */
+    persistComposition?: (composition: Composition) => Promise<void>;
+    /** Funnel event after the job settles. */
+    onSettled?: (job: Job) => void;
+    /** Records the request's aggregate token spend in the shared daily cap. */
+    recordUsage?: (usage: Pick<Usage, 'inputTokens' | 'outputTokens'>) => Promise<void>;
+    /** Releases resources held for the full lifetime of this detached job. */
+    release?: () => Promise<void>;
 }
 
 /**
@@ -27,6 +38,7 @@ export interface RunnerDeps {
 export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
     const store = jobStore();
     const ledger = new CostLedger();
+    let fallbackAttrs: RankAttributes = {};
 
     const emit = async (name: JobEventName, data?: Record<string, unknown>) => {
         const current = await store.get(job.id);
@@ -48,12 +60,20 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
 
         const intent = await classify(job.prompt);
         const provider = bill('classify', intent.usage);
+        fallbackAttrs = {
+            vertical: intent.data.vertical,
+            category: intent.data.category,
+            tone: intent.data.tone,
+            palette: intent.data.palette,
+            sections: intent.data.sections,
+        };
 
         const p = await fetchProfile(intent.data.vertical);
         bill('profile', p.usage);
 
         const planned = await plan(job.prompt, intent.data, p.data);
         bill('plan', planned.usage);
+        fallbackAttrs.sections = planned.data.map((section) => section.type);
 
         await emit('plan', { sections: planned.data.length });
         await advance('streaming', {
@@ -102,13 +122,14 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             props,
             title: p.data.label,
             description: job.prompt.slice(0, 160),
+            tone: intent.data.tone,
         });
 
-        // D16: motion budget and diversity, checked on the page about to be
-        // shown rather than on a corpus afterwards. A motion repair changes the
-        // art direction; a diversity finding is recorded and nothing more, since
-        // a samey page is still a page and refusing to ship it helps nobody.
-        const checked = validateComposition(assembled);
+        // D16: motion budget and diversity, repaired on the page about to be
+        // shown rather than scored on a corpus afterwards. A samey page is
+        // still a page — we restyle it; we never fail the job for looking
+        // like its neighbours.
+        const checked = checkAndRecord(assembled, { tone: intent.data.tone });
         const composition = checked.composition;
 
         if (checked.findings.length) {
@@ -123,15 +144,25 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         await emit('done');
         await advance('done', {
             composition,
+            files: compositionToFiles(composition),
             endedAt: Date.now(),
             ledger: [...ledger.all()],
         });
-        return (await store.get(job.id)) ?? job;
+        if (deps.persistComposition) {
+            try {
+                await deps.persistComposition(composition);
+            } catch (err) {
+                console.warn('[generate] persist composition', err instanceof Error ? err.message : err);
+            }
+        }
+        const done = (await store.get(job.id)) ?? job;
+        deps.onSettled?.(done);
+        return done;
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
 
         const fallback = nearestTemplate(
-            { category: undefined, sections: [] },
+            fallbackAttrs,
             deps.templates ?? [],
             message,
         );
@@ -153,7 +184,36 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             });
         }
 
-        return (await store.get(job.id)) ?? job;
+        const ended = (await store.get(job.id)) ?? job;
+        deps.onSettled?.(ended);
+        return ended;
+    } finally {
+        const rows = [...ledger.all()];
+        const usage = rows.reduce(
+            (total, row) => ({
+                inputTokens: total.inputTokens + row.inputTokens,
+                outputTokens: total.outputTokens + row.outputTokens,
+            }),
+            { inputTokens: 0, outputTokens: 0 },
+        );
+
+        try {
+            if (rows.length) await deps.recordUsage?.(usage);
+        } catch (error) {
+            console.error('[generation-spend] could not record usage', error);
+        }
+
+        try {
+            await deps.persistLedger?.(rows);
+        } catch (error) {
+            console.error('[generation-ledger] could not persist rows', error);
+        } finally {
+            try {
+                await deps.release?.();
+            } catch (error) {
+                console.error('[generation-guard] could not release concurrency slot', error);
+            }
+        }
     }
 }
 

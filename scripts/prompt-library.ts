@@ -3,9 +3,13 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { loadTemplate, listTemplates } from '@/lib/ai/harness/templates';
 import { registryVars } from '@/lib/ai/harness/registry-vars';
-import { guidanceFor } from '@/lib/ai/harness/guidance';
 import { aiConfig } from '@/lib/ai/config';
-import { SECTION_KEYS } from '@/lib/contracts';
+import {
+    SECTION_KEYS, THEME_IDS, MOTION_IDS, RADIUS_IDS, SPACING_IDS, IMAGERY_IDS, TONE_IDS,
+} from '@/lib/contracts';
+import { SECTION_CONTRACTS } from '@/lib/ai/sections/contracts';
+import { THEMES } from '@/lib/render/art-direction';
+import { TONE_THEMES, TONE_MOTIONS } from '@/lib/ai/art-direction/tone-map';
 
 /**
  * D19 — the prompt library reference.
@@ -201,6 +205,80 @@ export function buildPromptLibrary(): string {
         '',
         '`edit.v1` also carries the containment paragraph inline. That is now belt',
         'and braces rather than the only copy, and a test still asserts its wording.',
+        '',
+    );
+
+    // ── section content contracts ──────────────────────────────────────────
+    lines.push(
+        '## Section content contracts',
+        '',
+        'The fill stage is typed against these, not against free-form HTML. A field',
+        'rename here is a schema change; the prompt lists the keys so the model and',
+        'the contract cannot drift. Optional facts (phone, email, address, hours) may',
+        'be empty — dummy placeholders are scrubbed, not published.',
+        '',
+        '| Section | Variants | Fields |',
+        '|---|---|---|',
+    );
+
+    for (const key of SECTION_KEYS) {
+        const c = SECTION_CONTRACTS[key];
+        const fields = c.fields.map((f) => {
+            const opt = f.optional ? '?' : '';
+            return `\`${f.key}${opt}\` (${f.type})`;
+        }).join(', ');
+        lines.push(`| ${c.type} | ${c.variants.join(', ')} | ${fields} |`);
+    }
+
+    // ── art-direction dials ────────────────────────────────────────────────
+    lines.push(
+        '',
+        '## Art-direction dial vocabulary',
+        '',
+        'Five dials, chosen by the profile (constrained by classified tone) and',
+        'applied at render as CSS custom properties. D14 wired them; D16 keeps a',
+        'rolling sample from collapsing onto one look.',
+        '',
+        '### Themes (8)',
+        '',
+        '| Id | Label |',
+        '|---|---|',
+        ...THEME_IDS.map((id) => `| \`${id}\` | ${THEMES[id].label} |`),
+        '',
+        '### Motion',
+        '',
+        MOTION_IDS.map((id) => `\`${id}\``).join(', '),
+        '',
+        '### Radius / spacing / imagery',
+        '',
+        `| Radius | ${RADIUS_IDS.map((id) => `\`${id}\``).join(', ')} |`,
+        `| Spacing | ${SPACING_IDS.map((id) => `\`${id}\``).join(', ')} |`,
+        `| Imagery | ${IMAGERY_IDS.map((id) => `\`${id}\``).join(', ')} |`,
+        '',
+        '### Tone constraints',
+        '',
+        'Classified tone does not pin a single theme. It *constrains* the allowed',
+        'set; the profile look stays when it already fits (the D11 48% collapse',
+        'was `formal` → `clinical-blue` / `whisper`).',
+        '',
+        '| Tone | Themes | Motions |',
+        '|---|---|---|',
+        ...TONE_IDS.map((tone) =>
+            `| ${tone} | ${TONE_THEMES[tone].join(', ')} | ${TONE_MOTIONS[tone].join(', ')} |`),
+        '',
+        '## Day-19 freeze',
+        '',
+        'A process freeze, not a code dump of the product. Frozen:',
+        '',
+        '- **v1 prompt files** — hash-pinned in `tests/unit/ai-templates.test.ts`.',
+        '  Every eval on record was produced by those bytes. Add a version; do not',
+        '  edit v1.',
+        '- **Section content contract field names** — a rename is a schema change.',
+        '- **Art-direction dial ids** — `THEME_IDS`, `MOTION_IDS`, `RADIUS_IDS`,',
+        '  `SPACING_IDS`, `IMAGERY_IDS`.',
+        '',
+        'Not frozen: v3 prompts (switched via `AI_PROMPT_PLAN` / `AI_PROMPT_FILL`),',
+        'the catalogue, or the rest of the product.',
         '',
         '## Rules',
         '',

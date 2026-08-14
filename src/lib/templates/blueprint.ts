@@ -41,9 +41,18 @@ export interface Blueprint {
     heroImage?: { src: string; alt: string };
     sections: SectionSpec[];
     footer: string;
+    /** Classifier slug when it differs from `id`. */
+    vertical?: string;
 }
 
 const TIER_PRICE_INR: Record<TemplateTier, number> = { free: 0, premium: 499, signature: 999 };
+
+/** Corpus / classifier slugs that do not match the design id. */
+const VERTICAL_ALIAS: Record<string, string> = {
+    "ngo-nonprofit": "ngo",
+    "saas-product": "saas",
+    architecture: "architecture-studio",
+};
 
 const SEARCH_ICON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>';
@@ -314,6 +323,7 @@ export function buildTemplate(bp: Blueprint): Template {
         name: bp.name,
         description: bp.description,
         category: bp.category,
+        vertical: bp.vertical ?? VERTICAL_ALIAS[bp.id] ?? bp.id,
         tags: bp.tags,
         thumbnailUrl: `/templates/${bp.id}/thumbnail.png`,
         tier: bp.tier,

@@ -43,7 +43,7 @@ export function buildGateway(cfg: AiConfig = aiConfig()): Gateway {
 
     if (chain.length === 0) {
         throw new Error(
-            'No AI provider is configured. Set at least one of GROQ_API_KEY, ' +
+            'No AI provider is configured. Set at least one of GROQ_API_KEY / GROQ_API_KEYS, ' +
                 'CEREBRAS_API_KEY, or GEMINI_API_KEY.',
         );
     }

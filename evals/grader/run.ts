@@ -10,6 +10,8 @@ import {
     type AutoGrade, type CorpusItem, type HumanGrade,
 } from './index';
 import { measureDiversity, rowFor, type DiversityRow } from './diversity';
+import { diversityStore, resetDiversityStore } from '@/lib/ai/composition/diversity';
+import type { MotionId, ThemeId } from '@/lib/contracts';
 import { clusterFailures, failuresByStage, topThree, type GradedRun } from './taxonomy';
 
 config({ path: '.env.local' });
@@ -150,6 +152,14 @@ async function main(): Promise<void> {
 
         items = items.filter((i) => !done.has(i.id));
         console.log(`Resuming ${dir}: ${done.size} already graded, ${items.length} to go.\n`);
+    }
+
+    resetDiversityStore();
+    for (const row of diversityRows) {
+        diversityStore().record({
+            themeId: row.themeId as ThemeId,
+            motionId: row.motionId as MotionId,
+        });
     }
 
     const flush = () => {

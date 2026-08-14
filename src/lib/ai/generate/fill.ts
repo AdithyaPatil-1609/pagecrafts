@@ -2,8 +2,9 @@ import { model, GatewayError } from '../gateway';
 import { aiConfig } from '../config';
 import { loadTemplate, render } from '../harness/templates';
 import { guidanceFor } from '../harness/guidance';
-import { stripFences, sanitiseDeep } from '../sanitise';
-import { contractFor } from '../sections/contracts';
+import { stripFences, sanitiseDeep, containsHtmlTag } from '../sanitise';
+import { contractFor, scrubOptionalFields, coerceUngroundedPrices } from '../sections/contracts';
+import { preserveNativeFields } from '../composition/language';
 import { contain } from '../containment/envelope';
 import type { SectionInstance, SectionProps, AiResult } from '@/lib/contracts';
 
@@ -52,6 +53,23 @@ export async function fillSection(
     });
 
     const raw = JSON.parse(stripFences(reply.text));
+    const usage = { ...reply, promptVersion: `${tpl.id}.${tpl.version}` };
+
+    // TC-038 / v3 fill contract: content fields, never markup. A tag is a
+    // validation failure (repairable), not something we strip and keep.
+    if (containsHtmlTag(raw)) {
+        throw new GatewayError(
+            'generation_failed',
+            `fillSection(${instance.type}): HTML is not allowed in content fields`,
+            false,
+            {
+                raw: reply.text,
+                usage,
+                issues: [{ path: [], message: 'HTML is not allowed in content fields' }],
+            },
+        );
+    }
+
     const clean = sanitiseDeep(raw);
 
     // Groq/Cerebras may return image fields as a plain string instead of
@@ -98,7 +116,16 @@ export async function fillSection(
         }
     }
 
-    const usage = { ...reply, promptVersion: `${tpl.id}.${tpl.version}` };
+    if (clean && typeof clean === 'object') {
+        scrubOptionalFields(clean as Record<string, unknown>, contract.fields, context.prompt);
+        coerceUngroundedPrices(clean as Record<string, unknown>, contract.fields, context.prompt);
+        const maxByKey = Object.fromEntries(
+            contract.fields
+                .filter((f) => f.key === 'heading' || f.key === 'tagline')
+                .map((f) => [f.key, f.maxLength]),
+        );
+        preserveNativeFields(clean as Record<string, unknown>, context.prompt, maxByKey);
+    }
 
     const parsed = contract.fill.safeParse(clean);
     if (!parsed.success) {

@@ -55,6 +55,15 @@ describe("capture", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it("allows category and latency_bucket on generate events, never tokens", async () => {
+        await capture("EV-05", "user-1", { category: "healthcare", latency_bucket: "15-30s" });
+        expect(fetchMock).toHaveBeenCalledOnce();
+
+        fetchMock.mockClear();
+        await capture("EV-05", "user-1", { tokens: 900 });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("allows safe properties through", async () => {
         await capture("EV-03", "user-1", { method: "password", ok: true });
 

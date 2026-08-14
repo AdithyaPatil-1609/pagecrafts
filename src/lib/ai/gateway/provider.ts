@@ -2,6 +2,7 @@ import { GoogleGenAI, type Schema } from '@google/genai';
 import { aiConfig, type Provider, type ProviderConfig } from '../config';
 import type { ErrorCode } from '@/lib/contracts';
 import { timeoutFor, samplingFor, type Job, type Tier } from './tiers';
+import { backoffClock, delayForAttempt, isRateLimitError, MAX_RATE_LIMIT_ATTEMPTS } from './backoff';
 
 export interface CompleteRequest {
     tier: Tier;
@@ -74,34 +75,58 @@ export class GeminiGateway implements NamedGateway {
     async complete(req: CompleteRequest): Promise<CompleteReply> {
         const model = this.modelFor(req.tier);
         const startedAt = Date.now();
-
         const { temperature, topP } = samplingFor(req.job);
 
-        const response = await this.sdk().models.generateContent({
-            model,
-            contents: req.user,
-            config: {
-                ...(req.system ? { systemInstruction: req.system } : {}),
-                ...(req.schema
-                    ? { responseMimeType: 'application/json', responseSchema: req.schema }
-                    : {}),
-                // Omitted entirely when unconfigured, so the provider default stands.
-                ...(temperature === undefined ? {} : { temperature }),
-                ...(topP === undefined ? {} : { topP }),
-                abortSignal: attemptSignal(req.job, req.signal),
-            },
-        });
+        let waitedMs = 0;
+        let lastErr: unknown;
 
-        const usage = response.usageMetadata;
+        for (let attempt = 0; attempt < MAX_RATE_LIMIT_ATTEMPTS; attempt++) {
+            try {
+                const response = await this.sdk().models.generateContent({
+                    model,
+                    contents: req.user,
+                    config: {
+                        ...(req.system ? { systemInstruction: req.system } : {}),
+                        ...(req.schema
+                            ? { responseMimeType: 'application/json', responseSchema: req.schema }
+                            : {}),
+                        ...(temperature === undefined ? {} : { temperature }),
+                        ...(topP === undefined ? {} : { topP }),
+                        abortSignal: attemptSignal(req.job, req.signal),
+                    },
+                });
 
-        return {
-            provider: this.name,
-            structuredOutput: req.schema ? 'response_schema' : 'none',
-            text: response.text ?? '',
-            model,
-            inputTokens: usage?.promptTokenCount ?? 0,
-            outputTokens: usage?.candidatesTokenCount ?? 0,
-            latencyMs: Date.now() - startedAt,
-        };
+                const usage = response.usageMetadata;
+
+                return {
+                    provider: this.name,
+                    structuredOutput: req.schema ? 'response_schema' : 'none',
+                    text: response.text ?? '',
+                    model,
+                    inputTokens: usage?.promptTokenCount ?? 0,
+                    outputTokens: usage?.candidatesTokenCount ?? 0,
+                    latencyMs: Math.max(0, Date.now() - startedAt - waitedMs),
+                };
+            } catch (err) {
+                lastErr = err;
+                const rateLimited = isRateLimitError(err);
+                if (!rateLimited || attempt === MAX_RATE_LIMIT_ATTEMPTS - 1) {
+                    throw new GatewayError(
+                        rateLimited ? 'rate_limited' : 'generation_failed',
+                        `gemini: ${err instanceof Error ? err.message : String(err)}`,
+                        rateLimited,
+                        err,
+                    );
+                }
+                const waitMs = delayForAttempt(attempt, -1);
+                console.warn(`[gateway] gemini rate-limited; waiting ${Math.round(waitMs / 1000)}s before retrying.`);
+                if (waitMs > 0) {
+                    await backoffClock().sleep(waitMs);
+                    waitedMs += waitMs;
+                }
+            }
+        }
+
+        throw lastErr;
     }
 }

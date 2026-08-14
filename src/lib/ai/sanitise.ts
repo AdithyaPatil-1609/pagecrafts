@@ -43,6 +43,18 @@ export function stripFences(text: string): string {
         .trim();
 }
 
+/** Any HTML tag, including the ones the sanitiser would otherwise strip. */
+const HTML_TAG = /<\/?[a-zA-Z][^>]*>/;
+
+export function containsHtmlTag(value: unknown): boolean {
+    if (typeof value === 'string') return HTML_TAG.test(value);
+    if (Array.isArray(value)) return value.some(containsHtmlTag);
+    if (value && typeof value === 'object') {
+        return Object.values(value as Record<string, unknown>).some(containsHtmlTag);
+    }
+    return false;
+}
+
 export function sanitiseDeep<T>(value: T): T {
     if (typeof value === 'string') return sanitise(value).clean as T;
     if (Array.isArray(value)) return value.map(sanitiseDeep) as T;

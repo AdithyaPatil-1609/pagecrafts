@@ -1,0 +1,89 @@
+{
+  "summary": {
+    "overall": {
+      "passed": 30,
+      "total": 30,
+      "rate": 1
+    },
+    "noTemplate": {
+      "passed": 20,
+      "total": 20,
+      "rate": 1
+    },
+    "withTemplate": {
+      "passed": 10,
+      "total": 10,
+      "rate": 1
+    },
+    "byGroup": {
+      "no-template": {
+        "passed": 18,
+        "total": 18,
+        "rate": 1
+      },
+      "template": {
+        "passed": 8,
+        "total": 8,
+        "rate": 1
+      },
+      "adversarial": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1
+      },
+      "non-english": {
+        "passed": 2,
+        "total": 2,
+        "rate": 1
+      }
+    },
+    "completedButFailed": 0,
+    "fallbackUsed": 0,
+    "categoryCorrect": 30,
+    "totalRequests": 296,
+    "totalTokens": 487170
+  },
+  "diversity": {
+    "themes": {
+      "clinical-blue": 7,
+      "warm-editorial": 5,
+      "mono-precision": 4,
+      "tech-slate": 4,
+      "calm-sage": 4,
+      "sunlit-craft": 3,
+      "deep-luxury": 2,
+      "vivid-energy": 1
+    },
+    "motions": {
+      "calm": 12,
+      "whisper": 7,
+      "editorial": 6,
+      "none": 3,
+      "showcase": 2
+    },
+    "variantSets": 27,
+    "dominantTheme": "clinical-blue",
+    "dominantMotion": "calm",
+    "dominantThemeShare": 0.23333333333333334,
+    "dominantMotionShare": 0.4,
+    "passes": true,
+    "notes": []
+  },
+  "clusters": [],
+  "stages": [],
+  "human": {
+    "copySensible": 4.1,
+    "sectionSelectionAppropriate": 4.266666666666667,
+    "artDirectionAppropriate": 4.066666666666666,
+    "unread": {
+      "copySensible": 0,
+      "sectionSelectionAppropriate": 0,
+      "artDirectionAppropriate": 0
+    },
+    "complete": true,
+    "copyAtLeast4": 28,
+    "copyAtLeast4Rate": 0.9333333333333333
+  },
+  "mode": "full",
+  "ranAt": "2026-08-14T09:17:16.693Z"
+}

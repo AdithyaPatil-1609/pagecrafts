@@ -1,0 +1,16 @@
+{
+  "name": "Pagecrafts",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "next-dev",
+      "command": "npm run dev"
+    }
+  ],
+  "ports": [
+    { "name": "app", "port": 3000 },
+    { "name": "supabase-api", "port": 54321 },
+    { "name": "supabase-studio", "port": 54323 }
+  ]
+}

@@ -1,9 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const auth = vi.hoisted(() => ({ requireUser: vi.fn() }));
+const persisted = vi.hoisted(() => ({ ledger: vi.fn() }));
 vi.mock('@/lib/auth/session', () => ({
     requireUser: auth.requireUser,
     supabaseRoute: async () => ({}),
+}));
+vi.mock('@/lib/ai/cost/persist', () => ({
+    persistLedger: persisted.ledger,
 }));
 
 vi.mock('@/lib/limits/redis', async () => {
@@ -16,6 +20,7 @@ import { setGateway, type Gateway } from '@/lib/ai/gateway';
 import { MockGateway } from '@/lib/ai/gateway/mock';
 import { jobStore, setJobStore } from '@/lib/ai/jobs/store';
 import { setGenerationCounters } from '@/lib/ai/jobs/budget';
+import { resetDiversityStore } from '@/lib/ai/composition/diversity';
 import { POST as GENERATE } from '@/app/api/v1/projects/[id]/generate/route';
 import { GET as STREAM } from '@/app/api/v1/jobs/[id]/stream/route';
 import { POST as EDITS } from '@/app/api/v1/projects/[id]/edits/route';
@@ -55,11 +60,13 @@ async function settled(id: string) {
 
 beforeEach(() => {
     auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
+    persisted.ledger.mockReset().mockResolvedValue(undefined);
     resetRedisMock();
     limits.evalMock.mockImplementation(async (_s: string, keys: string[]) =>
         keys[0]?.startsWith('cc:') ? 1 : [1, 19, 0]);
     setJobStore(null);
     setGenerationCounters(null);
+    resetDiversityStore();
     setGateway(new MockGateway());
 });
 
@@ -132,6 +139,13 @@ describe('POST /api/v1/projects/{id}/edits', () => {
         expect(json.data.patch).toEqual([
             { op: 'replace', path: '/props/heading', value: 'New heading' },
         ]);
+        expect(json.data).toHaveProperty('pre_commit_sha');
+        expect(persisted.ledger).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ userId: 'u_1', projectId: 'p_1' }),
+            [expect.objectContaining({ stage: 'edit', provider: 'groq' })],
+        );
+        expect(limits.hincrbyMock).toHaveBeenCalled();
     });
 
     it('R14: sanitises the proposal before returning it', async () => {

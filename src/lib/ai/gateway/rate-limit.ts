@@ -1,12 +1,14 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Provider, ProviderQuota } from '../config';
+import type { ProviderQuota } from '../config';
 
 const MINUTE_MS = 60_000;
 
 interface Spend {
     at: number;
     tokens: number;
+    /** Set by `acquire` so a concurrent caller sees the budget as spent before `record`. */
+    reserved?: boolean;
 }
 
 /** Where a limiter's window survives between processes. */
@@ -28,6 +30,12 @@ export class RateLimiter {
     private readonly now: () => number;
     private readonly sleep: (ms: number) => Promise<void>;
     private readonly store?: WindowStore;
+    /**
+     * D18 — concurrent `acquire` used to all see the same empty window, all
+     * proceed, and over-admit. One waiter at a time, and a reservation so the
+     * next waiter sees the budget as spent before the HTTP call returns.
+     */
+    private tail: Promise<unknown> = Promise.resolve();
 
     constructor(
         private readonly quota: Pick<ProviderQuota, 'rpm' | 'tpm'>,
@@ -45,6 +53,20 @@ export class RateLimiter {
                 this.window = [];
             }
         }
+    }
+
+    private persist(): void {
+        try {
+            this.store?.save(this.window);
+        } catch {
+            // Unusable state degrades pacing, never the call.
+        }
+    }
+
+    private enqueue<T>(fn: () => Promise<T>): Promise<T> {
+        const run = this.tail.then(fn, fn);
+        this.tail = run.then(() => undefined, () => undefined);
+        return run;
     }
 
     private prune(at: number): void {
@@ -76,36 +98,47 @@ export class RateLimiter {
 
     /** Wait until this request fits the per-minute budget; returns ms spent waiting. */
     async acquire(estimatedInput: number): Promise<number> {
-        const need = estimatedInput + this.avgOutput;
-        let waited = 0;
-        // Each wait retires the oldest slice, so this terminates.
-        for (let wait = this.waitFor(need); wait > 0; wait = this.waitFor(need)) {
-            await this.sleep(wait);
-            waited += wait;
-        }
-        return waited;
+        return this.enqueue(async () => {
+            const need = estimatedInput + this.avgOutput;
+            let waited = 0;
+            // Each wait retires the oldest slice, so this terminates.
+            for (let wait = this.waitFor(need); wait > 0; wait = this.waitFor(need)) {
+                await this.sleep(wait);
+                waited += wait;
+            }
+            // Reserve before returning so a concurrent waiter cannot take the
+            // same slice. `record` replaces this with the actual cost.
+            this.window.push({ at: this.now(), tokens: need, reserved: true });
+            this.prune(this.now());
+            this.persist();
+            return waited;
+        });
     }
 
     /** Record what the call actually cost, and refine the output estimate. */
     record(inputTokens: number, outputTokens: number): void {
-        this.window.push({ at: this.now(), tokens: inputTokens + outputTokens });
+        const actual = inputTokens + outputTokens;
+        const reserved = this.window.find((s) => s.reserved);
+        if (reserved) {
+            reserved.tokens = actual;
+            reserved.reserved = false;
+        } else {
+            this.window.push({ at: this.now(), tokens: actual });
+        }
         if (outputTokens > 0) {
             this.avgOutput = Math.round(this.avgOutput * 0.7 + outputTokens * 0.3);
         }
         this.prune(this.now());
-        try {
-            this.store?.save(this.window);
-        } catch {
-            // Unusable state degrades pacing, never the call.
-        }
+        this.persist();
     }
 }
 
 const CACHE_DIR = join(process.cwd(), 'node_modules/.cache/pagecrafts');
 
 /** Kept in the build cache. Fail-soft: unreadable state just means no pacing. */
-export function fileWindowStore(provider: Provider): WindowStore {
-    const file = join(CACHE_DIR, `rate-limit-${provider}.json`);
+export function fileWindowStore(slot: string): WindowStore {
+    const safe = slot.replace(/[^a-z0-9:_-]+/gi, '-');
+    const file = join(CACHE_DIR, `rate-limit-${safe}.json`);
     return {
         load(): Spend[] {
             try {
@@ -133,19 +166,22 @@ export function fileWindowStore(provider: Provider): WindowStore {
 }
 
 /** Persist store state only outside Next.js runtime / test environments. */
-function defaultStore(provider: Provider): WindowStore | undefined {
+function defaultStore(slot: string): WindowStore | undefined {
     if (process.env.NEXT_RUNTIME || process.env.VITEST) return undefined;
-    return fileWindowStore(provider);
+    return fileWindowStore(slot);
 }
 
-const limiters = new Map<Provider, RateLimiter>();
+const limiters = new Map<string, RateLimiter>();
 
-/** One limiter per provider, shared across gateway instances in the process. */
-export function limiterFor(provider: Provider, quota: ProviderQuota): RateLimiter {
-    let limiter = limiters.get(provider);
+/**
+ * One limiter per slot. Groq keys each get `groq:0`, `groq:1`, … so five orgs
+ * are paced as five free tiers, not one shared 8k TPM.
+ */
+export function limiterFor(slot: string, quota: ProviderQuota): RateLimiter {
+    let limiter = limiters.get(slot);
     if (!limiter) {
-        limiter = new RateLimiter(quota, { store: defaultStore(provider) });
-        limiters.set(provider, limiter);
+        limiter = new RateLimiter(quota, { store: defaultStore(slot) });
+        limiters.set(slot, limiter);
     }
     return limiter;
 }
