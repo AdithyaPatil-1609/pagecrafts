@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import { TEMPLATES } from "../src/lib/templates";
 import { templateUuid } from "../src/lib/templates/template-id";
+import { thumbnailUrlFor } from "../src/lib/templates/thumbnails";
 
 // Load the design library into the `templates` table (R3 D8).
 //
@@ -41,7 +42,10 @@ export function templateRow(template: (typeof TEMPLATES)[number]) {
         description: template.description,
         category: template.category,
         tags: template.tags,
-        thumbnail_url: template.thumbnailUrl,
+        // The column only accepts https:// or null. Library designs still carry a
+        // relative /templates/... path that would 404; thumbnailUrlFor is null until
+        // rendered thumbnails exist, which is what the check allows.
+        thumbnail_url: thumbnailUrlFor(template),
         files: template.files,
         content_schema: template.contentSchema,
         license: template.license,

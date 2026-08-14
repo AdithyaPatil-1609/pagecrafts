@@ -45,6 +45,11 @@ describe("the id a design occupies", () => {
         const ids = new Set(TEMPLATES.map((t) => templateUuid(t.id)));
         expect(ids.size).toBe(TEMPLATES.length);
     });
+
+    it("seeds a thumbnail the database will accept", () => {
+        const url = templateRow(DESIGN).thumbnail_url;
+        expect(url === null || String(url).startsWith("https://")).toBe(true);
+    });
 });
 
 describe("a forked project", () => {
