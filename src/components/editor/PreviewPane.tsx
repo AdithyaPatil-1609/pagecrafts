@@ -46,18 +46,27 @@ export default function PreviewPane() {
 
     const issues = [...preview.warnings, ...(runtimeError ? [runtimeError] : [])];
     const showNotice = issues.length > 0 && !dismissed;
+    const empty = !preview.doc.trim();
 
     return (
-        <div className="relative h-full w-full">
-            <iframe
-                ref={frame}
-                title="Preview"
-                sandbox="allow-scripts"
-                srcDoc={preview.doc}
-                className="h-full w-full border-0 bg-white"
-            />
+        <div id="editor-preview" className="relative h-full min-h-0 w-full overflow-hidden">
+            {empty ? (
+                <div className="flex h-full min-h-[320px] items-center justify-center bg-white p-6">
+                    <p className="max-w-xs text-center text-sm text-neutral-600">
+                        {issues[0] ?? 'Nothing to preview yet. Add a page to see it here.'}
+                    </p>
+                </div>
+            ) : (
+                <iframe
+                    ref={frame}
+                    title="Preview"
+                    sandbox="allow-scripts"
+                    srcDoc={preview.doc}
+                    className="absolute inset-0 h-full w-full border-0 bg-white"
+                />
+            )}
 
-            {showNotice && (
+            {showNotice && !empty && (
                 <div
                     role="status"
                     className="absolute inset-x-3 bottom-3 rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow-md backdrop-blur"
