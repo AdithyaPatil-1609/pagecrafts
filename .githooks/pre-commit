@@ -18,4 +18,25 @@ if [ -f "$root/scripts/scan-secrets.mjs" ]; then
   node "$root/scripts/scan-secrets.mjs" --staged || exit 1
 fi
 
+if [ -n "$SKIP_TYPECHECK" ]; then
+  echo "pre-commit: typecheck skipped (SKIP_TYPECHECK is set)"
+  exit 0
+fi
+
+echo "pre-commit: typechecking..."
+
+if ! (cd "$root" && npm run --silent typecheck); then
+  echo ""
+  echo "BLOCKED: TypeScript is not happy."
+  echo ""
+  echo "Every build we have broken this month was caught by this check in"
+  echo "about ten seconds. The usual cause is a merge resolved with"
+  echo "'accept both changes', which leaves the same thing declared twice."
+  echo ""
+  echo "To commit anyway, once, when you know what you are doing:"
+  echo "  SKIP_TYPECHECK=1 git commit ..."
+  echo ""
+  exit 1
+fi
+
 exit 0

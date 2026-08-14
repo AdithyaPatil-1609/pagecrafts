@@ -59,7 +59,7 @@ async function run(
 
         const id = siteId;
         const subdomain = id.split('/')[1];
-        const url = `https://${subdomain}.${deployConfig.rootDomain}`;
+        const url = `https://${subdomain}.${deployConfig().rootDomain}`;
         const siteCtx = { ...ctx, siteId: id };
 
         stage = 'pushing';
