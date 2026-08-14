@@ -33,10 +33,6 @@ export default function EditorShell({ projectId }: { projectId: string }) {
     }, [projectId, loadProject, flushPendingSave]);
 
     useEffect(() => {
-        if (pendingChange) setAskOpen(true);
-    }, [pendingChange]);
-
-    useEffect(() => {
         function onKey(e: KeyboardEvent) {
             if ((e.metaKey || e.ctrlKey) && e.key === 's') {
                 e.preventDefault();
@@ -118,7 +114,9 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                             </section>
                         </>
                     )}
-                    {askOpen && (
+                    {/* A suggestion waiting on Keep or Discard keeps the panel open,
+                        so it can never be hidden behind a closed sidebar. */}
+                    {(askOpen || pendingChange) && (
                         <aside className="flex w-80 shrink-0 flex-col overflow-hidden border-l border-border">
                             {loading ? <PaneSkeleton /> : <ChatPanel />}
                         </aside>
