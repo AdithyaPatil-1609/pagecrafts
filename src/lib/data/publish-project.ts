@@ -97,5 +97,5 @@ export async function publishProject(
       await attempt.finish({ state: "failed", error: failure }).catch(() => undefined);
     });
 
-  return { deploymentId: attempt.id, status: "pending" };
+  return { deploymentId: attempt.deploymentId, status: "pending" };
 }
