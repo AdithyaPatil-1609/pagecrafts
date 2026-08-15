@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DeploymentState } from "@/lib/contracts";
+import type { Deployment, DeploymentState } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 
@@ -138,4 +138,40 @@ export async function recordDeployment(
                 error: result.error ?? null,
             }),
     };
+}
+
+/**
+ * Every publish this project has attempted, newest first (R3 D13).
+ *
+ * Attempts, not successes. A history that hid the failures would be the same dashboard that
+ * showed "draft" forever — pleasant and useless. Somebody debugging a site that will not go
+ * live needs the failed rows most of all, with the error the provider actually gave.
+ *
+ * Ordered by created_at with id as the tiebreak, because two attempts inside the same
+ * millisecond are not impossible and an unstable order makes "newest" a coin toss.
+ */
+export async function listDeployments(
+    supabase: SupabaseClient,
+    projectId: string,
+): Promise<Deployment[]> {
+    const { data, error } = await supabase
+        .from("deployments")
+        .select("id, project_id, status, live_url, commit_sha, error, created_at, updated_at")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+
+    if (error) throw new ApiError("internal", "Could not read the publish history.", error.message);
+
+    return (data ?? []).map((row) => ({
+        id: row.id as string,
+        projectId: row.project_id as string,
+        state: row.status as DeploymentState,
+        // C-05: a URL is only surfaced for a deployment that actually reached live.
+        liveUrl: row.status === "live" ? ((row.live_url as string | null) ?? null) : null,
+        commitSha: (row.commit_sha as string | null) ?? null,
+        error: (row.error as string | null) ?? null,
+        createdAt: row.created_at as string,
+        updatedAt: (row.updated_at as string | null) ?? (row.created_at as string),
+    }));
 }
