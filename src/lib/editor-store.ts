@@ -12,7 +12,13 @@ import {
     saveProjectSettings,
     createCommit,
     pickEntryFile,
+    proposeProjectEdit,
 } from '@/lib/project-source';
+import { parseComposition } from '@/lib/editor/parse-composition';
+import { applyEditPatch } from '@/lib/editor/apply-patch';
+import { writeCompositionFiles, writeRenderedSite } from '@/lib/editor/sync-site';
+import { sanitise } from '@/lib/ai/sanitise';
+import { sectionVariants } from '@/lib/editor/section-registry';
 import { debounceTrigger } from '@/lib/debounce';
 import { compareText } from '@/lib/compare';
 import { validateFieldValue } from '@/lib/content/apply-ops';
@@ -62,6 +68,11 @@ export interface ProposedChange {
     explanation: string;
 }
 
+export interface ChatTurn {
+    role: 'user' | 'assistant';
+    text: string;
+}
+
 interface EditorState {
     vfs: VFS;
     projectId: string | null;
@@ -77,6 +88,10 @@ interface EditorState {
     lastCommitSha: string | null;
     pendingChange: PendingChange | null;
     composition: Composition | null;
+    selectedSectionId: string | null;
+    chatMessages: ChatTurn[];
+    chatBusy: boolean;
+    chatError: string | null;
     projectName: string | null;
     contentSchema: ContentSchema | null;
     content: ContentValues;
@@ -105,6 +120,8 @@ interface EditorState {
     acceptChange: () => void;
     rejectChange: () => void;
     loadComposition: (composition: Composition) => void;
+    selectSection: (id: string) => void;
+    requestAiEdit: (instruction: string) => Promise<void>;
     moveSectionUp: (id: string) => void;
     moveSectionDown: (id: string) => void;
     toggleSectionVisible: (id: string) => void;
@@ -138,12 +155,16 @@ function applyComposition(
     set: (partial: Partial<EditorState>) => void,
     change: (composition: Composition) => Composition,
 ) {
-    const { vfs, composition } = get();
+    const { vfs, composition, selectedSectionId } = get();
     if (!composition) return;
 
     const next = change(composition);
-    set({ composition: next });
-    vfs.write('composition.json', JSON.stringify(next, null, 2));
+    const stillSelected = next.sections.some((section) => section.id === selectedSectionId);
+    set({
+        composition: next,
+        selectedSectionId: stillSelected ? selectedSectionId : next.sections[0]?.id ?? null,
+    });
+    writeCompositionFiles(vfs, next);
     autosave.trigger();
 }
 
@@ -162,6 +183,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     lastCommitSha: null,
     pendingChange: null,
     composition: null,
+    selectedSectionId: null,
+    chatMessages: [],
+    chatBusy: false,
+    chatError: null,
     projectName: null,
     contentSchema: null,
     content: {},
@@ -186,6 +211,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             loadError: null,
             saveError: null,
             pendingChange: null,
+            composition: null,
+            selectedSectionId: null,
+            chatMessages: [],
+            chatBusy: false,
+            chatError: null,
             contentError: null,
             contentIssues: {},
             content: {},
@@ -223,7 +253,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 composition = parseStoredComposition(stored);
                 vfs.write('composition.json', JSON.stringify(composition, null, 2));
             } catch {
-                composition = null;
+                composition = parseComposition(stored);
             }
         }
 
@@ -232,6 +262,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             lastSavedAt: updatedAt,
             loading: false,
             composition,
+            selectedSectionId: composition?.sections[0]?.id ?? null,
             projectName: detail?.name ?? null,
             contentSchema: schema,
             content:
@@ -254,6 +285,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     writeActive: (content) => {
         const { vfs, activeFile } = get();
         if (activeFile) vfs.write(activeFile, content);
+        if (activeFile === 'composition.json') {
+            const parsed = parseComposition(content);
+            if (parsed) {
+                const selected = get().selectedSectionId;
+                const still = parsed.sections.some((section) => section.id === selected);
+                set({
+                    composition: parsed,
+                    selectedSectionId: still ? selected : parsed.sections[0]?.id ?? null,
+                });
+                writeRenderedSite(vfs, parsed);
+            }
+        }
         autosave.trigger();
     },
 
@@ -346,12 +389,147 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (!pendingChange) return;
 
         vfs.write(pendingChange.path, pendingChange.after);
+
+        if (pendingChange.path === 'composition.json') {
+            const parsed = parseComposition(pendingChange.after);
+            if (parsed) {
+                const selected = get().selectedSectionId;
+                const still = parsed.sections.some((section) => section.id === selected);
+                set({
+                    composition: parsed,
+                    selectedSectionId: still ? selected : parsed.sections[0]?.id ?? null,
+                });
+                writeCompositionFiles(vfs, parsed);
+            }
+        }
+
         set({ pendingChange: null });
+        autosave.trigger();
     },
 
     rejectChange: () => set({ pendingChange: null }),
 
-    loadComposition: (composition) => set({ composition }),
+    loadComposition: (composition) => {
+        const { vfs } = get();
+        set({
+            composition,
+            selectedSectionId: composition.sections[0]?.id ?? null,
+        });
+        writeCompositionFiles(vfs, composition);
+    },
+    selectSection: (id) => set({ selectedSectionId: id }),
+    requestAiEdit: async (instruction) => {
+        const text = instruction.trim();
+        const {
+            chatBusy,
+            pendingChange,
+            composition,
+            selectedSectionId,
+            projectId,
+            vfs,
+            chatMessages,
+        } = get();
+
+        if (chatBusy) return;
+        if (!text) {
+            set({ chatError: 'Write what you would like to change.' });
+            return;
+        }
+        if (text.length > 300) {
+            set({ chatError: 'Keep the request under 300 characters.' });
+            return;
+        }
+        if (pendingChange) {
+            set({ chatError: 'Review the current suggestion first.' });
+            return;
+        }
+        if (!projectId) {
+            set({ chatError: 'This project could not be found.' });
+            return;
+        }
+        if (!composition || composition.sections.length === 0) {
+            set({ chatError: 'This page has no sections to change yet.' });
+            return;
+        }
+
+        const section =
+            composition.sections.find((item) => item.id === selectedSectionId) ??
+            composition.sections.find((item) => !item.locked) ??
+            null;
+
+        if (!section) {
+            set({ chatError: 'Pick a section first.' });
+            return;
+        }
+        if (section.locked) {
+            set({ chatError: 'That section is locked. Unlock it to suggest a change.' });
+            return;
+        }
+
+        set({
+            chatBusy: true,
+            chatError: null,
+            chatMessages: [...chatMessages, { role: 'user', text }],
+        });
+
+        autosave.cancel();
+        await get().saveProject();
+
+        const { sha, error: commitError } = await createCommit(
+            projectId,
+            'Saved before a suggested change',
+        );
+        if (sha) set({ lastCommitSha: sha });
+        if (!sha) {
+            set({
+                chatBusy: false,
+                chatError: commitError ?? 'Could not save a version first. Try again.',
+            });
+            return;
+        }
+
+        const variants = sectionVariants(section.type);
+        const { proposal, error } = await proposeProjectEdit(projectId, {
+            instruction: text,
+            section: {
+                id: section.id,
+                type: section.type,
+                variant: section.variant || variants[0] || 'default',
+                brief: section.brief,
+                props: section.props,
+            },
+        });
+
+        if (error || !proposal) {
+            set({
+                chatBusy: false,
+                chatError: error ?? 'The suggestion could not be prepared. Try again.',
+            });
+            return;
+        }
+
+        const next = applyEditPatch(composition, proposal.targetSectionId, proposal.patch);
+        if (vfs.read('composition.json') === null) {
+            vfs.write('composition.json', JSON.stringify(composition, null, 2));
+        }
+
+        const explanation =
+            sanitise(proposal.explanation).clean || 'A change is ready to review.';
+
+        get().proposeChange({
+            path: 'composition.json',
+            after: JSON.stringify(next, null, 2),
+            explanation,
+        });
+
+        set({
+            chatBusy: false,
+            chatMessages: [
+                ...get().chatMessages,
+                { role: 'assistant', text: explanation },
+            ],
+        });
+    },
     moveSectionUp: (id) => applyComposition(get, set, (c) => reorderSection(c, id, 'up')),
     moveSectionDown: (id) => applyComposition(get, set, (c) => reorderSection(c, id, 'down')),
     toggleSectionVisible: (id) => applyComposition(get, set, (c) => toggleVisible(c, id)),

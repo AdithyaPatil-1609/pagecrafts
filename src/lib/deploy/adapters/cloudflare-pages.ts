@@ -45,7 +45,7 @@ export const cloudflarePagesAdapter: DeployProvider = {
         return {
             siteId: subdomain,
             subdomain,
-            predictedUrl: `https://${subdomain}.${deployConfig.rootDomain}`,
+            predictedUrl: `https://${subdomain}.${deployConfig().rootDomain}`,
         };
     },
 
@@ -80,7 +80,7 @@ export const cloudflarePagesAdapter: DeployProvider = {
                     env: {
                         ...process.env,
                         CLOUDFLARE_API_TOKEN: readDeployCredential(),
-                        CLOUDFLARE_ACCOUNT_ID: deployConfig.accountId,
+                        CLOUDFLARE_ACCOUNT_ID: deployConfig().accountId,
                     },
                     maxBuffer: 10_000_000,
                 },
@@ -94,7 +94,7 @@ export const cloudflarePagesAdapter: DeployProvider = {
     },
 
     async enableHosting(siteId: string): Promise<void> {
-        const domain = `${siteId}.${deployConfig.rootDomain}`;
+        const domain = `${siteId}.${deployConfig().rootDomain}`;
 
         try {
             await cf('POST', accountPath(`/pages/projects/${siteId}/domains`), {

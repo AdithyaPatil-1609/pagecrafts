@@ -14,7 +14,7 @@ export async function cf<T = unknown>(
     path: string,
     body?: unknown,
 ): Promise<T> {
-    const res = await fetch(`${deployConfig.apiBase}${path}`, {
+    const res = await fetch(`${deployConfig().apiBase}${path}`, {
         method,
         headers: {
             authorization: `Bearer ${readDeployCredential()}`,
@@ -35,5 +35,5 @@ export async function cf<T = unknown>(
 }
 
 export function accountPath(suffix: string): string {
-    return `/accounts/${deployConfig.accountId}${suffix}`;
+    return `/accounts/${deployConfig().accountId}${suffix}`;
 }

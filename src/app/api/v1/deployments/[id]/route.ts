@@ -1,21 +1,42 @@
-import "server-only";
+import 'server-only';
 
-import { withRoute } from "@/lib/kernel/with-route";
-import { ok } from "@/lib/errors/respond";
-import { getDeployment } from "@/lib/data/deployments";
+import type { DeploymentResponse, DeploymentState } from '@/lib/contracts';
+import { withRoute } from '@/lib/kernel/with-route';
+import { ok, ApiError } from '@/lib/errors/respond';
+import { getDeployment } from '@/lib/data/deployments';
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 type Params = { id: string };
 
-// GET /api/v1/deployments/{id} — how is that publish going? (R3 D15, NFR-117)
-//
-// Polled, not streamed: the contract settled on polling for this, and a publish reports
-// through a database row rather than a live connection, so there is nothing to stream from.
-//
-// Owner-scoped by RLS through the caller's client — a deployment belonging to someone else
-// is not found, never forbidden, because saying "forbidden" would confirm it exists.
+// The database tracks seven states so the dashboard can narrate progress; the contract
+// exposes three, because a caller polling for an answer only needs "not yet", "done" or
+// "it failed". Everything in between is still "not yet".
+function reportedStatus(state: DeploymentState): DeploymentResponse['status'] {
+    if (state === 'live') return 'live';
+    if (state === 'failed') return 'failed';
+    return 'pending';
+}
+
+// GET /api/v1/deployments/{id} — poll a publish attempt.
 export const GET = withRoute<undefined, Params>({
-  handler: async ({ supabase, params }) => ok(await getDeployment(supabase, params.id)),
+    auth: 'required',
+    handler: async ({ params, supabase }) => {
+        const deployment = await getDeployment(supabase, params.id);
+
+        // Another account's deployment is not_found, never forbidden — the same rule the
+        // jobs route follows. "Forbidden" would confirm the id is real to someone guessing.
+        if (!deployment) {
+            throw new ApiError('not_found', 'No such deployment.');
+        }
+
+        return ok<DeploymentResponse>({
+            status: reportedStatus(deployment.state),
+            repoUrl: deployment.repoUrl,
+            liveUrl: deployment.liveUrl,
+            commitSha: deployment.commitSha,
+            error: deployment.error,
+        });
+    },
 });

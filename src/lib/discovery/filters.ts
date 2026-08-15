@@ -44,6 +44,29 @@ export const TIER_LABELS: Record<TemplateTier, string> = {
     signature: "Rs 999",
 };
 
+/**
+ * The feature values worth offering as chips.
+ *
+ * A chip earns its place by dividing the library. Today every design has a contact form, a
+ * list and a hero photograph — all 115 of them, one single feature set between them — so
+ * each of `form`, `list` and `photo` returns the whole gallery. Three controls that look
+ * like filters and cannot filter, which is worse than three fewer controls: someone presses
+ * one, nothing moves, and they learn to distrust the rest of the row.
+ *
+ * Computed rather than deleted, so the row returns of its own accord the day a design ships
+ * without a form. The `feature=` parameter itself is untouched — the API keeps answering it,
+ * and a link somebody saved still works.
+ */
+export function narrowingFeatures(
+    designs: readonly { features: readonly Feature[] }[],
+): Feature[] {
+    return FEATURES.filter((feature) => {
+        const withIt = designs.filter((d) => d.features.includes(feature)).length;
+        // Useful only when it separates: some designs have it, some do not.
+        return withIt > 0 && withIt < designs.length;
+    });
+}
+
 /** The filters a chip can set. `category` is one too, but it is drawn from its own list. */
 export type ChipFilter = "colour" | "layout" | "feature" | "tier";
 

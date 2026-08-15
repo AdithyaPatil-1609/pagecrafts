@@ -1,74 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 
-import type { Category, Palette, Tone } from "@/lib/contracts";
+import type { Category, CreateProjectResponse } from "@/lib/contracts";
 import { MAX_CLASSIFY_CHARS } from "@/lib/contracts";
 import { INTENT_CARDS } from "@/lib/discovery/intent-cards";
+import { apiPost } from "@/lib/api/client";
+import { projectNameFromPrompt } from "@/lib/ai/generate/name";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// What the classifier told us about a description, in the form the gallery can rank with.
-interface Classified {
-  category: Category;
-  vertical?: string;
-  tone?: Tone;
-  palette?: Palette;
+const PENDING_PROMPT_KEY = "pagecrafts:pending-generate";
+const AUTO_GENERATE_KEY = "pagecrafts:auto-generate";
+
+interface GenerateJobResponse {
+  job_id: string;
 }
 
-// Classify the free-text description via Hanish's endpoint. On ANY failure — network,
-// error envelope (a signed-out 401 included), bad shape, or the route's own safe default
-// (`fallback: true`) — return null and continue (D-2, FR-024): the funnel is never blocked
-// by a classification problem.
-//
-// null means "we learned nothing", which is NOT the same as the model deciding the site is
-// genuinely "other". Ranking on attributes we never established would push the library into
-// an arbitrary order, so the caller sends them to the gallery in its own order instead.
-//
-// Tone and palette ride along with the category (D5). They are worth carrying because the
-// designs are tagged in the same vocabulary — "dark", "warm", "minimal", "bold" — so they
-// are real signal in the deterministic score, not decoration.
-async function classifyText(text: string): Promise<Classified | null> {
-  try {
-    const res = await fetch("/api/v1/intent/classify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    const json: unknown = await res.json();
-    if (
-      json &&
-      typeof json === "object" &&
-      "ok" in json &&
-      (json as { ok: boolean }).ok
-    ) {
-      const data = (json as {
-        data?: {
-          category?: string;
-          vertical?: string;
-          tone?: string;
-          palette?: string;
-          fallback?: boolean;
-        };
-      }).data;
-
-      // A fallback classification is the route's safe default, not something learned:
-      // its tone and palette are placeholders and must not be passed off as signal.
-      if (data?.category && !data.fallback) {
-        return {
-          category: data.category as Category,
-          ...(data.vertical ? { vertical: data.vertical } : {}),
-          ...(data.tone ? { tone: data.tone as Tone } : {}),
-          ...(data.palette ? { palette: data.palette as Palette } : {}),
-        };
-      }
-    }
-  } catch {
-    // fall through to the null result
-  }
-  return null;
+function looksLikeSignIn(message: string): boolean {
+  return /sign in/i.test(message);
 }
 
 export function IntentCapture({
@@ -81,33 +33,79 @@ export function IntentCapture({
   const router = useRouter();
   const [describe, setDescribe] = useState(initialDescribe);
   const [busy, setBusy] = useState<"generate" | Category | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // The description path. What the classifier works out is sent as `intent`, not
-  // `category`: a guess ranks the gallery, an explicit pick filters it (see
-  // lib/discovery/ranking.ts). Describing "a website for my gym" should lead with the
-  // fitness design and still show the other eleven, not narrow the library to one.
-  //
-  // Where classification learns nothing the gallery simply opens in its own order. The
-  // funnel always advances (D-2). The text rides along so the gallery can show it back and
-  // offer an edit.
-  async function generate() {
+  async function startGeneration(text: string) {
     setBusy("generate");
-    const text = describe.trim();
-    const classified = text ? await classifyText(text) : null;
+    setError(null);
 
-    const params = new URLSearchParams();
-    if (classified) {
-      params.set("intent", classified.category);
-      if (classified.vertical) params.set("vertical", classified.vertical);
-      if (classified.tone) params.set("tone", classified.tone);
-      if (classified.palette) params.set("palette", classified.palette);
+    const created = await apiPost<CreateProjectResponse>("/api/v1/projects", {
+      name: projectNameFromPrompt(text),
+      mode: "generate",
+      prompt: text,
+    });
+
+    if (created.error || !created.data) {
+      const message = created.error ?? "The site could not be created.";
+      if (looksLikeSignIn(message)) {
+        try {
+          sessionStorage.setItem(PENDING_PROMPT_KEY, text);
+          sessionStorage.setItem(AUTO_GENERATE_KEY, "1");
+        } catch {
+          // private mode can refuse storage; they can type it again after signing in
+        }
+        router.push("/#sign-in");
+        return;
+      }
+      setError(message);
+      setBusy(null);
+      return;
     }
-    if (text) params.set("q", text);
-    const query = params.toString();
-    router.push(query ? `/templates?${query}` : "/templates");
+
+    const started = await apiPost<GenerateJobResponse>(
+      `/api/v1/projects/${encodeURIComponent(created.data.id)}/generate`,
+      { prompt: text },
+    );
+
+    if (started.error || !started.data) {
+      setError(started.error ?? "The site could not be generated.");
+      setBusy(null);
+      return;
+    }
+
+    router.push(
+      `/choose/${encodeURIComponent(created.data.id)}?job=${encodeURIComponent(started.data.job_id)}`,
+    );
   }
 
-  // A category card is the direct path: straight to the gallery, pre-filtered.
+  useEffect(() => {
+    let pending = "";
+    let auto = false;
+    try {
+      pending = sessionStorage.getItem(PENDING_PROMPT_KEY) ?? "";
+      auto = sessionStorage.getItem(AUTO_GENERATE_KEY) === "1";
+      if (pending) sessionStorage.removeItem(PENDING_PROMPT_KEY);
+      if (auto) sessionStorage.removeItem(AUTO_GENERATE_KEY);
+    } catch {
+      return;
+    }
+
+    if (!pending) return;
+    setDescribe(pending);
+    if (auto) void startGeneration(pending);
+    // The pending brief is restored once, on arrival after sign-in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function generate() {
+    const text = describe.trim();
+    if (!text) {
+      setError("Describe the website you want, then generate.");
+      return;
+    }
+    await startGeneration(text);
+  }
+
   function pickCategory(category: Category) {
     setBusy(category);
     router.push(`/templates?category=${category}`);
@@ -117,8 +115,6 @@ export function IntentCapture({
 
   return (
     <div className="flex flex-col gap-7">
-      {/* The describe box — free text plus the AI-enhancement affordance and Generate. It
-          sits in a narrower column than the cards below, so the eye starts here. */}
       <div className="mx-auto w-full max-w-3xl rounded-2xl border border-border bg-card/60 p-3.5 shadow-sm transition-colors focus-within:border-primary/50">
         <label htmlFor="describe" className="sr-only">
           Describe the website you want to build
@@ -126,7 +122,10 @@ export function IntentCapture({
         <textarea
           id="describe"
           value={describe}
-          onChange={(e) => setDescribe(e.target.value)}
+          onChange={(e) => {
+            setDescribe(e.target.value);
+            if (error) setError(null);
+          }}
           maxLength={MAX_CLASSIFY_CHARS}
           rows={2}
           placeholder="I want to build a website for…"
@@ -146,23 +145,25 @@ export function IntentCapture({
             <ArrowRight aria-hidden />
           </Button>
         </div>
+        {error && (
+          <p role="alert" className="px-2 pt-2 text-xs text-destructive">
+            {error}
+          </p>
+        )}
       </div>
 
-      {/* The "Next" pill on a divider, exactly as the mockup steps down to the cards. */}
       <div className="relative flex items-center justify-center">
         <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" aria-hidden />
         <span className="relative rounded-full border border-border bg-background px-4 py-1 text-xs font-medium text-muted-foreground">
-          Next
+          or start from a design
         </span>
       </div>
 
-      {/* The category cards. The photo is inset inside the card rather than bled to its
-          edges, so the six read as a row of tiles rather than a filmstrip. */}
       <section className="flex flex-col gap-4">
         <header className="flex flex-col items-center gap-1 text-center">
           <h2 className="text-xl font-bold tracking-tight text-foreground">Choose a category</h2>
           <p className="text-sm text-muted-foreground">
-            Select the category that best fits your website
+            Browse a ready-made template instead of generating a new site
           </p>
         </header>
 
@@ -203,8 +204,6 @@ export function IntentCapture({
   );
 }
 
-// A styled affordance for AI-assisted description. The menu is a light touch: it records a
-// preference the description path can use, and matches the mockup's collapsed pill.
 function AiEnhancementMenu() {
   const [open, setOpen] = useState(false);
 
@@ -228,7 +227,7 @@ function AiEnhancementMenu() {
           className="absolute bottom-full left-0 z-10 mb-2 w-56 rounded-xl border border-border bg-card p-1 text-sm shadow-lg"
         >
           <p className="px-3 py-2 text-xs text-muted-foreground">
-            AI can expand a short description into a fuller brief before it builds.
+            AI writes every page and its contents from your description — not a filtered template.
           </p>
         </div>
       )}

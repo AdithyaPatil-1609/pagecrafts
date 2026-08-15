@@ -1,5 +1,6 @@
 import type { Composition, FileMap } from '@/lib/contracts';
 import type { LedgerRow } from '../cost/ledger';
+import type { StyleOption } from '../generate/options';
 
 export type JobStatus =
     | 'queued' | 'planning' | 'streaming' | 'validating'
@@ -35,6 +36,8 @@ export interface Job {
     composition?: Composition;
     /** Generated file tree, present when generation produced a site rather than a fallback. */
     files?: FileMap;
+    /** Three looks (casual / photo-rich / animated) for the person to pick from. */
+    variants?: StyleOption[];
     /** Set when generation was abandoned and a template was substituted. */
     fallbackTemplateId?: string;
     error?: string;
@@ -44,4 +47,5 @@ export interface JobStore {
     create(job: Job): Promise<Job>;
     get(id: string): Promise<Job | undefined>;
     update(id: string, patch: Partial<Job>): Promise<Job | undefined>;
+    listByProject(projectId: string): Promise<Job[]>;
 }

@@ -120,7 +120,12 @@ export async function getProject(
     .maybeSingle();
 
   if (error) {
-    throw new ApiError("internal", "Could not read the project.", error.message);
+    // A malformed id in the URL is the caller's mistake, not ours. Reported as `internal`
+    // it becomes a 500 and tells the user to wait for a fix that is never coming (R4 D14).
+    throw (
+      clientFault(error, "That project address is not valid.") ??
+      new ApiError("internal", "Could not read the project.", error.message)
+    );
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 
@@ -167,8 +172,8 @@ async function assertUnderQuota(
 // from it — and the state they arrived at is recorded as version #1. Without that first
 // commit their history starts empty and there is nothing to restore back to.
 //
-// Without a sourceTemplateId this is still just an empty project row; the generation path
-// fills one in and belongs to E4.
+// Without a sourceTemplateId this is still just an empty project row. The generate
+// route fills it in once the job finishes (files, schema, first commit).
 export async function createProject(
   supabase: SupabaseClient,
   userId: string,

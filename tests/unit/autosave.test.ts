@@ -58,4 +58,21 @@ describe('autosave', () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    it('saves a kept suggestion after a pause', async () => {
+        const fetchMock = okReply({ ok: true, data: { projectId: 'p1', files: {}, updatedAt: 'now' } });
+        vi.stubGlobal('fetch', fetchMock);
+
+        useEditorStore.getState().proposeChange({
+            path: 'index.html',
+            after: '<h1>Kept</h1>',
+            explanation: 'Updates the heading.',
+        });
+        useEditorStore.getState().acceptChange();
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1500);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
 });

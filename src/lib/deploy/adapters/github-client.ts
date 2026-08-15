@@ -14,7 +14,7 @@ export async function gh<T = unknown>(
     path: string,
     body?: unknown,
 ): Promise<{ status: number; data: T }> {
-    const res = await fetch(`${deployConfig.apiBase}${path}`, {
+    const res = await fetch(`${deployConfig().apiBase}${path}`, {
         method,
         headers: {
             authorization: `Bearer ${readDeployCredential()}`,

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DeploymentResponse, DeploymentState } from "@/lib/contracts";
+import type { Deployment, DeploymentState } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 
@@ -18,6 +18,8 @@ export interface DeploymentRecord {
     id: string;
     state: DeploymentState;
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Begin recording an attempt.
@@ -52,40 +54,113 @@ export async function startDeployment(
     return { id: data.id as string, state: "pending" };
 }
 
+// Everything that is not yet an outcome. publish() reports each of these as it goes, so a
+// row sitting in one of them means the attempt is still running — or died without saying so.
+const IN_FLIGHT: DeploymentState[] = [
+    "pending",
+    "provisioning",
+    "pushing",
+    "enabling_hosting",
+    "verifying",
+];
+
+// How long an in-flight row is believed before it is treated as abandoned.
+//
+// A publish killed mid-flight leaves its row in whatever state it reached and nothing ever
+// moves it, which is honest history but would otherwise block the project from being
+// published again for good. After this long the row is ignored and a fresh attempt may
+// start. Comfortably longer than a slow publish, short enough that nobody is stuck for the
+// rest of the day.
+const IN_FLIGHT_TTL_MS = 15 * 60 * 1000;
+
 /**
- * One attempt, as the client polling it sees it (GET /deployments/{id}, R3 D15).
+ * The publish attempt already running for this project, if there is one.
  *
- * The four in-flight states collapse to `pending`. The contract's status enum is
- * pending | live | failed and was frozen on day one; the extra states exist so the
- * dashboard can narrate progress from the row it already reads, not so this endpoint can
- * invent values integrators were never told about. "Not finished yet" is the honest and
- * complete answer to a poll.
+ * Owner-scoped by RLS through the caller's client, so this can never report somebody else's
+ * publish. Returns null when the newest attempt has finished, or when it stalled long enough
+ * ago to be written off.
+ */
+export async function openDeployment(
+    supabase: SupabaseClient,
+    projectId: string,
+): Promise<DeploymentRecord | null> {
+    const { data, error } = await supabase
+        .from("deployments")
+        .select("id, status, updated_at")
+        .eq("project_id", projectId)
+        .in("status", IN_FLIGHT)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+    if (error) {
+        throw new ApiError("internal", "Could not check the site's publish state.", error.message);
+    }
+
+    const row = (data ?? [])[0] as { id: string; status: DeploymentState; updated_at: string } | undefined;
+    if (!row) return null;
+
+    const age = Date.now() - Date.parse(row.updated_at);
+    if (Number.isFinite(age) && age > IN_FLIGHT_TTL_MS) return null;
+
+    return { id: row.id, state: row.status };
+}
+
+export interface DeploymentView {
+    id: string;
+    projectId: string;
+    state: DeploymentState;
+    repoUrl: string | null;
+    liveUrl: string | null;
+    commitSha: string | null;
+    error: string | null;
+}
+
+/**
+ * One deployment, for the poll route.
+ *
+ * Owner-scoped by RLS: another account's deployment comes back as no row at all, which the
+ * route reports as not_found. Its existence is not ours to leak, so this deliberately cannot
+ * tell "never existed" apart from "not yours".
  */
 export async function getDeployment(
     supabase: SupabaseClient,
     deploymentId: string,
-): Promise<DeploymentResponse> {
+): Promise<DeploymentView | null> {
+    // Checked before the query rather than after it. `id` is a uuid column, so a malformed
+    // one is a type error to Postgres, not an empty result — and an id comes straight off
+    // the URL, where anybody can put anything. A value that cannot be a uuid cannot name a
+    // row, so this is "no such deployment", not a database fault.
+    if (!UUID.test(deploymentId)) return null;
+
     const { data, error } = await supabase
         .from("deployments")
-        .select("status, repo_url, live_url, commit_sha, error")
+        .select("id, project_id, status, repo_url, live_url, commit_sha, error")
         .eq("id", deploymentId)
         .maybeSingle();
 
     if (error) {
         throw new ApiError("internal", "Could not read the deployment.", error.message);
     }
-    // Someone else's deployment is invisible through RLS, and must read as absent rather
-    // than forbidden (SEC-14).
-    if (!data) throw new ApiError("not_found", "That deployment does not exist.");
+    if (!data) return null;
 
-    const state = data.status as DeploymentState;
+    const row = data as unknown as {
+        id: string;
+        project_id: string;
+        status: DeploymentState;
+        repo_url: string | null;
+        live_url: string | null;
+        commit_sha: string | null;
+        error: string | null;
+    };
 
     return {
-        status: state === "live" || state === "failed" ? state : "pending",
-        repoUrl: (data.repo_url as string | null) ?? null,
-        liveUrl: (data.live_url as string | null) ?? null,
-        commitSha: (data.commit_sha as string | null) ?? null,
-        error: (data.error as string | null) ?? null,
+        id: row.id,
+        projectId: row.project_id,
+        state: row.status,
+        repoUrl: row.repo_url,
+        liveUrl: row.live_url,
+        commitSha: row.commit_sha,
+        error: row.error,
     };
 }
 
@@ -156,15 +231,16 @@ export async function recordDeployment(
     supabase: SupabaseClient,
     projectId: string,
 ): Promise<{
-    /** The row's id — the publish route hands this back for the client to poll (R3 D15). */
-    id: string;
+    deploymentId: string;
     onState: (state: DeploymentState) => void;
     finish: (result: { state: DeploymentState; liveUrl?: string | null; commitSha?: string | null; error?: string | null }) => Promise<void>;
 }> {
     const started = await startDeployment(supabase, projectId);
 
     return {
-        id: started.id,
+        // The route answers 202 with this before the publish finishes, so the client has
+        // something to poll from the first moment rather than after the work is over.
+        deploymentId: started.id,
         onState: (state) => {
             // Intermediate states only. The final one carries a URL or an error with it and
             // is written by finish(), which the caller awaits.
@@ -178,4 +254,40 @@ export async function recordDeployment(
                 error: result.error ?? null,
             }),
     };
+}
+
+/**
+ * Every publish this project has attempted, newest first (R3 D13).
+ *
+ * Attempts, not successes. A history that hid the failures would be the same dashboard that
+ * showed "draft" forever — pleasant and useless. Somebody debugging a site that will not go
+ * live needs the failed rows most of all, with the error the provider actually gave.
+ *
+ * Ordered by created_at with id as the tiebreak, because two attempts inside the same
+ * millisecond are not impossible and an unstable order makes "newest" a coin toss.
+ */
+export async function listDeployments(
+    supabase: SupabaseClient,
+    projectId: string,
+): Promise<Deployment[]> {
+    const { data, error } = await supabase
+        .from("deployments")
+        .select("id, project_id, status, live_url, commit_sha, error, created_at, updated_at")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+
+    if (error) throw new ApiError("internal", "Could not read the publish history.", error.message);
+
+    return (data ?? []).map((row) => ({
+        id: row.id as string,
+        projectId: row.project_id as string,
+        state: row.status as DeploymentState,
+        // C-05: a URL is only surfaced for a deployment that actually reached live.
+        liveUrl: row.status === "live" ? ((row.live_url as string | null) ?? null) : null,
+        commitSha: (row.commit_sha as string | null) ?? null,
+        error: (row.error as string | null) ?? null,
+        createdAt: row.created_at as string,
+        updatedAt: (row.updated_at as string | null) ?? (row.created_at as string),
+    }));
 }

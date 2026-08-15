@@ -67,12 +67,18 @@ jobs:
   # the shared project: `db reset --local` loads supabase/seed.sql, which is
   # where the test users come from, and no run can touch anyone's real data.
   #
-  # continue-on-error until the suite has proven itself over a few days. A
-  # browser test that fails intermittently must not be able to stop four other
-  # people merging; remove the flag once it has earned it (DEP-05).
+  # D14: this is now a required gate — `continue-on-error` is gone, so a red
+  # walk-through blocks the merge (DEP-05). What makes that safe to do is that
+  # the part which always runs needs no credentials: the signed-out sweep in
+  # failure-paths.spec.ts, plus the smoke tests. Anything needing Upstash,
+  # hosting or a service role skips itself rather than failing, so the gate is
+  # never red for a secret somebody's fork does not have.
+  #
+  # If this starts flapping, fix or delete the offending test. Do not put the
+  # flag back — a gate that cannot fail is not a gate, and D14 exists precisely
+  # because the happy path was not being protected by anything.
   e2e:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
