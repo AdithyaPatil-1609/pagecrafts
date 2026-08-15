@@ -167,8 +167,8 @@ async function assertUnderQuota(
 // from it — and the state they arrived at is recorded as version #1. Without that first
 // commit their history starts empty and there is nothing to restore back to.
 //
-// Without a sourceTemplateId this is still just an empty project row; the generation path
-// fills one in and belongs to E4.
+// Without a sourceTemplateId this is still just an empty project row. The generate
+// route fills it in once the job finishes (files, schema, first commit).
 export async function createProject(
   supabase: SupabaseClient,
   userId: string,

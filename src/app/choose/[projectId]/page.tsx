@@ -1,6 +1,6 @@
-import EditorShell from '@/components/editor/EditorShell';
+import { StyleChooser } from "@/components/discovery/StyleChooser";
 
-export default async function EditorPage({
+export default async function ChooseLookPage({
     params,
     searchParams,
 }: {
@@ -9,5 +9,5 @@ export default async function EditorPage({
 }) {
     const { projectId } = await params;
     const { job } = await searchParams;
-    return <EditorShell projectId={projectId} jobId={job} />;
+    return <StyleChooser projectId={projectId} jobId={job} />;
 }
