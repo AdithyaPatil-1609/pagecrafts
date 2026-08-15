@@ -91,8 +91,12 @@ export function IntentCapture({
     }
 
     if (!pending) return;
-    setDescribe(pending);
-    if (auto) void startGeneration(pending);
+
+    // run the restore on the next microtask so setState is not called synchronously inside the effect
+    Promise.resolve().then(() => {
+      setDescribe(pending);
+      if (auto) void startGeneration(pending);
+    });
     // The pending brief is restored once, on arrival after sign-in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -176,7 +180,7 @@ export function IntentCapture({
               disabled={busy !== null}
               aria-label={`${card.label}: ${card.description}`}
               className={cn(
-                "group flex flex-col gap-2.5 rounded-2xl border bg-card p-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-70",
+                "group flex flex-col gap-2.5 rounded-2xl border bg-card p-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 initialCategory === card.category
                   ? "border-primary"
                   : "border-border hover:border-primary/50",
@@ -215,7 +219,7 @@ function AiEnhancementMenu() {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setOpen(false)}
-        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <Sparkles className="size-4" strokeWidth={1.75} aria-hidden />
         AI Enhancement
