@@ -1,4 +1,4 @@
-import type { Category } from '@/lib/contracts';
+import type { Category, FileMap } from '@/lib/contracts';
 
 export interface RankableTemplate {
     id: string;
@@ -6,6 +6,8 @@ export interface RankableTemplate {
     tags: string[];
     /** Curated vertical slug. Optional so the hand-authored library can rank without it. */
     vertical?: string;
+    /** Present on library designs so a generation fallback can still become a site. */
+    files?: FileMap;
 }
 
 export interface RankAttributes {

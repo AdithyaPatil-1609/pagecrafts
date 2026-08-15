@@ -10,8 +10,12 @@ import { checkGenerationBudget } from '@/lib/ai/jobs/budget';
 import { persistLedger } from '@/lib/ai/cost/persist';
 import { guardAiRequest } from '@/lib/limits/ai-guard';
 import { TEMPLATES } from '@/lib/templates';
-import { putProjectFile } from '@/lib/data/project-files';
+import { persistGeneratedSite } from '@/lib/ai/generate/persist';
 import { recordGenerationUse } from '@/lib/ai/jobs/counters';
+import {
+    assertFreeGenerationAllowed,
+    recordFreeGeneration,
+} from '@/lib/ai/jobs/quota';
 import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
 import { setProfileStore } from '@/lib/ai/profile-cache';
 import { SupabaseProfileStore } from '@/lib/ai/profile/persist';
@@ -31,6 +35,8 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     handler: async ({ body, params, userId, req, supabase }) => {
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
+
+        await assertFreeGenerationAllowed(params.id, userId, supabase);
 
         const admin = supabaseAdminOrNull();
         if (admin) setProfileStore(new SupabaseProfileStore(admin));
@@ -57,6 +63,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 events: [],
                 ledger: [],
             });
+            await recordFreeGeneration(params.id);
 
             void runJob(job, {
                 templates: TEMPLATES,
@@ -67,22 +74,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                     projectId: params.id,
                     prompt: body.prompt,
                 }, rows),
-                persistComposition: async (composition) => {
-                    if (typeof supabase.from !== 'function') return;
-                    try {
-                        await putProjectFile(
-                            supabase,
-                            params.id,
-                            'composition.json',
-                            JSON.stringify(composition, null, 2),
-                        );
-                    } catch (err) {
-                        console.warn(
-                            '[generate] persist composition',
-                            err instanceof Error ? err.message : err,
-                        );
-                    }
-                },
+                persistSite: (settled) => persistGeneratedSite(supabase, params.id, settled, TEMPLATES),
                 release: guard.release,
                 onSettled: (settled) => {
                     const elapsed = (settled.endedAt ?? Date.now()) - settled.startedAt;

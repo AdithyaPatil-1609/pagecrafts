@@ -69,7 +69,8 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
     });
 
     it('renders visible sections and skips hidden ones', () => {
-        expect(html).toContain('id="s_01"');
+        expect(html).toContain('id="hero"');
+        expect(html).toContain('data-section-id="s_01"');
         expect(html).toContain('data-type="hero"');
         expect(html).toContain('Family dentistry');
         expect(html).toContain('Do I need to book?');
@@ -98,5 +99,34 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
     it('marks sections for the motion observer', () => {
         expect(html).toContain('data-animate');
         expect(html).toContain('IntersectionObserver');
+    });
+
+    it('links every content page from the header', () => {
+        expect(html).toContain('aria-label="Site"');
+        expect(html).toContain('href="#services"');
+        expect(html).toContain('href="#faq"');
+        expect(html).toContain('href="#contact"');
+        expect(html).toContain('>Services<');
+        expect(html).toContain('>FAQ<');
+        expect(html).toContain('>Contact<');
+    });
+
+    it('tags copy with data-slot so the content panel can edit it', () => {
+        expect(html).toContain('data-slot="hero.heading"');
+        expect(html).toContain('data-slot="services.items.0.title"');
+        expect(html).toContain('data-slot="contact.email"');
+        expect(html).toContain('data-slot="hero.image"');
+    });
+
+    it('renders a real photograph when the slot has a url', () => {
+        const withPhoto = compositionToFiles({
+            ...composition,
+            sections: [section('s_01', 'hero', 'image-bg', {
+                heading: 'Family dentistry',
+                image: { query: 'dental clinic', alt: 'Waiting room', url: 'https://images.unsplash.com/photo-x?w=1600' },
+            })],
+        }, 'photos');
+        expect(withPhoto['index.html']).toContain('src="https://images.unsplash.com/photo-x?w=1600"');
+        expect(withPhoto['index.html']).toContain('data-style="photos"');
     });
 });

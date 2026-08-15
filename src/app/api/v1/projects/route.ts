@@ -19,7 +19,8 @@ export const GET = withRoute({
   },
 });
 
-// POST /api/v1/projects — create a project (fork/generate wiring lands in later days).
+// POST /api/v1/projects — create a project by forking a design, or an empty
+// row that generation fills in a moment later.
 export const POST = withRoute<CreateBody>({
   schema: createProjectSchema,
   handler: async ({ supabase, userId, body }) => {
