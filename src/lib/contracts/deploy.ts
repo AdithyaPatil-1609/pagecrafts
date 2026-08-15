@@ -25,6 +25,11 @@ export interface Deployment {
     updatedAt: string;
 }
 
+/** GET /projects/{id}/deployments — the history behind screen 02 (R3 D13). */
+export interface ListDeploymentsResponse {
+    items: Deployment[];
+}
+
 export interface PublishFile {
     path: string;
     content: string;

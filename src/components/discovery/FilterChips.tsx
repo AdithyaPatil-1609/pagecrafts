@@ -9,13 +9,12 @@ import {
     COLOUR_LABELS,
     COLOURS,
     FEATURE_LABELS,
-    FEATURES,
     LAYOUT_LABELS,
     LAYOUTS,
     TIER_LABELS,
     TIERS,
 } from "@/lib/discovery/filters";
-import type { TemplateQuery } from "@/lib/templates/query";
+import { narrowingLibraryFeatures, type TemplateQuery } from "@/lib/templates/query";
 import { cn } from "@/lib/utils";
 
 // Screen 04's filter chips (R2 D7). Combinable across groups, individually clearable, and
@@ -107,6 +106,9 @@ export function FilterChips({
     resetHref: string;
 }) {
     const active = activeFilterCount(query);
+    // Derived from the library itself rather than passed in: the answer is a property of
+    // the designs that exist, and the page should not have to know to ask.
+    const features = narrowingLibraryFeatures();
 
     return (
         <section aria-label="Filter designs" className="flex flex-col gap-3 rounded-xl border border-border bg-card/40 p-4">
@@ -154,16 +156,21 @@ export function FilterChips({
                 ))}
             </ChipRow>
 
-            <ChipRow label="Has">
-                {FEATURES.map((feature) => (
-                    <Chip
-                        key={feature}
-                        href={chipHref(preserve, "feature", feature, query.feature === feature)}
-                        label={FEATURE_LABELS[feature]}
-                        active={query.feature === feature}
-                    />
-                ))}
-            </ChipRow>
+            {/* Only the features that actually divide the library — see narrowingFeatures.
+                Today that is none of them, so the row does not render at all rather than
+                offering three chips that each return the whole gallery. */}
+            {features.length > 0 && (
+                <ChipRow label="Has">
+                    {features.map((feature) => (
+                        <Chip
+                            key={feature}
+                            href={chipHref(preserve, "feature", feature, query.feature === feature)}
+                            label={FEATURE_LABELS[feature]}
+                            active={query.feature === feature}
+                        />
+                    ))}
+                </ChipRow>
+            )}
 
             {active > 0 && (
                 <div className="flex items-center gap-3 border-t border-border pt-3">
