@@ -3,6 +3,7 @@ import { LandingBackdrop } from "@/components/landing/LandingBackdrop";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { ValueProps } from "@/components/landing/ValueProps";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { landingError } from "@/lib/auth/landing-errors";
 
 export default async function LandingPage({
     searchParams,
@@ -10,6 +11,7 @@ export default async function LandingPage({
     searchParams: Promise<{ error?: string }>;
 }) {
     const { error } = await searchParams;
+    const message = landingError(error);
 
     return (
         <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
@@ -20,12 +22,12 @@ export default async function LandingPage({
                 <Hero />
 
                 <div className="flex w-full flex-col items-center gap-3 justify-self-center lg:justify-self-end">
-                    {error === "expired" && (
+                    {message && (
                         <p
                             role="status"
                             className="w-full max-w-md rounded-lg border border-border bg-secondary p-3 text-center text-sm text-secondary-foreground"
                         >
-                            That link has expired or was already used. Ask for a new one below.
+                            {message}
                         </p>
                     )}
                     <AuthCard />

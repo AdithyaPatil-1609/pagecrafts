@@ -23,6 +23,11 @@ const CLIENT_FAULTS: Record<string, string> = {
     "23505": "That already exists.", // unique_violation
     "23514": "Some values were not allowed.", // check_violation
     "22001": "Some text was too long.", // string_data_right_truncation
+    // invalid_text_representation — a value that is not the type the column is, which in
+    // practice is almost always an id from a URL: /projects/not-a-uuid. Without this it is
+    // reported as `internal`, so a typed address becomes "we broke" and a 500 in the logs
+    // (R4 D14).
+    "22P02": "That address is not valid.",
 };
 
 // The same faults by the shape of their message, for the paths where a driver hands back
@@ -32,6 +37,7 @@ const BY_MESSAGE: [RegExp, string][] = [
     [/duplicate key value|unique constraint/i, "23505"],
     [/violates check constraint/i, "23514"],
     [/value too long/i, "22001"],
+    [/invalid input syntax for type uuid/i, "22P02"],
 ];
 
 /**

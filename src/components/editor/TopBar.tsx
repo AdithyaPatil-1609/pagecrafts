@@ -12,11 +12,25 @@ function statusLine(saving: boolean, saveError: string | null, unsaved: number, 
 
 interface TopBarProps {
     projectId: string;
+    hasComposition: boolean;
+    sectionsOpen: boolean;
+    onToggleSections: () => void;
+    askOpen: boolean;
+    onToggleAsk: () => void;
     historyOpen: boolean;
     onToggleHistory: () => void;
 }
 
-export default function TopBar({ projectId, historyOpen, onToggleHistory }: TopBarProps) {
+export default function TopBar({
+    projectId,
+    hasComposition,
+    sectionsOpen,
+    onToggleSections,
+    askOpen,
+    onToggleAsk,
+    historyOpen,
+    onToggleHistory,
+}: TopBarProps) {
     const advanced = useEditorStore((s) => s.advanced);
     const toggleAdvanced = useEditorStore((s) => s.toggleAdvanced);
     const dirtyPaths = useEditorStore((s) => s.dirtyPaths);
@@ -25,6 +39,7 @@ export default function TopBar({ projectId, historyOpen, onToggleHistory }: TopB
     const saveError = useEditorStore((s) => s.saveError);
     const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
     const projectName = useEditorStore((s) => s.projectName);
+    const contentError = useEditorStore((s) => s.contentError);
 
     const status = statusLine(saving, saveError, dirtyPaths.length, lastSavedAt);
 
@@ -33,20 +48,47 @@ export default function TopBar({ projectId, historyOpen, onToggleHistory }: TopB
             <span className="truncate text-sm font-medium" title={projectName ?? projectId}>
                 {projectName ?? projectId}
             </span>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
                 {status && (
                     <span
                         className={
                             status.tone === 'error'
                                 ? 'max-w-xs truncate text-xs text-destructive'
-                                : 'text-xs text-muted-foreground'
+                                : 'mr-1 text-xs text-muted-foreground'
                         }
                         title={status.text}
                     >
                         {status.text}
                     </span>
                 )}
+                {contentError && (
+                    <span
+                        className="max-w-xs truncate text-xs text-destructive"
+                        title={contentError}
+                    >
+                        {contentError}
+                    </span>
+                )}
+                {hasComposition && (
+                    <button
+                        type="button"
+                        onClick={onToggleSections}
+                        aria-pressed={sectionsOpen}
+                        className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
+                    >
+                        Sections
+                    </button>
+                )}
                 <button
+                    type="button"
+                    onClick={onToggleAsk}
+                    aria-pressed={askOpen}
+                    className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
+                >
+                    Ask
+                </button>
+                <button
+                    type="button"
                     onClick={onToggleHistory}
                     aria-pressed={historyOpen}
                     className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
@@ -54,12 +96,14 @@ export default function TopBar({ projectId, historyOpen, onToggleHistory }: TopB
                     Versions
                 </button>
                 <button
+                    type="button"
                     onClick={toggleAdvanced}
                     className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
                 >
                     {advanced ? 'Exit Advanced' : 'Advanced'}
                 </button>
                 <button
+                    type="button"
                     disabled={dirtyPaths.length === 0 || saving}
                     onClick={() => saveProject({ commit: true })}
                     className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground disabled:opacity-40"

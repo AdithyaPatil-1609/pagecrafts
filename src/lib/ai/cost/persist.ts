@@ -148,5 +148,5 @@ export async function loadGenerationRows(
         return [];
     }
 
-    return ((data ?? []) as GenerationTableRow[]).map(generationRowFromTable);
+    return ((data ?? []) as unknown as GenerationTableRow[]).map(generationRowFromTable);
 }

@@ -4,7 +4,7 @@ import { deployConfig } from '@/lib/deploy/config';
 async function main() {
     const { data } = await gh<{ login: string; id: number }>(
         'GET',
-        `/orgs/${deployConfig.accountId}`,
+        `/orgs/${deployConfig().accountId}`,
     );
     console.log('authenticated against org', data.login, `(id ${data.id})`);
 }

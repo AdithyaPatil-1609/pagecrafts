@@ -1,4 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config as loadEnv } from 'dotenv';
+
+// The specs read the same .env.local the app is built from — the service role key that
+// grants a publish entitlement, and the Supabase URL to reach with it. Without this the
+// runner sees neither and the publish walk skips itself for a credential that is right
+// there on disk. Existing values win, so `E2E_WITH_AUTH=1 npm run e2e` still overrides.
+loadEnv({ path: '.env.local', override: false, quiet: true });
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`;

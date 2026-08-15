@@ -120,7 +120,12 @@ export async function getProject(
     .maybeSingle();
 
   if (error) {
-    throw new ApiError("internal", "Could not read the project.", error.message);
+    // A malformed id in the URL is the caller's mistake, not ours. Reported as `internal`
+    // it becomes a 500 and tells the user to wait for a fix that is never coming (R4 D14).
+    throw (
+      clientFault(error, "That project address is not valid.") ??
+      new ApiError("internal", "Could not read the project.", error.message)
+    );
   }
   if (!data) throw new ApiError("not_found", "That project does not exist.");
 

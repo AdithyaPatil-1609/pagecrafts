@@ -3,6 +3,7 @@ import type {
     AssetResponse,
     Commit,
     ContentOp,
+    EditProposal,
     FileMap,
     ImageSearchResponse,
     ListCommitsResponse,
@@ -11,6 +12,7 @@ import type {
     PatchContentResponse,
     PatchProjectRequest,
     ProjectDetail,
+    SectionKey,
 } from '@/lib/contracts';
 import { apiPost } from '@/lib/api/client';
 import type { CreateCommitResponse } from '@/lib/contracts';
@@ -219,4 +221,29 @@ export function pickEntryFile(paths: string[]): string | null {
     if (paths.length === 0) return null;
     if (paths.includes('index.html')) return 'index.html';
     return [...paths].sort()[0] ?? null;
+}
+
+export interface ProposeEditPayload {
+    instruction: string;
+    section: {
+        id: string;
+        type: SectionKey;
+        variant: string;
+        brief: string;
+        props: Record<string, unknown>;
+    };
+}
+
+/** C-03: this only asks for a suggestion. Keeping it is a separate editor action. */
+export async function proposeProjectEdit(
+    projectId: string,
+    payload: ProposeEditPayload,
+): Promise<{ proposal: EditProposal | null; error: string | null }> {
+    const { data, error } = await apiPost<EditProposal>(
+        `${projectUrl(projectId)}/edits`,
+        payload,
+    );
+
+    if (error || !data) return { proposal: null, error: error ?? EMPTY_REPLY };
+    return { proposal: data, error: null };
 }

@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
+import { flattenFiles, stepFile } from '@/lib/editor/file-tree-nav';
 import type { TreeNode } from '@/lib/contracts';
 
 type Draft = { mode: 'create' } | { mode: 'rename'; path: string } | null;
@@ -46,8 +47,10 @@ function Node({
 
     return (
         <button
+            id={`tree-${node.path}`}
             role="treeitem"
             aria-selected={isActive}
+            tabIndex={-1}
             onClick={() => openFile(node.path)}
             onContextMenu={(e) => {
                 e.preventDefault();
@@ -70,6 +73,8 @@ function Node({
 
 export default function FileTree() {
     const tree = useEditorStore((s) => s.tree);
+    const activeFile = useEditorStore((s) => s.activeFile);
+    const openFile = useEditorStore((s) => s.openFile);
     const createFile = useEditorStore((s) => s.createFile);
     const renameFile = useEditorStore((s) => s.renameFile);
     const deleteFile = useEditorStore((s) => s.deleteFile);
@@ -78,6 +83,8 @@ export default function FileTree() {
     const [value, setValue] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [menu, setMenu] = useState<{ path: string; x: number; y: number } | null>(null);
+
+    const files = flattenFiles(tree);
 
     function start(next: Draft, initial = '') {
         setDraft(next);
@@ -91,6 +98,24 @@ export default function FileTree() {
         const err = draft.mode === 'create' ? createFile(value) : renameFile(draft.path, value);
         if (err) return setError(err.message);
         start(null);
+    }
+
+    function onTreeKey(e: KeyboardEvent<HTMLDivElement>) {
+        if (draft) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const next = stepFile(files, activeFile, e.key === 'ArrowDown' ? 1 : -1);
+            if (next) openFile(next);
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            if (files[0]) openFile(files[0]);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            if (files.length) openFile(files[files.length - 1]);
+        } else if (e.key === 'Enter' && activeFile) {
+            e.preventDefault();
+            openFile(activeFile);
+        }
     }
 
     return (
@@ -129,9 +154,16 @@ export default function FileTree() {
                 </div>
             )}
 
-            <div role="tree" aria-label="Project files" className="flex-1 overflow-auto py-1">
-                {tree?.children?.length ? (
-                    tree.children.map((c) => (
+            <div
+                role="tree"
+                aria-label="Project files"
+                tabIndex={0}
+                aria-activedescendant={activeFile ? `tree-${activeFile}` : undefined}
+                onKeyDown={onTreeKey}
+                className="flex-1 overflow-auto py-1 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+                {files.length ? (
+                    tree?.children?.map((c) => (
                         <Node
                             key={c.path}
                             node={c}
