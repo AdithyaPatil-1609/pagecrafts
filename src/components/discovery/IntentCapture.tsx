@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 
@@ -78,7 +78,7 @@ export function IntentCapture({
     );
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let pending = "";
     let auto = false;
     try {
@@ -91,12 +91,8 @@ export function IntentCapture({
     }
 
     if (!pending) return;
-
-    // run the restore on the next microtask so setState is not called synchronously inside the effect
-    Promise.resolve().then(() => {
-      setDescribe(pending);
-      if (auto) void startGeneration(pending);
-    });
+    setDescribe(pending);
+    if (auto) void startGeneration(pending);
     // The pending brief is restored once, on arrival after sign-in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
