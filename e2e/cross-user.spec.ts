@@ -1,6 +1,5 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { signIn } from './support/sign-in';
-import { SEEDED, SECOND } from './support/users';
+import { STATE } from './support/users';
 
 // D16 security review, and the D20 milestone: a deliberate cross-user read must fail at
 // the database, not at a check someone remembered to write in a route handler.
@@ -46,10 +45,11 @@ function assertHidden(status: number, body: { ok: boolean; error?: { code: strin
 test.describe("another person's project", () => {
     test.skip(!withAuth, 'needs Upstash: set E2E_WITH_AUTH=1');
 
+    test.use({ storageState: STATE.first });
+
     let asMeera: APIRequestContext;
 
     test.beforeEach(async ({ page }) => {
-        await signIn(page, SEEDED);
         asMeera = page.request;
     });
 
@@ -133,9 +133,9 @@ test.describe("another person's project", () => {
 test.describe('the other direction', () => {
     test.skip(!withAuth, 'needs Upstash: set E2E_WITH_AUTH=1');
 
-    test('Arjun cannot read Meera either, so this is not a one-way policy', async ({ page }) => {
-        await signIn(page, SECOND);
+    test.use({ storageState: STATE.second });
 
+    test('Arjun cannot read Meera either, so this is not a one-way policy', async ({ page }) => {
         const mine = await page.request.get(`/api/v1/projects/${ARJUN_PROJECT}`);
         expect(mine.status()).toBe(200);
 
