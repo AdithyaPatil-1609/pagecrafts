@@ -17,7 +17,7 @@
     "catalogue:build": "tsx scripts/build-catalogue.ts",
     "catalogue:thumbs": "tsx scripts/render-thumbnails.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
-    "pretypecheck": "node -e \"const fs=require('node:fs');for(const p of ['.next/types','.next/dev/types'])fs.rmSync(p,{recursive:true,force:true})\"",
+    "pretypecheck": "node scripts/pretypecheck.mjs",
     "typecheck": "tsc --noEmit",
     "deploy:seal": "tsx --env-file=.env.local scripts/seal-credential.ts",
     "deploy:health": "tsx --env-file=.env.local --conditions=react-server scripts/hosting-health-check.ts",
