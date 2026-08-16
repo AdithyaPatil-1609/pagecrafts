@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
+import { createFakeDb } from '../support/fake-db';
+
 const auth = vi.hoisted(() => ({ requireUser: vi.fn() }));
 const ledger = vi.hoisted(() => ({ persist: vi.fn() }));
 const entitlements = vi.hoisted(() => ({ hasPro: vi.fn(async () => false) }));
@@ -61,8 +63,21 @@ async function settled(id: string) {
     throw new Error('job did not settle');
 }
 
+// The generate route reads the project through RLS before it starts anything, so a session
+// in these tests needs a client that can see one. Backed by the same fake database the
+// persistence tests use rather than a bespoke stub: these specs also exercise /edits and
+// the look-picker, and those reach for query shapes a hand-rolled builder does not have.
+//
+// What each test is about is generation, not ownership — /generate refusing somebody else's
+// project is covered on its own in generate-ownership.test.ts.
+function sessionFor(userId: string) {
+    const db = createFakeDb({ users: [{ id: userId }] });
+    db.insert('projects', { id: 'p_1', user_id: userId, name: 'Test site', content_json: {}, site_meta: {} });
+    return { userId, supabase: db.asUser(userId) };
+}
+
 beforeEach(() => {
-    auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
+    auth.requireUser.mockResolvedValue(sessionFor('u_1'));
     ledger.persist.mockReset().mockResolvedValue(undefined);
     resetRedisMock();
     limits.evalMock.mockImplementation(async (_s: string, keys: string[]) =>
@@ -241,7 +256,7 @@ describe('GET /api/v1/jobs/{id}', () => {
         const res = await generate({ prompt: 'a family dental clinic in koramangala' });
         const { data } = await res.json();
 
-        auth.requireUser.mockResolvedValue({ userId: 'u_2', supabase: {} });
+        auth.requireUser.mockResolvedValue(sessionFor('u_2'));
         const poll = await pollJob(data.job_id);
 
         expect(poll.status).toBe(404);

@@ -17,6 +17,7 @@ import {
     recordFreeGeneration,
 } from '@/lib/ai/jobs/quota';
 import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
+import { getProject } from '@/lib/data/projects';
 import { setProfileStore } from '@/lib/ai/profile-cache';
 import { SupabaseProfileStore } from '@/lib/ai/profile/persist';
 import { track } from '@/lib/observability/analytics';
@@ -33,6 +34,20 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
     auth: 'required',
     schema,
     handler: async ({ body, params, userId, req, supabase }) => {
+        // Owner-scoped read first, before anything else touches params.id.
+        //
+        // Every other write route on a project reads it through RLS and gets not_found for
+        // somebody else's — publish does it via projectPublishInputs. This one did not: the
+        // id went straight into the budget check, the quota, the job and the persist step,
+        // and a signed-in stranger got 202 for a project they cannot see. RLS still refused
+        // the final write, so nothing was overwritten, but the job ran, the caller's budget
+        // and free-generation quota were spent on it, and the answer said it had worked.
+        //
+        // getProject throws not_found when RLS hides the row, which is the same answer the
+        // rest of the API gives and the one e2e/cross-user.spec.ts asks for. Found by the
+        // D14 cross-user audit, which left the test red on purpose until this landed.
+        await getProject(supabase, params.id);
+
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
 
