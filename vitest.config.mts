@@ -18,6 +18,19 @@ export default defineConfig({
             '**/.next/**',
             'e2e/**',
         ],
+        // The route tests import the route under test from inside the test body, because the
+        // module has to be loaded after its mocks are in place. That dynamic import is on the
+        // test's clock, and on a full run the transform and import phases together take well
+        // over two minutes — so a test whose own work takes 40ms gets judged against a 5s
+        // default it spends waiting for esbuild. Two files timed out on one full run and
+        // passed in 1.6s in isolation.
+        //
+        // Raised rather than worked around: nothing here is slow, and a test that hangs for
+        // real still fails, thirty seconds later. This is the load-sensitive flake carried in
+        // the R3 week-4 plan, which would have surfaced on a slower CI box as an unexplained
+        // red build during launch week.
+        testTimeout: 30_000,
+        hookTimeout: 120_000,
         env: {
             HOSTING_API_BASE: 'https://api.github.com',
             HOSTING_ACCOUNT_ID: 'pagecraft-sites',
