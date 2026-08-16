@@ -57,7 +57,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.39.2
-                - name: Check migrations for duplicate versions
+      - name: Check migrations for duplicate versions
         run: |
           set -euo pipefail
           # Only check if there are migration files
