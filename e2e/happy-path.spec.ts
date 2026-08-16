@@ -47,14 +47,19 @@ test.describe('the happy path', () => {
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     });
 
-    test('signing out ends the session', async ({ page }) => {
-        await page.goto('/');
+    // Its own context: signing out of the shared session would leave every test after
+    // this one unauthenticated, which is what happened the first time.
+    test('signing out ends the session', async ({ browser }) => {
+        const context = await browser.newContext({ storageState: STATE.first });
+        const page = await context.newPage();
 
         const out = await page.request.post('/api/v1/auth/logout');
         expect(out.status()).toBe(200);
 
         const me = await page.request.get('/api/v1/auth/me');
         expect(me.status()).toBe(401);
+
+        await context.close();
     });
 });
 

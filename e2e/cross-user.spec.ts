@@ -13,12 +13,13 @@ const ARJUN_PROJECT = 'bbbbbbbb-0000-4000-8000-000000000002';
 
 const withAuth = process.env.E2E_WITH_AUTH === '1';
 
+// Only paths that actually have a GET. /content is PATCH-only and /assets is POST-only;
+// asking them for a GET hits Next's own 405 with an empty body, which proves nothing
+// about ownership. Both are covered under WRITES.
 const READS = [
     '',
     '/files',
-    '/content',
     '/commits',
-    '/assets',
     '/composition',
 ];
 
