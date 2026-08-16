@@ -59,10 +59,12 @@ const ENTITIES: Record<string, string> = {
     "&nbsp;": " ",
 };
 
+function decodeEntities(text: string): string {
+    return text.replace(/&[a-z#0-9]+;/gi, (entity) => ENTITIES[entity.toLowerCase()] ?? entity);
+}
+
 function plainText(html: string): string {
-    return html
-        .replace(/<[^>]*>/g, "")
-        .replace(/&[a-z#0-9]+;/gi, (entity) => ENTITIES[entity.toLowerCase()] ?? entity)
+    return decodeEntities(html.replace(/<[^>]*>/g, ""))
         .replace(/\s+/g, " ")
         .trim();
 }
@@ -125,7 +127,16 @@ function layoutOf(html: string): PreviewLayout {
 // path, anything surprising) is dropped and the tile falls back to the motif.
 function heroImageOf(html: string): string | undefined {
     const frame = html.match(/data-slot="hero\.image"[\s\S]*?<\/div>/i)?.[0] ?? "";
-    const src = frame.match(/<img\b[^>]*\bsrc="([^"]+)"/i)?.[1];
+    const raw = frame.match(/<img\b[^>]*\bsrc="([^"]+)"/i)?.[1];
+    // Decoded, because this is being lifted out of *markup*: an ampersand in an attribute is
+    // written `&amp;`, so a photo authored as `?w=1600&q=70&auto=format&fit=crop` arrives
+    // here as `?w=1600&amp;q=70&amp;...`. Passing that on treated `amp;q` as a parameter
+    // name, and `new URL().toString()` then percent-encoded the semicolon in it — so the
+    // gallery asked Unsplash for `w` and three parameters it has never heard of. `q=70`,
+    // `auto=format` and `fit=crop` were all silently dropped from all 115 tiles: measured on
+    // one of the library's own photographs, 47.6 KB of JPEG where the intended URL returns
+    // 29.6 KB of AVIF (R2 D18).
+    const src = raw ? decodeEntities(raw) : undefined;
     return src && /^https:\/\//i.test(src) ? src : undefined;
 }
 

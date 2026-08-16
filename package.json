@@ -43,7 +43,8 @@
     "e2e:install": "playwright install --with-deps chromium",
     "check:bundle": "node --env-file=.env.local scripts/check-client-bundle.mjs",
     "check:config": "node --env-file=.env.local scripts/check-prod-config.mjs",
-    "db:verify": "tsx scripts/db-verify.ts"
+    "db:verify": "tsx scripts/db-verify.ts",
+    "templates:thumbs": "tsx scripts/render-template-thumbnails.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -84,6 +85,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "js-yaml": "^5.2.3",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.9",
     "typescript": "^5",

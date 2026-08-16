@@ -1,8 +1,11 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { TEMPLATES } from "@/lib/templates";
 import { parseTemplateQuery, queryTemplates } from "@/lib/templates/query";
-import { thumbnailUrlFor } from "@/lib/templates/thumbnails";
+import { renderedThumbnailIds, thumbnailUrlFor } from "@/lib/templates/thumbnails";
 
 const params = (search: string) => new URLSearchParams(search);
 const parse = (search: string) => parseTemplateQuery(params(search));
@@ -179,10 +182,44 @@ describe("a description is not a search", () => {
 });
 
 describe("thumbnails", () => {
-  it("advertises no thumbnail until one has actually been rendered", () => {
-    // public/templates/<id>/thumbnail.png has never existed; a URL that 404s is worse than
-    // none, because a caller will render it.
-    expect(thumbnailUrlFor({ id: "shop" })).toBeNull();
-    expect(run("").items.every((t) => t.thumbnailUrl === null)).toBe(true);
+  // The rule has not changed since the field was null for everything: advertise a thumbnail
+  // only when there is one. What changed at R2 D18 is that there are 115 of them.
+
+  it("advertises a thumbnail for a design that has been rendered", () => {
+    expect(thumbnailUrlFor({ id: "shop" })).toBe("/templates/shop.webp");
+    expect(run("").items.every((t) => t.thumbnailUrl !== null)).toBe(true);
+  });
+
+  it("still advertises nothing for a design nobody has rendered", () => {
+    // A URL that 404s is worse than none, because a caller will render it. This is what
+    // makes adding a design without re-running the renderer degrade to the parsed miniature
+    // instead of showing a page of broken images.
+    expect(thumbnailUrlFor({ id: "not-a-real-design" })).toBeNull();
+  });
+
+  it("points at a file that exists", () => {
+    // The manifest and the directory are written by the same script, and this is the check
+    // that they were not allowed to drift — a manifest listing a design whose file was never
+    // written is precisely the 404 the null was protecting against.
+    for (const id of renderedThumbnailIds()) {
+      expect(
+        existsSync(join(process.cwd(), "public", "templates", `${id}.webp`)),
+        `public/templates/${id}.webp is missing`,
+      ).toBe(true);
+    }
+  });
+
+  it("renders one for every design in the library", () => {
+    const rendered = new Set(renderedThumbnailIds());
+    const missing = TEMPLATES.filter((t) => !rendered.has(t.id)).map((t) => t.id);
+    expect(missing).toEqual([]);
+  });
+
+  it("keeps the record's own thumbnailUrl pointing at the same file", () => {
+    // Template.thumbnailUrl is what a direct reader of the library sees. It advertised
+    // `/templates/<id>/thumbnail.png` for months and no such file was ever produced.
+    for (const template of TEMPLATES) {
+      expect(template.thumbnailUrl, template.id).toBe(`/templates/${template.id}.webp`);
+    }
   });
 });

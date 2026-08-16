@@ -87,7 +87,7 @@ would mean judging that Nonprofit belongs inside Business or that Media belongs 
 Entertainment, and those read as different shelves to the person choosing even though the
 library is thin behind them. A thin shelf is honest; a wrong shelf is not.
 
-### D18 · Thumbnails
+### D18 · Thumbnails — **done**
 - `scripts/render-thumbnails.ts` exists and `public/templates/` is empty. Generate for all
   115, into Supabase Storage, at consistent framing and size.
 - Point `thumbnailUrlFor` at the bucket once they exist; it returns null today precisely so
@@ -95,6 +95,41 @@ library is thin behind them. A thin shelf is honest; a wrong shelf is not.
 - Re-check gallery first paint afterwards. 115 tiles currently draw a parsed miniature each;
   swapping to images changes the performance profile in both directions and should be
   measured, not assumed.
+
+**The existing script was the wrong one.** `scripts/render-thumbnails.ts` renders the AI
+catalogue's drafts out of `evals/catalogue/`; it has never had anything to do with the design
+library. `scripts/render-template-thumbnails.ts` (`npm run templates:thumbs`) is the one that
+was missing: Chromium is shown each design's own index.html with its own stylesheet inlined,
+screenshotted at 1280×800 and written as 640×400 WebP. **115 files, 1.62 MB, 14.4 KB average,
+31 KB largest**, with per-file and total budgets the script exits non-zero on.
+
+**They live in `public/templates/`, not Supabase Storage.** Not because there are no
+credentials here — because it is better: the thumbnail and the design move in the same
+commit, so the picture cannot drift from what it depicts, which is the one real cost a
+rendered image has over the parsed miniature. No bucket policy, no egress, nothing to rotate,
+and a design change is reviewable as a picture in the diff. `thumbnailUrlFor` still prefers
+`NEXT_PUBLIC_TEMPLATE_THUMBNAIL_BASE` when it is set, so moving them is one variable.
+
+**Measured, and the measurement found a bug first.** Taking the baseline showed every tile
+requesting `?w=480&amp%3Bq=70&amp%3Bauto=format&amp%3Bfit=crop`. `heroImageOf` lifts the src
+out of markup with a regex and never decoded the entities, so `&amp;q` became a parameter
+named `amp;q` — `q=70`, `auto=format` and `fit=crop` were being dropped from **all 115
+tiles**. On one of the library's own photographs that is 47.6 KB of JPEG where the intended
+URL returns 29.6 KB of AVIF.
+
+| | Before | After |
+| --- | --- | --- |
+| Gallery HTML, decoded | 1,125,821 B | 503,841 B (−55%) |
+| Gallery HTML, gzipped | 87,864 B | 39,962 B (−55%) |
+| DOM nodes | 3,669 | 1,524 (−58%) |
+| Images | 115 third-party, mis-parameterised | 115 same-origin WebP |
+| Requests to images.unsplash.com | up to 115 | 0 |
+
+Lazy loading was already right: 4 eager above the fold, 111 lazy.
+
+A design with no rendered thumbnail still gets `null` and still draws its miniature, so
+adding a design without re-running the renderer degrades one tile rather than breaking the
+page — and a test fails until somebody runs it.
 
 ### D19 · Visual polish, copy, and the freeze
 - Consistency pass across discovery and the editor: spacing, type, colour.
@@ -114,7 +149,8 @@ library is thin behind them. A thin shelf is honest; a wrong shelf is not.
 
 ## Carried in
 
-1. **No thumbnails at all.** The largest single gap on this track. D18.
+1. ~~**No thumbnails at all.**~~ Rendered at D18: 115 WebP in `public/templates/`,
+   regenerated with `npm run templates:thumbs`.
 2. ~~**The taxonomy decision**, four weeks open.~~ Made at D17; see above.
 3. ~~**The licence audit has never run**~~ — ran at D16. It found all 115 designs recording a
    source URL for a repository that has never existed, and the detail modal telling customers

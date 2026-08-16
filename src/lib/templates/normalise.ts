@@ -9,6 +9,7 @@ import type {
     TemplateTier,
 } from "@/lib/contracts";
 import { validateTemplate } from "./index";
+import { thumbnailPath } from "./thumbnails";
 
 // Normalises source templates by verifying provenance, drafting content schemas, and validating records.
 
@@ -362,7 +363,7 @@ export function normaliseTemplate(source: SourceTemplate): NormaliseResult {
         category,
         vertical: source.vertical ?? id,
         tags,
-        thumbnailUrl: `/templates/${id}/thumbnail.png`,
+        thumbnailUrl: thumbnailPath(id),
         files,
         contentSchema: schema,
         license,

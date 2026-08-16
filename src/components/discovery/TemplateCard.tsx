@@ -23,8 +23,37 @@ export function TemplateCard({
                     className="block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                     <span className="relative block">
-                        {/* Static miniature — never a live iframe (D-3, AC-F3-2). */}
-                        <TemplatePreview preview={template.preview} priority={index <= 4} />
+                        {/* The rendered thumbnail where the library has one, the parsed
+                            miniature where it does not. Never a live iframe either way
+                            (D-3, AC-F3-2).
+
+                            The thumbnail is a screenshot of the design's own two files, so
+                            it shows what the design actually is — and it replaces roughly
+                            9 KB of miniature markup per tile with a 14 KB image the CDN
+                            caches immutably. A design with no thumbnail keeps its miniature
+                            rather than showing a gap, which is what makes adding a design
+                            without rendering one safe (R2 D18). */}
+                        {template.thumbnailUrl ? (
+                            // A plain <img>, not next/image. The optimiser exists to resize
+                            // and re-encode images of unknown provenance; these are ours,
+                            // already 640x400 WebP at 14 KB, and putting them through it
+                            // would cost a round trip through /_next/image to produce a file
+                            // no smaller. The width/height and aspect class hold the space,
+                            // so there is no layout shift to buy back either.
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={template.thumbnailUrl}
+                                alt=""
+                                width={640}
+                                height={400}
+                                loading={index <= 4 ? "eager" : "lazy"}
+                                fetchPriority={index <= 4 ? "high" : "auto"}
+                                decoding="async"
+                                className="block aspect-[16/10] w-full bg-muted object-cover object-top"
+                            />
+                        ) : (
+                            <TemplatePreview preview={template.preview} priority={index <= 4} />
+                        )}
 
                         {/* The price, on the design, before any choice (UI Spec §7.5). */}
                         <PriceBadge
