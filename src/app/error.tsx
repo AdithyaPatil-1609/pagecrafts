@@ -30,7 +30,7 @@ export default function PageError({
             <h1 className="text-2xl font-semibold text-foreground">This page did not load</h1>
 
             <p className="text-sm text-muted-foreground">
-                Something went wrong on our side. Your work is saved — nothing has been lost.
+                This is our fault, not yours. Your work is saved — nothing has been lost.
                 Try again, and if it keeps happening go back to your dashboard.
             </p>
 

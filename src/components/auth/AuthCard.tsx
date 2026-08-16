@@ -26,7 +26,10 @@ const MESSAGES: Partial<Record<ErrorCode, string>> = {
     validation_failed: "Check the details above and try again.",
     unauthorized: "That email and password do not match. Try again, or reset your password.",
     rate_limited: "Too many attempts. Wait a few minutes and try again.",
-    internal: "Something went wrong on our side. Please try again.",
+    // Not "something went wrong", which is the phrase UI Spec §7.18 exists to prevent:
+    // it names nothing and offers nothing. What a person needs here is that their
+    // details are fine and the fault is ours (R2 D19 copy audit).
+    internal: "We could not finish that just now. Nothing is wrong with your details — try again in a moment.",
 };
 const FIELD_MESSAGES: Record<string, string> = {
     email: "Enter a valid email address.",

@@ -18,7 +18,14 @@ import { cn } from "@/lib/utils";
 /** Filters that match nothing. The way out is to loosen them, and it is one click. */
 export function GalleryEmpty({ resetHref }: { resetHref: string }) {
     return (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-12 text-center">
+        // `status`, not `alert`: filtering to nothing is a normal result, and an assertive
+        // live region would interrupt whatever the person was reading to announce it. It
+        // does have to be announced though — the grid emptying is silent otherwise, and the
+        // only other signal is a heading that changes without saying so (R2 D19).
+        <div
+            role="status"
+            className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-12 text-center"
+        >
             <span aria-hidden className="flex size-10 items-center justify-center rounded-full bg-accent">
                 <SearchX className="size-5 text-muted-foreground" strokeWidth={1.75} />
             </span>
@@ -56,7 +63,7 @@ export function GalleryError({ retryHref }: { retryHref: string }) {
             </span>
             <p className="text-sm font-medium text-foreground">We could not load the designs</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-                Something went wrong on our side. Nothing you have done is lost — try again in a moment.
+                This is our fault, not yours. Nothing you have done is lost — try again in a moment.
             </p>
             <Link
                 href={retryHref}
