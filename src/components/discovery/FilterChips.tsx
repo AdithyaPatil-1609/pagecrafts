@@ -46,10 +46,20 @@ function Chip({
     return (
         <Link
             href={href}
-            // aria-pressed rather than aria-current: this is a toggle, and a screen reader
-            // should say so — otherwise the only cue that a chip clears on a second press is
-            // the colour, which is not a cue at all for some people.
-            aria-pressed={active}
+            // `aria-current`, not `aria-pressed`.
+            //
+            // This was aria-pressed, on the reasoning that a chip is a toggle and a screen
+            // reader should say so. The reasoning was right and the attribute was not:
+            // aria-pressed is only defined for a button, and this is a link. An unsupported
+            // ARIA attribute is not a weaker announcement, it is no announcement — so the
+            // active filter was conveyed by colour and nothing else, to anybody not looking
+            // at it. axe reported it as critical across all forty chips (R2 D20).
+            //
+            // aria-current is valid on a link and announces "current". What it does not
+            // carry is that pressing again clears the filter, so that goes into the
+            // accessible name below, where it is words rather than an attribute nobody
+            // implements.
+            aria-current={active ? "true" : undefined}
             className={cn(
                 // min-h-9 on a phone, tighter from sm upwards. The chips were 30px tall at
                 // every width, which is comfortable with a mouse and not with a thumb —
@@ -64,8 +74,15 @@ function Chip({
         >
             {label}
             {/* The × is what makes "individually clearable" visible rather than something
-                you have to discover by pressing an active chip and seeing what happens. */}
-            {active && <X aria-hidden className="size-3" strokeWidth={2.5} />}
+                you have to discover by pressing an active chip and seeing what happens. It is
+                aria-hidden, so the sentence beside it is the same information for somebody
+                who cannot see it — "Fitness, selected — activate to clear this filter". */}
+            {active && (
+                <>
+                    <X aria-hidden className="size-3" strokeWidth={2.5} />
+                    <span className="sr-only">, selected — activate to clear this filter</span>
+                </>
+            )}
         </Link>
     );
 }
@@ -184,7 +201,7 @@ export function FilterChips({
                     </span>
                     <Link
                         href={resetHref}
-                        className="text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="text-xs font-medium text-brand-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                         Clear all
                     </Link>

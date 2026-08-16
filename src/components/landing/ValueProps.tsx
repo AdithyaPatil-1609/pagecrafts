@@ -21,9 +21,23 @@ const PROPS = [
 
 export function ValueProps() {
     return (
-        <section id="how-it-works" className="relative z-10 w-full scroll-mt-24 px-6 pb-24">
+        // aria-labelledby, so this is a landmark rather than a plain grouping.
+        //
+        // A bare <section> is only exposed as a region when it has an accessible name, and
+        // this one sits outside <main> on the landing page — so the whole "how it works"
+        // block was content in no landmark at all, invisible to anybody moving through the
+        // page by region, which is how a lot of screen reader users navigate. axe reported
+        // it across all seven pieces (R2 D20). The heading it already has is the name.
+        <section
+            id="how-it-works"
+            aria-labelledby="how-it-works-heading"
+            className="relative z-10 w-full scroll-mt-24 px-6 pb-24"
+        >
             <div className="mx-auto flex max-w-7xl flex-col items-center gap-10">
-                <h2 className="text-center text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                <h2
+                    id="how-it-works-heading"
+                    className="text-center text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+                >
                     How it works
                 </h2>
                 <div className="grid w-full gap-5 sm:grid-cols-3">

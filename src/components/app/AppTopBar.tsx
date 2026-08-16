@@ -74,7 +74,7 @@ export function AppTopBar({
                         // Padded to a thumb-sized target rather than the 46x20 the text
                         // alone gave it. It sits beside a 36px avatar when signed in, so
                         // matching that height also stops the bar shifting at sign-in.
-                        className="inline-flex min-h-9 items-center rounded-md px-2 text-sm font-semibold text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex min-h-9 items-center rounded-md px-2 text-sm font-semibold text-foreground transition-colors hover:text-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                         Sign in
                     </Link>
