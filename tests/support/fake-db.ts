@@ -21,8 +21,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type Row = Record<string, unknown>;
 
 /**
- * The owner rule per table, transcribed from the migration's policies. `public` is the
- * template catalogue, readable by any signed-in user.
+ * The owner rule per table, transcribed from the migrations' policies. `public` is
+ * reference data — the template catalogue and the vertical profiles — readable by any
+ * signed-in user.
+ *
+ * Every table in `public` must appear here. That is enforced two ways: `visible()` throws
+ * on a table it does not know rather than guessing, and tests/db/fake-db-parity.pg.test.ts
+ * compares this list against the tables a real Postgres actually ends up with after the
+ * migrations run. Both exist because guessing has been wrong twice — `templates` was read
+ * as owner-scoped and the whole catalogue vanished from the fake, and the four tables added
+ * after this map was written were silently owner-scoped too, which hid the vertical
+ * profiles from every test that touched them.
  */
 type OwnerRule = "own_user_id" | "via_project" | "public";
 
@@ -34,7 +43,16 @@ const POLICIES: Record<string, OwnerRule> = {
     commits: "via_project",
     deployments: "via_project",
     assets: "via_project",
+    generations: "own_user_id",
+    entitlements: "own_user_id",
+    ai_edit_proposals: "own_user_id",
+    // Reference data shared by every generation, written only by the service role.
+    vertical_profiles: "public",
+    vertical_profile_aliases: "public",
 };
+
+/** The tables this fake claims to model. Read by the parity test, not by the fake itself. */
+export const TRANSCRIBED_TABLES: readonly string[] = Object.keys(POLICIES);
 
 // Tables whose updated_at is maintained by a `before update` trigger.
 const TOUCHES_UPDATED_AT = new Set(["projects", "users"]);
@@ -87,7 +105,20 @@ export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
 
     // The `using` / `with check` clause, in one place for both reads and writes.
     function visible(name: string, row: Row, userId: string): boolean {
-        switch (POLICIES[name] ?? "own_user_id") {
+        const rule = POLICIES[name];
+        if (!rule) {
+            // Never guess. The previous default was `own_user_id`, which is a plausible
+            // rule and therefore the dangerous kind of wrong: applied to a table with no
+            // user_id column it evaluates undefined === userId, hides every row, and the
+            // test reads an empty table and passes. Failing loudly here turns "somebody
+            // added a table and forgot the fake" into a build error instead of a quiet
+            // hole in the coverage.
+            throw new Error(
+                `fake-db: no policy transcribed for "${name}". Add it to POLICIES in ` +
+                    `tests/support/fake-db.ts, matching the migration that created the table.`,
+            );
+        }
+        switch (rule) {
             case "public":
                 return true;
             case "via_project":

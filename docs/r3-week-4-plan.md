@@ -29,6 +29,20 @@ with all twenty at once rather than one at a time.
 
 It wants half a day at the start of D16, not an afternoon in D20.
 
+> **Closed on D16 — and the premise above was already half wrong when it was written.**
+>
+> Repairing CI on D15 turned the `database` job back on, and it has run
+> `supabase db reset --local` and `supabase db lint --local` green three times since. The
+> migrations had in fact executed against real Supabase Postgres before D16 began. Recorded
+> here rather than quietly deleted, because the plan overstated the risk and the correction
+> belongs next to the claim.
+>
+> What genuinely had never happened is narrower and worse: **no policy had ever been
+> exercised.** `db reset` proves twenty files apply; it does not read a row as one user and
+> fail to read it as another. Every ownership guarantee in the API still rested on the
+> hand-written fake. D16 closed that — see `tests/db/`, `scripts/db/` and the revised
+> `docs/database-workflow.md`.
+
 ## The week
 
 ### D16 · Run the database, then harden what it tells you
@@ -72,12 +86,20 @@ entitlement being read rather than re-granted.
 
 ## Carried in, still open
 
-1. **The database has never been run.** Above; the whole week depends on it.
+1. ~~**The database has never been run.**~~ Closed on D16; see the note above for what was
+   actually wrong and what was already fine.
 2. **Taxonomy** — Health / Wellness / Health & Wellness, Retail / E-commerce, Technology /
    Business are separate buckets because the mockups labelled them separately. A product
    decision, not a cleanup, and it should be made before launch rather than after.
-3. **A load-sensitive test.** One full-suite run in five fails on a timeout when module
-   import crosses ~140s. Not logic; it will resurface on a slower CI box.
+3. ~~**A load-sensitive test.**~~ Closed on D16. It was never logic: the route tests import
+   the route from inside the test body so mocks apply first, and on a full run that import
+   is slower than the 5s default timeout the test is judged against. `testTimeout` raised to
+   30s in `vitest.config.mts` with the reasoning written there.
 4. **`applyContentToFiles` is now called in two places** — the editor as you type, and the
    publish build as a backstop. That is deliberate, and the reason is written where it
    happens, but if a third caller appears the rendering should move to one owner.
+5. **The platform prelude is a reconstruction.** `scripts/db/platform-prelude.sql` is our
+   version of what Supabase provides, and nothing compares it to the real thing. If it drifts,
+   `tests/db/` keeps passing while production differs. The `database` CI job runs against real
+   Supabase on every PR, so a drift that matters should show up there — but it would show up
+   as a confusing disagreement between two green-looking checks, not as a clear message.

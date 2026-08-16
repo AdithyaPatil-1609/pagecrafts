@@ -42,7 +42,8 @@
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install --with-deps chromium",
     "check:bundle": "node --env-file=.env.local scripts/check-client-bundle.mjs",
-    "check:config": "node --env-file=.env.local scripts/check-prod-config.mjs"
+    "check:config": "node --env-file=.env.local scripts/check-prod-config.mjs",
+    "db:verify": "tsx scripts/db-verify.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -72,6 +73,8 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.5",
+    "@playwright/test": "^1.50.0",
     "@tailwindcss/postcss": "^4",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
@@ -85,8 +88,7 @@
     "tsx": "^4.23.9",
     "typescript": "^5",
     "vitest": "^4.1.10",
-    "wrangler": "^4.120.0",
-    "@playwright/test": "^1.50.0"
+    "wrangler": "^4.120.0"
   },
   "allowScripts": {}
 }
