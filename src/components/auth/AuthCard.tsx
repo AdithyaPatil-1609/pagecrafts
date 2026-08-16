@@ -174,7 +174,7 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
                 <button
                     type="button"
                     onClick={() => switchTo("signin")}
-                    className="mt-6 rounded-md text-sm font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="mt-6 rounded-md text-sm font-medium text-brand-ink underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     Back to sign in
                 </button>
@@ -303,12 +303,12 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
             <div className="mt-5 flex flex-col items-center gap-1.5 text-sm text-muted-foreground">
                 {mode === "signin" && (
                     <>
-                        <button type="button" onClick={() => switchTo("forgot")} className="font-medium text-primary underline underline-offset-4">
+                        <button type="button" onClick={() => switchTo("forgot")} className="font-medium text-brand-ink underline underline-offset-4">
                             Forgot your password?
                         </button>
                         <span>
                             New here?{" "}
-                            <button type="button" onClick={() => switchTo("signup")} className="font-medium text-primary underline underline-offset-4">
+                            <button type="button" onClick={() => switchTo("signup")} className="font-medium text-brand-ink underline underline-offset-4">
                                 Create an account
                             </button>
                         </span>

@@ -136,7 +136,7 @@ export function AppSidebar({
                         type="button"
                         disabled
                         title="Billing is not live yet"
-                        className="mt-4 w-full rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-4 w-full rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-brand-ink disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         Upgrade now
                     </button>

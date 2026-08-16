@@ -178,13 +178,48 @@ and fallback, and a gradient built from a template's own palette. The thirteenth
 **Noted, not changed during a freeze:** `text-[11px]` appears five times and `text-[10px]`
 three, which is a token wanting to exist. Eight call sites is not a freeze-day change.
 
-### D20 · Accessibility baseline and launch
+### D20 · Accessibility baseline and launch — **done**
 - axe-core across discovery and the content panel; fix critical and serious.
 - The core flow keyboard-completable with visible focus. Partly built in already — tiles are
   real buttons, chips carry `aria-pressed` — but it has never been walked end to end with
   only a keyboard, and the automation available here cannot do it. **This one needs a
   person.**
 - Launch landing, then watch the funnel without shipping.
+
+**Three findings, one of them from the sentence above.** "Chips carry `aria-pressed`" was
+written as evidence that keyboard access was partly built in. It was the critical violation:
+`aria-pressed` is only defined for a button and these are links, so an unsupported attribute
+meant *no* announcement — the active filter was conveyed by colour and nothing else, on all
+forty chips. `aria-current` now carries the state, and what it cannot carry — that pressing
+again clears the filter — is in the accessible name as words.
+
+**The brand red fails as small text.** `#dc2626` on the near-black surface is 4.06:1 against
+the 4.5:1 AA asks for. Lightening `--primary` would have fixed the text and broken the
+buttons: white on red-500 is 3.76:1. They are two jobs, so there is a `--brand-ink` token
+now — red-500 on dark, red-600 unchanged on light, both clear — used where brand red is
+words. Fills, borders and icons stay on `--primary`, which already clears the 3:1 an icon
+needs.
+
+**The landing page's "How it works" sat outside every landmark**, so seven pieces of content
+were unreachable by region navigation on the first screen a customer sees.
+
+**The keyboard walk was done, and the D15 note was too pessimistic.** The in-app browser
+cannot deliver real key events — the pane does not composite, so `visibilityState` is
+hidden — but Playwright can, and does. `e2e/a11y.spec.ts` tabs through the gallery with the
+browser's own sequencing, checks every stop paints a visible indicator, opens a design with
+Enter, tabs ten times inside the dialog without escaping it, and presses Escape to confirm
+focus returns to the tile it came from. Ten tests, in CI, unauthenticated so they need no
+credential.
+
+**What still needs a person, precisely.** Not the tab order and not the focus ring — those
+are covered above. What no automation here can do is listen: whether the announcements make
+sense in sequence, whether the gallery is comprehensible through a screen reader rather than
+merely conformant, and whether the reading order matches the visual one in a way that feels
+right. Half an hour with VoiceOver or NVDA before launch.
+
+**Also owed:** the editor's content panel is not in the axe sweep. It needs a session, so it
+is gated with the rest of the signed-in specs behind `E2E_WITH_AUTH`, which CI has no
+credential for — the same gap as the cross-user spec on the R3 track.
 
 ## Carried in
 

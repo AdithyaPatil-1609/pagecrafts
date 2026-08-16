@@ -92,7 +92,7 @@ export function GalleryGrid({
                         </span>
                     )}
                     {activeCategory && (
-                        <span className="rounded-full border border-primary/40 px-2.5 py-0.5 text-xs font-medium text-primary">
+                        <span className="rounded-full border border-primary/40 px-2.5 py-0.5 text-xs font-medium text-brand-ink">
                             · {CATEGORY_LABELS[activeCategory]}
                         </span>
                     )}
