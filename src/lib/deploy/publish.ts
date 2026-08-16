@@ -5,6 +5,7 @@ import { deployProvider } from './adapters';
 import { runOnce } from './idempotency';
 import { step } from './log';
 import { toPublishError } from './errors';
+import type { FailureReason } from './failure';
 
 export interface PublishInput {
     projectId: string;
@@ -19,6 +20,13 @@ export interface PublishResult {
     subdomain: string;
     liveUrl: string | null;
     /**
+     * Why the attempt did not reach `live`, or null when it did.
+     *
+     * A value from a closed set, never a sentence: the words a person reads are derived
+     * from it by lib/deploy/failure.ts, so improving them improves rows already written.
+     */
+    reason: FailureReason | null;
+    /**
      * The address a `verifying` result is waiting on.
      *
      * Set only when the site was built and hosted but has not answered yet. It is what a
@@ -28,7 +36,6 @@ export interface PublishResult {
     pendingUrl: string | null;
     commitSha: string;
     state: DeploymentState;
-    error: string | null;
 }
 
 export function publish(
@@ -110,7 +117,12 @@ async function run(
             pendingUrl: live ? null : url,
             commitSha,
             state,
-            error: live ? null : 'verification_timeout',
+            // A reason, not a sentence and no longer a code. This was the literal string
+            // 'verification_timeout', which went straight into a column the dashboard shows
+            // a person (R3 D18). lib/deploy/failure.ts turns it into words at read time —
+            // and the words for this one say the site is published and switching on, which
+            // is what is actually true.
+            reason: live ? null : ('not_answering_yet' satisfies FailureReason),
         };
     } catch (error) {
         onState('failed');

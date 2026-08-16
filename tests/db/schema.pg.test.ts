@@ -60,7 +60,10 @@ describe("the migration stack", () => {
         const applied = await db.query<{ n: number }>(
             "select count(*)::int as n from pg_tables where schemaname = 'public'",
         );
-        expect(migrationFiles().length).toBe(20);
+        // A count, deliberately. It is the one assertion that notices a migration file
+        // being deleted or never committed — the failure mode where the stack still
+        // applies cleanly because the broken one is simply gone. Bump it when you add one.
+        expect(migrationFiles().length).toBe(21);
         expect(applied.rows[0]!.n).toBeGreaterThan(0);
     });
 

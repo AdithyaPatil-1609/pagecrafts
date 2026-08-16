@@ -120,6 +120,7 @@ export function stubGetProject(): ApiResult<ProjectDetail> {
         name: "Kettle & Co.",
         status: "draft",
         liveUrl: null,
+        failure: null,
         thumbnailUrl: null,
         updatedAt: STUB_TIME,
         sourceTemplateId: STUB_TEMPLATE_ID,

@@ -3,11 +3,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DeploymentState, PublishProjectResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { assertCanPublish } from "./entitlements";
-import { advanceDeployment, getDeployment, recordDeployment } from "./deployments";
+import {
+  advanceDeployment,
+  getDeployment,
+  openDeployment,
+  recordDeployment,
+} from "./deployments";
 import { projectPublishInputs } from "@/lib/deploy/publishable";
 import { publish } from "@/lib/deploy/publish";
 import { PublishError } from "@/lib/deploy/errors";
 import { deployProvider } from "@/lib/deploy/adapters";
+import { failureMessage, reasonForError } from "@/lib/deploy/failure";
 import type { DeployProvider } from "@/lib/deploy/provider";
 
 // Publishing a project (R3 D15 · FR-080–FR-091, C-05).
@@ -68,8 +74,18 @@ export async function publishProject(
   const { projectName, files } = await projectPublishInputs(supabase, projectId);
 
   if (files.length === 0) {
-    throw new ApiError("validation_failed", "There is nothing to publish yet.", projectId);
+    // The same words the failure map gives this reason, so a person hears one thing whether
+    // they hit it here or read it off the dashboard later.
+    const { what, next } = failureMessage("nothing_to_publish");
+    throw new ApiError("validation_failed", `${what} ${next}`, projectId);
   }
+
+  // A publish already under way is handed back rather than joined by a second one.
+  // runOnce() in the deploy layer only dedupes an identical idempotency key; two different
+  // keys for one project would otherwise race each other onto the same subdomain. Moved
+  // here from the route at D18, with the rest of what a publish has to decide.
+  const running = await openDeployment(supabase, projectId);
+  if (running) return { deploymentId: running.id, status: "pending" };
 
   const attempt = await recordDeployment(supabase, projectId);
 
@@ -90,7 +106,7 @@ export async function publishProject(
         state: result.state,
         liveUrl: result.liveUrl,
         commitSha: result.commitSha,
-        error: result.error,
+        failureReason: result.reason,
       });
     })
     .catch(async (error: unknown) => {
@@ -106,17 +122,30 @@ export async function publishProject(
         await rememberSite(supabase, projectId, error.siteId).catch(() => undefined);
       }
 
-      const failure =
+      // Two separate things, and keeping them separate is the point of D18.
+      //
+      // `failureReason` is what the owner is told, by way of lib/deploy/failure.ts — a value,
+      // so the wording can be improved later and improve rows already written, and so
+      // "the dashboard explains every failure mode" is a claim a test can check.
+      //
+      // `error` is the redacted provider detail, kept for whoever has to work out why this
+      // person's publish failed. It is not shown; it used to be, which is how a stray HTTP
+      // status could end up in front of a customer.
+      const detail =
         error instanceof PublishError
-          ? `${error.message}${error.detail ? ` (${error.detail})` : ""}`
+          ? (error.detail ?? null)
           : error instanceof Error
             ? error.message
             : String(error);
 
+      console.error("[publish]", projectId, error);
+
       // finish() can itself fail — a dropped connection, a policy change. There is nothing
       // useful left to do at that point except not crash the process the response already
       // left behind.
-      await attempt.finish({ state: "failed", error: failure }).catch(() => undefined);
+      await attempt
+        .finish({ state: "failed", error: detail, failureReason: reasonForError(error) })
+        .catch(() => undefined);
     });
 
   return { deploymentId: attempt.deploymentId, status: "pending" };

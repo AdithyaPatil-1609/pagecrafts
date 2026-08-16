@@ -146,6 +146,7 @@ describe("the contract checker itself", () => {
                 name: "Kettle & Co.",
                 status: "draft",
                 liveUrl: null,
+                failure: null,
                 thumbnailUrl: null,
                 updatedAt: NOW,
                 sourceTemplateId: null,

@@ -137,12 +137,14 @@ export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
             let onConflict: string[] = [];
             const filters: [string, unknown][] = [];
             let notIn: { column: string; values: string[] } | null = null;
+            let anyOf: { column: string; values: unknown[] } | null = null;
             const orders: { column: string; ascending: boolean }[] = [];
             let take: number | null = null;
 
             const matches = (row: Row): boolean => {
                 if (!filters.every(([column, value]) => row[column] === value)) return false;
                 if (notIn && notIn.values.includes(String(row[notIn.column]))) return false;
+                if (anyOf && !anyOf.values.includes(row[anyOf.column])) return false;
                 return true;
             };
 
@@ -285,6 +287,10 @@ export function createFakeDb(seed: Record<string, Row[]> = {}): FakeDb {
                 },
                 delete: () => ((op = "delete"), builder),
                 eq: (column: string, value: unknown) => (filters.push([column, value]), builder),
+                // `.in(column, values)` — used by openDeployment to ask for the attempts
+                // that have not finished. Missing until R3 D18, which is why the publish
+                // route's concurrency guard had never been exercised against this fake.
+                in: (column: string, values: unknown[]) => ((anyOf = { column, values }), builder),
                 not: (column: string, operator: string, value: string) => {
                     if (operator === "in") {
                         notIn = {
