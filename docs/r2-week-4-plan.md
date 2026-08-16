@@ -131,13 +131,52 @@ A design with no rendered thumbnail still gets `null` and still draws its miniat
 adding a design without re-running the renderer degrades one tile rather than breaking the
 page — and a test fails until somebody runs it.
 
-### D19 · Visual polish, copy, and the freeze
+### D19 · Visual polish, copy, and the freeze — **done**
 - Consistency pass across discovery and the editor: spacing, type, colour.
 - Copy audit against UI Spec §7.18 — never a technical word, one clear action per screen,
   prices in rupees before any choice. The mojibake found in a live string at R3 D15 says
   this pass should also check for encoding damage, not only wording.
 - Empty and first-run states.
 - Day-19 freeze: polish and configuration only.
+
+**The encoding sweep found worse than mojibake.** `src/lib/data/validate-file-map.ts` had
+`const NUL = /�/` — a literal U+FFFD, the replacement character an editor writes when it
+saves a byte it cannot decode, not `\0`. So the guard named NUL matched the wrong character:
+**a path containing a real NUL byte passed `isValidFilePath`**, while a harmless pasted
+replacement character was refused. Proven both ways before fixing. Nothing was ever stored
+with one — the database's `position(chr(0) in path) = 0` CHECK refused it — so what was lost
+is the clean 422 this function exists to give. Written as an escape now, so no future save
+can mangle it back.
+
+**"Something went wrong" was in six customer-facing strings.** It is the phrase §7.18 exists
+to prevent: it names nothing and offers nothing. Rewritten to say what happened and what is
+still true — sign-in, password reset, the gallery error, the shared API message, `error.tsx`
+and `global-error.tsx`.
+
+**The last-resort screen was the wrong product.** `global-error.tsx` — the one shown when
+even the root layout has failed — rendered white with near-black text, in a product whose
+identity is dark-first. It cannot use tokens (globals.css is exactly what may not have
+loaded), so the palette values are inlined, named, and commented with why they must be kept
+in step by hand.
+
+**The audit is a test now**, `tests/unit/copy-audit.test.ts`, and it caught its own blind
+spot: the first version's JSX-text pattern excluded newlines, so it walked straight past the
+two multi-line paragraphs — including the one on the crash screen. Both self-check against
+the strings they exist for, so neither can quietly stop working.
+
+**Empty states hold up.** Filtering to nothing gives a heading, a sentence, and two ways out;
+the funnel is not a dead end anywhere (D-6). Two fixes: the empty state carries `role="status"`
+so the grid emptying is announced rather than silent, and the count heading had a `gap`
+between flex children but no space in the text stream, so it read "0 designs to start
+fromof 115" to a screen reader.
+
+**Tokens are otherwise clean.** Thirteen raw hex values across the app, and twelve of them
+are right: Google's brand colours inside their own logo SVG, a colour picker's placeholder
+and fallback, and a gradient built from a template's own palette. The thirteenth was
+`global-error.tsx`, above. No `rgba()`, no hand-rolled brand gradient.
+
+**Noted, not changed during a freeze:** `text-[11px]` appears five times and `text-[10px]`
+three, which is a token wanting to exist. Eight call sites is not a freeze-day change.
 
 ### D20 · Accessibility baseline and launch
 - axe-core across discovery and the content panel; fix critical and serious.
@@ -160,7 +199,10 @@ page — and a test fails until somebody runs it.
 4. **The editor was not auditable on mobile** at D15 — it needs a signed-in session, so the
    content panel at 375px is still unverified. Worth ten minutes with a real account before
    D20 rather than discovering it at launch.
-5. **Ten shelves hold one design each** — resume, architecture, professional_services,
+5. **A small-print size wants a token.** `text-[11px]` x5 and `text-[10px]` x3 across the
+   discovery components and the sidebar. Noted at D19 and deliberately not changed under the
+   freeze.
+6. **Ten shelves hold one design each** — resume, architecture, professional_services,
    nonprofit, media, arts_culture, personal and three more. Not a fault, and folding them
    would misfile designs to flatter a count. But if D18's thumbnails make thin shelves look
    thin, this is the lever.

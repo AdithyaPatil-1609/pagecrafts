@@ -11,7 +11,7 @@ import type { ApiResult, ErrorCode } from "@/lib/contracts";
 const MESSAGES: Partial<Record<ErrorCode, string>> = {
     validation_failed: "Choose a password of at least 10 characters.",
     unauthorized: "That link has expired. Ask for a new one from the sign-in screen.",
-    internal: "Something went wrong on our side. Please try again.",
+    internal: "We could not set your new password just now. Your old one still works — try again in a moment.",
 };
 
 export function ResetPasswordForm() {

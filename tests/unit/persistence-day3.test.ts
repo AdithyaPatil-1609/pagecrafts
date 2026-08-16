@@ -54,6 +54,20 @@ describe("file-path validation backing PUT/DELETE /files/{path}", () => {
     expect(isValidFilePath("../outside.html")).toBe(false);
     expect(isValidFilePath("a/../../b")).toBe(false);
   });
+
+  it("rejects a NUL byte in a path", () => {
+    // The guard for this existed and matched the wrong character. Its regex was a literal
+    // U+FFFD — the replacement character an editor writes when it cannot decode a byte —
+    // rather than \0, so a real NUL sailed through while a harmless pasted character was
+    // refused. The database's own CHECK caught the path anyway, so nothing was ever stored
+    // with one; what was lost is the clean 422 this function exists to give (R2 D19).
+    //
+    // Written with fromCharCode so no future save of this file can mangle it either.
+    const nul = String.fromCharCode(0);
+    expect(isValidFilePath(`index${nul}.html`)).toBe(false);
+    expect(isValidFilePath(`${nul}`)).toBe(false);
+    expect(isValidFilePath("index�.html")).toBe(true);
+  });
 });
 
 describe("asset gates (E-4)", () => {
