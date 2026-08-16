@@ -91,6 +91,19 @@ export function IntentCapture({
     }
 
     if (!pending) return;
+
+    // set-state-in-effect is disabled here rather than worked around, because the pattern
+    // it warns about is the right one for this case and the alternatives are worse.
+    //
+    // The brief lives in sessionStorage, which does not exist while the page is rendered on
+    // the server. Reading it in a useState initialiser would make the server render an empty
+    // textarea and the client render a full one — a hydration mismatch, traded for the one
+    // extra render the rule is trying to save. useSyncExternalStore does not fit either: the
+    // value is read once and deleted, so there is no stable snapshot to subscribe to.
+    //
+    // Restoring client-only state after mount is what React's own guidance suggests here,
+    // and it costs exactly one additional render, once, on arrival from sign-in.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDescribe(pending);
     if (auto) void startGeneration(pending);
     // The pending brief is restored once, on arrival after sign-in.

@@ -1,4 +1,4 @@
--- Rollback for 20260813120000_template_categories_catch_up.sql
+-- Rollback for 20260815120000_template_categories_catch_up.sql
 --
 -- Postgres cannot drop a value from an enum. Reversing this means rebuilding the type, and
 -- that is only safe once no row uses any of the added values. Check first:
