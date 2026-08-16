@@ -13,6 +13,7 @@
     "verify:injection": "node scripts/verify-injection-suite.mjs",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "templates:normalise": "tsx scripts/normalise-template.ts",
+    "templates:ledger": "tsx scripts/provenance-ledger.ts",
     "templates:seed": "tsx --env-file=.env.local scripts/seed-templates.ts",
     "catalogue:build": "tsx scripts/build-catalogue.ts",
     "catalogue:thumbs": "tsx scripts/render-thumbnails.ts",
