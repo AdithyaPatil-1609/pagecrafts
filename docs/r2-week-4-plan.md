@@ -140,7 +140,7 @@ page — and a test fails until somebody runs it.
 - Day-19 freeze: polish and configuration only.
 
 **The encoding sweep found worse than mojibake.** `src/lib/data/validate-file-map.ts` had
-`const NUL = /�/` — a literal U+FFFD, the replacement character an editor writes when it
+`const NUL = /<U+FFFD>/` — a literal replacement character, the replacement character an editor writes when it
 saves a byte it cannot decode, not `\0`. So the guard named NUL matched the wrong character:
 **a path containing a real NUL byte passed `isValidFilePath`**, while a harmless pasted
 replacement character was refused. Proven both ways before fixing. Nothing was ever stored

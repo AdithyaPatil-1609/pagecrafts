@@ -143,12 +143,61 @@ a second attempt while one is still in flight returns the running one rather tha
 race. The last of those was the guard that moved out of the route — and the fake database
 had no `.in()`, so it had never been exercised against a fake at all.
 
-### D19 · Freeze, and the audit nobody wants to do late
+### D19 · Freeze, and the audit nobody wants to do late — **done**
 - Route audit: every owner route RLS-scoped, every input Zod-validated, every response in
   the envelope. There is a test for each of these already; the audit is confirming no route
   added since escaped them.
 - Check the seed data matches the schema after twenty migrations.
 - Day-19 freeze: polish and configuration only.
+
+**The escaping was the whole problem, and it had happened.** Each existing test names the
+route it covers, so a route nobody thought about is covered by nothing and looks exactly
+like a route that passed. Both new audits start from the filesystem instead.
+
+`tests/contract/route-audit.test.ts` enumerates all 36 routes and holds each to the kernel's
+guarantees: through `withRoute` or on a written exemption list; a Zod schema on every write
+or a written reason; no `req.json()` past the schema; the service-role client only where the
+audit has agreed; no user id taken from the request; `runtime` and `dynamic` pinned on every
+one. Exemptions are checked in both directions, so one for a route that no longer exists, or
+that no longer needs it, fails too. Verified by removing a `dynamic` export and watching it
+go red.
+
+**Nothing structural had escaped** — 25 routes on `withRoute`, 7 auth routes on `guard()`
+because they are pre-session by definition, and 4 redirect or probe routes with no envelope
+to return. That is a good result and it is now enforced rather than observed.
+
+**The cross-user coverage had escaped.** `e2e/cross-user.spec.ts` keeps its route list by
+hand and had fallen five behind — `/checkout`, `/deployments`, `/assets`, `/edits/apply` and
+`/generate/choose` were all absent. Worse, it is skipped unless `E2E_WITH_AUTH=1`, which
+needs an Upstash credential CI does not have, so the guarantee was being checked on nobody's
+machine on any ordinary day. `tests/contract/cross-user-routes.test.ts` enumerates the same
+directory, requires a decision recorded for every route under `/projects/{id}`, and runs in
+`npm test` on every PR.
+
+**It found one.** `startPublishCheckout` consulted the entitlement before it read the
+project, and `checkEntitlement` asks about the *account* — a `pro` subscription satisfies
+every kind. So a subscriber asking about somebody else's project got `granted: true` and
+returned before anything touched the project row, where every other route answers not_found.
+Never exploitable: nothing granted, nothing charged, and the answer was identical for an id
+belonging to nobody, so it leaked nothing either. It was the API disagreeing with itself
+about what a stranger is told. Two lines swapped.
+
+**The seed.** `tests/db/seed.pg.test.ts`, against real Postgres after all twenty-one
+migrations. `db reset` proves the seed *inserts*, which is a lower bar than it sounds — a
+column added later is nullable, so the seed keeps loading while quietly producing rows the
+product cannot use. These check the rows are usable: every auth user has the profile row its
+trigger should have made, each owner sees their own project and only theirs, at least one
+project has files and an `index.html` to publish, every template has a category the app
+knows, a tier it can price, a source that resolves, a non-empty content schema and the files
+it claims. Plus a sweep for any column left entirely null across the seed, pinned to an
+explicit list so adding one is a decision rather than a discovery.
+
+Two things it turned up about the seed, both fine and now written down: the seeded commits
+pre-date snapshots, so the restore path cannot be walked on a fresh database without making
+a commit first — `getCommitSnapshot` already answers `validation_failed` rather than
+restoring nothing. And there is no `price_inr` column at all, deliberately: the database
+stores the tier so the fork gate can enforce it, and the price is a business rule the app
+owns.
 
 ### D20 · Launch support
 - Watch the publish funnel and Sentry; triage without shipping.
@@ -171,7 +220,11 @@ had no `.in()`, so it had never been exercised against a fake at all.
 5. **`applyContentToFiles` is now called in two places** — the editor as you type, and the
    publish build as a backstop. That is deliberate, and the reason is written where it
    happens, but if a third caller appears the rendering should move to one owner.
-6. **The platform prelude is a reconstruction.** `scripts/db/platform-prelude.sql` is our
+6. **e2e/cross-user.spec.ts still needs a credential to run.** Its contract-test counterpart
+   now covers the same ground in CI, so the guarantee is checked either way — but the e2e
+   version is the one that exercises the real routes over HTTP, and it is still dark. An
+   Upstash credential for CI would turn it on.
+7. **The platform prelude is a reconstruction.** `scripts/db/platform-prelude.sql` is our
    version of what Supabase provides, and nothing compares it to the real thing. If it drifts,
    `tests/db/` keeps passing while production differs. The `database` CI job runs against real
    Supabase on every PR, so a drift that matters should show up there — but it would show up
