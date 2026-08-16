@@ -17,7 +17,7 @@
     "catalogue:build": "tsx scripts/build-catalogue.ts",
     "catalogue:thumbs": "tsx scripts/render-thumbnails.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
-    "pretypecheck": "node -e \"const fs=require('node:fs');for(const p of ['.next/types','.next/dev/types'])fs.rmSync(p,{recursive:true,force:true})\"",
+    "pretypecheck": "node scripts/pretypecheck.mjs",
     "typecheck": "tsc --noEmit",
     "deploy:seal": "tsx --env-file=.env.local scripts/seal-credential.ts",
     "deploy:health": "tsx --env-file=.env.local --conditions=react-server scripts/hosting-health-check.ts",
@@ -39,7 +39,9 @@
     "db:drift": "tsx --env-file=.env.local scripts/db-drift.ts",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "e2e:install": "playwright install --with-deps chromium"
+    "e2e:install": "playwright install --with-deps chromium",
+    "check:bundle": "node --env-file=.env.local scripts/check-client-bundle.mjs",
+    "check:config": "node --env-file=.env.local scripts/check-prod-config.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
