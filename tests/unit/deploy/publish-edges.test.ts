@@ -147,7 +147,9 @@ describe("a publish whose DNS has not propagated yet", () => {
 
         expect(result.state).toBe("verifying");
         expect(result.liveUrl).toBeNull();
-        expect(result.error).toBe("verification_timeout");
+        // A reason, not a code. `verification_timeout` used to be stored verbatim in a
+        // column the dashboard shows a person (R3 D18).
+        expect(result.reason).toBe("not_answering_yet");
     });
 
     it("carries the site id and the address it is waiting on", async () => {

@@ -61,7 +61,7 @@ describe('publish', () => {
         expect(result.state).toBe('verifying');
         expect(result.liveUrl).toBeNull();
         expect(result.pendingUrl).toBe('https://spike.pagecrafts.in');
-        expect(result.error).toBe('verification_timeout');
+        expect(result.reason).toBe('not_answering_yet');
     });
 
     it('skips hosting setup when republishing', async () => {

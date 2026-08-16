@@ -167,14 +167,42 @@ describe("the publish history behind screen 02", () => {
         expect(history[1]!.state).toBe("failed");
     });
 
-    it("keeps the failures, with the reason", async () => {
+    it("keeps the failures, and explains them in the owner's words", async () => {
         // A history that hid failures would be the dashboard that said "draft" forever —
         // pleasant and useless. Somebody debugging needs those rows most of all.
+        //
+        // What it shows changed at R3 D18. It used to be whatever sentence the failing
+        // branch happened to write, and the provider's own strings went in beside it. Now
+        // the row stores a reason and the words are derived, so the history says what
+        // happened *and* what to do — and improving the wording improves rows already
+        // written rather than only the next one.
         const { db, id } = site();
-        db.insert("deployments", { project_id: id, status: "failed", created_at: ago(DAY), error: "hosting refused" });
+        db.insert("deployments", {
+            project_id: id,
+            status: "failed",
+            created_at: ago(DAY),
+            failure_reason: "hosting_failed",
+            error: "hosting API 503",
+        });
 
         const [attempt] = await listDeployments(db.asUser("u1"), id);
-        expect(attempt.error).toBe("hosting refused");
+        expect(attempt.error).toBe(
+            "Your files are uploaded, but we could not switch the site on. " +
+                "Nothing needs redoing. Try publishing again — if it happens twice, tell us and we will finish it by hand.",
+        );
+        expect(attempt.error).not.toContain("503");
+    });
+
+    it("still explains a failure recorded before reasons were stored", async () => {
+        // Rows written by the old code have prose and no reason. The migration backfills
+        // them to `unknown`, whose words are true of any of them; a row that somehow has
+        // neither must still not read as a blank.
+        const { db, id } = site();
+        db.insert("deployments", { project_id: id, status: "failed", created_at: ago(DAY), error: "boom" });
+
+        const [attempt] = await listDeployments(db.asUser("u1"), id);
+        expect(attempt.error).toMatch(/Publishing did not finish\./);
+        expect(attempt.error).toMatch(/Nothing you have made is lost/);
     });
 
     it("surfaces a URL only for an attempt that reached live (C-05)", async () => {

@@ -195,7 +195,10 @@ describe("a publish that fails after the site was claimed", () => {
         expect(row.live_url).toBe("https://meeras-cafe.pagecrafts.in");
     });
 
-    it("records the failure with a message rather than losing the attempt", async () => {
+    it("records why it failed, and keeps the provider's words out of the owner's way", async () => {
+        // Two columns, two audiences (R3 D18). `failure_reason` is what the owner is told,
+        // by way of lib/deploy/failure.ts; `error` is the redacted provider detail, kept for
+        // whoever has to work out what happened and never shown.
         const { db, projectId } = seeded();
         const failing = provider({ failAt: "pushing" });
 
@@ -205,7 +208,8 @@ describe("a publish that fails after the site was claimed", () => {
         const row = await settled(db, attempt.deploymentId);
 
         expect(row.status).toBe("failed");
-        expect(String(row.error)).toMatch(/upload/i);
+        expect(row.failure_reason).toBe("upload_failed");
+        expect(String(row.error)).toContain("502");
     });
 });
 
