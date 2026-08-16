@@ -46,7 +46,7 @@ audit, the attribution check and the thumbnails were all scoped to 25 designs an
 **Watch:** this is the audit that can only fail late. If a design cannot be traced, it comes
 out of the library, and that is a gallery change on the eve of launch.
 
-### D17 · Category coverage, and the taxonomy decision
+### D17 · Category coverage, and the taxonomy decision — **done**
 - Every intent category needs designs behind it, and at least one free design per category —
   a category with only paid designs is a dead end (Doc 22 P1).
 - **Then make the taxonomy call**, which has been open since the second batch: Health &
@@ -54,6 +54,38 @@ out of the library, and that is a gallery change on the eve of launch.
   Company sits in Business while IT Consulting sits in Technology. Nobody browsing reads
   those as distinct shelves. Collapsing them is a product decision and it should be made
   before launch, not after the first person filters and finds three near-identical chips.
+
+**What the measurement found.** No empty shelves and nothing orphaned — but two dead ends:
+`architecture` held one design at Rs 999 and `agency` one at Rs 499, so picking either card
+left paying as the only way forward. Ten of the thirty-five shelves held exactly one design.
+
+**Decided and applied.** The clear duplicates are folded:
+
+| Folded | Into | Why |
+| --- | --- | --- |
+| `agency` | `business` | one design literally named "Agency", beside Marketing Agency, Digital Agency, Recruitment Agency and Recruitment Firm |
+| `wellness` | `health_wellness` | a counsellor, beside a yoga studio and a spa |
+| `health` | `health_wellness` | a nutritionist, same shelf |
+| `retail` | `store` | a bookshop and a florist, beside fourteen shops |
+
+Plus "Tech Company" moved from `business` to `technology`, where the other five tech designs
+already were. Thirty-five shelves became thirty-one, and no design left the library.
+
+The enum values stay and resolve through `CATEGORY_ALIASES`, so `?category=retail` still
+filters — to E-commerce, where its designs went. Removing the values would have broken a
+bookmarked link, the classifier's output and the database's own type, all for a change that
+is only about what a person sees.
+
+**Dead ends cleared.** The `agency` fold absorbed one. Architecture is now free, which is
+what took the last one out: 110 of 115 designs are free, so the paid tier was carrying five
+designs and two of them were the only thing on their shelf. `tests/unit/category-coverage.test.ts`
+holds the rule from here — a card with no design, a card with no free design, or a design
+stored on a shelf with no card all fail the build.
+
+**Not done, and deliberately.** The ten single-design shelves are left alone. Folding them
+would mean judging that Nonprofit belongs inside Business or that Media belongs inside
+Entertainment, and those read as different shelves to the person choosing even though the
+library is thin behind them. A thin shelf is honest; a wrong shelf is not.
 
 ### D18 · Thumbnails
 - `scripts/render-thumbnails.ts` exists and `public/templates/` is empty. Generate for all
@@ -82,9 +114,17 @@ out of the library, and that is a gallery change on the eve of launch.
 
 ## Carried in
 
-1. **No thumbnails at all.** The largest single gap on this track.
-2. **The taxonomy decision**, four weeks open.
-3. **The licence audit has never run**, and it is now 115 designs wide.
+1. **No thumbnails at all.** The largest single gap on this track. D18.
+2. ~~**The taxonomy decision**, four weeks open.~~ Made at D17; see above.
+3. ~~**The licence audit has never run**~~ — ran at D16. It found all 115 designs recording a
+   source URL for a repository that has never existed, and the detail modal telling customers
+   a first-party design "comes from open source". Both fixed. **Still open from it:** the repo
+   has no LICENSE file, so the `MIT` on 115 designs is a claim the project has not made
+   anywhere. Either add the LICENSE or change the recorded value.
 4. **The editor was not auditable on mobile** at D15 — it needs a signed-in session, so the
    content panel at 375px is still unverified. Worth ten minutes with a real account before
    D20 rather than discovering it at launch.
+5. **Ten shelves hold one design each** — resume, architecture, professional_services,
+   nonprofit, media, arts_culture, personal and three more. Not a fault, and folding them
+   would misfile designs to flatter a count. But if D18's thumbnails make thin shelves look
+   thin, this is the lever.

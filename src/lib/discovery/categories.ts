@@ -38,10 +38,11 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   arts_culture: "Arts & Culture",
   retail: "Retail",
   finance: "Finance",
-  // Three neighbouring labels, kept apart because the mockups keep them apart: a spa is
-  // "Health & Wellness", a counselling practice is "Wellness", a nutritionist is "Health".
-  // A person browsing may well read those as the same shelf — worth collapsing to one
-  // bucket if the team agrees, which is a decision about the taxonomy, not about a design.
+  // Folded into "Health & Wellness" at R2 D17. These three were kept apart because the
+  // mockups kept them apart — a spa was "Health & Wellness", a counselling practice
+  // "Wellness", a nutritionist "Health" — which is a distinction the person who wrote the
+  // mockup was making, not one the person browsing would. The labels stay because the enum
+  // values stay; see CATEGORY_ALIASES below for why, and what they resolve to.
   wellness: "Wellness",
   health: "Health",
   creative: "Creative",
@@ -69,7 +70,6 @@ export const CATEGORY_CARDS: Category[] = [
   "architecture",
   "education",
   "travel",
-  "agency",
   "business",
   "event",
   // The buckets designs 13-24 brought with them.
@@ -95,11 +95,8 @@ export const CATEGORY_CARDS: Category[] = [
   "health_wellness",
   "pets",
   "arts_culture",
-  "retail",
   "finance",
   // The buckets designs 52-68 brought with them.
-  "wellness",
-  "health",
   "creative",
   // The bucket designs 69-83 brought with them.
   "technology",
@@ -110,12 +107,49 @@ export const CATEGORY_CARDS: Category[] = [
 
 const CATEGORY_SET = new Set<string>(CATEGORY_CARDS);
 
-// Narrow an untrusted URL/query value to a category the gallery can filter on, or
-// undefined. Only the categories the library covers are accepted; anything else — an
-// unknown value, or an enum bucket with no design — is ignored and shows the whole library
-// rather than raising an error or an empty grid (D-4, FR-035).
+/**
+ * Shelves that were folded into another shelf at R2 D17, and where they went.
+ *
+ * The taxonomy grew one bucket at a time, each batch adding whatever word its mockup used,
+ * and it arrived at 35 shelves with four that nobody browsing reads as distinct: `agency`
+ * held a single design called "Agency" while `business` already held Marketing Agency,
+ * Digital Agency, Recruitment Agency and Recruitment Firm; `wellness` (a counsellor) and
+ * `health` (a nutritionist) sat beside `health_wellness` (a yoga studio, a spa); `retail`
+ * held a bookshop and a florist beside `store`'s fourteen shops.
+ *
+ * The enum values stay. Removing them would break three things at once — a bookmarked
+ * `?category=retail`, a classifier that has always been allowed to emit any Category, and
+ * the database's own `template_category` type — for no gain, since a fold is a display
+ * decision and this is the display layer. So the value keeps working and lands the person
+ * on the shelf the designs actually moved to, rather than on an empty grid or, worse,
+ * silently on the whole library as though they had never filtered.
+ */
+export const CATEGORY_ALIASES: Partial<Record<Category, Category>> = {
+  agency: "business",
+  wellness: "health_wellness",
+  health: "health_wellness",
+  retail: "store",
+};
+
+const ALIAS_LOOKUP = new Map<string, Category>(Object.entries(CATEGORY_ALIASES) as [string, Category][]);
+
+/**
+ * Narrow an untrusted URL/query value to a category the gallery can filter on, or
+ * undefined. Only the categories the library covers are accepted; anything else — an
+ * unknown value, or an enum bucket with no design — is ignored and shows the whole library
+ * rather than raising an error or an empty grid (D-4, FR-035).
+ *
+ * A folded shelf resolves to the shelf it was folded into, so an old link still filters.
+ */
 export function toCategory(value: string | undefined | null): Category | undefined {
-  return value && CATEGORY_SET.has(value) ? (value as Category) : undefined;
+  if (!value) return undefined;
+  // A Map, not the object literal. Indexing a plain object with an untrusted string walks
+  // the prototype chain, so `?category=__proto__` came back as Object.prototype and
+  // `?category=constructor` as a function — both then travelling on as though they were a
+  // category. The existing test for exactly this caught it.
+  const folded = ALIAS_LOOKUP.get(value);
+  if (folded) return folded;
+  return CATEGORY_SET.has(value) ? (value as Category) : undefined;
 }
 
 // The gallery filter. No category means the whole library — an absent filter is not an

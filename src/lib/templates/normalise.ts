@@ -85,8 +85,15 @@ const CATEGORY_KEYWORDS: Partial<Record<Category, string[]>> = {
     architecture: ["architecture", "architect", "studio", "interior", "built", "practice"],
     education: ["school", "students", "admissions", "course", "teachers", "academy", "learning"],
     travel: ["travel", "tour", "trip", "destination", "itinerary", "stay", "guide"],
-    agency: ["agency", "clients", "services", "campaign", "brand", "team"],
-    business: ["consulting", "consultant", "business", "advisory", "solutions", "enterprise"],
+    // `agency` was folded into `business` at R2 D17, so its words score for business now.
+    // Left as one entry rather than a separate key that resolves later: this table decides
+    // the category a sourced design is *stored* with, and storing a folded shelf would put
+    // the design somewhere the gallery has no card for — invisible on every shelf, however
+    // well the URL alias works.
+    business: [
+        "consulting", "consultant", "business", "advisory", "solutions", "enterprise",
+        "agency", "clients", "services", "campaign", "brand", "team",
+    ],
     event: ["event", "conference", "tickets", "speakers", "schedule", "venue", "wedding"],
     store: ["shop", "store", "product", "cart", "buy", "collection"],
     nonprofit: ["donate", "charity", "volunteer", "nonprofit", "cause", "fundraise"],
