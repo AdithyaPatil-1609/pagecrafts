@@ -38,6 +38,15 @@ export const githubPagesAdapter: DeployProvider = {
         };
     },
 
+    // A GitHub site id is `org/repo`; the repo name is the subdomain.
+    addressFor(siteId: string) {
+        const subdomain = siteId.split('/').pop() ?? siteId;
+        return {
+            subdomain,
+            url: `https://${subdomain}.${deployConfig().rootDomain}`,
+        };
+    },
+
     async pushBuild(siteId: string, files: PublishFile[], message: string) {
         const [owner, repo] = siteId.split('/');
         const domain = `${repo}.${deployConfig().rootDomain}`;

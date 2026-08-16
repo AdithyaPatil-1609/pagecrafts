@@ -3,7 +3,8 @@ import 'server-only';
 import type { DeploymentResponse, DeploymentState } from '@/lib/contracts';
 import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
-import { getDeployment } from '@/lib/data/deployments';
+import { getDeployment, type DeploymentView } from '@/lib/data/deployments';
+import { resumeVerification } from '@/lib/data/publish-project';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,20 @@ function reportedStatus(state: DeploymentState): DeploymentResponse['status'] {
     return 'pending';
 }
 
+function toResponse(deployment: DeploymentView): DeploymentResponse {
+    return {
+        status: reportedStatus(deployment.state),
+        repoUrl: deployment.repoUrl,
+        // C-05: only a deployment that reached live has a URL worth giving anyone. The
+        // column can hold one earlier — a resumed attempt writes it at the same moment it
+        // writes the state — and reading it unconditionally would hand out a link to a site
+        // that is not answering yet.
+        liveUrl: deployment.state === 'live' ? deployment.liveUrl : null,
+        commitSha: deployment.commitSha,
+        error: deployment.error,
+    };
+}
+
 // GET /api/v1/deployments/{id} — poll a publish attempt.
 export const GET = withRoute<undefined, Params>({
     auth: 'required',
@@ -31,12 +46,24 @@ export const GET = withRoute<undefined, Params>({
             throw new ApiError('not_found', 'No such deployment.');
         }
 
-        return ok<DeploymentResponse>({
-            status: reportedStatus(deployment.state),
-            repoUrl: deployment.repoUrl,
-            liveUrl: deployment.liveUrl,
-            commitSha: deployment.commitSha,
-            error: deployment.error,
-        });
+        // An attempt resting in `verifying` did everything except get an answer from the
+        // host. The client is already polling this route waiting for exactly that, so the
+        // poll is where the re-check belongs — no scheduler, no worker, and no site left
+        // sitting one DNS refresh short of live because nothing came back to look (R3 D17).
+        //
+        // Re-checking costs one request and provisions nothing, so a client polling every
+        // two seconds is not doing anything expensive. A failure inside it leaves the row
+        // untouched and is not the poll's problem to report.
+        if (deployment.state === 'verifying') {
+            const state = await resumeVerification(supabase, params.id).catch(
+                () => deployment.state,
+            );
+            if (state === 'live') {
+                const settled = await getDeployment(supabase, params.id);
+                if (settled) return ok<DeploymentResponse>(toResponse(settled));
+            }
+        }
+
+        return ok<DeploymentResponse>(toResponse(deployment));
     },
 });
