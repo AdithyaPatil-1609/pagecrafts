@@ -57,6 +57,21 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.39.2
+                - name: Check migrations for duplicate versions
+        run: |
+          set -euo pipefail
+          # Only check if there are migration files
+          if compgen -G "supabase/migrations/*.sql" > /dev/null; then
+            duplicates=$(ls supabase/migrations/*.sql | xargs -n1 basename | cut -d_ -f1 | sort | uniq -d || true)
+            if [ -n "$duplicates" ]; then
+              echo "Duplicate migration versions found:"
+              echo "$duplicates"
+              echo ""
+              echo "Each migration filename must have a unique timestamp prefix (e.g. YYYYMMDDhhmmss)."
+              echo "Please rename the conflicting file(s) so their prefixes are unique."
+              exit 1
+            fi
+          fi
       - run: supabase start
       - run: supabase db reset --local
       - run: supabase db lint --local
