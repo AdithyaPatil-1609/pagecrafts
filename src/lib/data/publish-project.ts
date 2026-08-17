@@ -14,6 +14,8 @@ import { publish } from "@/lib/deploy/publish";
 import { PublishError } from "@/lib/deploy/errors";
 import { deployProvider } from "@/lib/deploy/adapters";
 import { failureMessage, reasonForError } from "@/lib/deploy/failure";
+import { track } from "@/lib/observability/analytics";
+import { captureError } from "@/lib/observability/capture";
 import type { DeployProvider } from "@/lib/deploy/provider";
 
 // Publishing a project (R3 D15 · FR-080–FR-091, C-05).
@@ -89,6 +91,11 @@ export async function publishProject(
 
   const attempt = await recordDeployment(supabase, projectId);
 
+  // EV-06. Fired once the attempt is real — past the entitlement gate, past the empty-files
+  // check, with a row to point at — so the funnel counts publishes that were actually tried
+  // rather than requests that bounced off a precondition.
+  track("EV-06", userId, { republish: siteId !== null });
+
   // Deliberately not awaited. The response carries the deployment id and the client polls;
   // holding the request open for the ninety seconds this can take would time out the
   // function and tell the user nothing. Every outcome is written to the row, including the
@@ -107,6 +114,16 @@ export async function publishProject(
         liveUrl: result.liveUrl,
         commitSha: result.commitSha,
         failureReason: result.reason,
+      });
+
+      // EV-07. `state` distinguishes live from verifying, which is the difference between
+      // "it worked" and "it is waiting on DNS" — and conflating those would make the
+      // success rate look worse than it is on a slow day, or better than it is on a broken
+      // one, depending on which way somebody guessed.
+      track("EV-07", userId, {
+        state: result.state,
+        republish: siteId !== null,
+        reason: result.reason,
       });
     })
     .catch(async (error: unknown) => {
@@ -138,13 +155,29 @@ export async function publishProject(
             ? error.message
             : String(error);
 
+      const reason = reasonForError(error);
+
+      // The publish runs after the response has gone, so nothing upstream is watching:
+      // withRoute's Sentry boundary only wraps errors thrown *during* a request, and this
+      // promise is detached by design. Until R3 D20 a failed publish left one console line
+      // in a serverless log and nothing else — no Sentry issue, no analytics event — so the
+      // first anybody knew of a bad deploy was a customer saying so.
+      //
+      // Tagged with the reason so failures group by cause rather than by whichever provider
+      // string came back, and with the project so support can find the attempt.
+      captureError(error, {
+        tags: { boundary: "publish", reason },
+        extra: { projectId, deploymentId: attempt.deploymentId },
+      });
+      track("EV-08", userId, { reason, republish: siteId !== null });
+
       console.error("[publish]", projectId, error);
 
       // finish() can itself fail — a dropped connection, a policy change. There is nothing
       // useful left to do at that point except not crash the process the response already
       // left behind.
       await attempt
-        .finish({ state: "failed", error: detail, failureReason: reasonForError(error) })
+        .finish({ state: "failed", error: detail, failureReason: reason })
         .catch(() => undefined);
     });
 
