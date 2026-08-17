@@ -22,7 +22,7 @@ import { PROJECTS_PER_USER } from "@/lib/limits/config";
 // entitlement is — including that a lapsed one is not.
 import { hasPro } from "./entitlements";
 import { TEMPLATES } from "@/lib/templates";
-import { templateRow } from "@/lib/templates/row";
+import { writeLibraryRows } from "@/lib/templates/row";
 import { templateUuid } from "@/lib/templates/template-id";
 import { supabaseAdminOrNull } from "./supabase-admin";
 
@@ -191,7 +191,7 @@ async function ensureLibraryTemplate(
   if (!design) return false;
 
   const writer = supabaseAdminOrNull() ?? supabase;
-  const { error } = await writer.from("templates").upsert(templateRow(design), { onConflict: "id" });
+  const { error } = await writeLibraryRows(writer, [design]);
   if (error) {
     throw new ApiError("internal", "Could not load that design.", error.message);
   }
