@@ -19,6 +19,9 @@ import { applyEditPatch } from '@/lib/editor/apply-patch';
 import { writeCompositionFiles, writeRenderedSite } from '@/lib/editor/sync-site';
 import { sanitise } from '@/lib/ai/sanitise';
 import { sectionVariants } from '@/lib/editor/section-registry';
+import { isSiteGenerationRequest } from '@/lib/editor/site-intent';
+import { generateSiteProposal, generationExplanation } from '@/lib/editor/generate-site';
+import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
 import { debounceTrigger } from '@/lib/debounce';
 import { compareText } from '@/lib/compare';
 import { validateFieldValue } from '@/lib/content/apply-ops';
@@ -92,6 +95,7 @@ interface EditorState {
     chatMessages: ChatTurn[];
     chatBusy: boolean;
     chatError: string | null;
+    chatProgress: string | null;
     projectName: string | null;
     contentSchema: ContentSchema | null;
     content: ContentValues;
@@ -187,6 +191,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     chatMessages: [],
     chatBusy: false,
     chatError: null,
+    chatProgress: null,
     projectName: null,
     contentSchema: null,
     content: {},
@@ -216,6 +221,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             chatMessages: [],
             chatBusy: false,
             chatError: null,
+            chatProgress: null,
             contentError: null,
             contentIssues: {},
             content: {},
@@ -366,9 +372,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     proposeChange: (proposed) => {
         const { vfs } = get();
-        const before = vfs.read(proposed.path);
-
-        if (before === null) return;
+        const before = vfs.read(proposed.path) ?? '';
 
         const compared = compareText(before, proposed.after);
         if (compared.isEmpty) return;
@@ -435,10 +439,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             set({ chatError: 'Write what you would like to change.' });
             return;
         }
-        if (text.length > 300) {
-            set({ chatError: 'Keep the request under 300 characters.' });
-            return;
-        }
         if (pendingChange) {
             set({ chatError: 'Review the current suggestion first.' });
             return;
@@ -447,8 +447,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             set({ chatError: 'This project could not be found.' });
             return;
         }
+
+        const sectionCount = composition?.sections.length ?? 0;
+        if (isSiteGenerationRequest(text, sectionCount)) {
+            if (text.length > MAX_CLASSIFY_CHARS) {
+                set({ chatError: 'Keep the request under 500 characters.' });
+                return;
+            }
+            await requestFullSite(get, set, text);
+            return;
+        }
+
+        if (text.length > 300) {
+            set({ chatError: 'Keep the request under 300 characters.' });
+            return;
+        }
         if (!composition || composition.sections.length === 0) {
-            set({ chatError: 'This page has no sections to change yet.' });
+            set({ chatError: 'Describe the website you want, or pick a section to change.' });
             return;
         }
 
@@ -626,6 +641,62 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         await get().loadHistory();
     },
 }));
+
+/** One-page generation from Ask. The result is a suggestion until Keep. */
+async function requestFullSite(
+    get: () => EditorState,
+    set: (partial: Partial<EditorState>) => void,
+    text: string,
+) {
+    const { projectId, chatMessages, composition } = get();
+    if (!projectId) return;
+
+    set({
+        chatBusy: true,
+        chatError: null,
+        chatProgress: 'Preparing your site…',
+        chatMessages: [...chatMessages, { role: 'user', text }],
+    });
+
+    autosave.cancel();
+    await get().saveProject();
+
+    const { sha } = await createCommit(projectId, 'Saved before generating a site');
+    if (sha) set({ lastCommitSha: sha });
+
+    const { composition: next, error } = await generateSiteProposal(
+        projectId,
+        text,
+        (message) => set({ chatProgress: message }),
+    );
+
+    if (error || !next) {
+        set({
+            chatBusy: false,
+            chatProgress: null,
+            chatError: error ?? 'The site could not be generated.',
+        });
+        return;
+    }
+
+    const replacing = (composition?.sections.length ?? 0) > 0;
+    const explanation = generationExplanation(next, replacing);
+
+    get().proposeChange({
+        path: 'composition.json',
+        after: JSON.stringify(next, null, 2),
+        explanation,
+    });
+
+    set({
+        chatBusy: false,
+        chatProgress: null,
+        chatMessages: [
+            ...get().chatMessages,
+            { role: 'assistant', text: explanation },
+        ],
+    });
+}
 
 /**
  * One content edit, all the way through: validated, held in state, written into the page so

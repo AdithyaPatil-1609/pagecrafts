@@ -5,6 +5,7 @@ import { assemblePreview, injectErrorHook } from '@/lib/preview';
 import { withPreviewCsp } from '@/lib/preview-security';
 import { friendlyPreviewIssue } from '@/lib/editor/preview-copy';
 import { previewDocumentUrl } from '@/lib/editor/preview-frame';
+import { filesForPreview } from '@/lib/editor/preview-files';
 
 const DEBOUNCE_MS = 120;
 
@@ -14,6 +15,7 @@ export default function PreviewPane() {
     const vfs = useEditorStore((s) => s.vfs);
     const dirtyPaths = useEditorStore((s) => s.dirtyPaths);
     const tree = useEditorStore((s) => s.tree);
+    const pendingChange = useEditorStore((s) => s.pendingChange);
 
     const frame = useRef<HTMLIFrameElement>(null);
     const [viewport, setViewport] = useState<Viewport>('full');
@@ -28,7 +30,7 @@ export default function PreviewPane() {
 
     useEffect(() => {
         const t = setTimeout(() => {
-            const r = assemblePreview(vfs.toMap());
+            const r = assemblePreview(filesForPreview(vfs.toMap(), pendingChange));
             const next = withPreviewCsp(injectErrorHook(r.html));
             if (next === last.current) return;
             last.current = next;
@@ -37,7 +39,7 @@ export default function PreviewPane() {
             setDismissed(false);
         }, DEBOUNCE_MS);
         return () => clearTimeout(t);
-    }, [vfs, dirtyPaths, tree]);
+    }, [vfs, dirtyPaths, tree, pendingChange]);
 
     useLayoutEffect(() => {
         const url = previewDocumentUrl(preview.doc);

@@ -1,5 +1,6 @@
 import type { Composition, FileMap, SectionInstance, SectionKey } from '@/lib/contracts';
 import { compositionShell } from '@/lib/render/page-shell';
+import { SITE_NAV_CSS, siteNavHtml } from '@/lib/render/site-chrome';
 
 /**
  * D15 — turn a composition into a file tree the rest of the product already
@@ -62,17 +63,22 @@ function listMarkup(
     }).join('')}</ul>`;
 }
 
-function renderSection(section: SectionInstance, index: number): string {
+function renderSection(section: SectionInstance, index: number, contactId: string | null): string {
     const p = section.props;
     const heading = asString(p.heading);
     const open = `<section id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate style="--i:${index}">`;
     const close = '</section>';
 
-    const inner = renderInner(section.type, p, heading);
+    const inner = renderInner(section.type, p, heading, contactId);
     return `${open}${inner}${close}`;
 }
 
-function renderInner(type: SectionKey, p: Record<string, unknown>, heading: string): string {
+function renderInner(
+    type: SectionKey,
+    p: Record<string, unknown>,
+    heading: string,
+    contactId: string | null,
+): string {
     const h = (tag: 'h1' | 'h2', text: string) =>
         text ? `<${tag}>${escapeHtml(text)}</${tag}>` : '';
 
@@ -82,7 +88,9 @@ function renderInner(type: SectionKey, p: Record<string, unknown>, heading: stri
                 asString(p.eyebrow) ? `<p class="eyebrow">${escapeHtml(asString(p.eyebrow))}</p>` : '',
                 h('h1', asString(p.heading)),
                 asString(p.sub) ? `<p>${escapeHtml(asString(p.sub))}</p>` : '',
-                asString(p.ctaLabel) ? `<a class="cta" href="#contact">${escapeHtml(asString(p.ctaLabel))}</a>` : '',
+                asString(p.ctaLabel)
+                    ? `<a class="cta" href="#${escapeHtml(contactId ?? 'contact')}">${escapeHtml(asString(p.ctaLabel))}</a>`
+                    : '',
                 imageSlot(p.image, asString(p.heading) || 'Hero'),
             ].join('');
         case 'about':
@@ -132,6 +140,7 @@ function renderInner(type: SectionKey, p: Record<string, unknown>, heading: stri
 
 const PAGE_CSS = `
 main { max-width: 72rem; margin: 0 auto; padding-inline: 1.5rem; }
+${SITE_NAV_CSS}
 .eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
 .cta {
   display: inline-block; margin-top: 1rem; padding: 0.7rem 1.2rem;
@@ -155,7 +164,9 @@ ul { padding-left: 1.1rem; }
 /** A generated site as the file tree persistence already stores. */
 export function compositionToFiles(composition: Composition): FileMap {
     const visible = composition.sections.filter((s) => s.visible);
-    const body = `<style>${PAGE_CSS}</style>\n<main>\n${visible.map(renderSection).join('\n')}\n</main>`;
+    const contactId = visible.find((s) => s.type === 'contact')?.id ?? null;
+    const nav = siteNavHtml(composition);
+    const body = `<style>${PAGE_CSS}</style>\n${nav}\n<main>\n${visible.map((section, index) => renderSection(section, index, contactId)).join('\n')}\n</main>`;
 
     return {
         'index.html': compositionShell({

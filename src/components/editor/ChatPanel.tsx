@@ -12,7 +12,9 @@ export default function ChatPanel() {
     const messages = useEditorStore((s) => s.chatMessages);
     const busy = useEditorStore((s) => s.chatBusy);
     const error = useEditorStore((s) => s.chatError);
+    const progress = useEditorStore((s) => s.chatProgress);
     const pendingChange = useEditorStore((s) => s.pendingChange);
+    const hasSections = (composition?.sections.length ?? 0) > 0;
 
     const [draft, setDraft] = useState('');
 
@@ -35,8 +37,9 @@ export default function ChatPanel() {
             <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
                 {messages.length === 0 && !busy ? (
                     <p className="text-xs text-muted-foreground">
-                        Describe a change to the selected section. Nothing is applied until you
-                        keep it.
+                        {hasSections
+                            ? 'Describe a change to the selected section, or ask for a whole new website. Nothing is applied until you keep it.'
+                            : 'Describe the website you want. Nothing is applied until you keep it.'}
                     </p>
                 ) : (
                     <ol className="space-y-3">
@@ -52,7 +55,7 @@ export default function ChatPanel() {
                 )}
                 {busy && (
                     <p role="status" className="mt-3 text-xs text-muted-foreground">
-                        Preparing a suggestion…
+                        {progress || 'Preparing a suggestion…'}
                     </p>
                 )}
                 {error && (
@@ -63,7 +66,7 @@ export default function ChatPanel() {
             </div>
 
             <form onSubmit={onSubmit} className="shrink-0 border-t border-border p-3">
-                {composition && composition.sections.length > 0 ? (
+                {hasSections ? (
                     <label className="mb-2 block text-xs text-muted-foreground">
                         Section
                         <select
@@ -71,7 +74,7 @@ export default function ChatPanel() {
                             onChange={(e) => selectSection(e.target.value)}
                             className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
                         >
-                            {composition.sections.map((section) => (
+                            {composition?.sections.map((section) => (
                                 <option key={section.id} value={section.id}>
                                     {sectionLabel(section.type)}
                                     {section.locked ? ' (locked)' : ''}
@@ -79,19 +82,15 @@ export default function ChatPanel() {
                             ))}
                         </select>
                     </label>
-                ) : (
-                    <p className="mb-2 text-xs text-muted-foreground">
-                        This page has no sections to change yet.
-                    </p>
-                )}
+                ) : null}
 
                 <textarea
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    maxLength={300}
+                    maxLength={500}
                     rows={3}
                     disabled={busy || !!pendingChange}
-                    placeholder="Make the heading shorter"
+                    placeholder="Create a sweet shop website"
                     aria-label="Change request"
                     className="w-full resize-none rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                 />

@@ -185,7 +185,17 @@ describe('editor QA (D16–D20)', () => {
         expect(preview).not.toMatch(/srcDoc/i);
         expect(preview).toContain('previewDocumentUrl');
         expect(preview).toContain('src={frameUrl}');
+        expect(preview).toContain('filesForPreview');
         const helper = readFileSync('src/lib/editor/preview-frame.ts', 'utf8');
         expect(helper).toContain('createObjectURL');
+    });
+
+    it('lets Ask generate a whole site from a prompt', () => {
+        const chat = readFileSync('src/components/editor/ChatPanel.tsx', 'utf8');
+        expect(chat).toContain('Create a sweet shop website');
+        expect(chat).toContain('whole new website');
+        const store = readFileSync('src/lib/editor-store.ts', 'utf8');
+        expect(store).toContain('isSiteGenerationRequest');
+        expect(store).toContain('generateSiteProposal');
     });
 });

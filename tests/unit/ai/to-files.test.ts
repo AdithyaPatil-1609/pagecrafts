@@ -78,6 +78,13 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         expect(html).not.toContain('id="s_hidden"');
     });
 
+    it('adds a nav so in-page links stay on the preview', () => {
+        expect(html).toContain('class="site-nav"');
+        expect(html).toContain('href="#s_01"');
+        expect(html).toContain('href="#s_04"');
+        expect(html).toContain('Smile Dental');
+    });
+
     it('escapes copy so a heading cannot break out of the markup', () => {
         const hostile = compositionToFiles({
             ...composition,

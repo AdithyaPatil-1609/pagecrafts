@@ -1,5 +1,6 @@
 import { SECTION_KEYS, type Composition, type SectionInstance, type SectionKey } from '@/lib/contracts';
 import { compositionShell } from './page-shell';
+import { SITE_NAV_CSS, siteNavHtml } from './site-chrome';
 
 const KNOWN = new Set<string>(SECTION_KEYS);
 
@@ -13,21 +14,22 @@ const KNOWN = new Set<string>(SECTION_KEYS);
 export function compositionToHtml(composition: Composition): string {
     const sections = composition.sections
         .filter((s) => s.visible !== false)
-        .filter((s) => KNOWN.has(s.type))
-        .map((s, i) => renderSection(s, i))
-        .join('\n');
+        .filter((s) => KNOWN.has(s.type));
+    const contactId = sections.find((s) => s.type === 'contact')?.id ?? 'contact';
+    const markup = sections.map((s, i) => renderSection(s, i, contactId)).join('\n');
 
     return compositionShell({
         title: esc(composition.meta.title || composition.vertical),
         description: esc(composition.meta.description || ''),
         lang: esc(composition.meta.lang || 'en'),
         artDirection: composition.artDirection,
-        body: `<style>${LAYOUT_CSS}</style>\n<main>\n${sections}\n</main>`,
+        body: `<style>${LAYOUT_CSS}</style>\n${siteNavHtml(composition)}\n<main>\n${markup}\n</main>`,
     });
 }
 
 const LAYOUT_CSS = `
 main { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; }
+${SITE_NAV_CSS}
 .hero { display: grid; gap: var(--stack-gap); align-items: center; }
 .hero.split-image, .hero.media-split, .about.media-split, .contact.split-map {
   grid-template-columns: 1fr 1fr;
@@ -58,29 +60,32 @@ main { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem; }
 }
 `.replace(/\s+/g, ' ').trim();
 
-function renderSection(section: SectionInstance, index: number): string {
+function renderSection(section: SectionInstance, index: number, contactId: string): string {
     const type = section.type as SectionKey;
     const props = section.props ?? {};
     const cls = `${type} ${escAttr(section.variant)}`;
-    const inner = SECTION_HTML[type](props, section.variant);
-    return `<section class="${cls}" data-section="${escAttr(type)}" data-index="${index}">${inner}</section>`;
+    const inner = type === 'hero'
+        ? heroHtml(props, section.variant, contactId)
+        : SECTION_HTML[type](props, section.variant);
+    return `<section id="${escAttr(section.id)}" class="${cls}" data-section="${escAttr(type)}" data-index="${index}">${inner}</section>`;
 }
 
 type Props = Record<string, unknown>;
 
-const SECTION_HTML: Record<SectionKey, (p: Props, variant: string) => string> = {
-    hero: (p, variant) => {
-        const copy = [
-            p.eyebrow ? `<p class="kicker">${esc(str(p.eyebrow))}</p>` : '',
-            heading(p.heading, 'h1'),
-            p.sub ? `<p>${esc(str(p.sub))}</p>` : '',
-            p.ctaLabel ? `<a class="cta" href="#contact">${esc(str(p.ctaLabel))}</a>` : '',
-        ].join('');
-        const pic = figure(p.image);
-        if (variant === 'split-image') return `<div>${copy}</div>${pic}`;
-        if (variant === 'image-bg') return `${pic}${copy}`;
-        return copy + pic;
-    },
+function heroHtml(p: Props, variant: string, contactId: string): string {
+    const copy = [
+        p.eyebrow ? `<p class="kicker">${esc(str(p.eyebrow))}</p>` : '',
+        heading(p.heading, 'h1'),
+        p.sub ? `<p>${esc(str(p.sub))}</p>` : '',
+        p.ctaLabel ? `<a class="cta" href="#${escAttr(contactId)}">${esc(str(p.ctaLabel))}</a>` : '',
+    ].join('');
+    const pic = figure(p.image);
+    if (variant === 'split-image') return `<div>${copy}</div>${pic}`;
+    if (variant === 'image-bg') return `${pic}${copy}`;
+    return copy + pic;
+}
+
+const SECTION_HTML: Record<Exclude<SectionKey, 'hero'>, (p: Props, variant: string) => string> = {
     about: (p, variant) => {
         const copy = heading(p.heading) + (p.body ? `<p>${esc(str(p.body))}</p>` : '');
         return variant === 'media-split' ? `<div>${copy}</div>${figure(p.image)}` : copy + figure(p.image);

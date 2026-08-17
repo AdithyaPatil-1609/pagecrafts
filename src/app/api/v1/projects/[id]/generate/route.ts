@@ -11,6 +11,7 @@ import { persistLedger } from '@/lib/ai/cost/persist';
 import { guardAiRequest } from '@/lib/limits/ai-guard';
 import { TEMPLATES } from '@/lib/templates';
 import { putProjectFile } from '@/lib/data/project-files';
+import { compositionToFiles } from '@/lib/ai/generate/to-files';
 import { recordGenerationUse } from '@/lib/ai/jobs/counters';
 import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
 import { setProfileStore } from '@/lib/ai/profile-cache';
@@ -22,7 +23,10 @@ export const dynamic = 'force-dynamic';
 
 type Params = { id: string };
 
-const schema = z.object({ prompt: z.string().min(1).max(MAX_CLASSIFY_CHARS) });
+const schema = z.object({
+    prompt: z.string().min(1).max(MAX_CLASSIFY_CHARS),
+    persist: z.boolean().optional(),
+});
 
 // POST /api/v1/projects/{id}/generate — 202 with a job id; the work runs after.
 export const POST = withRoute<z.infer<typeof schema>, Params>({
@@ -67,22 +71,28 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                     projectId: params.id,
                     prompt: body.prompt,
                 }, rows),
-                persistComposition: async (composition) => {
-                    if (typeof supabase.from !== 'function') return;
-                    try {
-                        await putProjectFile(
-                            supabase,
-                            params.id,
-                            'composition.json',
-                            JSON.stringify(composition, null, 2),
-                        );
-                    } catch (err) {
-                        console.warn(
-                            '[generate] persist composition',
-                            err instanceof Error ? err.message : err,
-                        );
-                    }
-                },
+                persistComposition: body.persist === false
+                    ? undefined
+                    : async (composition) => {
+                        if (typeof supabase.from !== 'function') return;
+                        try {
+                            await putProjectFile(
+                                supabase,
+                                params.id,
+                                'composition.json',
+                                JSON.stringify(composition, null, 2),
+                            );
+                            const html = compositionToFiles(composition)['index.html'];
+                            if (html) {
+                                await putProjectFile(supabase, params.id, 'index.html', html);
+                            }
+                        } catch (err) {
+                            console.warn(
+                                '[generate] persist composition',
+                                err instanceof Error ? err.message : err,
+                            );
+                        }
+                    },
                 release: guard.release,
                 onSettled: (settled) => {
                     const elapsed = (settled.endedAt ?? Date.now()) - settled.startedAt;
