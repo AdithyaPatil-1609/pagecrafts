@@ -23,6 +23,10 @@ import { failureMessage, toFailureReason } from "@/lib/deploy/failure";
 // Shared with the publish gate (R3 D9), so fork and publish agree about what a live
 // entitlement is — including that a lapsed one is not.
 import { hasPro } from "./entitlements";
+import { TEMPLATES } from "@/lib/templates";
+import { writeLibraryRows } from "@/lib/templates/row";
+import { templateUuid } from "@/lib/templates/template-id";
+import { supabaseAdminOrNull } from "./supabase-admin";
 
 const DETAIL_COLUMNS =
   "id, name, source_template_id, content_json, content_schema, site_meta, form_endpoint, updated_at, " +
@@ -190,6 +194,36 @@ async function assertUnderQuota(
   }
 }
 
+/**
+ * The gallery is the in-memory library; fork is a foreign key into `templates`.
+ * If the library has the design and the table does not, write the row first so
+ * "Use this design" does not fail with a broken FK (and `internal`).
+ *
+ * Writes go through the service role when it is available — authenticated users
+ * can only read the catalogue. Tests without env fall back to the caller client.
+ */
+async function ensureLibraryTemplate(
+  supabase: SupabaseClient,
+  sourceTemplateId: string,
+): Promise<boolean> {
+  const { data: existing } = await supabase
+    .from("templates")
+    .select("id")
+    .eq("id", sourceTemplateId)
+    .maybeSingle();
+  if (existing) return true;
+
+  const design = TEMPLATES.find((template) => templateUuid(template.id) === sourceTemplateId);
+  if (!design) return false;
+
+  const writer = supabaseAdminOrNull() ?? supabase;
+  const { error } = await writeLibraryRows(writer, [design]);
+  if (error) {
+    throw new ApiError("internal", "Could not load that design.", error.message);
+  }
+  return true;
+}
+
 // Fork a template (R3 D8).
 //
 // A person picks a design and expects to land in the editor looking at it. That means the
@@ -209,6 +243,13 @@ export async function createProject(
   // database and the route only has the caller's word for anything (R3 D8).
   const pro = await hasPro(supabase, userId);
   await assertUnderQuota(supabase, userId, pro);
+
+  if (req.sourceTemplateId) {
+    const inLibrary = await ensureLibraryTemplate(supabase, req.sourceTemplateId);
+    if (!inLibrary) {
+      throw new ApiError("not_found", "That design does not exist.");
+    }
+  }
 
   const { data, error } = await supabase
     .from("projects")

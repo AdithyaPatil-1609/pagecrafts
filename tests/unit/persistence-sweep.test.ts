@@ -66,30 +66,20 @@ describe("touching a project has something to set", () => {
 // `internal` is a promise that the fault was ours and a retry might work. Saying it about a
 // bad request sends the caller to wait for a fix that is never coming.
 describe("a bad request is not reported as our failure", () => {
-    it("a template that no longer exists is validation_failed, not internal", async () => {
-        // The insert is what fails; the reads before it must not. createProject counts the
-        // caller's existing sites first (the R3 D8 quota gate), and a fake that failed every
-        // projects operation alike would stop at the count and never reach the case this
-        // test is about.
+    it("a template that no longer exists is not_found, not internal", async () => {
+        // The gallery can only fork a library design. An id that is not in the library
+        // (and not in the table) is a missing design, not a broken server.
         const fake = fakeSupabase({
             entitlements: () => ({ data: [], error: null }),
-            projects: (query) =>
-                query.op === "insert"
-                    ? {
-                          data: null,
-                          error: {
-                              message:
-                                  'insert violates foreign key constraint "projects_source_template_id_fkey"',
-                          },
-                      }
-                    : { data: [], error: null },
+            templates: () => ({ data: null, error: null }),
+            projects: () => ({ data: [], error: null }),
         });
 
         await expect(
             createProject(fake.client, "u1", { name: "New site", sourceTemplateId: "missing" }),
         ).rejects.toMatchObject({
-            code: "validation_failed",
-            message: "That design is not available any more.",
+            code: "not_found",
+            message: "That design does not exist.",
         });
     });
 

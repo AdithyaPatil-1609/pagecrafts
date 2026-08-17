@@ -130,6 +130,19 @@ describe("a forked project", () => {
 
         expect(db.rows("projects")).toHaveLength(0);
     });
+
+    it("loads a library design that is not yet in the table", async () => {
+        const db = createFakeDb({ users: [{ id: "u1" }] });
+
+        const result = await createProject(db.asUser("u1"), "u1", {
+            name: DESIGN.name,
+            sourceTemplateId: templateUuid(DESIGN.id),
+        });
+
+        expect(result.id).toBeTruthy();
+        expect(db.rows("templates").some((row) => row.id === templateUuid(DESIGN.id))).toBe(true);
+        expect(db.rows("project_files").some((f) => f.project_id === result.id)).toBe(true);
+    });
 });
 
 // Doc 22 P2/P3 — a premium or signature design is paid for once, before the fork runs.

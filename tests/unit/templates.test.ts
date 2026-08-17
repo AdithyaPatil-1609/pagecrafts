@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TEMPLATES, validateTemplate } from "@/lib/templates";
+import { isCategoryEnumError, templateRow, writeLibraryRows } from "@/lib/templates/row";
 
 // A representative free design from the registry, used to exercise the provenance and
 // pricing checks. Portfolio is the free, first-class entry the library has always shipped.
@@ -108,5 +109,49 @@ describe("slot / schema parity", () => {
         expect(slots, `${template.id}: field "${path}" has no slot`).toContain(path);
       }
     }
+  });
+});
+
+describe("the row the seed writes", () => {
+  it("uses a null thumbnail until a real https image exists", () => {
+    for (const template of TEMPLATES) {
+      const row = templateRow(template);
+      expect(
+        row.thumbnail_url === null || /^https:\/\//.test(row.thumbnail_url),
+        `${template.id}: thumbnail_url must be https or null, got ${row.thumbnail_url}`,
+      ).toBe(true);
+    }
+  });
+
+  it("recognises a missing category enum value", () => {
+    expect(
+      isCategoryEnumError('invalid input value for enum template_category: "hospitality"'),
+    ).toBe(true);
+    expect(isCategoryEnumError("duplicate key value")).toBe(false);
+  });
+
+  it("stores a design as other when the database does not know its category", async () => {
+    const hospitality = TEMPLATES.find((t) => t.category === "hospitality")!;
+    const written: { category: string }[] = [];
+    const supabase = {
+      from: () => ({
+        upsert: async (row: object | object[]) => {
+          const payload = (Array.isArray(row) ? row[0]! : row) as { category: string };
+          if (payload.category === "hospitality") {
+            return {
+              error: { message: 'invalid input value for enum template_category: "hospitality"' },
+            };
+          }
+          written.push(payload);
+          return { error: null };
+        },
+      }),
+    };
+
+    const result = await writeLibraryRows(supabase, [hospitality]);
+
+    expect(result.error).toBeNull();
+    expect(result.usedOther).toEqual([hospitality.id]);
+    expect(written.at(-1)?.category).toBe("other");
   });
 });

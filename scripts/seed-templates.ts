@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { TEMPLATES } from "../src/lib/templates";
-import { templateUuid } from "../src/lib/templates/template-id";
+import { templateRow, writeLibraryRows } from "../src/lib/templates/row";
+
+export { templateRow };
 
 // Load the design library into the `templates` table (R3 D8).
 //
@@ -33,53 +35,41 @@ function requireEnv(): { url: string; key: string } {
     return { url: URL, key: SERVICE_ROLE };
 }
 
-/** The row shape `templates` expects, built from a library design. */
-export function templateRow(template: (typeof TEMPLATES)[number]) {
-    return {
-        id: templateUuid(template.id),
-        name: template.name,
-        description: template.description,
-        category: template.category,
-        tags: template.tags,
-        thumbnail_url: template.thumbnailUrl,
-        files: template.files,
-        content_schema: template.contentSchema,
-        license: template.license,
-        source_url: template.sourceUrl,
-        // What the design costs, so the fork check can read it from the row rather than
-        // trusting whoever is asking (R3 D8).
-        tier: template.tier,
-    };
-}
-
 async function main(): Promise<void> {
     const { url, key } = requireEnv();
     const supabase = createClient(url, key, {
         auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const rows = TEMPLATES.map(templateRow);
-
-    // In batches: the whole library is a few megabytes of markup, and one statement carrying
-    // all of it is the kind of request a connection drops halfway through.
+    const rows = TEMPLATES.map((template) => templateRow(template));
     const BATCH = 20;
     let written = 0;
+    const usedOther: string[] = [];
 
-    for (let i = 0; i < rows.length; i += BATCH) {
-        const batch = rows.slice(i, i + BATCH);
-        const { error } = await supabase.from("templates").upsert(batch, { onConflict: "id" });
+    for (let i = 0; i < TEMPLATES.length; i += BATCH) {
+        const batch = TEMPLATES.slice(i, i + BATCH);
+        const result = await writeLibraryRows(supabase, batch);
 
-        if (error) {
-            console.error(`Failed on designs ${i + 1}-${i + batch.length}: ${error.message}`);
+        if (result.error) {
+            console.error(`Failed on designs ${i + 1}-${i + batch.length}: ${result.error.message}`);
             process.exit(1);
         }
 
+        usedOther.push(...result.usedOther);
         written += batch.length;
-        console.log(`  seeded ${written}/${rows.length}`);
+        console.log(`  seeded ${written}/${TEMPLATES.length}`);
     }
 
     console.log(`\nDone. ${written} designs are in the templates table.`);
     console.log(`First: ${rows[0]?.name} -> ${rows[0]?.id}`);
+    if (usedOther.length > 0) {
+        console.log(
+            `\n${usedOther.length} designs were stored as category "other" because this database is missing newer category values.`,
+        );
+        console.log(
+            "That does not block the editor. Paste supabase/migrations/20260817140000_template_categories_library.sql into the Supabase SQL editor, then run npm run templates:seed again if you want the real buckets.",
+        );
+    }
 }
 
 // Guarded so the row builder above can be imported by tests without running the seed.
