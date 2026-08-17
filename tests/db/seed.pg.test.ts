@@ -3,6 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { asUser, buildStack } from "../../scripts/db/stack";
 import { CATEGORY_IDS } from "@/lib/contracts";
+import { TEMPLATES } from "@/lib/templates";
+import { templateRow } from "@/lib/templates/row";
 
 // The seed, against the schema twenty-one migrations later (R3 D19).
 //
@@ -31,6 +33,11 @@ afterAll(async () => {
 
 async function rows<T>(sql: string): Promise<T[]> {
     return (await db.query<T>(sql)).rows;
+}
+
+/** A Postgres error's first line — the constraint name, without the DETAIL/HINT tail. */
+function firstLine(error: unknown): string {
+    return String(error instanceof Error ? error.message : error).split("\n")[0]!;
 }
 
 describe("the people the seed creates", () => {
@@ -223,5 +230,54 @@ describe("what twenty-one migrations left behind", () => {
             "select count(*)::int as n from public.templates",
         );
         expect(templates!.n).toBeGreaterThan(0);
+    });
+});
+
+describe("the whole library, written the way the app writes it", () => {
+    it("upserts all 115 designs without a constraint refusing one", async () => {
+        // The unit test on templateRow checks the shape it produces. This checks Postgres
+        // agrees, which is a different question and the one that actually broke: R2 D18
+        // rendered the thumbnails and made thumbnailUrlFor() return `/templates/<id>.webp`,
+        // and templates.thumbnail_url has a CHECK of `null or ~ '^https://'`. Every one of
+        // the 115 rows would have been refused on a real database. Only a test that lets
+        // Postgres judge the values can notice that.
+        const inserted: string[] = [];
+        const refused: string[] = [];
+
+        for (const template of TEMPLATES) {
+            const row = templateRow(template);
+            try {
+                await db.query(
+                    `insert into public.templates
+                       (id, name, description, category, tags, thumbnail_url, files,
+                        content_schema, license, source_url, tier)
+                     values ($1,$2,$3,$4::public.template_category,$5,$6,$7,$8,$9,$10,
+                             $11::public.template_tier)
+                     on conflict (id) do update set thumbnail_url = excluded.thumbnail_url`,
+                    [
+                        row.id, row.name, row.description, row.category, row.tags,
+                        row.thumbnail_url, JSON.stringify(row.files),
+                        JSON.stringify(row.content_schema), row.license, row.source_url,
+                        row.tier,
+                    ],
+                );
+                inserted.push(template.id);
+            } catch (error) {
+                refused.push(`${template.id}: ${firstLine(error)}`);
+            }
+        }
+
+        expect(refused.slice(0, 5)).toEqual([]);
+        expect(inserted).toHaveLength(TEMPLATES.length);
+    }, 60_000);
+
+    it("still refuses a relative thumbnail, so the seam is doing something", async () => {
+        // The negative control. If this ever passes, the column has stopped guarding and
+        // absoluteOnly() in lib/templates/row.ts is no longer protecting anything.
+        await expect(
+            db.query("update public.templates set thumbnail_url = $1 where true", [
+                "/templates/gym.webp",
+            ]),
+        ).rejects.toThrow(/templates_thumbnail_url_check/);
     });
 });
