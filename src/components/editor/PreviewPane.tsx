@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
 import { withPreviewCsp } from '@/lib/preview-security';
@@ -21,7 +21,6 @@ export default function PreviewPane() {
         const r = assemblePreview(vfs.toMap());
         return { doc: withPreviewCsp(injectErrorHook(r.html)), warnings: r.warnings };
     });
-    const [frameUrl, setFrameUrl] = useState<string | null>(null);
     const [runtimeError, setRuntimeError] = useState<string | null>(null);
     const [dismissed, setDismissed] = useState(false);
     const last = useRef(preview.doc);
@@ -39,13 +38,23 @@ export default function PreviewPane() {
         return () => clearTimeout(t);
     }, [vfs, dirtyPaths, tree]);
 
-    useLayoutEffect(() => {
-        const url = previewDocumentUrl(preview.doc);
-        setFrameUrl(url);
+    // Derived during render, not written into state from an effect.
+    //
+    // This was a useLayoutEffect that called setFrameUrl, which React's lint rule flags as
+    // an error: setting state synchronously inside an effect renders the component, then
+    // immediately renders it again with the new state. Every keystroke in the editor paid
+    // for two renders of the preview pane and the frame flashed empty on the first of them.
+    //
+    // The blob still has to be revoked, so that stays in an effect — a cleanup, which is
+    // what effects are for. Keyed on the url so the previous one is released the moment a
+    // new document replaces it rather than only on unmount.
+    const frameUrl = useMemo(() => previewDocumentUrl(preview.doc), [preview.doc]);
+
+    useEffect(() => {
         return () => {
-            if (url) URL.revokeObjectURL(url);
+            if (frameUrl) URL.revokeObjectURL(frameUrl);
         };
-    }, [preview.doc]);
+    }, [frameUrl]);
 
     useEffect(() => {
         function onMessage(e: MessageEvent) {
