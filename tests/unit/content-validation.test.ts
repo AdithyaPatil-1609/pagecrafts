@@ -46,7 +46,10 @@ describe("every FieldType says yes or why not", () => {
     it("takes an asset id or null for an image, and nothing else", () => {
         expect(validateFieldValue(PHOTO, "https://cdn.example.test/a.png")).toBeNull();
         expect(validateFieldValue(PHOTO, null)).toBeNull();
-        expect(validateFieldValue(PHOTO, 42)).toContain("asset id");
+        // Asserts it is refused and that the refusal is worth reading, not that it uses
+        // the words "asset id" — that phrasing was jargon, and the copy audit caught it at
+        // R3 D20 once its surfaces widened to the whole of src/lib.
+        expect(validateFieldValue(PHOTO, 42)).toMatch(/photo/i);
     });
 
     it("checks each cell of a list against its own field, cap included", () => {

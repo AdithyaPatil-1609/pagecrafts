@@ -18,13 +18,25 @@ import { describe, expect, it } from "vitest";
 // Run over the source rather than over a list of strings somebody maintains, because the
 // point is to catch the next one — a copy rule nobody can break by accident is a copy rule.
 
-const SURFACES = [
-    "src/components",
-    "src/app",
-    "src/lib/api/messages.ts",
-    "src/lib/auth/landing-errors.ts",
-    "src/lib/deploy/failure.ts",
-    "src/lib/discovery",
+// Everywhere a sentence can reach a person. `src/lib` in whole rather than a hand-kept
+// list of files inside it — the D19 version named six modules and missed
+// `lib/errors/respond.ts` and `lib/kernel/with-route.ts`, which between them produce the
+// most-read sentence in the product: every unhandled 500, from every route. Both still
+// said "Something went wrong on our side." while the audit reported the phrase eliminated
+// (found at R3 D20). A curated list of surfaces is the same mistake as a curated list of
+// routes, and it failed the same way.
+const SURFACES = ["src/components", "src/app", "src/lib"];
+
+// Inside src/lib, the parts that talk to machines rather than to people: prompts sent to a
+// model, log lines, provider adapters. Listed rather than pattern-matched, so adding one is
+// a decision.
+const NOT_READ_BY_A_PERSON = [
+    "src/lib/ai/",           // prompts, gateway plumbing, eval harness
+    "src/lib/observability/", // log and telemetry text
+    "src/lib/deploy/log.ts",
+    "src/lib/deploy/adapters/",
+    "src/lib/preview-security.ts", // CSP header text
+    "src/lib/api-stubs/",
 ];
 
 // The whole tree, for the encoding sweep — a mangled byte is a defect wherever it is, and
@@ -143,6 +155,7 @@ describe("customer-facing copy says something (UI Spec §7.18)", () => {
             // Route handlers answer machines as well as people; their messages are checked
             // by the contract tests against the documented envelope.
             if (file.includes("/api/") || file.includes("/styleguide")) continue;
+            if (NOT_READ_BY_A_PERSON.some((prefix) => file.startsWith(prefix))) continue;
 
             const text = withoutComments(readFileSync(join(process.cwd(), file), "utf8"));
 

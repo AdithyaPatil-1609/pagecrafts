@@ -199,9 +199,74 @@ restoring nothing. And there is no `price_inr` column at all, deliberately: the 
 stores the tier so the fork gate can enforce it, and the price is a business rule the app
 owns.
 
-### D20 · Launch support
+### D20 · Launch support — **done, with a correction to the premise**
 - Watch the publish funnel and Sentry; triage without shipping.
 - Keep a live note of anything that fails in the wild, for R4.
+
+**There was nothing to watch.** The event catalogue held five events — landing, sign-in,
+generate — and not one for publish: the funnel that takes money, and the one the whole of
+week 4 was about. Three of those five (`landing_viewed`, `signin_started`,
+`signin_completed`) are defined and never fired by anything, so the catalogue was
+two-fifths real.
+
+**A failed publish reached nothing at all.** The provider work runs after the response as a
+detached promise — that is deliberate, a publish takes ninety seconds and no request should
+be held open for it — but it means `withRoute`'s Sentry boundary never sees the failure,
+because that only wraps errors thrown *during* a request. The catch wrote one `console.error`
+and stopped. No Sentry issue, no event. On launch day the first anybody would have known of
+a bad deploy was a customer saying so, and "watch the funnel and Sentry" would have been an
+afternoon looking at a blank wall and concluding all was well.
+
+`publish_started`, `publish_completed` and `publish_failed` now exist and fire, and a failed
+publish goes to Sentry tagged `boundary: publish` and `reason: <the reason>`, carrying the
+project and deployment ids so support can find the attempt. The reason is D18's closed set,
+so the number on a dashboard and the sentence the owner read are the same value and cannot
+drift. `publish_completed` reports `state`, because `verifying` is not a failure and
+conflating the two would make a slow DNS day read as an outage.
+
+`tests/contract/publish-observability.test.ts` holds it, including that the events carry no
+site name, address, filename or markup — the analytics module already refuses a suspicious
+property *name*, and this is the other half, the values. Verified by removing the
+`captureError` call and watching two tests go red.
+
+**And the copy audit had a hole in the same shape as the route audit's.** `lib/errors/respond.ts`
+and `lib/kernel/with-route.ts` both still answered "Something went wrong on our side." — the
+phrase D19 removed from six places — because that audit's `SURFACES` list named components,
+pages and six specific modules. These two produce the most-read sentence in the product:
+every unhandled 500, from every route. A curated list of surfaces failed exactly the way a
+curated list of routes did. It is `src/lib` in whole now, with a written exemption list for
+the parts that talk to machines.
+
+`docs/publish-launch-support.md` is the runbook: what to check before believing the
+dashboard, what each failure reason means and what to do about it, how to find one person's
+publish, two behaviours that look like bugs and are not, and an honest list of what is still
+uninstrumented. The live note the plan asks for is the last section of it.
+
+## Handing over to R4
+
+The three things most worth doing first, in order.
+
+1. **Nothing renders the failure.** `ProjectSummary` carries
+   `failure: { reason, what, next, retryable }`, documented and tested, and `src/app` has no
+   project list to show it on. V-7 is data and no further. Whoever owns the app shell owes
+   the page; this track owes it nothing more.
+2. **Turn the telemetry on.** PostHog and Sentry are both keyed off environment variables
+   that are unset here, and both fail silent. An unset key looks exactly like a healthy
+   product. `docs/publish-launch-support.md` opens with this for a reason.
+3. **CI has no Upstash credential**, so `e2e/cross-user.spec.ts` and every signed-in
+   walk-through skip themselves on every run. The contract tests cover the same ground
+   in-process, but nothing exercises those routes over HTTP as a signed-in person.
+
+Smaller, and written down so they are not rediscovered:
+
+- Three of the eight analytics events — `landing_viewed`, `signin_started`,
+  `signin_completed` — are defined and fired by nothing. The funnel *into* publish is
+  uninstrumented, so "how many people who arrived reached publish" has no answer.
+- The seeded commits pre-date snapshots, so the restore path cannot be walked on a fresh
+  database without making a commit first.
+- The editor's content panel is outside the axe sweep, for the same missing credential.
+- One full-suite run in four or five fails on a timeout when module import crosses ~140s.
+  Not logic; it will resurface on a slower CI box.
 
 ## Carried in, still open
 
