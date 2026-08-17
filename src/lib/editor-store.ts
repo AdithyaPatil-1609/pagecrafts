@@ -48,6 +48,7 @@ import type {
     TreeNode,
 } from '@/lib/contracts';
 import { parseStoredComposition } from '@/lib/ai/composition/migrate';
+import { asContentSchema } from '@/lib/content/schema';
 
 const vfs = new VFS();
 const AUTOSAVE_DELAY_MS = 1500;
@@ -248,7 +249,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         vfs.reset();
         vfs.seed(files);
 
-        const schema = detail?.contentSchema ?? null;
+        const schema = detail ? asContentSchema(detail.contentSchema) : null;
         const entry = entryPath(vfs);
         const html = entry ? vfs.read(entry) : null;
 

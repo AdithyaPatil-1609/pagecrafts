@@ -11,6 +11,7 @@ import type {
     ProjectDetail,
     SiteMeta,
 } from '@/lib/contracts';
+import { asContentSchema } from '@/lib/content/schema';
 
 // The content panel's data access (R2 D8), kept out of the component for the same reason
 // project-source.ts is: the panel should be about controls and layout, and swapping the
@@ -40,7 +41,7 @@ export async function loadProjectContent(projectId: string): Promise<ProjectCont
     }
 
     return {
-        schema: data.contentSchema ?? { sections: [] },
+        schema: asContentSchema(data.contentSchema),
         content: data.contentJson ?? {},
         siteMeta: data.siteMeta ?? {},
         error: null,
