@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TEMPLATES, validateTemplate } from "@/lib/templates";
+import { templateRow } from "@/lib/templates/row";
 
 // A representative free design from the registry, used to exercise the provenance and
 // pricing checks. Portfolio is the free, first-class entry the library has always shipped.
@@ -107,6 +108,18 @@ describe("slot / schema parity", () => {
       for (const path of fieldPaths(template)) {
         expect(slots, `${template.id}: field "${path}" has no slot`).toContain(path);
       }
+    }
+  });
+});
+
+describe("the row the seed writes", () => {
+  it("uses a null thumbnail until a real https image exists", () => {
+    for (const template of TEMPLATES) {
+      const row = templateRow(template);
+      expect(
+        row.thumbnail_url === null || /^https:\/\//.test(row.thumbnail_url),
+        `${template.id}: thumbnail_url must be https or null, got ${row.thumbnail_url}`,
+      ).toBe(true);
     }
   });
 });

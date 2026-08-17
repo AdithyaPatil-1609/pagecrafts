@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
 import { TEMPLATES } from "../src/lib/templates";
-import { templateUuid } from "../src/lib/templates/template-id";
+import { templateRow } from "../src/lib/templates/row";
+
+export { templateRow };
 
 // Load the design library into the `templates` table (R3 D8).
 //
@@ -31,25 +33,6 @@ function requireEnv(): { url: string; key: string } {
         process.exit(1);
     }
     return { url: URL, key: SERVICE_ROLE };
-}
-
-/** The row shape `templates` expects, built from a library design. */
-export function templateRow(template: (typeof TEMPLATES)[number]) {
-    return {
-        id: templateUuid(template.id),
-        name: template.name,
-        description: template.description,
-        category: template.category,
-        tags: template.tags,
-        thumbnail_url: template.thumbnailUrl,
-        files: template.files,
-        content_schema: template.contentSchema,
-        license: template.license,
-        source_url: template.sourceUrl,
-        // What the design costs, so the fork check can read it from the row rather than
-        // trusting whoever is asking (R3 D8).
-        tier: template.tier,
-    };
 }
 
 async function main(): Promise<void> {
