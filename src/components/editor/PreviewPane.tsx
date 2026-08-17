@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
 import { withPreviewCsp } from '@/lib/preview-security';
 import { friendlyPreviewIssue } from '@/lib/editor/preview-copy';
+import { previewDocumentUrl } from '@/lib/editor/preview-frame';
 
 const DEBOUNCE_MS = 120;
 
@@ -20,6 +21,7 @@ export default function PreviewPane() {
         const r = assemblePreview(vfs.toMap());
         return { doc: withPreviewCsp(injectErrorHook(r.html)), warnings: r.warnings };
     });
+    const [frameUrl, setFrameUrl] = useState<string | null>(null);
     const [runtimeError, setRuntimeError] = useState<string | null>(null);
     const [dismissed, setDismissed] = useState(false);
     const last = useRef(preview.doc);
@@ -36,6 +38,14 @@ export default function PreviewPane() {
         }, DEBOUNCE_MS);
         return () => clearTimeout(t);
     }, [vfs, dirtyPaths, tree]);
+
+    useLayoutEffect(() => {
+        const url = previewDocumentUrl(preview.doc);
+        setFrameUrl(url);
+        return () => {
+            if (url) URL.revokeObjectURL(url);
+        };
+    }, [preview.doc]);
 
     useEffect(() => {
         function onMessage(e: MessageEvent) {
@@ -92,7 +102,7 @@ export default function PreviewPane() {
                             : 'relative h-full min-h-[320px] w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm'
                     }
                 >
-                    {empty ? (
+                    {empty || !frameUrl ? (
                         <div className="flex h-full items-center justify-center p-6">
                             <p className="max-w-xs text-center text-sm text-neutral-600">
                                 Your site will show up here as you edit.
@@ -103,7 +113,7 @@ export default function PreviewPane() {
                             ref={frame}
                             title="Your site"
                             sandbox="allow-scripts"
-                            srcDoc={preview.doc}
+                            src={frameUrl}
                             className="absolute inset-0 h-full w-full border-0 bg-white"
                         />
                     )}

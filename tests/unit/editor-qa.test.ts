@@ -179,4 +179,13 @@ describe('editor QA (D16–D20)', () => {
         expect(preview).toContain('Your site');
         expect(preview).toContain('Phone');
     });
+
+    it('loads Your site from a blob URL instead of srcDoc', () => {
+        const preview = readFileSync('src/components/editor/PreviewPane.tsx', 'utf8');
+        expect(preview).not.toMatch(/srcDoc/i);
+        expect(preview).toContain('previewDocumentUrl');
+        expect(preview).toContain('src={frameUrl}');
+        const helper = readFileSync('src/lib/editor/preview-frame.ts', 'utf8');
+        expect(helper).toContain('createObjectURL');
+    });
 });
