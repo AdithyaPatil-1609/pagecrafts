@@ -18,6 +18,8 @@ export interface Query {
     op: "select" | "insert" | "update" | "upsert" | "delete";
     filters: Record<string, unknown>;
     payload?: unknown;
+    /** Columns requested on select, when the handler named them. */
+    select?: string;
     /** How the caller finished the chain — `many` is a bare await. */
     shape: "single" | "maybeSingle" | "many";
 }
@@ -111,7 +113,7 @@ export function fakeSupabase(
         // Every builder method returns the builder; only the finishers resolve. The real
         // client is thenable, so a bare `await` has to work too.
         const builder: Record<string, unknown> = {
-            select: () => builder,
+            select: (columns?: string) => ((query.select = columns), builder),
             insert: (payload: unknown) => ((query.op = "insert"), (query.payload = payload), builder),
             update: (payload: unknown) => ((query.op = "update"), (query.payload = payload), builder),
             upsert: (payload: unknown) => ((query.op = "upsert"), (query.payload = payload), builder),

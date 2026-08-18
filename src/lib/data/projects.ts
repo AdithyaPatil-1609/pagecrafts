@@ -18,6 +18,7 @@ import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
 import { contentFromFiles } from "@/lib/content/from-files";
+import { asContentSchema } from "@/lib/content/schema";
 import { PROJECTS_PER_USER } from "@/lib/limits/config";
 import { failureMessage, toFailureReason } from "@/lib/deploy/failure";
 // Shared with the publish gate (R3 D9), so fork and publish agree about what a live
@@ -28,12 +29,11 @@ import { writeLibraryRows } from "@/lib/templates/row";
 import { templateUuid } from "@/lib/templates/template-id";
 import { supabaseAdminOrNull } from "./supabase-admin";
 
-const DETAIL_COLUMNS =
-  "id, name, source_template_id, content_json, content_schema, site_meta, form_endpoint, updated_at, " +
-  "deployments(status, live_url, failure_reason, created_at)";
-
-const SUMMARY_COLUMNS =
-  "id, name, updated_at, deployments(status, live_url, failure_reason, created_at)";
+const PROJECT_COLUMNS =
+  "id, name, source_template_id, content_json, content_schema, site_meta, form_endpoint, updated_at";
+const DETAIL_COLUMNS = `${PROJECT_COLUMNS}, deployments(status, live_url, created_at)`;
+const SUMMARY_COLUMNS = "id, name, updated_at, deployments(status, live_url, created_at)";
+const SUMMARY_COLUMNS_PLAIN = "id, name, updated_at";
 
 interface DeploymentRow {
   status: DeploymentState;
@@ -103,7 +103,7 @@ function rowToDetail(row: ProjectRow): ProjectDetail {
     updatedAt: row.updated_at,
     sourceTemplateId: row.source_template_id,
     contentJson: row.content_json ?? {},
-    contentSchema: row.content_schema ?? { sections: [] },
+    contentSchema: asContentSchema(row.content_schema),
     siteMeta: row.site_meta ?? {},
     formEndpoint: row.form_endpoint,
   };
@@ -114,11 +114,19 @@ export async function listProjects(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<ProjectSummary[]> {
-  const { data, error } = await supabase
+  const first = await supabase
     .from("projects")
     .select(SUMMARY_COLUMNS)
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
+
+  const { data, error } = first.error
+    ? await supabase
+        .from("projects")
+        .select(SUMMARY_COLUMNS_PLAIN)
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+    : first;
 
   if (error) {
     throw new ApiError("internal", "Could not list your sites.", error.message);
@@ -143,11 +151,21 @@ export async function getProject(
   supabase: SupabaseClient,
   projectId: string,
 ): Promise<ProjectDetail> {
-  const { data, error } = await supabase
+  const first = await supabase
     .from("projects")
     .select(DETAIL_COLUMNS)
     .eq("id", projectId)
     .maybeSingle();
+
+  // The deployments embed is optional status. If PostgREST cannot resolve the
+  // relationship (schema cache, missing grant), still open the editor from the row.
+  const { data, error } = first.error
+    ? await supabase
+        .from("projects")
+        .select(PROJECT_COLUMNS)
+        .eq("id", projectId)
+        .maybeSingle()
+    : first;
 
   if (error) {
     // A malformed id in the URL is the caller's mistake, not ours. Reported as `internal`

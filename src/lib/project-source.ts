@@ -2,6 +2,7 @@ import { apiGet, apiPatch, apiPut, apiUpload } from '@/lib/api/client';
 import type {
     AssetResponse,
     Commit,
+    Composition,
     ContentOp,
     EditProposal,
     FileMap,
@@ -246,4 +247,41 @@ export async function proposeProjectEdit(
 
     if (error || !data) return { proposal: null, error: error ?? EMPTY_REPLY };
     return { proposal: data, error: null };
+}
+
+export interface GenerationJobStatus {
+    status: 'queued' | 'planning' | 'streaming' | 'validating' | 'repairing' | 'done' | 'failed';
+    sections_done: number;
+    sections_total: number;
+    provider?: string;
+    elapsed_ms: number;
+    fallback_template_id?: string;
+    error?: string;
+    composition?: Composition;
+    files_ready: boolean;
+}
+
+/** Starts a full-site job. persist:false keeps files off the tree until Keep. */
+export async function startProjectGenerate(
+    projectId: string,
+    prompt: string,
+): Promise<{ jobId: string | null; error: string | null }> {
+    const { data, error } = await apiPost<{ job_id: string }>(
+        `${projectUrl(projectId)}/generate`,
+        { prompt, persist: false },
+    );
+
+    if (error || !data?.job_id) return { jobId: null, error: error ?? EMPTY_REPLY };
+    return { jobId: data.job_id, error: null };
+}
+
+export async function loadGenerationJob(
+    jobId: string,
+): Promise<{ job: GenerationJobStatus | null; error: string | null }> {
+    const { data, error } = await apiGet<GenerationJobStatus>(
+        `/api/v1/jobs/${encodeURIComponent(jobId)}`,
+    );
+
+    if (error || !data) return { job: null, error: error ?? EMPTY_REPLY };
+    return { job: data, error: null };
 }

@@ -9,6 +9,13 @@ const PREVIEW_CSP = [
     "form-action 'none'",
 ].join('; ');
 
+/**
+ * Unique origin on purpose: scripts may run, forms may be filled, but the
+ * preview must not inherit the editor origin. Never add allow-same-origin
+ * alongside allow-scripts.
+ */
+export const PREVIEW_IFRAME_SANDBOX = 'allow-scripts allow-forms';
+
 export const MAX_PREVIEW_BYTES = 3_000_000;
 
 export function withPreviewCsp(html: string): string {

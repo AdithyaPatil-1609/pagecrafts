@@ -27,7 +27,10 @@ export const dynamic = 'force-dynamic';
 
 type Params = { id: string };
 
-const schema = z.object({ prompt: z.string().min(1).max(MAX_CLASSIFY_CHARS) });
+const schema = z.object({
+    prompt: z.string().min(1).max(MAX_CLASSIFY_CHARS),
+    persist: z.boolean().optional(),
+});
 
 // POST /api/v1/projects/{id}/generate — 202 with a job id; the work runs after.
 export const POST = withRoute<z.infer<typeof schema>, Params>({

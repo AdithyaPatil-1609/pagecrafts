@@ -185,7 +185,21 @@ describe('editor QA (D16–D20)', () => {
         expect(preview).not.toMatch(/srcDoc/i);
         expect(preview).toContain('previewDocumentUrl');
         expect(preview).toContain('src={frameUrl}');
+        expect(preview).toContain('filesForPreview');
+        expect(preview).toContain('PREVIEW_IFRAME_SANDBOX');
         const helper = readFileSync('src/lib/editor/preview-frame.ts', 'utf8');
         expect(helper).toContain('createObjectURL');
+        const sandbox = readFileSync('src/lib/preview-security.ts', 'utf8');
+        expect(sandbox).toContain("PREVIEW_IFRAME_SANDBOX = 'allow-scripts allow-forms'");
+        expect(sandbox).not.toMatch(/SANDBOX = '[^']*allow-same-origin/);
+    });
+
+    it('lets Ask generate a whole site from a prompt', () => {
+        const chat = readFileSync('src/components/editor/ChatPanel.tsx', 'utf8');
+        expect(chat).toContain('Create a sweet shop website');
+        expect(chat).toContain('whole new website');
+        const store = readFileSync('src/lib/editor-store.ts', 'utf8');
+        expect(store).toContain('isSiteGenerationRequest');
+        expect(store).toContain('generateSiteProposal');
     });
 });

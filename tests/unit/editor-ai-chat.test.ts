@@ -64,6 +64,7 @@ beforeEach(() => {
         chatMessages: [],
         chatBusy: false,
         chatError: null,
+        chatProgress: null,
         saving: false,
         saveError: null,
         lastCommitSha: null,
@@ -129,5 +130,133 @@ describe('AI chat (D11–D15)', () => {
 
         expect(useEditorStore.getState().chatError).toMatch(/locked/i);
         expect(useEditorStore.getState().pendingChange).toBeNull();
+    });
+});
+
+function generatedSite(): Composition {
+    return {
+        schemaVersion: 3,
+        vertical: 'sweet-shop',
+        artDirection: {
+            themeId: 'sunlit-craft',
+            motionId: 'calm',
+            radiusId: 'soft',
+            spacingId: 'default',
+            imageryId: 'warm-natural',
+        },
+        meta: { title: 'Sugar & Co', description: 'Sweets made today', lang: 'en' },
+        sections: [
+            {
+                id: 'hero', type: 'hero', variant: 'centred', brief: '',
+                visible: true, locked: false, source: 'ai',
+                props: { heading: 'Handmade sweets', ctaLabel: 'See the trays' },
+            },
+            {
+                id: 'about', type: 'about', variant: 'text', brief: '',
+                visible: true, locked: false, source: 'ai',
+                props: { heading: 'The shop', body: 'Trays from 8am.' },
+            },
+            {
+                id: 'menu', type: 'menu', variant: 'simple', brief: '',
+                visible: true, locked: false, source: 'ai',
+                props: { heading: 'Today', items: [{ name: 'Jalebi', description: 'Hot', price: '40' }] },
+            },
+            {
+                id: 'contact', type: 'contact', variant: 'simple', brief: '',
+                visible: true, locked: false, source: 'ai',
+                props: { heading: 'Visit', email: 'hi@sugar.test' },
+            },
+            {
+                id: 'footer', type: 'footer', variant: 'simple', brief: '',
+                visible: true, locked: false, source: 'ai',
+                props: { tagline: 'Sugar & Co' },
+            },
+        ],
+    };
+}
+
+function generateServer() {
+    const site = generatedSite();
+    return vi.fn(async (url: string) => {
+        const path = String(url);
+        if (path.includes('/generate')) {
+            return jsonResponse({ ok: true, data: { job_id: 'job_1' } });
+        }
+        if (path.includes('/jobs/')) {
+            return jsonResponse({
+                ok: true,
+                data: {
+                    status: 'done',
+                    sections_done: 5,
+                    sections_total: 5,
+                    elapsed_ms: 20,
+                    files_ready: true,
+                    composition: site,
+                },
+            });
+        }
+        if (path.includes('/commits')) {
+            return jsonResponse({ ok: true, data: { sha: 'pre-gen' } });
+        }
+        return jsonResponse({ ok: true, data: { projectId: 'p1', files: {}, updatedAt: 'now' } });
+    });
+}
+
+describe('AI chat — full site from Ask', () => {
+    it('proposes a generated site without writing files', async () => {
+        const fetchMock = generateServer();
+        vi.stubGlobal('fetch', fetchMock);
+
+        const beforeHtml = useEditorStore.getState().vfs.read('index.html');
+        await useEditorStore.getState().requestAiEdit('Create a sweet shop website');
+
+        const called = fetchMock.mock.calls.map(([url]) => String(url));
+        expect(called.some((url) => url.includes('/generate'))).toBe(true);
+        expect(called.some((url) => url.includes('/jobs/'))).toBe(true);
+        expect(called.some((url) => url.includes('/edits'))).toBe(false);
+        expect(useEditorStore.getState().vfs.read('index.html')).toBe(beforeHtml);
+        expect(useEditorStore.getState().pendingChange?.after).toContain('Handmade sweets');
+        expect(useEditorStore.getState().pendingChange?.explanation).toContain('Sugar & Co');
+    });
+
+    it('keeps the generated files in the tree', async () => {
+        vi.stubGlobal('fetch', generateServer());
+
+        await useEditorStore.getState().requestAiEdit('Create a sweet shop website');
+        useEditorStore.getState().acceptChange();
+
+        expect(useEditorStore.getState().composition?.meta.title).toBe('Sugar & Co');
+        expect(useEditorStore.getState().vfs.read('composition.json')).toContain('Handmade sweets');
+        expect(useEditorStore.getState().vfs.read('index.html')).toContain('Handmade sweets');
+        expect(useEditorStore.getState().vfs.read('index.html')).toContain('class="site-nav"');
+        expect(useEditorStore.getState().pendingChange).toBeNull();
+    });
+
+    it('discards a generated site and leaves the project as it was', async () => {
+        vi.stubGlobal('fetch', generateServer());
+
+        const beforeJson = useEditorStore.getState().vfs.read('composition.json');
+        const beforeHtml = useEditorStore.getState().vfs.read('index.html');
+
+        await useEditorStore.getState().requestAiEdit('Create a restaurant website');
+        useEditorStore.getState().rejectChange();
+
+        expect(useEditorStore.getState().vfs.read('composition.json')).toBe(beforeJson);
+        expect(useEditorStore.getState().vfs.read('index.html')).toBe(beforeHtml);
+        expect(useEditorStore.getState().pendingChange).toBeNull();
+        expect(useEditorStore.getState().vfs.dirtyPaths()).toEqual([]);
+    });
+
+    it('generates a site when the page has no sections yet', async () => {
+        const { vfs } = useEditorStore.getState();
+        vfs.reset();
+        vfs.seed({ 'index.html': '<p>Empty</p>' });
+        useEditorStore.setState({ composition: null, selectedSectionId: null });
+        vi.stubGlobal('fetch', generateServer());
+
+        await useEditorStore.getState().requestAiEdit('a gym landing page');
+
+        expect(useEditorStore.getState().pendingChange?.after).toContain('Handmade sweets');
+        expect(useEditorStore.getState().vfs.read('index.html')).toBe('<p>Empty</p>');
     });
 });
