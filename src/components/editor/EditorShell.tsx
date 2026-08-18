@@ -1,7 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useEditorStore } from '@/lib/editor-store';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
+import { apiGet } from '@/lib/api/client';
+import type { JobStatus } from '@/lib/ai/jobs/types';
 import TopBar from './TopBar';
 import ContentPanel from './ContentPanel';
 import PreviewPane from './PreviewPane';
@@ -10,11 +13,30 @@ import CodePane from './CodePane';
 import { TreeSkeleton, PaneSkeleton } from './Skeletons';
 import SectionsPanel from './SectionsPanel';
 import VersionHistory from './VersionHistory';
+import { GeneratingOverlay } from './GeneratingOverlay';
 import ChatPanel from './ChatPanel';
 
-export default function EditorShell({ projectId }: { projectId: string }) {
+interface JobProgress {
+    status: JobStatus;
+    sections_done: number;
+    sections_total: number;
+    files_ready?: boolean;
+    error?: string;
+}
+
+export default function EditorShell({
+    projectId,
+    jobId,
+}: {
+    projectId: string;
+    jobId?: string;
+}) {
     useUnsavedGuard();
+    const router = useRouter();
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [generation, setGeneration] = useState<JobProgress | null>(
+        jobId ? { status: 'queued', sections_done: 0, sections_total: 0 } : null,
+    );
     const [askOpen, setAskOpen] = useState(false);
     const [sectionsOpen, setSectionsOpen] = useState(false);
     const advanced = useEditorStore((s) => s.advanced);
@@ -28,9 +50,52 @@ export default function EditorShell({ projectId }: { projectId: string }) {
     const rejectChange = useEditorStore((s) => s.rejectChange);
 
     useEffect(() => {
+        if (jobId) return;
         loadProject(projectId);
         return () => flushPendingSave();
-    }, [projectId, loadProject, flushPendingSave]);
+    }, [projectId, jobId, loadProject, flushPendingSave]);
+
+    useEffect(() => {
+        if (!jobId) return;
+
+        let cancelled = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+
+        const poll = async () => {
+            const { data, error } = await apiGet<JobProgress>(
+                `/api/v1/jobs/${encodeURIComponent(jobId)}`,
+            );
+            if (cancelled) return;
+
+            if (error || !data) {
+                await loadProject(projectId);
+                if (cancelled) return;
+                setGeneration(null);
+                router.replace(`/editor/${encodeURIComponent(projectId)}`);
+                return;
+            }
+
+            setGeneration(data);
+
+            if (data.status === 'done' || data.status === 'failed') {
+                await loadProject(projectId);
+                if (cancelled) return;
+                if (data.status === 'done') {
+                    setGeneration(null);
+                    router.replace(`/editor/${encodeURIComponent(projectId)}`);
+                }
+                return;
+            }
+
+            timer = setTimeout(poll, 400);
+        };
+
+        void poll();
+        return () => {
+            cancelled = true;
+            if (timer) clearTimeout(timer);
+        };
+    }, [jobId, projectId, loadProject, router]);
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
@@ -54,6 +119,8 @@ export default function EditorShell({ projectId }: { projectId: string }) {
         return () => window.removeEventListener('keydown', onKey);
     }, [saveProject, pendingChange, rejectChange]);
 
+    const generating = Boolean(generation && generation.status !== 'failed');
+
     return (
         <div className="flex h-screen flex-col bg-background">
             <a
@@ -72,7 +139,7 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                 historyOpen={historyOpen}
                 onToggleHistory={() => setHistoryOpen((open) => !open)}
             />
-            {loadError ? (
+            {loadError && !generating ? (
                 <div className="flex flex-1 items-center justify-center p-8">
                     <div className="max-w-sm text-center">
                         <p className="text-sm font-medium">This project could not be opened.</p>
@@ -86,7 +153,15 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                     </div>
                 </div>
             ) : (
-                <main className="flex min-h-0 flex-1">
+                <main className="relative flex min-h-0 flex-1">
+                    {generation && (
+                        <GeneratingOverlay
+                            status={generation.status}
+                            sectionsDone={generation.sections_done}
+                            sectionsTotal={generation.sections_total}
+                            error={generation.error}
+                        />
+                    )}
                     {sectionsOpen && composition && (
                         <aside className="w-64 shrink-0 overflow-auto border-r border-border">
                             {loading ? <TreeSkeleton /> : <SectionsPanel />}
@@ -107,10 +182,10 @@ export default function EditorShell({ projectId }: { projectId: string }) {
                     ) : (
                         <>
                             <section className="w-[420px] shrink-0 overflow-auto border-r border-border">
-                                {loading ? <PaneSkeleton /> : <ContentPanel projectId={projectId} />}
+                                {loading || generating ? <PaneSkeleton /> : <ContentPanel projectId={projectId} />}
                             </section>
                             <section className="relative min-h-0 min-w-0 flex-1">
-                                {loading ? <PaneSkeleton /> : <PreviewPane />}
+                                {loading || generating ? <PaneSkeleton /> : <PreviewPane />}
                             </section>
                         </>
                     )}

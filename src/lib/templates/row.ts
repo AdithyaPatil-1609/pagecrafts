@@ -18,11 +18,25 @@ type TemplateWriter = {
 /**
  * The `templates` row a library design occupies.
  *
- * `thumbnail_url` must be an https URL or null — the column check rejects the
- * relative `/templates/...` paths the blueprints still carry. The gallery never
- * reads this column; it draws a miniature from the markup. Null here means
- * "not rendered yet", which is true until the thumbnail pipeline writes one.
+ * `thumbnail_url` must be an absolute https URL or null: the column's CHECK is
+ * `thumbnail_url is null or thumbnail_url ~ '^https://'`, so a relative path is refused by
+ * Postgres rather than stored.
+ *
+ * That matters more since R2 D18, which rendered the thumbnails and made thumbnailUrlFor()
+ * return `/templates/<id>.webp` — the right answer for the app, served by the CDN in front
+ * of it, and not a value this column can hold. Sending it upserted 115 rows straight into a
+ * constraint violation. absoluteOnly() is the seam: the app keeps its relative path, the
+ * database gets https or nothing.
+ *
+ * Null means "no thumbnail at a URL the database can name", which is honest — the gallery
+ * never reads this column anyway; it uses thumbnailUrlFor() and falls back to a miniature
+ * drawn from the markup. Set NEXT_PUBLIC_TEMPLATE_THUMBNAIL_BASE to a storage bucket and
+ * the same function returns an https URL, which lands here without any other change.
  */
+function absoluteOnly(url: string | null): string | null {
+    return url && /^https:\/\//.test(url) ? url : null;
+}
+
 export function templateRow(template: Template, category: Category = template.category) {
     return {
         id: templateUuid(template.id),
@@ -30,7 +44,7 @@ export function templateRow(template: Template, category: Category = template.ca
         description: template.description,
         category,
         tags: template.tags,
-        thumbnail_url: thumbnailUrlFor(template),
+        thumbnail_url: absoluteOnly(thumbnailUrlFor(template)),
         files: template.files,
         content_schema: template.contentSchema,
         license: template.license,

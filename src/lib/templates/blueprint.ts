@@ -1,5 +1,6 @@
 import type { Category, ContentSchema, Field, Template, TemplateTier } from "@/lib/contracts";
 import { MOTIF_BY_CATEGORY, motifToSvg } from "./motifs";
+import { thumbnailPath } from "./thumbnails";
 import type { MotifId, PaletteRole } from "./motifs";
 
 // Templates are authored as blueprints, not as hand-written HTML. One generator emits the
@@ -325,7 +326,12 @@ export function buildTemplate(bp: Blueprint): Template {
         category: bp.category,
         vertical: bp.vertical ?? VERTICAL_ALIAS[bp.id] ?? bp.id,
         tags: bp.tags,
-        thumbnailUrl: `/templates/${bp.id}/thumbnail.png`,
+        // The path the renderer actually writes to (R2 D18). This said
+        // `/templates/<id>/thumbnail.png` for as long as the field has existed and no such
+        // file was ever produced, so the record advertised a 404 to anybody who read it
+        // directly. thumbnailPath() is the one place that spelling lives now, shared with
+        // the renderer, so the two cannot drift apart again.
+        thumbnailUrl: thumbnailPath(bp.id),
         tier: bp.tier,
         priceInr: TIER_PRICE_INR[bp.tier],
         license: bp.license,

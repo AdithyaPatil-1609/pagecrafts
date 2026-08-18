@@ -31,6 +31,14 @@ Semantic, not literal — pick by role, not by hue.
 | `border` / `input` | `border-border`, `border-input` | Hairlines and field borders |
 | `field` | `bg-field` | Input surface — sits one step above its card |
 | `ring` | `ring-ring` | Focus ring — always visible for keyboard use |
+| `brand-ink` | `text-brand-ink` | The brand red as **text**. Use wherever brand red is words rather than a fill |
+
+`primary` and `brand-ink` are the same red doing two jobs, and one value cannot do both.
+`#dc2626` behind white text is 4.83:1 and correct; the same red as small text on the
+near-black surface is 4.16:1, under the 4.5:1 WCAG AA asks for. Lightening `primary` to fix
+the text would have taken the button to 3.76:1. So text gets its own token — red-500 on
+dark, red-600 unchanged on light, both above 4.5:1 (R2 D20). Fills, borders and icons stay
+on `primary`; an icon only needs 3:1, which `#dc2626` already clears.
 
 ## Brand gradient
 

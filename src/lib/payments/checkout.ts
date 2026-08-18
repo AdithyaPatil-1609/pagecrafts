@@ -106,10 +106,22 @@ export async function startPublishCheckout(
     userId: string,
     projectId: string,
 ): Promise<CheckoutResponse> {
+    // Owner-scoped read first, before the entitlement is consulted (R3 D19 route audit).
+    //
+    // These two lines were the other way round, and the order mattered. checkEntitlement
+    // asks about the *account*, not the project, and a `pro` subscription satisfies every
+    // kind — so a subscriber asking about somebody else's project got `granted: true` and
+    // returned before anything read the project row. Every other route on a project answers
+    // not_found for one that is not yours; this one answered 200.
+    //
+    // Never exploitable: nothing was granted, nothing was charged, and the answer was
+    // identical for an id belonging to nobody, so it leaked nothing either. It was the API
+    // disagreeing with itself about what a stranger is told, which is exactly what an audit
+    // is for and exactly what nobody finds by reading one route at a time.
+    const { tier } = await priceOf(supabase, projectId);
+
     const existing = await checkEntitlement(supabase, userId, projectId, "publish");
     if (existing.granted) return { granted: true };
-
-    const { tier } = await priceOf(supabase, projectId);
 
     if (isFree(tier)) {
         await grantPublish(projectId, userId, "launch_offer");

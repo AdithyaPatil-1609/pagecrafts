@@ -52,3 +52,8 @@ export const AI_DAILY_GLOBAL: DailyCap = {
 // Deleting a site frees a slot, because the cap is on what is held rather than on what has
 // ever been made — a limit somebody cannot get back under by tidying up is a trap.
 export const PROJECTS_PER_USER = 25;
+
+// Free AI regenerations for one site. After this, they pick from the looks
+// already made, or hold `pro` to generate more. Separate from AI_DAILY_PER_USER,
+// which is the cost safety net rather than the product rule.
+export const FREE_GENERATIONS_PER_PROJECT = 5;

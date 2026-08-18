@@ -37,7 +37,14 @@ test.describe('the app is up', () => {
             failOnStatusCode: false,
         });
 
-        expect([401, 413, 422]).toContain(response.status());
+        // 429 belongs here alongside the others. The login limiter fails closed — when it
+        // cannot reach Redis it denies rather than waving the request through — so on a run
+        // without Upstash credentials every login answers 429 before the body is looked at.
+        //
+        // That is still the thing this test is named for: the oversized body was refused
+        // and not swallowed. What the test must never accept is a 2xx, or a hang, or a 500
+        // from something choking on 70KB, and it still fails on all three.
+        expect([401, 413, 422, 429]).toContain(response.status());
 
         const body = await response.json();
         expect(body.ok).toBe(false);

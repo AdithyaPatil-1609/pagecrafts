@@ -5,9 +5,9 @@ import { toCategory } from "@/lib/discovery/categories";
 import { IntentCapture } from "@/components/discovery/IntentCapture";
 import { PagecraftFeatures } from "@/components/discovery/PagecraftFeatures";
 
-// Screen 03 — "What are you trying to build?" (step 1 of the funnel). Neither input is
-// required: describing the site or picking a category card routes to the gallery, and both
-// empty shows every template.
+// Screen 03 — "What are you trying to build?" (step 1 of the funnel). Describing the
+// site starts a generation that writes a full project. Picking a category card still
+// opens the template gallery for people who want a ready-made design.
 //
 // Arriving with `q`/`category` means the user came back from the gallery to edit what they
 // said, so the form opens on exactly what it sent — never a blank page.
@@ -31,7 +31,7 @@ export default async function NewProjectPage({
           What are you trying to <span className="text-primary">build</span>?
         </h1>
         <p className="max-w-xl text-sm text-muted-foreground">
-          Describe your idea in a few words and let AI create the perfect website for you.
+          Describe the business or subject. AI will create a complete website — every page and its contents — for you.
         </p>
       </header>
 

@@ -28,6 +28,17 @@
   --primary: #dc2626; /* red-600 — PageCraft brand */
   --primary-foreground: #ffffff;
 
+  /* The brand red as *ink*, which is a different job from the brand red as a *fill*.
+     One value cannot do both: #dc2626 behind white text is 4.83:1 and correct, and the
+     same red as small text on this near-black surface is 4.16:1 — below the 4.5:1 that
+     WCAG AA asks for, which axe reported as serious at R2 D20. Lightening --primary to
+     fix the text would have taken the button down to 3.76:1, so the roles are split
+     instead. Red-500 here: 5.34:1 on the page surface, and visibly the same brand red
+     one stop up the same ramp.
+     Use for brand-coloured text. Fills, borders and icons stay on --primary; an icon
+     needs 3:1, which #dc2626 already clears. */
+  --brand-ink: #ef4444;
+
   --secondary: #17171d;
   --secondary-foreground: #f5f5f7;
 
@@ -68,6 +79,10 @@
   --primary: #dc2626;
   --primary-foreground: #ffffff;
 
+  /* On white, red-600 is already 4.83:1, so the light theme keeps the brand red exactly.
+     The token exists so a component does not have to know which theme it is in. */
+  --brand-ink: #dc2626;
+
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
 
@@ -103,6 +118,7 @@
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-brand-ink: var(--brand-ink);
 
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);

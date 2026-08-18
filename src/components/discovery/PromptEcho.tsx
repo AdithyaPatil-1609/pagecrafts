@@ -13,7 +13,7 @@ export function PromptEcho({ text, editHref }: { text: string; editHref: string 
             </p>
             <Link
                 href={editHref}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-3 py-1.5 text-sm font-medium text-brand-ink transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
                 <Pencil className="size-3.5" aria-hidden />
                 Edit

@@ -228,9 +228,16 @@ export function TemplateDetailModal({
                             It says where the design came from and nothing about what it
                             costs — a licence that is free to us is not a free design, and
                             putting the word "free" here would contradict the price sitting
-                            two lines below it. */}
+                            two lines below it.
+
+                            It also no longer says "comes from open source". Every design in
+                            the library is first-party, written here, so that sentence was
+                            telling a paying customer something untrue about where their site
+                            came from (R2 D16 licence audit). The licence is still named,
+                            because a design sourced from someone else's project will carry
+                            theirs and that is the case this line exists for. */}
                         <p className="text-xs text-muted-foreground">
-                            This design comes from open source, under the {detail.license} licence.{" "}
+                            Licensed under {detail.license}.{" "}
                             <Link
                                 href={detail.sourceUrl}
                                 target="_blank"

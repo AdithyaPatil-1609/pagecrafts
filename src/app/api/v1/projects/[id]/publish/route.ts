@@ -2,11 +2,7 @@ import 'server-only';
 
 import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
-import { assertCanPublish } from '@/lib/data/entitlements';
-import { projectPublishInputs } from '@/lib/deploy/publishable';
-import { publish } from '@/lib/deploy/publish';
-import { PublishError } from '@/lib/deploy/errors';
-import { openDeployment, recordDeployment } from '@/lib/data/deployments';
+import { publishProject } from '@/lib/data/publish-project';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,6 +16,19 @@ const MAX_KEY_LENGTH = 255;
 // Shaped after the generate route rather than invented: the client is given something to
 // poll immediately, because provisioning, pushing and verifying together take far longer
 // than a request should be held open for.
+//
+// The publish itself is publishProject() and this route is only the door. It used to be
+// both: an inline copy of the whole sequence lived here, and publishProject — written on
+// D15 with the entitlement gate, the site-id memory and the failure handling — was never
+// called by anything (R3 D18).
+//
+// That was not a tidiness problem. The copy here passed `siteId: null` on every call, under
+// a comment saying no column held it, so every republish provisioned a brand-new site and
+// abandoned the last one: FR-087 says ten republishes produce one site, and this produced
+// ten. The D17 work that keeps a subdomain across a failed attempt was in the function
+// nothing ran, so it protected nobody.
+//
+// One publish path now. Anything that must be true of a publish is true of it once.
 export const POST = withRoute<undefined, Params>({
     auth: 'required',
     handler: async ({ params, userId, req, supabase }) => {
@@ -42,63 +51,6 @@ export const POST = withRoute<undefined, Params>({
             );
         }
 
-        // Ownership is settled here, before anything is charged for or provisioned: the
-        // read is owner-scoped by RLS, so somebody else's project is not found.
-        const inputs = await projectPublishInputs(supabase, params.id);
-
-        if (inputs.files.length === 0) {
-            throw new ApiError(
-                'validation_failed',
-                'There is nothing to publish yet. Generate or edit the site first.',
-            );
-        }
-
-        await assertCanPublish(supabase, userId, params.id);
-
-        // A publish already under way is handed back rather than joined by a second one.
-        // runOnce() in the deploy layer only dedupes an identical key; two different keys
-        // for one project would otherwise race each other onto the same subdomain.
-        const running = await openDeployment(supabase, params.id);
-        if (running) return ok({ deploymentId: running.id, status: 'pending' as const }, 202);
-
-        const recorder = await recordDeployment(supabase, params.id);
-
-        void publish(
-            {
-                projectId: params.id,
-                projectName: inputs.projectName,
-                files: inputs.files,
-                // No column holds the provisioned site id yet, so every publish provisions
-                // a fresh one. Noted for R3 — see the handover note for D14.
-                siteId: null,
-                idempotencyKey,
-            },
-            recorder.onState,
-        )
-            .then((result) =>
-                recorder.finish({
-                    state: result.state,
-                    liveUrl: result.liveUrl,
-                    commitSha: result.commitSha,
-                    error: result.error,
-                }),
-            )
-            .catch(async (err) => {
-                // What lands in the row is the sentence a person reads on the dashboard, so
-                // it must never be a stack trace or an opaque provider string. PublishError
-                // already carries one; anything else gets a written fallback.
-                const message =
-                    err instanceof PublishError
-                        ? err.message
-                        : 'Publishing failed. Nothing you have made is lost — try again in a moment.';
-
-                console.error('[publish]', params.id, err);
-
-                await recorder
-                    .finish({ state: 'failed', error: message })
-                    .catch((writeErr) => console.error('[publish] record failure', writeErr));
-            });
-
-        return ok({ deploymentId: recorder.deploymentId, status: 'pending' as const }, 202);
+        return ok(await publishProject(supabase, userId, params.id, idempotencyKey), 202);
     },
 });

@@ -19,7 +19,7 @@ const FRIENDLY: Record<ErrorCode, string> = {
     payment_required: 'This needs an upgrade before it can run.',
     hosting_error: 'The hosting service did not respond.',
     service_unavailable: 'PageCraft is having trouble right now. Your work is safe. Try again in a moment.',
-    internal: 'Something went wrong on our side. Your work is safe in this tab.',
+    internal: 'We could not finish that just now. Your work is safe in this tab — try again in a moment.',
 };
 
 export function friendlyMessage(code: ErrorCode, fallback: string): string {

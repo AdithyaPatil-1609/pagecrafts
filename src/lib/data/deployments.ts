@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DeploymentState } from "@/lib/contracts";
+import type { Deployment, DeploymentState } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
+import { failureLine, toFailureReason, type FailureReason } from "@/lib/deploy/failure";
 
 // The deployment row behind the dashboard (R3 D12, V-7, N-4).
 //
@@ -112,7 +113,10 @@ export interface DeploymentView {
     repoUrl: string | null;
     liveUrl: string | null;
     commitSha: string | null;
+    /** The redacted provider detail. For logs and support, not for the owner (R3 D18). */
     error: string | null;
+    /** Why it stopped. Turn it into words with lib/deploy/failure.ts. */
+    failureReason: FailureReason | null;
 }
 
 /**
@@ -134,7 +138,7 @@ export async function getDeployment(
 
     const { data, error } = await supabase
         .from("deployments")
-        .select("id, project_id, status, repo_url, live_url, commit_sha, error")
+        .select("id, project_id, status, repo_url, live_url, commit_sha, error, failure_reason")
         .eq("id", deploymentId)
         .maybeSingle();
 
@@ -151,6 +155,7 @@ export async function getDeployment(
         live_url: string | null;
         commit_sha: string | null;
         error: string | null;
+        failure_reason: string | null;
     };
 
     return {
@@ -161,13 +166,17 @@ export async function getDeployment(
         liveUrl: row.live_url,
         commitSha: row.commit_sha,
         error: row.error,
+        failureReason: row.failure_reason ? toFailureReason(row.failure_reason) : null,
     };
 }
 
 export interface DeploymentPatch {
     liveUrl?: string | null;
     commitSha?: string | null;
+    /** The redacted provider detail, for debugging. Never shown to the owner (R3 D18). */
     error?: string | null;
+    /** Why it stopped, from the closed set in lib/deploy/failure.ts. */
+    failureReason?: FailureReason | null;
 }
 
 /**
@@ -204,6 +213,7 @@ export async function advanceDeployment(
             ...(patch.liveUrl !== undefined ? { live_url: patch.liveUrl } : {}),
             ...(patch.commitSha !== undefined ? { commit_sha: patch.commitSha } : {}),
             ...(patch.error !== undefined ? { error: patch.error } : {}),
+            ...(patch.failureReason !== undefined ? { failure_reason: patch.failureReason } : {}),
         })
         .eq("id", deploymentId);
 
@@ -233,7 +243,15 @@ export async function recordDeployment(
 ): Promise<{
     deploymentId: string;
     onState: (state: DeploymentState) => void;
-    finish: (result: { state: DeploymentState; liveUrl?: string | null; commitSha?: string | null; error?: string | null }) => Promise<void>;
+    finish: (result: {
+        state: DeploymentState;
+        liveUrl?: string | null;
+        commitSha?: string | null;
+        /** Redacted provider detail, for support. Never shown to the owner (R3 D18). */
+        error?: string | null;
+        /** Why it stopped, from the closed set in lib/deploy/failure.ts. */
+        failureReason?: FailureReason | null;
+    }) => Promise<void>;
 }> {
     const started = await startDeployment(supabase, projectId);
 
@@ -252,6 +270,50 @@ export async function recordDeployment(
                 liveUrl: result.liveUrl ?? null,
                 commitSha: result.commitSha ?? null,
                 error: result.error ?? null,
+                failureReason: result.failureReason ?? null,
             }),
     };
+}
+
+/**
+ * Every publish this project has attempted, newest first (R3 D13).
+ *
+ * Attempts, not successes. A history that hid the failures would be the same dashboard that
+ * showed "draft" forever — pleasant and useless. Somebody debugging a site that will not go
+ * live needs the failed rows most of all, with the error the provider actually gave.
+ *
+ * Ordered by created_at with id as the tiebreak, because two attempts inside the same
+ * millisecond are not impossible and an unstable order makes "newest" a coin toss.
+ */
+export async function listDeployments(
+    supabase: SupabaseClient,
+    projectId: string,
+): Promise<Deployment[]> {
+    const { data, error } = await supabase
+        .from("deployments")
+        .select("id, project_id, status, live_url, commit_sha, error, failure_reason, created_at, updated_at")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+
+    if (error) throw new ApiError("internal", "Could not read the publish history.", error.message);
+
+    return (data ?? []).map((row) => ({
+        id: row.id as string,
+        projectId: row.project_id as string,
+        state: row.status as DeploymentState,
+        // C-05: a URL is only surfaced for a deployment that actually reached live.
+        liveUrl: row.status === "live" ? ((row.live_url as string | null) ?? null) : null,
+        commitSha: (row.commit_sha as string | null) ?? null,
+        // What the owner reads, derived rather than stored: `error` holds the redacted
+        // provider detail and is not a sentence anybody should be shown (R3 D18).
+        error: row.failure_reason || row.status === "failed"
+            ? failureLine(row.failure_reason as string | null)
+            : null,
+        failureReason: row.failure_reason
+            ? toFailureReason(row.failure_reason as string)
+            : null,
+        createdAt: row.created_at as string,
+        updatedAt: (row.updated_at as string | null) ?? (row.created_at as string),
+    }));
 }

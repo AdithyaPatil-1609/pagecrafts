@@ -1,19 +1,19 @@
 import type { Composition, FileMap, SectionInstance, SectionKey } from '@/lib/contracts';
 import { compositionShell } from '@/lib/render/page-shell';
-import { SITE_NAV_CSS, siteNavHtml } from '@/lib/render/site-chrome';
+import { contractFor } from '../sections/contracts';
+import { sectionContentKey } from './schema';
+import type { StyleId } from './styles';
 
 /**
  * D15 — turn a composition into a file tree the rest of the product already
  * knows how to save.
  *
- * Until now `runJob` produced a `Composition` and stopped. `putProjectFiles`
- * and `recordCommit` were ready; nothing turned the composition into a
- * `FileMap`. A dial that never reaches markup is a dial that does not exist,
- * and a generation that never becomes a file is not a site.
+ * A generation that never becomes a file is not a site. Every visible section
+ * is a page of the site (linked from the header), with `data-slot` attributes
+ * so the content panel can edit the words the model just wrote.
  *
  * Images stay as search queries, not Unsplash URLs — picking a photograph is
- * an editor action (and needs an id we do not have at generation time). The
- * slot is marked so the picker can find it.
+ * an editor action (and needs an id we do not have at generation time).
  */
 
 function escapeHtml(value: string): string {
@@ -35,102 +35,150 @@ function asList(value: unknown): Record<string, unknown>[] {
         : [];
 }
 
-function imageSlot(value: unknown, fallbackAlt: string): string {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-        const rec = value as Record<string, unknown>;
-        const query = asString(rec.query);
-        const alt = asString(rec.alt) || fallbackAlt;
-        return `<div class="img-slot" role="img" aria-label="${escapeHtml(alt)}" data-query="${escapeHtml(query)}"></div>`;
-    }
-    if (typeof value === 'string' && value) {
-        return `<div class="img-slot" role="img" aria-label="${escapeHtml(fallbackAlt)}" data-query="${escapeHtml(value)}"></div>`;
-    }
-    return '';
+function slot(tag: string, path: string, inner: string, extra = ''): string {
+    return `<${tag} data-slot="${escapeHtml(path)}"${extra}>${inner}</${tag}>`;
+}
+
+function imageSlot(path: string, value: unknown, fallbackAlt: string): string {
+    const rec = value && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : null;
+    const query = rec ? asString(rec.query) : (typeof value === 'string' ? value : '');
+    const alt = (rec ? asString(rec.alt) : '') || fallbackAlt;
+    const url = rec ? asString(rec.url) : '';
+    const photo = url
+        ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`
+        : '';
+    return `<div class="img-slot" data-slot="${escapeHtml(path)}" role="img" aria-label="${escapeHtml(alt)}" data-query="${escapeHtml(query)}">${photo}</div>`;
 }
 
 function listMarkup(
+    sectionKey: string,
+    fieldKey: string,
     items: Record<string, unknown>[],
     titleKey: string,
     bodyKey: string,
-    extra?: (item: Record<string, unknown>) => string,
+    extra?: (item: Record<string, unknown>, path: string) => string,
 ): string {
     if (items.length === 0) return '';
-    return `<ul>${items.map((item) => {
+    return `<ul class="cards">${items.map((item, index) => {
+        const path = `${sectionKey}.${fieldKey}.${index}`;
         const title = asString(item[titleKey]);
         const body = asString(item[bodyKey]);
-        const more = extra?.(item) ?? '';
-        return `<li><strong>${escapeHtml(title)}</strong>${body ? `<p>${escapeHtml(body)}</p>` : ''}${more}</li>`;
+        const more = extra?.(item, path) ?? '';
+        return `<li class="card">${slot('h3', `${path}.${titleKey}`, escapeHtml(title))}${
+            body ? slot('p', `${path}.${bodyKey}`, escapeHtml(body)) : ''
+        }${more}</li>`;
     }).join('')}</ul>`;
 }
 
-function renderSection(section: SectionInstance, index: number, contactId: string | null): string {
-    const p = section.props;
-    const heading = asString(p.heading);
-    const open = `<section id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate style="--i:${index}">`;
-    const close = '</section>';
+function sectionAnchor(
+    section: SectionInstance,
+    visible: readonly SectionInstance[],
+): string {
+    const unique = visible.filter((s) => s.type === section.type).length === 1;
+    return unique ? section.type : section.id;
+}
 
-    const inner = renderInner(section.type, p, heading, contactId);
-    return `${open}${inner}${close}`;
+function renderSection(
+    section: SectionInstance,
+    index: number,
+    visible: readonly SectionInstance[],
+): string {
+    const p = section.props;
+    const key = sectionContentKey(section, visible);
+    const heading = asString(p.heading);
+    const anchor = sectionAnchor(section, visible);
+    const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate style="--i:${index}">`;
+    return `${open}${renderInner(section.type, key, p, heading, visible)}</section>`;
+}
+
+function contactHref(visible: readonly SectionInstance[]): string {
+    const contact = visible.find((s) => s.type === 'contact');
+    return contact ? `#${sectionAnchor(contact, visible)}` : '#top';
 }
 
 function renderInner(
     type: SectionKey,
+    key: string,
     p: Record<string, unknown>,
     heading: string,
-    contactId: string | null,
+    visible: readonly SectionInstance[],
 ): string {
     const h = (tag: 'h1' | 'h2', text: string) =>
-        text ? `<${tag}>${escapeHtml(text)}</${tag}>` : '';
+        text ? slot(tag, `${key}.heading`, escapeHtml(text)) : '';
 
     switch (type) {
         case 'hero':
             return [
-                asString(p.eyebrow) ? `<p class="eyebrow">${escapeHtml(asString(p.eyebrow))}</p>` : '',
+                '<div class="hero-copy">',
+                asString(p.eyebrow) ? slot('p', `${key}.eyebrow`, escapeHtml(asString(p.eyebrow)), ' class="eyebrow"') : '',
                 h('h1', asString(p.heading)),
-                asString(p.sub) ? `<p>${escapeHtml(asString(p.sub))}</p>` : '',
+                asString(p.sub) ? slot('p', `${key}.sub`, escapeHtml(asString(p.sub)), ' class="lede"') : '',
                 asString(p.ctaLabel)
-                    ? `<a class="cta" href="#${escapeHtml(contactId ?? 'contact')}">${escapeHtml(asString(p.ctaLabel))}</a>`
+                    ? slot('a', `${key}.ctaLabel`, escapeHtml(asString(p.ctaLabel)), ` class="cta" href="${contactHref(visible)}"`)
                     : '',
-                imageSlot(p.image, asString(p.heading) || 'Hero'),
+                '</div>',
+                imageSlot(`${key}.image`, p.image, asString(p.heading) || 'Hero'),
             ].join('');
         case 'about':
-            return `${h('h2', heading)}${asString(p.body) ? `<p>${escapeHtml(asString(p.body))}</p>` : ''}${imageSlot(p.image, heading || 'About')}`;
+            return `${h('h2', heading)}${asString(p.body) ? slot('p', `${key}.body`, escapeHtml(asString(p.body))) : ''}${imageSlot(`${key}.image`, p.image, heading || 'About')}`;
         case 'services':
-            return `${h('h2', heading)}${listMarkup(asList(p.items), 'title', 'body')}`;
+            return `${h('h2', heading)}${listMarkup(key, 'items', asList(p.items), 'title', 'body')}`;
         case 'menu':
-            return `${h('h2', heading)}${listMarkup(asList(p.items), 'name', 'description', (item) =>
-                asString(item.price) ? `<span class="price">${escapeHtml(asString(item.price))}</span>` : '')}`;
+            return `${h('h2', heading)}${listMarkup(key, 'items', asList(p.items), 'name', 'description', (item, path) =>
+                asString(item.price) ? slot('span', `${path}.price`, escapeHtml(asString(item.price)), ' class="price"') : '')}`;
         case 'gallery': {
             const images = asList(p.images);
-            const figures = images.map((img) =>
-                `<figure>${imageSlot(img, asString(img.alt) || asString(img.query) || 'Gallery')}<figcaption>${escapeHtml(asString(img.alt) || asString(img.query))}</figcaption></figure>`,
-            ).join('');
+            const figures = images.map((img, index) => {
+                const path = `${key}.images.${index}`;
+                const caption = asString(img.alt) || asString(img.query);
+                const query = asString(img.query);
+                const photo = asString(img.url)
+                    ? `<img src="${escapeHtml(asString(img.url))}" alt="${escapeHtml(caption || 'Gallery')}" loading="lazy" decoding="async" />`
+                    : '';
+                return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${
+                    query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
+                }${
+                    caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
+                }</figure>`;
+            }).join('');
             return `${h('h2', heading)}<div class="gallery">${figures}</div>`;
         }
         case 'team':
-            return `${h('h2', heading)}${listMarkup(asList(p.members), 'name', 'bio', (item) =>
-                asString(item.role) ? `<p class="role">${escapeHtml(asString(item.role))}</p>` : '')}`;
+            return `${h('h2', heading)}${listMarkup(key, 'members', asList(p.members), 'name', 'bio', (item, path) =>
+                asString(item.role) ? slot('p', `${path}.role`, escapeHtml(asString(item.role)), ' class="role"') : '')}`;
         case 'testimonials':
-            return `${h('h2', heading)}${asList(p.items).map((item) =>
-                `<blockquote><p>${escapeHtml(asString(item.quote))}</p>${asString(item.author) ? `<cite>${escapeHtml(asString(item.author))}</cite>` : ''}</blockquote>`,
-            ).join('')}`;
+            return `${h('h2', heading)}${asList(p.items).map((item, index) => {
+                const path = `${key}.items.${index}`;
+                return `<blockquote>${slot('p', `${path}.quote`, escapeHtml(asString(item.quote)))}${
+                    asString(item.author) ? slot('cite', `${path}.author`, escapeHtml(asString(item.author))) : ''
+                }</blockquote>`;
+            }).join('')}`;
         case 'faq':
-            return `${h('h2', heading)}${asList(p.items).map((item) =>
-                `<details><summary>${escapeHtml(asString(item.question))}</summary><p>${escapeHtml(asString(item.answer))}</p></details>`,
-            ).join('')}`;
+            return `${h('h2', heading)}${asList(p.items).map((item, index) => {
+                const path = `${key}.items.${index}`;
+                return `<details>${slot('summary', `${path}.question`, escapeHtml(asString(item.question)))}${
+                    slot('p', `${path}.answer`, escapeHtml(asString(item.answer)))
+                }</details>`;
+            }).join('')}`;
         case 'contact':
             return [
                 h('h2', heading),
-                asString(p.blurb) ? `<p>${escapeHtml(asString(p.blurb))}</p>` : '',
+                asString(p.blurb) ? slot('p', `${key}.blurb`, escapeHtml(asString(p.blurb))) : '',
                 '<address>',
-                asString(p.address) ? `<p>${escapeHtml(asString(p.address))}</p>` : '',
-                asString(p.phone) ? `<p><a href="tel:${escapeHtml(asString(p.phone))}">${escapeHtml(asString(p.phone))}</a></p>` : '',
-                asString(p.email) ? `<p><a href="mailto:${escapeHtml(asString(p.email))}">${escapeHtml(asString(p.email))}</a></p>` : '',
-                asString(p.hours) ? `<p>${escapeHtml(asString(p.hours))}</p>` : '',
+                asString(p.address) ? slot('p', `${key}.address`, escapeHtml(asString(p.address))) : '',
+                asString(p.phone)
+                    ? `<p><a href="tel:${escapeHtml(asString(p.phone))}">${slot('span', `${key}.phone`, escapeHtml(asString(p.phone)))}</a></p>`
+                    : '',
+                asString(p.email)
+                    ? `<p><a href="mailto:${escapeHtml(asString(p.email))}">${slot('span', `${key}.email`, escapeHtml(asString(p.email)))}</a></p>`
+                    : '',
+                asString(p.hours) ? slot('p', `${key}.hours`, escapeHtml(asString(p.hours))) : '',
                 '</address>',
             ].join('');
         case 'footer':
-            return `<p>${escapeHtml(asString(p.tagline))}</p>`;
+            return slot('p', `${key}.tagline`, escapeHtml(asString(p.tagline)));
         default: {
             const exhaustive: never = type;
             return exhaustive;
@@ -138,35 +186,158 @@ function renderInner(
     }
 }
 
+function siteNav(visible: readonly SectionInstance[], title: string): string {
+    const links = visible
+        .filter((s) => s.type !== 'hero' && s.type !== 'footer')
+        .map((s) => {
+            const label = contractFor(s.type).label;
+            const href = `#${sectionAnchor(s, visible)}`;
+            return `<a href="${href}">${escapeHtml(label)}</a>`;
+        })
+        .join('');
+
+    return `<header class="site-header">
+  <a class="wordmark" href="#top">${escapeHtml(title)}</a>
+  <nav aria-label="Site">${links}</nav>
+</header>`;
+}
+
 const PAGE_CSS = `
-main { max-width: 72rem; margin: 0 auto; padding-inline: 1.5rem; }
-${SITE_NAV_CSS}
-.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); }
+body { margin: 0; color: var(--ink); background: var(--bg); }
+a { color: inherit; }
+.site-header {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 0.75rem 1.5rem; max-width: 72rem; margin: 0 auto; padding: 1.25rem 1.5rem;
+}
+.wordmark { font-weight: 700; text-decoration: none; letter-spacing: var(--display-tracking, -0.01em); }
+.site-header nav { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
+.site-header nav a {
+  color: var(--muted); text-decoration: none; font-size: 0.95rem; cursor: pointer;
+}
+.site-header nav a:hover { color: var(--ink); }
+main { max-width: 72rem; margin: 0 auto; padding-inline: 1.5rem; padding-bottom: 3rem; }
+section { padding-block: var(--section-gap, 3.5rem); }
+[data-type="hero"] {
+  display: grid; gap: 1.5rem; align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 768px) {
+  [data-type="hero"] { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); }
+}
+.hero-copy { min-width: 0; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); margin: 0 0 0.5rem; }
+.lede { font-size: 1.1rem; line-height: 1.6; color: var(--muted); max-width: 40rem; }
 .cta {
-  display: inline-block; margin-top: 1rem; padding: 0.7rem 1.2rem;
+  display: inline-block; margin-top: 1rem; padding: 0.75rem 1.25rem;
   background: var(--accent); color: var(--accent-ink);
   border-radius: var(--radius-md); text-decoration: none; font-weight: 600;
+  cursor: pointer;
 }
 .img-slot {
-  min-height: 12rem; background: var(--panel); border: var(--border-width) solid var(--rule);
-  border-radius: var(--radius-md);
+  min-height: 12rem; background: var(--panel); border: var(--border-width, 1px) solid var(--rule);
+  border-radius: var(--radius-md); overflow: hidden;
 }
-.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--stack-gap); }
+.img-slot img { display: block; width: 100%; height: 100%; min-height: 12rem; object-fit: cover; }
+.cards {
+  list-style: none; padding: 0; margin: 1.25rem 0 0;
+  display: grid; gap: var(--stack-gap, 1rem);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+.card {
+  background: var(--panel); border: 1px solid var(--rule);
+  border-radius: var(--radius-md); padding: 1.1rem 1.2rem;
+}
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--stack-gap, 1rem); }
+.gallery figure { margin: 0; }
 .price { color: var(--muted); margin-left: 0.5rem; }
-blockquote { margin: 0 0 var(--stack-gap); padding-left: 1rem; border-left: 3px solid var(--accent); }
+.role { color: var(--muted); margin: 0.2rem 0 0; }
+blockquote { margin: 0 0 var(--stack-gap, 1rem); padding-left: 1rem; border-left: 3px solid var(--accent); }
 cite { display: block; color: var(--muted); font-style: normal; margin-top: 0.4rem; }
-details { border-bottom: 1px solid var(--rule); padding: 0.75rem 0; }
+details { border-bottom: 1px solid var(--rule); padding: 0.75rem 0; cursor: pointer; }
 address { font-style: normal; }
-ul { padding-left: 1.1rem; }
-[data-type="footer"] { color: var(--muted); font-size: 0.9rem; }
+[data-type="footer"] { color: var(--muted); font-size: 0.9rem; padding-block: 2rem; }
+
+[data-style="casual"] [data-type="hero"] { grid-template-columns: 1fr; }
+[data-style="casual"] [data-type="hero"] .img-slot { display: none; }
+[data-style="casual"] [data-type="hero"] { text-align: center; }
+[data-style="casual"] [data-type="hero"] .lede { margin-inline: auto; }
+[data-style="casual"] [data-type="about"] .img-slot { display: none; }
+
+[data-variant="image-bg"] {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  min-height: 28rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  padding-block: 0;
+}
+[data-variant="image-bg"] .hero-copy,
+[data-variant="image-bg"] .img-slot { grid-area: 1 / 1; }
+[data-variant="image-bg"] .img-slot {
+  min-height: 28rem; height: 100%; border: 0; border-radius: 0;
+}
+[data-variant="image-bg"] .img-slot img {
+  width: 100%; height: 100%; min-height: 28rem; object-fit: cover; border-radius: 0;
+}
+[data-variant="image-bg"] .hero-copy {
+  z-index: 1; align-self: end; color: #fff;
+  background: linear-gradient(transparent, rgba(12, 10, 9, 0.72));
+  padding: 4rem 1.5rem 2.25rem; max-width: none;
+}
+[data-variant="image-bg"] .eyebrow,
+[data-variant="image-bg"] .lede { color: rgba(255,255,255,0.88); }
+
+[data-variant="media-split"] {
+  display: grid; gap: 2rem; align-items: center;
+}
+@media (min-width: 768px) {
+  [data-variant="media-split"] { grid-template-columns: 1fr 1fr; }
+}
+[data-variant="media-split"] .img-slot img {
+  width: 100%; height: 100%; object-fit: cover; min-height: 16rem;
+}
+
+[data-style="motion"] [data-type="hero"] {
+  animation: pc-rise 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+[data-style="motion"] .cta {
+  animation: pc-pulse 2.2s ease-in-out infinite;
+}
+[data-style="motion"] .card {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+[data-style="motion"] .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+@keyframes pc-rise {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pc-pulse {
+  50% { filter: brightness(1.12); transform: translateY(-1px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-style="motion"] [data-type="hero"],
+  [data-style="motion"] .cta { animation: none; }
+}
 `;
 
 /** A generated site as the file tree persistence already stores. */
-export function compositionToFiles(composition: Composition): FileMap {
+export function compositionToFiles(composition: Composition, style?: StyleId): FileMap {
     const visible = composition.sections.filter((s) => s.visible);
-    const contactId = visible.find((s) => s.type === 'contact')?.id ?? null;
-    const nav = siteNavHtml(composition);
-    const body = `<style>${PAGE_CSS}</style>\n${nav}\n<main>\n${visible.map((section, index) => renderSection(section, index, contactId)).join('\n')}\n</main>`;
+    const title = composition.meta.title || 'Home';
+    const styleAttr = style ? ` data-style="${escapeHtml(style)}"` : '';
+    const body = [
+        `<style>${PAGE_CSS}</style>`,
+        `<div class="site"${styleAttr}>`,
+        siteNav(visible, title),
+        `<main id="top">`,
+        visible.map((section, index) => renderSection(section, index, visible)).join('\n'),
+        `</main>`,
+        `</div>`,
+    ].join('\n');
 
     return {
         'index.html': compositionShell({

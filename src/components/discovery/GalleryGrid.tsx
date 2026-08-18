@@ -82,12 +82,17 @@ export function GalleryGrid({
                     {templates.length} design{templates.length === 1 ? "" : "s"}
                     {personalised ? " for you" : " to start from"}
                     {filtered && (
+                        // The leading space is inside the span deliberately. `gap-2.5` on
+                        // the heading separates these visually but not in the text stream,
+                        // so a screen reader — and anyone copying the heading — got
+                        // "0 designs to start fromof 115" (R2 D19).
                         <span className="text-sm font-normal text-muted-foreground">
-                            of {total}
+                            {" of "}
+                            {total}
                         </span>
                     )}
                     {activeCategory && (
-                        <span className="rounded-full border border-primary/40 px-2.5 py-0.5 text-xs font-medium text-primary">
+                        <span className="rounded-full border border-primary/40 px-2.5 py-0.5 text-xs font-medium text-brand-ink">
                             · {CATEGORY_LABELS[activeCategory]}
                         </span>
                     )}

@@ -8,6 +8,7 @@ import type {
   FileMap,
   PatchProjectRequest,
   ProjectDetail,
+  ProjectFailure,
   ProjectSummary,
   SiteMeta,
   TemplateTier,
@@ -19,6 +20,7 @@ import { createCommit } from "./commits";
 import { contentFromFiles } from "@/lib/content/from-files";
 import { asContentSchema } from "@/lib/content/schema";
 import { PROJECTS_PER_USER } from "@/lib/limits/config";
+import { failureMessage, toFailureReason } from "@/lib/deploy/failure";
 // Shared with the publish gate (R3 D9), so fork and publish agree about what a live
 // entitlement is — including that a lapsed one is not.
 import { hasPro } from "./entitlements";
@@ -36,6 +38,7 @@ const SUMMARY_COLUMNS_PLAIN = "id, name, updated_at";
 interface DeploymentRow {
   status: DeploymentState;
   live_url: string | null;
+  failure_reason: string | null;
   created_at: string;
 }
 
@@ -57,6 +60,26 @@ function liveUrlOf(rows: DeploymentRow[] | null | undefined): string | null {
   return d && d.status === "live" ? d.live_url : null;
 }
 
+/**
+ * Why the latest publish did not go live, in words (R3 D18, V-7).
+ *
+ * Null once a site is live, and null for a project that has never been published — neither
+ * of those is a failure and inventing an explanation for them would be noise on every row.
+ * `verifying` is included deliberately: it is not a failure either, but a person who pressed
+ * publish two minutes ago and sees nothing needs to be told the site is on its way, and the
+ * words for that reason say exactly that.
+ */
+function failureOf(rows: DeploymentRow[] | null | undefined): ProjectFailure | null {
+  const d = latestDeployment(rows);
+  if (!d) return null;
+  if (d.status === "live") return null;
+  if (!d.failure_reason && d.status !== "failed") return null;
+
+  const reason = toFailureReason(d.failure_reason);
+  const { what, next, retryable } = failureMessage(reason);
+  return { reason, what, next, retryable };
+}
+
 interface ProjectRow {
   id: string;
   name: string;
@@ -75,6 +98,7 @@ function rowToDetail(row: ProjectRow): ProjectDetail {
     name: row.name,
     status: statusOf(row.deployments),
     liveUrl: liveUrlOf(row.deployments),
+    failure: failureOf(row.deployments),
     thumbnailUrl: null,
     updatedAt: row.updated_at,
     sourceTemplateId: row.source_template_id,
@@ -115,6 +139,7 @@ export async function listProjects(
       name: r.name,
       status: statusOf(r.deployments),
       liveUrl: liveUrlOf(r.deployments),
+      failure: failureOf(r.deployments),
       thumbnailUrl: null,
       updatedAt: r.updated_at,
     };
@@ -225,8 +250,8 @@ async function ensureLibraryTemplate(
 // from it — and the state they arrived at is recorded as version #1. Without that first
 // commit their history starts empty and there is nothing to restore back to.
 //
-// Without a sourceTemplateId this is still just an empty project row; the generation path
-// fills one in and belongs to E4.
+// Without a sourceTemplateId this is still just an empty project row. The generate
+// route fills it in once the job finishes (files, schema, first commit).
 export async function createProject(
   supabase: SupabaseClient,
   userId: string,

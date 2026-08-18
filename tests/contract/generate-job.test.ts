@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
+import { createFakeDb } from '../support/fake-db';
+
 const auth = vi.hoisted(() => ({ requireUser: vi.fn() }));
 const ledger = vi.hoisted(() => ({ persist: vi.fn() }));
+const entitlements = vi.hoisted(() => ({ hasPro: vi.fn(async () => false) }));
 vi.mock('@/lib/auth/session', () => ({
     requireUser: auth.requireUser,
     supabaseRoute: async () => ({}),
@@ -9,6 +12,10 @@ vi.mock('@/lib/auth/session', () => ({
 vi.mock('@/lib/ai/cost/persist', () => ({
     persistLedger: ledger.persist,
 }));
+vi.mock('@/lib/data/entitlements', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/lib/data/entitlements')>();
+    return { ...actual, hasPro: entitlements.hasPro };
+});
 
 vi.mock('@/lib/limits/redis', async () => {
     const support = await import('../support/redis-mock');
@@ -21,7 +28,13 @@ import { MockGateway } from '@/lib/ai/gateway/mock';
 import { setGenerationCounters } from '@/lib/ai/jobs/budget';
 import { resetDiversityStore } from '@/lib/ai/composition/diversity';
 import { jobStore, setJobStore } from '@/lib/ai/jobs/store';
+import {
+    recordFreeGeneration,
+    resetFreeGenerationQuota,
+} from '@/lib/ai/jobs/quota';
+import { FREE_GENERATIONS_PER_PROJECT } from '@/lib/limits/config';
 import { POST } from '@/app/api/v1/projects/[id]/generate/route';
+import { POST as choose } from '@/app/api/v1/projects/[id]/generate/choose/route';
 import { GET } from '@/app/api/v1/jobs/[id]/route';
 
 const generate = (body: unknown, projectId = 'p_1') =>
@@ -50,8 +63,21 @@ async function settled(id: string) {
     throw new Error('job did not settle');
 }
 
+// The generate route reads the project through RLS before it starts anything, so a session
+// in these tests needs a client that can see one. Backed by the same fake database the
+// persistence tests use rather than a bespoke stub: these specs also exercise /edits and
+// the look-picker, and those reach for query shapes a hand-rolled builder does not have.
+//
+// What each test is about is generation, not ownership — /generate refusing somebody else's
+// project is covered on its own in generate-ownership.test.ts.
+function sessionFor(userId: string) {
+    const db = createFakeDb({ users: [{ id: userId }] });
+    db.insert('projects', { id: 'p_1', user_id: userId, name: 'Test site', content_json: {}, site_meta: {} });
+    return { userId, supabase: db.asUser(userId) };
+}
+
 beforeEach(() => {
-    auth.requireUser.mockResolvedValue({ userId: 'u_1', supabase: {} });
+    auth.requireUser.mockResolvedValue(sessionFor('u_1'));
     ledger.persist.mockReset().mockResolvedValue(undefined);
     resetRedisMock();
     limits.evalMock.mockImplementation(async (_s: string, keys: string[]) =>
@@ -59,6 +85,8 @@ beforeEach(() => {
     setJobStore(null);
     setGenerationCounters(null);
     resetDiversityStore();
+    resetFreeGenerationQuota();
+    entitlements.hasPro.mockResolvedValue(false);
     setGateway(new MockGateway());
 });
 
@@ -209,13 +237,26 @@ describe('GET /api/v1/jobs/{id}', () => {
             elapsed_ms: expect.any(Number),
             files_ready: true,
         });
+        expect(json.data.variants).toHaveLength(3);
+        expect(json.data.variants.map((v: { id: string }) => v.id)).toEqual([
+            'casual', 'photos', 'motion',
+        ]);
+        expect(json.data.variants.every((v: { html: string }) => v.html.startsWith('<!doctype html>'))).toBe(true);
+        expect(json.data.attempts).toHaveLength(1);
+        expect(json.data.quota).toMatchObject({
+            used: 1,
+            limit: FREE_GENERATIONS_PER_PROJECT,
+            remaining: FREE_GENERATIONS_PER_PROJECT - 1,
+            unlimited: false,
+        });
+        expect(json.data.prompt).toBe('a family dental clinic in koramangala');
     });
 
     it('R7: another user\'s job is not_found, not forbidden', async () => {
         const res = await generate({ prompt: 'a family dental clinic in koramangala' });
         const { data } = await res.json();
 
-        auth.requireUser.mockResolvedValue({ userId: 'u_2', supabase: {} });
+        auth.requireUser.mockResolvedValue(sessionFor('u_2'));
         const poll = await pollJob(data.job_id);
 
         expect(poll.status).toBe(404);
@@ -225,5 +266,99 @@ describe('GET /api/v1/jobs/{id}', () => {
     it('an unknown job id is not_found', async () => {
         const poll = await pollJob('job_nope');
         expect(poll.status).toBe(404);
+    });
+});
+
+describe('POST /api/v1/projects/{id}/generate/choose', () => {
+    it('records the photo-rich look on the job', async () => {
+        const res = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const { data } = await res.json();
+        await settled(data.job_id);
+
+        const picked = await choose(
+            new Request('http://x/api/v1/projects/p_1/generate/choose', {
+                method: 'POST',
+                body: JSON.stringify({ jobId: data.job_id, variantId: 'photos' }),
+                headers: { 'content-type': 'application/json' },
+            }) as never,
+            { params: Promise.resolve({ id: 'p_1' }) } as never,
+        );
+        const json = await picked.json();
+
+        expect(picked.status).toBe(200);
+        expect(json.data.variant_id).toBe('photos');
+        const job = await jobStore().get(data.job_id);
+        expect(job?.composition?.artDirection.themeId).toBe('warm-editorial');
+        expect(job?.files?.['index.html']).toContain('data-style="photos"');
+    });
+
+    it('refuses a look that was not generated', async () => {
+        const res = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const { data } = await res.json();
+        await settled(data.job_id);
+
+        const picked = await choose(
+            new Request('http://x/api/v1/projects/p_1/generate/choose', {
+                method: 'POST',
+                body: JSON.stringify({ jobId: data.job_id, variantId: 'neon' }),
+                headers: { 'content-type': 'application/json' },
+            }) as never,
+            { params: Promise.resolve({ id: 'p_1' }) } as never,
+        );
+        expect(picked.status).toBe(422);
+    });
+
+    it('lets them pick a look from an earlier generation', async () => {
+        const first = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const firstJson = await first.json();
+        await settled(firstJson.data.job_id);
+
+        const second = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const secondJson = await second.json();
+        await settled(secondJson.data.job_id);
+
+        const poll = await pollJob(secondJson.data.job_id);
+        const pollJson = await poll.json();
+        expect(pollJson.data.attempts).toHaveLength(2);
+        expect(pollJson.data.attempts.map((a: { job_id: string }) => a.job_id)).toEqual([
+            firstJson.data.job_id,
+            secondJson.data.job_id,
+        ]);
+
+        const picked = await choose(
+            new Request('http://x/api/v1/projects/p_1/generate/choose', {
+                method: 'POST',
+                body: JSON.stringify({ jobId: firstJson.data.job_id, variantId: 'casual' }),
+                headers: { 'content-type': 'application/json' },
+            }) as never,
+            { params: Promise.resolve({ id: 'p_1' }) } as never,
+        );
+        expect(picked.status).toBe(200);
+        expect((await picked.json()).data.variant_id).toBe('casual');
+    });
+});
+
+describe('free generation quota', () => {
+    it(`the ${FREE_GENERATIONS_PER_PROJECT + 1}th generation on a project is payment_required`, async () => {
+        for (let i = 0; i < FREE_GENERATIONS_PER_PROJECT; i++) {
+            await recordFreeGeneration('p_1');
+        }
+
+        const res = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const json = await res.json();
+
+        expect(res.status).toBe(402);
+        expect(json.error.code).toBe('payment_required');
+        expect(json.error.message).toMatch(/5 free generations/i);
+    });
+
+    it('a Pro account can generate past the free cap', async () => {
+        entitlements.hasPro.mockResolvedValue(true);
+        for (let i = 0; i < FREE_GENERATIONS_PER_PROJECT; i++) {
+            await recordFreeGeneration('p_1');
+        }
+
+        const res = await generate({ prompt: 'a family dental clinic in koramangala' });
+        expect(res.status).toBe(202);
     });
 });

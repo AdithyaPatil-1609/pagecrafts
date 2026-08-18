@@ -29,7 +29,11 @@ export function checkScalar(field: Field, value: unknown): string | null {
       return null;
     case "image":
       // An asset id, or null to clear the slot.
-      if (value !== null && typeof value !== "string") return "Expected an asset id or null.";
+      // Worded for a person, because these strings travel out as validation detail and
+      // this file mixes the two kinds — "Too long — the limit is N characters" above is
+      // read by whoever is typing. The UI cannot produce this case, but a message nobody
+      // can act on is not improved by being unreachable (R3 D20 copy audit).
+      if (value !== null && typeof value !== "string") return "Choose a photo, or clear the one that is there.";
       return null;
     case "color":
       if (typeof value !== "string" || !HEX_COLOR.test(value)) {

@@ -9,13 +9,12 @@ import {
     COLOUR_LABELS,
     COLOURS,
     FEATURE_LABELS,
-    FEATURES,
     LAYOUT_LABELS,
     LAYOUTS,
     TIER_LABELS,
     TIERS,
 } from "@/lib/discovery/filters";
-import type { TemplateQuery } from "@/lib/templates/query";
+import { narrowingLibraryFeatures, type TemplateQuery } from "@/lib/templates/query";
 import { cn } from "@/lib/utils";
 
 // Screen 04's filter chips (R2 D7). Combinable across groups, individually clearable, and
@@ -47,12 +46,27 @@ function Chip({
     return (
         <Link
             href={href}
-            // aria-pressed rather than aria-current: this is a toggle, and a screen reader
-            // should say so — otherwise the only cue that a chip clears on a second press is
-            // the colour, which is not a cue at all for some people.
-            aria-pressed={active}
+            // `aria-current`, not `aria-pressed`.
+            //
+            // This was aria-pressed, on the reasoning that a chip is a toggle and a screen
+            // reader should say so. The reasoning was right and the attribute was not:
+            // aria-pressed is only defined for a button, and this is a link. An unsupported
+            // ARIA attribute is not a weaker announcement, it is no announcement — so the
+            // active filter was conveyed by colour and nothing else, to anybody not looking
+            // at it. axe reported it as critical across all forty chips (R2 D20).
+            //
+            // aria-current is valid on a link and announces "current". What it does not
+            // carry is that pressing again clears the filter, so that goes into the
+            // accessible name below, where it is words rather than an attribute nobody
+            // implements.
+            aria-current={active ? "true" : undefined}
             className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                // min-h-9 on a phone, tighter from sm upwards. The chips were 30px tall at
+                // every width, which is comfortable with a mouse and not with a thumb —
+                // Meera is on a phone, and forty-five of these sat under the finger size
+                // people actually have (R2 D15 mobile pass). The text stays the same size;
+                // only the target grows, so nothing about the layout changes on desktop.
+                "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-0 sm:px-3",
                 active
                     ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                     : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -60,8 +74,15 @@ function Chip({
         >
             {label}
             {/* The × is what makes "individually clearable" visible rather than something
-                you have to discover by pressing an active chip and seeing what happens. */}
-            {active && <X aria-hidden className="size-3" strokeWidth={2.5} />}
+                you have to discover by pressing an active chip and seeing what happens. It is
+                aria-hidden, so the sentence beside it is the same information for somebody
+                who cannot see it — "Fitness, selected — activate to clear this filter". */}
+            {active && (
+                <>
+                    <X aria-hidden className="size-3" strokeWidth={2.5} />
+                    <span className="sr-only">, selected — activate to clear this filter</span>
+                </>
+            )}
         </Link>
     );
 }
@@ -107,6 +128,9 @@ export function FilterChips({
     resetHref: string;
 }) {
     const active = activeFilterCount(query);
+    // Derived from the library itself rather than passed in: the answer is a property of
+    // the designs that exist, and the page should not have to know to ask.
+    const features = narrowingLibraryFeatures();
 
     return (
         <section aria-label="Filter designs" className="flex flex-col gap-3 rounded-xl border border-border bg-card/40 p-4">
@@ -154,16 +178,21 @@ export function FilterChips({
                 ))}
             </ChipRow>
 
-            <ChipRow label="Has">
-                {FEATURES.map((feature) => (
-                    <Chip
-                        key={feature}
-                        href={chipHref(preserve, "feature", feature, query.feature === feature)}
-                        label={FEATURE_LABELS[feature]}
-                        active={query.feature === feature}
-                    />
-                ))}
-            </ChipRow>
+            {/* Only the features that actually divide the library — see narrowingFeatures.
+                Today that is none of them, so the row does not render at all rather than
+                offering three chips that each return the whole gallery. */}
+            {features.length > 0 && (
+                <ChipRow label="Has">
+                    {features.map((feature) => (
+                        <Chip
+                            key={feature}
+                            href={chipHref(preserve, "feature", feature, query.feature === feature)}
+                            label={FEATURE_LABELS[feature]}
+                            active={query.feature === feature}
+                        />
+                    ))}
+                </ChipRow>
+            )}
 
             {active > 0 && (
                 <div className="flex items-center gap-3 border-t border-border pt-3">
@@ -172,7 +201,7 @@ export function FilterChips({
                     </span>
                     <Link
                         href={resetHref}
-                        className="text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="text-xs font-medium text-brand-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                         Clear all
                     </Link>

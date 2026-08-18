@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ZodType } from "zod";
 
 import { requireUser, supabaseRoute } from "@/lib/auth/session";
-import { ApiError, fail } from "@/lib/errors/respond"
+import { ApiError, fail, UNEXPECTED_FAILURE } from "@/lib/errors/respond"
 import { guardAiRequest, type UsageReport } from "@/lib/limits/ai-guard";
 import { readJson } from "./body";
 import { captureError } from "@/lib/observability/capture";
@@ -90,7 +90,7 @@ export function withRoute<
       });
       console.error("[api]", err);
 
-      return fail("internal", "Something went wrong on our side.");
+      return fail("internal", UNEXPECTED_FAILURE);
     }
   };
 }

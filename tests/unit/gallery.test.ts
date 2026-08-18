@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { paletteOf, previewOf } from "@/lib/discovery/preview";
+import { tileSrcSet } from "@/lib/discovery/image-size";
 import { MOTIF_BY_CATEGORY, MOTIFS, motifToSvg } from "@/lib/templates/motifs";
 import { DEFAULT_SORT, SORT_KEYS, SORT_LABELS, toSort } from "@/lib/discovery/sort";
 import { queryTemplates } from "@/lib/templates/query";
@@ -130,8 +131,50 @@ describe("previewOf", () => {
       const preview = previewOf(template);
       // Every design in the refreshed library leads with a photograph.
       expect(preview.heroImage, `${template.id} has no hero image`).toMatch(/^https:\/\//);
-      // Whatever the tile shows must be the src in the template's own markup.
-      expect(template.files["index.html"]).toContain(`src="${preview.heroImage}"`);
+      // Whatever the tile shows must be the src in the template's own markup — the same URL
+      // the markup means, not the same characters. An ampersand is written `&amp;` in an
+      // attribute, so comparing the raw text asserted that the tile passes the *encoded*
+      // form through, which is exactly the bug found at R2 D18: `?w=1600&amp;q=70&...`
+      // reached Unsplash as one real parameter and three it has never heard of, so `q`,
+      // `auto=format` and `fit=crop` were dropped from all 115 tiles.
+      expect(template.files["index.html"]).toContain(
+        `src="${preview.heroImage!.replace(/&/g, "&amp;")}"`,
+      );
+    }
+  });
+
+  it("hands on the URL the markup means, not the characters it is written with", () => {
+    // R2 D18. The src is lifted out of an HTML attribute, where `&` is written `&amp;`.
+    // Passing that through made `amp;q` a parameter name, and new URL().toString() then
+    // percent-encoded its semicolon — so every tile asked Unsplash for `w` plus three
+    // parameters it has never heard of, and `q=70`, `auto=format` and `fit=crop` were
+    // silently dropped from all 115. Measured on one of the library's own photographs:
+    // 47.6 KB of JPEG against 29.6 KB of AVIF for the URL the design actually specifies.
+    const preview = previewOf({
+      ...TEMPLATES[0]!,
+      files: {
+        "index.html":
+          '<div data-slot="hero.image"><img src="https://images.unsplash.com/p?w=1600&amp;q=70&amp;auto=format" /></div>',
+      },
+    });
+
+    expect(preview.heroImage).toBe("https://images.unsplash.com/p?w=1600&q=70&auto=format");
+    expect(preview.heroImage).not.toContain("amp");
+  });
+
+  it("keeps every resizing directive when the tile asks for a narrower photo", () => {
+    // The end of the same path: what the tile actually requests. `w` is rewritten; nothing
+    // else may be lost on the way.
+    for (const template of TEMPLATES.slice(0, 20)) {
+      const src = previewOf(template).heroImage;
+      if (!src?.includes("images.unsplash.com")) continue;
+
+      const asked = new URL(tileSrcSet(src)!.split(" ")[0]!);
+      expect(asked.searchParams.get("w"), template.id).toBe("480");
+      for (const [key, value] of new URL(src).searchParams) {
+        if (key === "w") continue;
+        expect(asked.searchParams.get(key), `${template.id}: ${key}`).toBe(value);
+      }
     }
   });
 
