@@ -661,6 +661,60 @@ paths:
                 $ref: '#/components/schemas/DeploymentResult'
         default:
           $ref: '#/components/responses/Error'
+  /account:
+    get:
+      operationId: getAccount
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: >-
+            The caller's own account. Scoped by RLS rather than by an id in the request —
+            there is no path that names a user, so there is none to guess.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResult'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteAccount
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: >-
+            Account, sites, files, version history and publish records removed. Already
+            published sites stay online — they belong to the person, and closing an account
+            is not a request to take a website down (C-12).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteAccountResult'
+        default:
+          $ref: '#/components/responses/Error'
+  /account/consent:
+    patch:
+      operationId: setTrainingConsent
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRequest'
+      responses:
+        '200':
+          description: >-
+            Consent recorded. Off by default and never inferred: the field is required, so
+            an absent value is a validation_failed rather than a guess ([R2] §11 R11).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResult'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -1659,6 +1713,45 @@ components:
             composition:
               type: object
               additionalProperties: true
+    ConsentRequest:
+      type: object
+      required: [trainingOptIn]
+      properties:
+        trainingOptIn:
+          type: boolean
+    AccountResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [email, emailVerified, trainingOptIn, createdAt]
+          properties:
+            email:
+              type: string
+              format: email
+            emailVerified:
+              type: boolean
+            trainingOptIn:
+              type: boolean
+              description: Off by default. Only the owner may set it, on the settings page.
+            createdAt:
+              type: string
+              format: date-time
+    DeleteAccountResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [deleted]
+          properties:
+            deleted:
+              const: true
     ErrorResult:
       type: object
       required: [ok, error]
