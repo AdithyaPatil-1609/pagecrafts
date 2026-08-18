@@ -27,12 +27,17 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-    { label: "Your sites", icon: LayoutGrid },
+    { label: "Your sites", icon: LayoutGrid, href: "/sites" },
     { label: "Templates", icon: LayoutTemplate, href: "/templates" },
+    // Still inert, and deliberately. AI Assistant lives inside the editor, where it has a
+    // project and a section to talk about; a standalone page for it has nothing to say.
+    // Domains and Team are post-MVP (Amendment A1 §22.3) with nothing behind them at all.
+    // A row that navigates to "coming soon" is a worse answer than a row that plainly does
+    // nothing.
     { label: "AI Assistant", icon: Sparkles, badge: "Beta" },
     { label: "Domains", icon: Globe },
     { label: "Team", icon: Users },
-    { label: "Settings", icon: Settings },
+    { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
 const ROW = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium";

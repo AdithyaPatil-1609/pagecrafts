@@ -66,6 +66,11 @@ const NO_SCHEMA: Record<string, string> = {
         "type — because a Zod schema cannot describe a file upload.",
     "/v1/projects/[id]/checkout": "No body at all; the project is the whole request.",
     "/v1/projects/[id]/publish": "No body. The idempotency key is a header, checked in the route.",
+    "/v1/account":
+        "DELETE, and there is nothing to validate: the session says whose account it is, and " +
+        "a confirmation field in the body would only be a box the client ticks for them. The " +
+        "confirmation is in the interface, where a person is shown what they lose and types " +
+        "the words. PATCH /account/consent, which does carry a body, has its schema.",
 };
 
 /** Routes allowed to reach past RLS with the service role, and why. */
