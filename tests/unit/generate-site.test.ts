@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generationExplanation, generationProgressCopy } from '@/lib/editor/generate-site';
+import { generationExplanation, generationProgressCopy, compositionFromJob } from '@/lib/editor/generate-site';
 import type { Composition } from '@/lib/contracts';
 
 const composition: Composition = {
@@ -42,5 +42,33 @@ describe('generation copy', () => {
             elapsed_ms: 10,
             files_ready: false,
         })).toBe('Writing the site… 2 of 6');
+    });
+});
+
+describe('compositionFromJob', () => {
+    const done = {
+        status: 'done' as const,
+        sections_done: 4,
+        sections_total: 4,
+        elapsed_ms: 10,
+        files_ready: true,
+        composition,
+    };
+
+    it('returns the generated composition', () => {
+        expect(compositionFromJob(done).composition?.meta.title).toBe('Iron Hall');
+        expect(compositionFromJob(done).error).toBeNull();
+    });
+
+    it('does not treat a gallery template as a generated site', () => {
+        const result = compositionFromJob({
+            ...done,
+            composition: undefined,
+            files_ready: false,
+            fallback_template_id: 'portfolio',
+        });
+        expect(result.composition).toBeNull();
+        expect(result.error).toMatch(/could not be generated/i);
+        expect(result.error).not.toMatch(/template/i);
     });
 });
