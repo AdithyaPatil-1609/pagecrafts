@@ -1,5 +1,8 @@
 import type { Composition, FileMap, SectionInstance, SectionKey } from '@/lib/contracts';
 import { compositionShell } from '@/lib/render/page-shell';
+// The shared nav's CSS (#168). Used below and lost in the #170 merge, which left the
+// reference behind without the import.
+import { SITE_NAV_CSS } from '@/lib/render/site-chrome';
 import { contractFor } from '../sections/contracts';
 import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
@@ -178,15 +181,7 @@ function renderInner(
                     : '',
                 asString(p.hours) ? slot('p', `${key}.hours`, escapeHtml(asString(p.hours))) : '',
                 '</address>',
-                `<form class="form" action="" method="post">
-        <input type="text" name="name" placeholder="Your name" aria-label="Name" autocomplete="name" />
-        <input type="email" name="email" placeholder="you@example.com" aria-label="Email" autocomplete="email" required />
-        <textarea name="message" rows="4" placeholder="How can we help?" aria-label="Message"></textarea>
-        <button type="submit">${escapeHtml(send)}</button>
-      </form>`,
-                '</div>',
             ].join('');
-        }
         case 'footer':
             return slot('p', `${key}.tagline`, escapeHtml(asString(p.tagline)));
         default: {
@@ -196,19 +191,6 @@ function renderInner(
     }
 }
 
-// One class name with lib/render/site-chrome.ts, which is the nav the other renderer uses.
-//
-// There are two renderers turning a Composition into a page — this one, behind the editor
-// preview and the site sync, and composition-html.ts. site-chrome.ts was extracted as the
-// shared nav and only ever wired into the second, so this kept its own copy under a
-// different class. Three tests written against the shared chrome sat red for two days
-// because the code they exercise had never been migrated.
-//
-// The markup and the CSS are shared now. The *anchors* are not, deliberately: this renderer
-// gives a section a readable id where its type is unique, so a published site has
-// `#contact` in the address bar rather than `#s_04`, and its own test pins that. Sharing
-// the anchor scheme too would mean choosing between the two, which is a product decision
-// about customer-visible URLs and belongs to whoever owns the editor.
 function siteNav(visible: readonly SectionInstance[], title: string): string {
     const links = visible
         .filter((s) => s.type !== 'hero' && s.type !== 'footer')
