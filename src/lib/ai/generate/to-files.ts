@@ -69,9 +69,8 @@ function listMarkup(
         const title = asString(item[titleKey]);
         const body = asString(item[bodyKey]);
         const more = extra?.(item, path) ?? '';
-        return `<li class="card">${slot('h3', `${path}.${titleKey}`, escapeHtml(title))}${
-            body ? slot('p', `${path}.${bodyKey}`, escapeHtml(body)) : ''
-        }${more}</li>`;
+        return `<li class="card">${slot('h3', `${path}.${titleKey}`, escapeHtml(title))}${body ? slot('p', `${path}.${bodyKey}`, escapeHtml(body)) : ''
+            }${more}</li>`;
     }).join('')}</ul>`;
 }
 
@@ -140,11 +139,9 @@ function renderInner(
                 const photo = asString(img.url)
                     ? `<img src="${escapeHtml(asString(img.url))}" alt="${escapeHtml(caption || 'Gallery')}" loading="lazy" decoding="async" />`
                     : '';
-                return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${
-                    query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
-                }${
-                    caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
-                }</figure>`;
+                return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
+                    }${caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
+                    }</figure>`;
             }).join('');
             return `${h('h2', heading)}<div class="gallery">${figures}</div>`;
         }
@@ -154,16 +151,14 @@ function renderInner(
         case 'testimonials':
             return `${h('h2', heading)}${asList(p.items).map((item, index) => {
                 const path = `${key}.items.${index}`;
-                return `<blockquote>${slot('p', `${path}.quote`, escapeHtml(asString(item.quote)))}${
-                    asString(item.author) ? slot('cite', `${path}.author`, escapeHtml(asString(item.author))) : ''
-                }</blockquote>`;
+                return `<blockquote>${slot('p', `${path}.quote`, escapeHtml(asString(item.quote)))}${asString(item.author) ? slot('cite', `${path}.author`, escapeHtml(asString(item.author))) : ''
+                    }</blockquote>`;
             }).join('')}`;
         case 'faq':
             return `${h('h2', heading)}${asList(p.items).map((item, index) => {
                 const path = `${key}.items.${index}`;
-                return `<details>${slot('summary', `${path}.question`, escapeHtml(asString(item.question)))}${
-                    slot('p', `${path}.answer`, escapeHtml(asString(item.answer)))
-                }</details>`;
+                return `<details>${slot('summary', `${path}.question`, escapeHtml(asString(item.question)))}${slot('p', `${path}.answer`, escapeHtml(asString(item.answer)))
+                    }</details>`;
             }).join('')}`;
         case 'contact': {
             const send = asString(p.ctaLabel) || 'Send';
@@ -181,7 +176,15 @@ function renderInner(
                     : '',
                 asString(p.hours) ? slot('p', `${key}.hours`, escapeHtml(asString(p.hours))) : '',
                 '</address>',
+                `<form class="form" action="" method="post">
+        <input type="text" name="name" placeholder="Your name" aria-label="Name" autocomplete="name" />
+        <input type="email" name="email" placeholder="you@example.com" aria-label="Email" autocomplete="email" required />
+        <textarea name="message" rows="4" placeholder="How can we help?" aria-label="Message"></textarea>
+        <button type="submit">${escapeHtml(send)}</button>
+      </form>`,
+                '</div>',
             ].join('');
+        }
         case 'footer':
             return slot('p', `${key}.tagline`, escapeHtml(asString(p.tagline)));
         default: {
