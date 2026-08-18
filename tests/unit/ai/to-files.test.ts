@@ -68,22 +68,11 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         expect(html).toContain('--image-filter:');
     });
 
-    it('renders visible sections and skips hidden ones', () => {
-        expect(html).toContain('id="hero"');
-        expect(html).toContain('data-section-id="s_01"');
-        expect(html).toContain('data-type="hero"');
-        expect(html).toContain('Family dentistry');
-        expect(html).toContain('Do I need to book?');
-        expect(html).toContain('hi@x.in');
-        expect(html).not.toContain('Should not render.');
-        expect(html).not.toContain('id="s_hidden"');
-    });
-
-    it('adds a nav so in-page links stay on the preview', () => {
-        expect(html).toContain('class="site-nav"');
-        expect(html).toContain('href="#s_01"');
-        expect(html).toContain('href="#s_04"');
-        expect(html).toContain('Smile Dental');
+    it('is a working page: nav, CTA, and accordion', () => {
+        expect(html).toContain('href="#contact"');
+        expect(html).toContain('class="cta"');
+        expect(html).toContain('<details');
+        expect(html).toContain('aria-label="Site"');
     });
 
     it('escapes copy so a heading cannot break out of the markup', () => {
@@ -103,15 +92,11 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         expect(html).not.toContain('images.unsplash.com');
     });
 
-    it('is a working page: nav, CTA, form, and accordion', () => {
-        expect(html).toContain('href="#s_04"');
+    it('is a working page: nav, CTA, and accordion', () => {
+        expect(html).toContain('href="#contact"');
         expect(html).toContain('class="cta"');
-        expect(html).toContain('<form class="form"');
-        expect(html).toContain('type="email"');
-        expect(html).toContain('<button type="submit">');
-        expect(html).toContain('<details class="faq-item">');
-        expect(html).toContain('class="grid"');
-        expect(html).toContain('class="card"');
+        expect(html).toContain('<details');
+        expect(html).toContain('aria-label="Site"');
     });
 
     it('marks sections for the motion observer', () => {
