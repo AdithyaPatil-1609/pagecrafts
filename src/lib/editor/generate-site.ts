@@ -73,17 +73,25 @@ export async function generateSiteProposal(
         }
 
         if (job.status === 'done') {
-            if (!job.composition) {
-                return {
-                    composition: null,
-                    error: 'The site could not be generated. Try a more specific description.',
-                };
-            }
-            return { composition: job.composition, error: null };
+            return compositionFromJob(job);
         }
 
         await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     }
 
     return { composition: null, error: 'That is taking too long. Try again.' };
+}
+
+/** A finished job is a generated composition, never a ranked gallery template. */
+export function compositionFromJob(job: GenerationJobStatus): {
+    composition: Composition | null;
+    error: string | null;
+} {
+    if (job.fallback_template_id || !job.composition) {
+        return {
+            composition: null,
+            error: 'The site could not be generated from your description. Try again with more detail.',
+        };
+    }
+    return { composition: job.composition, error: null };
 }
