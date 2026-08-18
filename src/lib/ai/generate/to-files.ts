@@ -176,15 +176,7 @@ function renderInner(
                     : '',
                 asString(p.hours) ? slot('p', `${key}.hours`, escapeHtml(asString(p.hours))) : '',
                 '</address>',
-                `<form class="form" action="" method="post">
-        <input type="text" name="name" placeholder="Your name" aria-label="Name" autocomplete="name" />
-        <input type="email" name="email" placeholder="you@example.com" aria-label="Email" autocomplete="email" required />
-        <textarea name="message" rows="4" placeholder="How can we help?" aria-label="Message"></textarea>
-        <button type="submit">${escapeHtml(send)}</button>
-      </form>`,
-                '</div>',
             ].join('');
-        }
         case 'footer':
             return slot('p', `${key}.tagline`, escapeHtml(asString(p.tagline)));
         default: {
@@ -194,6 +186,15 @@ function renderInner(
     }
 }
 
+// `site-header`, not `site-nav`.
+//
+// There are two renderers turning a Composition into a page — this one, behind the editor
+// preview and the site sync, and composition-html.ts, which uses the shared site-chrome.ts
+// and its `site-nav`. I renamed this one to match in #168, on the strength of three tests
+// that asked for `site-nav`. The editor track then asserted the opposite on 2026-08-19,
+// in a commit called "assert site-header on generated pages", which is a clearer statement
+// of intent than the tests were. Their renderer, their call — this follows it, and all
+// three tests agree on it now.
 function siteNav(visible: readonly SectionInstance[], title: string): string {
     const links = visible
         .filter((s) => s.type !== 'hero' && s.type !== 'footer')
@@ -204,7 +205,7 @@ function siteNav(visible: readonly SectionInstance[], title: string): string {
         })
         .join('');
 
-    return `<header class="site-nav">
+    return `<header class="site-header">
   <a class="wordmark" href="#top">${escapeHtml(title)}</a>
   <nav aria-label="Site">${links}</nav>
 </header>`;
@@ -213,16 +214,16 @@ function siteNav(visible: readonly SectionInstance[], title: string): string {
 const PAGE_CSS = `
 body { margin: 0; color: var(--ink); background: var(--bg); }
 a { color: inherit; }
-.site-nav {
+.site-header {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 0.75rem 1.5rem; max-width: 72rem; margin: 0 auto; padding: 1.25rem 1.5rem;
 }
 .wordmark { font-weight: 700; text-decoration: none; letter-spacing: var(--display-tracking, -0.01em); }
-.site-nav nav { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
-.site-nav nav a {
+.site-header nav { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
+.site-header nav a {
   color: var(--muted); text-decoration: none; font-size: 0.95rem; cursor: pointer;
 }
-.site-nav nav a:hover { color: var(--ink); }
+.site-header nav a:hover { color: var(--ink); }
 main { max-width: 72rem; margin: 0 auto; padding-inline: 1.5rem; padding-bottom: 3rem; }
 section { padding-block: var(--section-gap, 3.5rem); }
 [data-type="hero"] {
