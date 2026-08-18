@@ -228,7 +228,7 @@ describe('AI chat — full site from Ask', () => {
         expect(useEditorStore.getState().composition?.meta.title).toBe('Sugar & Co');
         expect(useEditorStore.getState().vfs.read('composition.json')).toContain('Handmade sweets');
         expect(useEditorStore.getState().vfs.read('index.html')).toContain('Handmade sweets');
-        expect(useEditorStore.getState().vfs.read('index.html')).toContain('class="site-header"');
+        expect(useEditorStore.getState().vfs.read('index.html')).toContain('class="site-nav"');
         expect(useEditorStore.getState().pendingChange).toBeNull();
     });
 

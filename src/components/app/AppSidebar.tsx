@@ -27,12 +27,18 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-    { label: "Your sites", icon: LayoutGrid },
+    { label: "Your sites", icon: LayoutGrid, href: "/sites" },
     { label: "Templates", icon: LayoutTemplate, href: "/templates" },
-    { label: "AI Assistant", icon: Sparkles, badge: "Beta" },
+    // The assistant lives inside the editor, where it has a project and a section to talk
+    // about. /assistant is only the way in: it asks which site, then hands over.
+    { label: "AI Assistant", icon: Sparkles, href: "/assistant", badge: "Beta" },
+    // Still inert, and deliberately. Domains and Team are post-MVP (Amendment A1 §22.3) with
+    // nothing behind them at all — no registrar code, no team or member concept in the
+    // database. A row that navigates to "coming soon" is a worse answer than a row that
+    // plainly does nothing.
     { label: "Domains", icon: Globe },
     { label: "Team", icon: Users },
-    { label: "Settings", icon: Settings },
+    { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
 const ROW = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium";

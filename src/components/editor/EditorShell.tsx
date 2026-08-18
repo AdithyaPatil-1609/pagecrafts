@@ -49,6 +49,14 @@ export default function EditorShell({
     const pendingChange = useEditorStore((s) => s.pendingChange);
     const rejectChange = useEditorStore((s) => s.rejectChange);
 
+    // Arriving from /assistant, where the person has already said they want to ask for a
+    // change. Opening the panel here rather than seeding useState keeps the first render the
+    // same on the server and the client; a mismatched boolean would be a hydration warning
+    // for the sake of one frame. Read once on mount, so it never fights the toggle afterwards.
+    useEffect(() => {
+        if (new URLSearchParams(window.location.search).get('ask') === '1') setAskOpen(true);
+    }, []);
+
     useEffect(() => {
         if (jobId) return;
         loadProject(projectId);

@@ -80,9 +80,11 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
     });
 
     it('adds a nav so in-page links stay on the preview', () => {
-        expect(html).toContain('class="site-header"');
+        expect(html).toContain('class="site-nav"');
+        expect(html).toContain('href="#top"');
         expect(html).toContain('href="#contact"');
         expect(html).toContain('Smile Dental');
+        expect(html).toContain('<main id="top">');
     });
 
     it('escapes copy so a heading cannot break out of the markup', () => {
