@@ -79,3 +79,10 @@ export const restoreSchema = z.object({
     .regex(/^[0-9a-f]{7,40}$/, "That is not a version id."),
 });
 
+// PATCH /account/consent — required, not optional. An absent value would have to be given a
+// meaning, and every meaning available (leave it, clear it, assume yes) is a way to get
+// consent wrong.
+export const consentSchema = z.object({
+  trainingOptIn: z.boolean(),
+});
+

@@ -22,3 +22,4 @@ export * from "./projects";
 export * from "./commits";
 export * from "./content";
 export * from "./entitlements";
+export * from "./account";
