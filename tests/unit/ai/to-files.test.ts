@@ -102,6 +102,17 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         expect(html).not.toContain('images.unsplash.com');
     });
 
+    it('is a working page: nav, CTA, form, and accordion', () => {
+        expect(html).toContain('href="#s_04"');
+        expect(html).toContain('class="cta"');
+        expect(html).toContain('<form class="form"');
+        expect(html).toContain('type="email"');
+        expect(html).toContain('<button type="submit">');
+        expect(html).toContain('<details class="faq-item">');
+        expect(html).toContain('class="grid"');
+        expect(html).toContain('class="card"');
+    });
+
     it('marks sections for the motion observer', () => {
         expect(html).toContain('data-animate');
         expect(html).toContain('IntersectionObserver');
