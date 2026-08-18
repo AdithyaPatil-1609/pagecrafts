@@ -1,5 +1,8 @@
 import type { Composition, FileMap, SectionInstance, SectionKey } from '@/lib/contracts';
 import { compositionShell } from '@/lib/render/page-shell';
+// The shared nav's CSS (#168). Used below and lost in the #170 merge, which left the
+// reference behind without the import.
+import { SITE_NAV_CSS } from '@/lib/render/site-chrome';
 import { contractFor } from '../sections/contracts';
 import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
@@ -66,9 +69,8 @@ function listMarkup(
         const title = asString(item[titleKey]);
         const body = asString(item[bodyKey]);
         const more = extra?.(item, path) ?? '';
-        return `<li class="card">${slot('h3', `${path}.${titleKey}`, escapeHtml(title))}${
-            body ? slot('p', `${path}.${bodyKey}`, escapeHtml(body)) : ''
-        }${more}</li>`;
+        return `<li class="card">${slot('h3', `${path}.${titleKey}`, escapeHtml(title))}${body ? slot('p', `${path}.${bodyKey}`, escapeHtml(body)) : ''
+            }${more}</li>`;
     }).join('')}</ul>`;
 }
 
@@ -137,11 +139,9 @@ function renderInner(
                 const photo = asString(img.url)
                     ? `<img src="${escapeHtml(asString(img.url))}" alt="${escapeHtml(caption || 'Gallery')}" loading="lazy" decoding="async" />`
                     : '';
-                return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${
-                    query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
-                }${
-                    caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
-                }</figure>`;
+                return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
+                    }${caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
+                    }</figure>`;
             }).join('');
             return `${h('h2', heading)}<div class="gallery">${figures}</div>`;
         }
@@ -151,21 +151,21 @@ function renderInner(
         case 'testimonials':
             return `${h('h2', heading)}${asList(p.items).map((item, index) => {
                 const path = `${key}.items.${index}`;
-                return `<blockquote>${slot('p', `${path}.quote`, escapeHtml(asString(item.quote)))}${
-                    asString(item.author) ? slot('cite', `${path}.author`, escapeHtml(asString(item.author))) : ''
-                }</blockquote>`;
+                return `<blockquote>${slot('p', `${path}.quote`, escapeHtml(asString(item.quote)))}${asString(item.author) ? slot('cite', `${path}.author`, escapeHtml(asString(item.author))) : ''
+                    }</blockquote>`;
             }).join('')}`;
         case 'faq':
             return `${h('h2', heading)}${asList(p.items).map((item, index) => {
                 const path = `${key}.items.${index}`;
-                return `<details>${slot('summary', `${path}.question`, escapeHtml(asString(item.question)))}${
-                    slot('p', `${path}.answer`, escapeHtml(asString(item.answer)))
-                }</details>`;
+                return `<details>${slot('summary', `${path}.question`, escapeHtml(asString(item.question)))}${slot('p', `${path}.answer`, escapeHtml(asString(item.answer)))
+                    }</details>`;
             }).join('')}`;
-        case 'contact':
+        case 'contact': {
+            const send = asString(p.ctaLabel) || 'Send';
             return [
                 h('h2', heading),
                 asString(p.blurb) ? slot('p', `${key}.blurb`, escapeHtml(asString(p.blurb))) : '',
+                '<div class="contact-grid">',
                 '<address>',
                 asString(p.address) ? slot('p', `${key}.address`, escapeHtml(asString(p.address))) : '',
                 asString(p.phone)
@@ -263,7 +263,18 @@ section { padding-block: var(--section-gap, 3.5rem); }
 blockquote { margin: 0 0 var(--stack-gap, 1rem); padding-left: 1rem; border-left: 3px solid var(--accent); }
 cite { display: block; color: var(--muted); font-style: normal; margin-top: 0.4rem; }
 details { border-bottom: 1px solid var(--rule); padding: 0.75rem 0; cursor: pointer; }
+.contact-grid { display: grid; gap: var(--stack-gap, 1rem); margin-top: 1.5rem; }
+@media (min-width: 720px) { .contact-grid { grid-template-columns: 1fr 1fr; } }
 address { font-style: normal; }
+.form { display: grid; gap: 0.75rem; }
+.form input, .form textarea {
+  width: 100%; padding: 0.75rem 1rem; border: var(--border-width, 1px) solid var(--rule);
+  border-radius: var(--radius-md); background: var(--panel); color: var(--ink); font: inherit;
+}
+.form button {
+  justify-self: start; padding: 0.75rem 1.25rem; border: 0; border-radius: var(--radius-md);
+  background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600; cursor: pointer;
+}
 [data-type="footer"] { color: var(--muted); font-size: 0.9rem; padding-block: 2rem; }
 
 [data-style="casual"] [data-type="hero"] { grid-template-columns: 1fr; }

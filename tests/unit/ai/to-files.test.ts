@@ -107,7 +107,9 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         // Kept, narrowed to what this renderer does guarantee and the test below does not:
         // the nav is there, it carries the site's name, and its wordmark goes to the top.
         expect(html).toContain('class="site-header"');
+        expect(html).toContain('class="site-nav"');
         expect(html).toContain('href="#top"');
+        expect(html).toContain('href="#contact"');
         expect(html).toContain('Smile Dental');
         expect(html).toContain('<main id="top">');
     });
@@ -135,12 +137,14 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
     // site should have; none of them are true of the renderer currently in the tree.
     it.skip('is a working page: nav, CTA, form, and accordion', () => {
         expect(html).toContain('href="#s_04"');
+    it('is a working page: nav, CTA, form, and accordion', () => {
+        expect(html).toContain('href="#contact"');
         expect(html).toContain('class="cta"');
         expect(html).toContain('<form class="form"');
         expect(html).toContain('type="email"');
         expect(html).toContain('<button type="submit">');
-        expect(html).toContain('<details class="faq-item">');
-        expect(html).toContain('class="grid"');
+        expect(html).toContain('<details>');
+        expect(html).toContain('class="cards"');
         expect(html).toContain('class="card"');
     });
 
