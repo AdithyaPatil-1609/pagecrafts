@@ -8,12 +8,9 @@ import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
 
 /**
- * Turn a generated composition into a one-page site.
+ * D15 — turn a composition into a file tree the rest of the product already
+ * knows how to save.
  *
- * This is not a gallery template: the words, sections and art direction come
- * from the job. Markup is HTML + CSS so the editor preview and publish path
- * already know how to show it. Image queries stay as slots — choosing a
- * photograph is a content edit, not something this renderer invents.
  * A generation that never becomes a file is not a site. Every visible section
  * is a page of the site (linked from the header), with `data-slot` attributes
  * so the content panel can edit the words the model just wrote.
@@ -168,10 +165,12 @@ function renderInner(
                     slot('p', `${path}.answer`, escapeHtml(asString(item.answer)))
                 }</details>`;
             }).join('')}`;
-        case 'contact':
+        case 'contact': {
+            const send = asString(p.ctaLabel) || 'Send';
             return [
                 h('h2', heading),
                 asString(p.blurb) ? slot('p', `${key}.blurb`, escapeHtml(asString(p.blurb))) : '',
+                '<div class="contact-grid">',
                 '<address>',
                 asString(p.address) ? slot('p', `${key}.address`, escapeHtml(asString(p.address))) : '',
                 asString(p.phone)
@@ -209,25 +208,6 @@ function siteNav(visible: readonly SectionInstance[], title: string): string {
 }
 
 const PAGE_CSS = `
-${SITE_NAV_CSS}
-.site-nav { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: var(--border-width) solid var(--rule); }
-main { max-width: 72rem; margin: 0 auto; padding-inline: 1.5rem; padding-bottom: 3rem; }
-section { padding-block: var(--section-gap); }
-.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--muted); margin: 0 0 0.5rem; }
-.lede { font-size: 1.05rem; color: var(--muted); }
-[data-type="hero"] {
-  display: grid; gap: var(--stack-gap); align-items: center;
-}
-[data-variant="split-image"], [data-variant="media-split"], .split {
-  display: grid; gap: var(--stack-gap); align-items: center;
-}
-@media (min-width: 720px) {
-  [data-variant="split-image"], [data-variant="media-split"], .split {
-    grid-template-columns: 1.05fr 0.95fr;
-  }
-}
-.cta {
-  display: inline-block; margin-top: 1.25rem; padding: 0.75rem 1.4rem;
 body { margin: 0; color: var(--ink); background: var(--bg); }
 a { color: inherit; }
 .site-nav {
@@ -258,37 +238,6 @@ section { padding-block: var(--section-gap, 3.5rem); }
   border-radius: var(--radius-md); text-decoration: none; font-weight: 600;
   cursor: pointer;
 }
-.cta:hover, .cta:focus { filter: brightness(1.08); }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--stack-gap); margin-top: 1.5rem; }
-.card, .faq-item {
-  background: var(--panel); border: var(--border-width) solid var(--rule);
-  border-radius: var(--radius-md); padding: 1.25rem;
-}
-.card h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
-.photo {
-  display: grid; place-items: center; min-height: 14rem; margin: 0;
-  background: var(--panel); color: var(--muted); border-radius: var(--radius-md);
-  border: var(--border-width) solid var(--rule); font-size: 0.85rem; text-align: center; padding: 1rem;
-}
-.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--stack-gap); }
-.price { color: var(--muted); margin: 0.4rem 0 0; }
-blockquote { margin: 0; }
-cite { display: block; color: var(--muted); font-style: normal; margin-top: 0.4rem; }
-.faq-item { margin-top: 0.6rem; }
-.faq-item summary { cursor: pointer; font-weight: 600; }
-.contact-grid { display: grid; gap: var(--stack-gap); margin-top: 1.5rem; }
-@media (min-width: 720px) { .contact-grid { grid-template-columns: 1fr 1fr; } }
-address { font-style: normal; }
-.form { display: grid; gap: 0.75rem; }
-.form input, .form textarea {
-  width: 100%; padding: 0.75rem 1rem; border: var(--border-width) solid var(--rule);
-  border-radius: var(--radius-md); background: var(--panel); color: var(--ink); font: inherit;
-}
-.form button {
-  justify-self: start; padding: 0.75rem 1.4rem; border: 0; border-radius: var(--radius-md);
-  background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600; cursor: pointer;
-}
-[data-type="footer"] { color: var(--muted); font-size: 0.9rem; border-top: var(--border-width) solid var(--rule); }
 .img-slot {
   min-height: 12rem; background: var(--panel); border: var(--border-width, 1px) solid var(--rule);
   border-radius: var(--radius-md); overflow: hidden;
@@ -310,7 +259,18 @@ address { font-style: normal; }
 blockquote { margin: 0 0 var(--stack-gap, 1rem); padding-left: 1rem; border-left: 3px solid var(--accent); }
 cite { display: block; color: var(--muted); font-style: normal; margin-top: 0.4rem; }
 details { border-bottom: 1px solid var(--rule); padding: 0.75rem 0; cursor: pointer; }
+.contact-grid { display: grid; gap: var(--stack-gap, 1rem); margin-top: 1.5rem; }
+@media (min-width: 720px) { .contact-grid { grid-template-columns: 1fr 1fr; } }
 address { font-style: normal; }
+.form { display: grid; gap: 0.75rem; }
+.form input, .form textarea {
+  width: 100%; padding: 0.75rem 1rem; border: var(--border-width, 1px) solid var(--rule);
+  border-radius: var(--radius-md); background: var(--panel); color: var(--ink); font: inherit;
+}
+.form button {
+  justify-self: start; padding: 0.75rem 1.25rem; border: 0; border-radius: var(--radius-md);
+  background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600; cursor: pointer;
+}
 [data-type="footer"] { color: var(--muted); font-size: 0.9rem; padding-block: 2rem; }
 
 [data-style="casual"] [data-type="hero"] { grid-template-columns: 1fr; }
