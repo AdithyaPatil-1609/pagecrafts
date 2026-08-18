@@ -6,6 +6,7 @@ import { readCredentials } from "@/lib/auth/credentials";
 import { toSessionUser } from "@/lib/auth/session";
 import { ok, fail, guard } from "@/lib/errors/respond";
 import { readJson } from "@/lib/kernel/body";
+import { setPendingCookie } from "@/lib/auth/pending-signup";
 import { publicEnv } from "@/lib/config/env";
 
 export const runtime = "nodejs";

@@ -1,4 +1,5 @@
 import { ResendVerification } from "@/components/auth/ResendVerification";
+import { VerifyWatcher } from "@/components/auth/VerifyWatcher";
 
 export default async function VerifyPage({
     searchParams,
@@ -17,6 +18,7 @@ export default async function VerifyPage({
                     Tap it and you are ready to build.
                 </p>
                 {email && <ResendVerification email={email} />}
+                <VerifyWatcher />
                 <p className="mt-4 text-xs text-muted-foreground">
                     Nothing arrived? Check the spam folder before asking for another.
                 </p>
