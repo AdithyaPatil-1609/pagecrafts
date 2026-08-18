@@ -140,7 +140,7 @@ export const DESIGNS: Template[] = [
         sections: [
             {
                 key: "menu",
-                label: "Menu",
+                label: "Your Menu",
                 kind: "cards",
                 heading: "On the menu",
                 body: "A short card that changes with the season — here is what is on this week.",
@@ -152,7 +152,7 @@ export const DESIGNS: Template[] = [
             },
             {
                 key: "book",
-                label: "Book",
+                label: "Book a Table",
                 kind: "form",
                 heading: "Reserve a table",
                 body: "Leave your email and we'll confirm your booking.",

@@ -54,6 +54,12 @@ export default function EditorShell({
     // same on the server and the client; a mismatched boolean would be a hydration warning
     // for the sake of one frame. Read once on mount, so it never fights the toggle afterwards.
     useEffect(() => {
+        // The value can only be read from window, so it cannot be a useState initialiser
+        // without the server and the client disagreeing on the first render. One extra
+        // render on mount is the cost of not shipping a hydration mismatch, and it is paid
+        // once — which is the paragraph above, and why the rule is suppressed rather than
+        // obeyed here.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (new URLSearchParams(window.location.search).get('ask') === '1') setAskOpen(true);
     }, []);
 
