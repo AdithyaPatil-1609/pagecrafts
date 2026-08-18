@@ -1,4 +1,5 @@
 import { isOverPreviewLimit } from './preview-security';
+import { PREVIEW_BOOTSTRAP_SCRIPT } from './preview-runtime';
 
 export interface PreviewResult {
     html: string;
@@ -56,17 +57,11 @@ export function assemblePreview(
     return { html: out, warnings };
 }
 
-const ERROR_HOOK = `<script>
-(function () {
-  function send(msg) {
-    try { parent.postMessage({ __pagecraft: true, message: String(msg) }, '*'); } catch (e) {}
-  }
-  window.addEventListener('error', function (e) { send(e.message); });
-  window.addEventListener('unhandledrejection', function (e) { send(e.reason); });
-})();
-</script>`;
-
 export function injectErrorHook(html: string): string {
     const head = html.match(/<head[^>]*>/i);
-    return head ? html.replace(head[0], head[0] + ERROR_HOOK) : ERROR_HOOK + html;
+    if (!head || head.index === undefined) {
+        return PREVIEW_BOOTSTRAP_SCRIPT + html;
+    }
+    const at = head.index + head[0].length;
+    return html.slice(0, at) + PREVIEW_BOOTSTRAP_SCRIPT + html.slice(at);
 }

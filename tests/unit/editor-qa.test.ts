@@ -186,8 +186,12 @@ describe('editor QA (D16–D20)', () => {
         expect(preview).toContain('previewDocumentUrl');
         expect(preview).toContain('src={frameUrl}');
         expect(preview).toContain('filesForPreview');
+        expect(preview).toContain('PREVIEW_IFRAME_SANDBOX');
         const helper = readFileSync('src/lib/editor/preview-frame.ts', 'utf8');
         expect(helper).toContain('createObjectURL');
+        const sandbox = readFileSync('src/lib/preview-security.ts', 'utf8');
+        expect(sandbox).toContain("PREVIEW_IFRAME_SANDBOX = 'allow-scripts allow-forms'");
+        expect(sandbox).not.toMatch(/SANDBOX = '[^']*allow-same-origin/);
     });
 
     it('lets Ask generate a whole site from a prompt', () => {

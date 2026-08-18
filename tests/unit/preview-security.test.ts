@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isOverPreviewLimit, withPreviewCsp } from '@/lib/preview-security';
+import { isOverPreviewLimit, PREVIEW_IFRAME_SANDBOX, withPreviewCsp } from '@/lib/preview-security';
 
 describe('withPreviewCsp', () => {
     it('injects a CSP meta tag that blocks outbound connections', () => {
@@ -8,11 +8,20 @@ describe('withPreviewCsp', () => {
 
         expect(result).toContain('Content-Security-Policy');
         expect(result).toContain("connect-src 'none'");
+        expect(result).toContain("form-action 'none'");
     });
 
     it('still works when there is no head tag', () => {
         const result = withPreviewCsp('<body>hi</body>');
         expect(result).toContain('Content-Security-Policy');
+    });
+});
+
+describe('PREVIEW_IFRAME_SANDBOX', () => {
+    it('does not combine scripts with same-origin', () => {
+        expect(PREVIEW_IFRAME_SANDBOX).toContain('allow-scripts');
+        expect(PREVIEW_IFRAME_SANDBOX).toContain('allow-forms');
+        expect(PREVIEW_IFRAME_SANDBOX).not.toContain('allow-same-origin');
     });
 });
 

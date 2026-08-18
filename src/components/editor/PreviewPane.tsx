@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
-import { withPreviewCsp } from '@/lib/preview-security';
+import { PREVIEW_IFRAME_SANDBOX, withPreviewCsp } from '@/lib/preview-security';
 import { friendlyPreviewIssue } from '@/lib/editor/preview-copy';
 import { previewDocumentUrl } from '@/lib/editor/preview-frame';
 import { filesForPreview } from '@/lib/editor/preview-files';
@@ -114,9 +114,9 @@ export default function PreviewPane() {
                         <iframe
                             ref={frame}
                             title="Your site"
-                            sandbox="allow-scripts"
+                            sandbox={PREVIEW_IFRAME_SANDBOX}
                             src={frameUrl}
-                            className="absolute inset-0 h-full w-full border-0 bg-white"
+                            className="pointer-events-auto absolute inset-0 z-0 h-full w-full border-0 bg-white"
                         />
                     )}
                 </div>
@@ -124,7 +124,7 @@ export default function PreviewPane() {
                 {showNotice && !empty && (
                     <div
                         role="status"
-                        className="absolute inset-x-6 bottom-6 rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow-md backdrop-blur"
+                        className="pointer-events-auto absolute inset-x-6 bottom-6 z-10 rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow-md backdrop-blur"
                     >
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">

@@ -6,8 +6,9 @@
  * That request is framed (X-Frame-Options: DENY) and shows up as
  * "localhost refused to connect" in the Your site pane.
  *
- * A blob: URL gives the preview its own document URL, so hash links stay
- * inside the preview.
+ * A blob: URL gives the preview its own document URL. Unique-origin sandbox
+ * still blocks fragment navigation in Chromium, so preview-runtime.ts
+ * intercepts hash clicks and scrolls inside the document.
  */
 export function previewDocumentUrl(html: string): string | null {
     if (!html.trim()) return null;
