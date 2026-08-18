@@ -5,7 +5,23 @@ export const MAX_TEXT_BYTES = 2_097_152;
 
 const LEADING_SLASH = /^\//;
 const DOT_DOT = /(^|\/)\.\.(\/|$)/;
-const NUL = /�/;
+
+// `\0`, written as an escape.
+//
+// This was a literal character in the source — and not a NUL. It was U+FFFD, the
+// replacement character a text editor leaves behind when it saves a byte it could not
+// decode. So the guard named NUL matched that character instead, let a real NUL byte
+// straight through, and rejected a harmless replacement character somebody happened to
+// paste. It had been that way since it was written (found by the R2 D19 encoding sweep,
+// which is now tests/unit/copy-audit.test.ts — and which flags this comment too if the
+// character is written out, so it is described rather than shown).
+//
+// The database's own CHECK — `position(chr(0) in path) = 0` — refused the path anyway, so
+// nothing was ever stored with one. What was lost is the clean 422 this function exists to
+// give: the caller got a constraint violation from Postgres instead.
+//
+// An escape rather than the character itself, so no future save can mangle it back.
+const NUL = /\0/;
 
 export interface FileIssue {
     path: string;

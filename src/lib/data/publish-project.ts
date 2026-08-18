@@ -1,0 +1,237 @@
+import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DeploymentState, PublishProjectResponse } from "@/lib/contracts";
+import { ApiError } from "@/lib/errors/respond";
+import { assertCanPublish } from "./entitlements";
+import {
+  advanceDeployment,
+  getDeployment,
+  openDeployment,
+  recordDeployment,
+} from "./deployments";
+import { projectPublishInputs } from "@/lib/deploy/publishable";
+import { publish } from "@/lib/deploy/publish";
+import { PublishError } from "@/lib/deploy/errors";
+import { deployProvider } from "@/lib/deploy/adapters";
+import { failureMessage, reasonForError } from "@/lib/deploy/failure";
+import { track } from "@/lib/observability/analytics";
+import { captureError } from "@/lib/observability/capture";
+import type { DeployProvider } from "@/lib/deploy/provider";
+
+// Publishing a project (R3 D15 · FR-080–FR-091, C-05).
+//
+// Everything this needs already existed and nothing called it: entitlements decide whether
+// a site may go live, publishable.ts turns a working tree into a build, deployments.ts
+// records the attempt, and publish() runs the provider steps. This is the seam between
+// them, and the shape of it is dictated by one fact — a publish can legitimately take
+// ninety seconds, and no request should be held open that long.
+//
+// So the request does the parts that can fail fast and answer honestly (is this project
+// yours, is it paid for, does it have files), writes the deployment row, and hands back its
+// id. The provider work runs on after the response, reporting into that row, and the client
+// polls GET /deployments/{id} — which is what NFR-117 asks for and what the contract's
+// `status: "pending"` has always implied.
+
+/** Where the site lives on the host, kept so a republish updates rather than duplicating. */
+async function siteIdFor(supabase: SupabaseClient, projectId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("repo_full_name")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (error) throw new ApiError("internal", "Could not read the project.", error.message);
+  // RLS: someone else's project is not there, and must not be distinguishable from one that
+  // never existed (SEC-14).
+  if (!data) throw new ApiError("not_found", "That project does not exist.");
+
+  return (data.repo_full_name as string | null) ?? null;
+}
+
+/** FR-087: ten republishes produce one site, not ten. */
+async function rememberSite(
+  supabase: SupabaseClient,
+  projectId: string,
+  siteId: string,
+): Promise<void> {
+  await supabase.from("projects").update({ repo_full_name: siteId }).eq("id", projectId);
+}
+
+export async function publishProject(
+  supabase: SupabaseClient,
+  userId: string,
+  projectId: string,
+  idempotencyKey: string,
+  // Injectable for the same reason publish() takes one: the edge cases this function exists
+  // to survive — a claim that outlives a failed attempt, a site that is not answering yet —
+  // can only be reproduced by a provider that behaves that way on purpose.
+  provider: DeployProvider = deployProvider,
+): Promise<PublishProjectResponse> {
+  // Before anything is recorded or provisioned. A publish nobody paid for should cost us
+  // nothing and leave no trace, and the caller should hear payment_required rather than
+  // watch a deployment fail for reasons it cannot act on.
+  await assertCanPublish(supabase, userId, projectId);
+
+  const siteId = await siteIdFor(supabase, projectId);
+  const { projectName, files } = await projectPublishInputs(supabase, projectId);
+
+  if (files.length === 0) {
+    // The same words the failure map gives this reason, so a person hears one thing whether
+    // they hit it here or read it off the dashboard later.
+    const { what, next } = failureMessage("nothing_to_publish");
+    throw new ApiError("validation_failed", `${what} ${next}`, projectId);
+  }
+
+  // A publish already under way is handed back rather than joined by a second one.
+  // runOnce() in the deploy layer only dedupes an identical idempotency key; two different
+  // keys for one project would otherwise race each other onto the same subdomain. Moved
+  // here from the route at D18, with the rest of what a publish has to decide.
+  const running = await openDeployment(supabase, projectId);
+  if (running) return { deploymentId: running.id, status: "pending" };
+
+  const attempt = await recordDeployment(supabase, projectId);
+
+  // EV-06. Fired once the attempt is real — past the entitlement gate, past the empty-files
+  // check, with a row to point at — so the funnel counts publishes that were actually tried
+  // rather than requests that bounced off a precondition.
+  track("EV-06", userId, { republish: siteId !== null });
+
+  // Deliberately not awaited. The response carries the deployment id and the client polls;
+  // holding the request open for the ninety seconds this can take would time out the
+  // function and tell the user nothing. Every outcome is written to the row, including the
+  // failures — an attempt that dies silently leaves `pending`, which is the honest answer
+  // when nobody knows how it ended.
+  void publish(
+    { projectId, projectName, files, siteId, idempotencyKey },
+    attempt.onState,
+    provider,
+  )
+    .then(async (result) => {
+      if (!siteId) await rememberSite(supabase, projectId, result.siteId);
+
+      await attempt.finish({
+        state: result.state,
+        liveUrl: result.liveUrl,
+        commitSha: result.commitSha,
+        failureReason: result.reason,
+      });
+
+      // EV-07. `state` distinguishes live from verifying, which is the difference between
+      // "it worked" and "it is waiting on DNS" — and conflating those would make the
+      // success rate look worse than it is on a slow day, or better than it is on a broken
+      // one, depending on which way somebody guessed.
+      track("EV-07", userId, {
+        state: result.state,
+        republish: siteId !== null,
+        reason: result.reason,
+      });
+    })
+    .catch(async (error: unknown) => {
+      // Keep the address even though the attempt failed.
+      //
+      // Provisioning claims a subdomain on the host. If the attempt then dies at pushing,
+      // that claim is real and, until R3 D17, nobody recorded it — so the retry re-derived
+      // the address from the project name, was told by the host that it was taken (by the
+      // site we had just abandoned), and published to `name-2`. A transient upload error
+      // moved somebody's address and orphaned their first site. Remembering it here means
+      // the retry reuses the site instead of racing its own leftovers.
+      if (!siteId && error instanceof PublishError && error.siteId) {
+        await rememberSite(supabase, projectId, error.siteId).catch(() => undefined);
+      }
+
+      // Two separate things, and keeping them separate is the point of D18.
+      //
+      // `failureReason` is what the owner is told, by way of lib/deploy/failure.ts — a value,
+      // so the wording can be improved later and improve rows already written, and so
+      // "the dashboard explains every failure mode" is a claim a test can check.
+      //
+      // `error` is the redacted provider detail, kept for whoever has to work out why this
+      // person's publish failed. It is not shown; it used to be, which is how a stray HTTP
+      // status could end up in front of a customer.
+      const detail =
+        error instanceof PublishError
+          ? (error.detail ?? null)
+          : error instanceof Error
+            ? error.message
+            : String(error);
+
+      const reason = reasonForError(error);
+
+      // The publish runs after the response has gone, so nothing upstream is watching:
+      // withRoute's Sentry boundary only wraps errors thrown *during* a request, and this
+      // promise is detached by design. Until R3 D20 a failed publish left one console line
+      // in a serverless log and nothing else — no Sentry issue, no analytics event — so the
+      // first anybody knew of a bad deploy was a customer saying so.
+      //
+      // Tagged with the reason so failures group by cause rather than by whichever provider
+      // string came back, and with the project so support can find the attempt.
+      captureError(error, {
+        tags: { boundary: "publish", reason },
+        extra: { projectId, deploymentId: attempt.deploymentId },
+      });
+      track("EV-08", userId, { reason, republish: siteId !== null });
+
+      console.error("[publish]", projectId, error);
+
+      // finish() can itself fail — a dropped connection, a policy change. There is nothing
+      // useful left to do at that point except not crash the process the response already
+      // left behind.
+      await attempt
+        .finish({ state: "failed", error: detail, failureReason: reason })
+        .catch(() => undefined);
+    });
+
+  return { deploymentId: attempt.deploymentId, status: "pending" };
+}
+
+/**
+ * Finish a publish that was only waiting for DNS (R3 D17).
+ *
+ * A propagation delay is not a failure. The site is provisioned, the files are pushed and
+ * hosting is on; the one thing left is the host answering on the new address, and that can
+ * take longer than any request should wait. Such an attempt now rests in `verifying`, and
+ * this is what picks it back up: re-check the one URL, and promote it if the site is there.
+ *
+ * Nothing is re-provisioned and nothing is re-pushed, so calling this repeatedly is free and
+ * safe — which matters, because the client is already polling and this runs on that poll.
+ *
+ * The address is derived from the stored site id rather than kept in a column. Two reasons:
+ * `live_url` is the column somebody would reach for, and parking an unverified address there
+ * means anything that reads it without checking the state hands out a link to a site that is
+ * not up yet (C-05) — the poll route did exactly that until D17. And the adapter can always
+ * recover the address from the id, so a second copy could only ever disagree with the first.
+ *
+ * Returns the state the attempt is now in.
+ */
+export async function resumeVerification(
+  supabase: SupabaseClient,
+  deploymentId: string,
+  provider: DeployProvider = deployProvider,
+): Promise<DeploymentState> {
+  const deployment = await getDeployment(supabase, deploymentId);
+  // RLS has already decided this: another account's attempt reads as no row at all.
+  if (!deployment) throw new ApiError("not_found", "No such deployment.");
+  if (deployment.state !== "verifying") return deployment.state;
+
+  const siteId = await siteIdFor(supabase, deployment.projectId);
+  // Provisioned but never recorded, on an attempt old enough to predate that fix. There is
+  // nothing to re-check, and inventing an address would be worse than leaving it alone.
+  if (!siteId) return deployment.state;
+
+  const { url } = provider.addressFor(siteId);
+
+  let live = false;
+  try {
+    live = await provider.verifyLive(url);
+  } catch {
+    // The host being unreachable is not evidence the site is missing. Leave the attempt
+    // where it is and let the next poll ask again — turning a flaky check into a permanent
+    // `failed` is exactly the mistake this whole state exists to avoid.
+    return deployment.state;
+  }
+
+  if (!live) return deployment.state;
+
+  await advanceDeployment(supabase, deploymentId, "live", { liveUrl: url, error: null });
+  return "live";
+}

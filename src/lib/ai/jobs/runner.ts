@@ -4,12 +4,14 @@ import { plan } from '../generate/plan';
 import { fillSection } from '../generate/fill';
 import { assemble } from '../generate/assemble';
 import { compositionToFiles } from '../generate/to-files';
+import { buildStyleOptions } from '../generate/options';
+import { bankPhotoUrl } from '../generate/photos';
 import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
 import { CostLedger, type LedgerRow } from '../cost/ledger';
 import type { RankableTemplate, RankAttributes } from '../rank';
-import type { Composition, SectionProps, Usage } from '@/lib/contracts';
+import type { FileMap, SectionProps, Usage } from '@/lib/contracts';
 import { jobStore } from './store';
 import type { Job, JobEventName, JobStatus } from './types';
 
@@ -18,8 +20,8 @@ export interface RunnerDeps {
     templates?: readonly RankableTemplate[];
     /** Persist ledger rows; must not throw. */
     persistLedger?: (rows: readonly LedgerRow[]) => Promise<void>;
-    /** Write the finished composition to the project tree. */
-    persistComposition?: (composition: Composition) => Promise<void>;
+    /** Write the finished site (files, schema, content) to the project. */
+    persistSite?: (job: Job) => Promise<void>;
     /** Funnel event after the job settles. */
     onSettled?: (job: Job) => void;
     /** Records the request's aggregate token spend in the shared daily cap. */
@@ -53,6 +55,15 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
     const bill = (stage: string, usage: Usage, ok = true) => {
         ledger.add(stage, usage, ok ? 'completed' : 'failed');
         return usage.provider;
+    };
+
+    const persistSettled = async (settled: Job) => {
+        if (!deps.persistSite) return;
+        try {
+            await deps.persistSite(settled);
+        } catch (err) {
+            console.warn('[generate] persist site', err instanceof Error ? err.message : err);
+        }
     };
 
     try {
@@ -141,20 +152,18 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             }
         }
 
+        const variants = await buildStyleOptions(composition, lookupPhoto);
+        const picked = variants[0];
+        const files = picked?.files ?? compositionToFiles(composition);
+        const endedAt = Date.now();
         await emit('done');
         await advance('done', {
-            composition,
-            files: compositionToFiles(composition),
-            endedAt: Date.now(),
+            composition: picked?.composition ?? composition,
+            files,
+            variants,
+            endedAt,
             ledger: [...ledger.all()],
         });
-        if (deps.persistComposition) {
-            try {
-                await deps.persistComposition(composition);
-            } catch (err) {
-                console.warn('[generate] persist composition', err instanceof Error ? err.message : err);
-            }
-        }
         const done = (await store.get(job.id)) ?? job;
         deps.onSettled?.(done);
         return done;
@@ -168,11 +177,24 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         );
 
         if (fallback) {
+            const files = filesOf(fallback.template);
+            const endedAt = Date.now();
+            const current = (await store.get(job.id)) ?? job;
+            await persistSettled({
+                ...current,
+                fallbackTemplateId: fallback.template.id,
+                ...(files ? { files } : {}),
+                error: message,
+                status: 'done',
+                endedAt,
+                ledger: [...ledger.all()],
+            });
             await emit('fallback', { templateId: fallback.template.id, reason: message });
             await advance('done', {
                 fallbackTemplateId: fallback.template.id,
+                ...(files ? { files } : {}),
                 error: message,
-                endedAt: Date.now(),
+                endedAt,
                 ledger: [...ledger.all()],
             });
         } else {
@@ -220,4 +242,20 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
 function usageFromError(err: unknown): Usage | undefined {
     const detail = (err as { detail?: { usage?: Usage } })?.detail;
     return detail?.usage;
+}
+
+function filesOf(template: RankableTemplate): FileMap | undefined {
+    if (!template.files || Object.keys(template.files).length === 0) return undefined;
+    return template.files;
+}
+
+async function lookupPhoto(query: string): Promise<string> {
+    try {
+        const { isImageSearchConfigured, searchImages } = await import('@/lib/images/unsplash');
+        if (!isImageSearchConfigured()) return bankPhotoUrl(query);
+        const { items } = await searchImages(query, 1);
+        return items[0]?.fullUrl ?? bankPhotoUrl(query);
+    } catch {
+        return bankPhotoUrl(query);
+    }
 }

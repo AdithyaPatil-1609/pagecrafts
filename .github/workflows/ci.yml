@@ -54,9 +54,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
       - uses: supabase/setup-cli@v1
         with:
           version: 2.39.2
+      - name: Check migrations for duplicate versions
+        run: |
+          set -euo pipefail
+          # Only check if there are migration files
+          if compgen -G "supabase/migrations/*.sql" > /dev/null; then
+            duplicates=$(ls supabase/migrations/*.sql | xargs -n1 basename | cut -d_ -f1 | sort | uniq -d || true)
+            if [ -n "$duplicates" ]; then
+              echo "Duplicate migration versions found:"
+              echo "$duplicates"
+              echo ""
+              echo "Each migration filename must have a unique timestamp prefix (e.g. YYYYMMDDhhmmss)."
+              echo "Please rename the conflicting file(s) so their prefixes are unique."
+              exit 1
+            fi
+          fi
+      # Before spending two minutes on Docker: build the same schema in-process and say
+      # which file broke. `supabase db reset` reports a failure as a wall of CLI output;
+      # this names the migration, the error, and how many were never reached. It also runs
+      # the platform prelude on Linux, which is otherwise only ever exercised on a
+      # developer's machine.
+      - run: npm ci
+      - run: npm run db:verify
       - run: supabase start
       - run: supabase db reset --local
       - run: supabase db lint --local

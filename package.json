@@ -13,11 +13,12 @@
     "verify:injection": "node scripts/verify-injection-suite.mjs",
     "prompt": "tsx --env-file=.env.local src/lib/ai/harness/cli.ts",
     "templates:normalise": "tsx scripts/normalise-template.ts",
+    "templates:ledger": "tsx scripts/provenance-ledger.ts",
     "templates:seed": "tsx --env-file=.env.local scripts/seed-templates.ts",
     "catalogue:build": "tsx scripts/build-catalogue.ts",
     "catalogue:thumbs": "tsx scripts/render-thumbnails.ts",
     "eval": "tsx --env-file=.env.local evals/run.ts",
-    "pretypecheck": "node -e \"const fs=require('node:fs');for(const p of ['.next/types','.next/dev/types'])fs.rmSync(p,{recursive:true,force:true})\"",
+    "pretypecheck": "node scripts/pretypecheck.mjs",
     "typecheck": "tsc --noEmit",
     "deploy:seal": "tsx --env-file=.env.local scripts/seal-credential.ts",
     "deploy:health": "tsx --env-file=.env.local --conditions=react-server scripts/hosting-health-check.ts",
@@ -39,7 +40,11 @@
     "db:drift": "tsx --env-file=.env.local scripts/db-drift.ts",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "e2e:install": "playwright install --with-deps chromium"
+    "e2e:install": "playwright install --with-deps chromium",
+    "check:bundle": "node --env-file=.env.local scripts/check-client-bundle.mjs",
+    "check:config": "node --env-file=.env.local scripts/check-prod-config.mjs",
+    "db:verify": "tsx scripts/db-verify.ts",
+    "templates:thumbs": "tsx scripts/render-template-thumbnails.ts"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -69,21 +74,24 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.5",
+    "@playwright/test": "^1.50.0",
     "@tailwindcss/postcss": "^4",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "axe-core": "^4.13.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "js-yaml": "^5.2.3",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.9",
     "typescript": "^5",
     "vitest": "^4.1.10",
-    "wrangler": "^4.120.0",
-    "@playwright/test": "^1.50.0"
+    "wrangler": "^4.120.0"
   },
   "allowScripts": {}
 }

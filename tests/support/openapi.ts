@@ -17,6 +17,7 @@ interface OperationObject {
 export interface Schema {
     $ref?: string;
     allOf?: Schema[];
+    oneOf?: Schema[];
     type?: string | string[];
     enum?: unknown[];
     const?: unknown;
@@ -119,13 +120,34 @@ function typeMatches(type: string, value: unknown): boolean {
 }
 
 const KNOWN_KEYWORDS = new Set([
-    "$ref", "allOf", "type", "enum", "const", "pattern", "required", "properties",
+    "$ref", "allOf", "oneOf", "type", "enum", "const", "pattern", "required", "properties",
     "additionalProperties", "items", "minItems", "maxItems", "minLength", "maxLength",
     "format", "description",
 ]);
 
 function check(schema: Schema, value: unknown, at: string, issues: string[]): void {
     const s = resolve(schema);
+
+    // `oneOf` is how OpenAPI 3.1 says "this shape, or null" when the shape is a $ref — you
+    // cannot write `type: [..., 'null']` beside one. Exactly one branch must match, which is
+    // what oneOf means and what makes a nullable ref unambiguous. Added at R3 D18 for
+    // ProjectSummary.failure; before that the checker refused the keyword outright, which is
+    // the right default — silently ignoring a keyword would let the spec say things the
+    // tests never look at.
+    if (s.oneOf) {
+        const matched = s.oneOf.filter((branch) => {
+            const branchIssues: string[] = [];
+            check(branch, value, at, branchIssues);
+            return branchIssues.length === 0;
+        });
+
+        if (matched.length !== 1) {
+            issues.push(
+                `${at}: ${JSON.stringify(value)} matches ${matched.length} of the ${s.oneOf.length} oneOf branches, expected exactly 1`,
+            );
+        }
+        return;
+    }
 
     for (const keyword of Object.keys(s)) {
         if (!KNOWN_KEYWORDS.has(keyword)) {

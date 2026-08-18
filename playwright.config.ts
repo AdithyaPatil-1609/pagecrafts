@@ -30,7 +30,14 @@ export default defineConfig({
         video: 'off',
     },
     projects: [
-        { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+        // Signing in is rate limited, so it happens twice for the whole run and every
+        // spec reuses the saved session. See e2e/auth.setup.ts.
+        { name: 'setup', testMatch: /auth\.setup\.ts/ },
+        {
+            name: 'chromium',
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: process.env.E2E_WITH_AUTH === '1' ? ['setup'] : [],
+        },
     ],
     webServer: process.env.E2E_BASE_URL
         ? undefined

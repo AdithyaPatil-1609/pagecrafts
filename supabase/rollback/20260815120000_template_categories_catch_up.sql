@@ -1,0 +1,10 @@
+-- Rollback for 20260815120000_template_categories_catch_up.sql
+--
+-- Postgres cannot drop a value from an enum. Reversing this means rebuilding the type, and
+-- that is only safe once no row uses any of the added values. Check first:
+--
+--   select distinct category from public.templates;
+--
+-- Then, if the result is clear of them, rebuild the type with the set you want and cast the
+-- column back — the cast fails loudly if any row still holds a dropped value, which is the
+-- behaviour you want rather than a silent data loss.

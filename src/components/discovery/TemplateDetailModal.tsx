@@ -113,7 +113,24 @@ export function TemplateDetailModal({
 
         try {
             const response = await fetch(`/api/v1/templates/${encodeURIComponent(templateId)}`);
-            const body = (await response.json()) as ApiResult<TemplateDetail>;
+
+            // A reply arrived, so whatever went wrong is ours, not the network's. This used
+            // to go straight to response.json(), which throws on a body that is not JSON —
+            // and every such case landed in the catch below and told the person to check
+            // their connection. A stale dev-server route table serving Next's own HTML 404
+            // is exactly that shape: the connection was fine and the advice was wrong.
+            const body = await response
+                .json()
+                .catch(() => null) as ApiResult<TemplateDetail> | null;
+
+            if (!body) {
+                setState({
+                    status: "error",
+                    message:
+                        "We could not load this design just now. It is not something you did — try again in a moment.",
+                });
+                return;
+            }
 
             setState(
                 body.ok
@@ -121,11 +138,11 @@ export function TemplateDetailModal({
                     : { status: "error", message: body.error.message },
             );
         } catch {
-            // Offline, or the request never landed. Say what happened and what to do — the
-            // funnel is never a dead end (D-6).
+            // Now only reached when the request never landed at all: offline, or a DNS
+            // failure. Checking the connection is sound advice here and nowhere else.
             setState({
                 status: "error",
-                message: "We could not load this design just now. Check your connection and try again.",
+                message: "We could not reach PageCraft. Check your connection and try again.",
             });
         }
     }, [templateId]);
@@ -228,9 +245,16 @@ export function TemplateDetailModal({
                             It says where the design came from and nothing about what it
                             costs — a licence that is free to us is not a free design, and
                             putting the word "free" here would contradict the price sitting
-                            two lines below it. */}
+                            two lines below it.
+
+                            It also no longer says "comes from open source". Every design in
+                            the library is first-party, written here, so that sentence was
+                            telling a paying customer something untrue about where their site
+                            came from (R2 D16 licence audit). The licence is still named,
+                            because a design sourced from someone else's project will carry
+                            theirs and that is the case this line exists for. */}
                         <p className="text-xs text-muted-foreground">
-                            This design comes from open source, under the {detail.license} licence.{" "}
+                            Licensed under {detail.license}.{" "}
                             <Link
                                 href={detail.sourceUrl}
                                 target="_blank"

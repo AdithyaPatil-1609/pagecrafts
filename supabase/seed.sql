@@ -83,7 +83,7 @@ values
       )
     ),
     'MIT',
-    'https://github.com/pagecraft/templates'
+    'https://github.com/AdithyaPatil-1609/pagecrafts/blob/main/src/lib/templates/designs.ts'
   ),
   (
     'aaaaaaaa-0000-4000-8000-000000000002',
@@ -110,7 +110,7 @@ values
       )
     ),
     'MIT',
-    'https://github.com/pagecraft/templates'
+    'https://github.com/AdithyaPatil-1609/pagecrafts/blob/main/src/lib/templates/designs.ts'
   ),
   (
     'aaaaaaaa-0000-4000-8000-000000000003',
@@ -150,7 +150,7 @@ values
       )
     ),
     'CC-BY-4.0',
-    'https://github.com/pagecraft/templates'
+    'https://github.com/AdithyaPatil-1609/pagecrafts/blob/main/src/lib/templates/designs.ts'
   )
 on conflict (id) do nothing;
 

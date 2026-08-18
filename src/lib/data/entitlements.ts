@@ -132,12 +132,12 @@ export interface EditPermission {
  * May this project still be edited? (R3 D13, Doc 22 P5)
  *
  * A site that has never gone live is simply a draft, and drafts are free to change. Once it
- * is published the rules change: editing it again needs an `edit_unlock` entitlement â€” with
+ * is published the rules change: editing it again needs an `edit_unlock` entitlement — with
  * the first change within seven days of publishing free, as a goodwill window.
  *
  * The window runs from the *first* successful publish, not the most recent. Measuring from
  * the latest one would renew itself on every republish, so anybody willing to press publish
- * again would never pay â€” which is not a goodwill window, it is a subscription nobody is
+ * again would never pay — which is not a goodwill window, it is a subscription nobody is
  * charged for.
  *
  * Decided here rather than in the editor, because a gate the client evaluates is a gate
@@ -188,7 +188,7 @@ export async function assertCanEdit(
     if (!permission.allowed) {
         throw new ApiError(
             "payment_required",
-            `This site is live. Editing it again needs an unlock â€” changes in the first ${GOODWILL_WINDOW_DAYS} days after publishing are free.`,
+            `This site is live. Editing it again needs an unlock — changes in the first ${GOODWILL_WINDOW_DAYS} days after publishing are free.`,
             `projectId=${projectId}`,
         );
     }

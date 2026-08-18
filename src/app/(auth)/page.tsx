@@ -2,8 +2,10 @@ import { Hero } from "@/components/landing/Hero";
 import { LandingBackdrop } from "@/components/landing/LandingBackdrop";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { ValueProps } from "@/components/landing/ValueProps";
+import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { landingError } from "@/lib/auth/landing-errors";
+import { currentUser } from "@/lib/auth/session";
 
 export default async function LandingPage({
     searchParams,
@@ -11,6 +13,15 @@ export default async function LandingPage({
     searchParams: Promise<{ error?: string }>;
 }) {
     const { error } = await searchParams;
+
+    // Somebody already signed in has no business being shown a sign-in form. This is
+    // what made confirming an email look like it had not worked: the session was
+    // created, but anything that landed on / showed the form again, so the only
+    // evidence of being signed in was invisible.
+    if (!error && (await currentUser())) {
+        redirect("/new");
+    }
+
     const message = landingError(error);
 
     return (

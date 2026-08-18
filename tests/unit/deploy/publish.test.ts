@@ -9,6 +9,10 @@ function fakeProvider(live = true): DeployProvider {
             subdomain: 'spike',
             predictedUrl: 'https://spike.pagecrafts.in',
         }),
+        addressFor: (siteId: string) => {
+            const subdomain = siteId.split('/').pop() ?? siteId;
+            return { subdomain, url: `https://${subdomain}.pagecrafts.in` };
+        },
         pushBuild: async () => ({ commitSha: 'commit-1' }),
         enableHosting: async () => { },
         verifyLive: async () => live,
@@ -43,16 +47,21 @@ describe('publish', () => {
         expect(result.commitSha).toBe('commit-1');
     });
 
-    it('stays pending with no url when verification times out', async () => {
+    it('stays verifying with no url when verification times out', async () => {
+        // Was `pending` until R3 D17. That is the state an attempt *starts* in, so a site
+        // that had been provisioned, pushed and hosted reported the same thing as one that
+        // had done nothing at all — and a resume needs to be able to tell them apart. See
+        // tests/unit/deploy/publish-edges.test.ts for the rest of that case.
         const result = await publish(
             { ...input, idempotencyKey: 'k2' },
             () => { },
             fakeProvider(false),
         );
 
-        expect(result.state).toBe('pending');
+        expect(result.state).toBe('verifying');
         expect(result.liveUrl).toBeNull();
-        expect(result.error).toBe('verification_timeout');
+        expect(result.pendingUrl).toBe('https://spike.pagecrafts.in');
+        expect(result.reason).toBe('not_answering_yet');
     });
 
     it('skips hosting setup when republishing', async () => {

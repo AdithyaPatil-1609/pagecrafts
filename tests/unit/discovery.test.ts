@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CATEGORY_ALIASES,
   CATEGORY_CARDS,
   CATEGORY_LABELS,
   filterByCategory,
@@ -34,7 +35,13 @@ describe("toCategory", () => {
 
   it("ignores an enum bucket the library ships no design for", () => {
     const shipped = new Set(TEMPLATES.map((t) => t.category));
-    const orphans = CATEGORY_IDS.filter((c) => !shipped.has(c));
+    // A folded shelf is also shipped nothing, but deliberately so — it resolves to the
+    // shelf its designs moved to rather than to the whole library, and that case is
+    // covered in tests/unit/category-coverage.test.ts. Excluded here so this test keeps
+    // asking its own question: what happens to a bucket nobody has any answer for.
+    const orphans = CATEGORY_IDS.filter(
+      (c) => !shipped.has(c) && !(c in CATEGORY_ALIASES),
+    );
 
     // There are such buckets — the classifier can still emit them — and each
     // must route to the unfiltered gallery rather than stranding the user.
@@ -42,6 +49,18 @@ describe("toCategory", () => {
     for (const category of orphans) {
       expect(toCategory(category), category).toBeUndefined();
       expect(filterByCategory(TEMPLATES, toCategory(category))).toHaveLength(TEMPLATES.length);
+    }
+  });
+
+  it("sends a folded shelf to the shelf its designs moved to (R2 D17)", () => {
+    // The other half of the rule above. `?category=retail` was a working filter before the
+    // fold and must stay one: resolving it to undefined would show the whole library, which
+    // reads to the person as the filter being ignored rather than redirected.
+    for (const [folded, destination] of Object.entries(CATEGORY_ALIASES)) {
+      expect(toCategory(folded), folded).toBe(destination);
+      const shelf = filterByCategory(TEMPLATES, toCategory(folded));
+      expect(shelf.length, folded).toBeGreaterThan(0);
+      expect(shelf.length, folded).toBeLessThan(TEMPLATES.length);
     }
   });
 

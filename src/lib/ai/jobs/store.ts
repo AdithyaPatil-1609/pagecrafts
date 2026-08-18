@@ -20,6 +20,12 @@ class MemoryJobStore implements JobStore {
         this.jobs.set(id, next);
         return next;
     }
+
+    async listByProject(projectId: string): Promise<Job[]> {
+        return [...this.jobs.values()]
+            .filter((job) => job.projectId === projectId)
+            .sort((a, b) => a.startedAt - b.startedAt);
+    }
 }
 
 let instance: JobStore = new MemoryJobStore();

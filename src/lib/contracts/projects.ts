@@ -18,6 +18,25 @@ export interface SiteMeta {
   ogImageUrl?: string;
 }
 
+/**
+ * What went wrong with the latest publish, in words the owner can act on (R3 D18).
+ *
+ * Present only when the newest attempt did not reach `live`. Carried on the dashboard row
+ * itself because V-7 asks for a failed publish to be visible *without opening the project* —
+ * and "it failed" without a reason or a next step sends the person into the project anyway,
+ * which is the thing V-7 is trying to avoid.
+ */
+export interface ProjectFailure {
+  /** A stable key from a closed set, for anything that needs to branch rather than read. */
+  reason: string;
+  /** What happened. One sentence, no code, no jargon. */
+  what: string;
+  /** What happens next, or what they can do about it. */
+  next: string;
+  /** Whether pressing publish again is a sensible thing to offer. */
+  retryable: boolean;
+}
+
 // Dashboard row (GET /projects). Carries the latest deployment status so a failed
 // publish is visible without opening the project (V-7).
 export interface ProjectSummary {
@@ -27,6 +46,8 @@ export interface ProjectSummary {
   liveUrl: string | null;
   thumbnailUrl: string | null;
   updatedAt: string;
+  /** Set when the latest attempt did not reach live; null when it did, or never ran. */
+  failure: ProjectFailure | null;
 }
 
 // Full project (GET /projects/{id}).

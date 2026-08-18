@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FileMap, PublishFile, SiteMeta } from "@/lib/contracts";
 import { getProject } from "@/lib/data/projects";
 import { getProjectFiles } from "@/lib/data/project-files";
+import { applyContentToFiles } from "@/lib/content/to-files";
 import { applyAssetsToHtml, bundleAssets, referencedAssetIds } from "./publish-assets";
 
 // The file set that actually goes live (R3 D9).
@@ -82,9 +83,32 @@ function injectHead(html: string, tags: string[]): string {
         ? stripTemplateTitle(html)
         : html;
 
+    const block = tags.join("\n  ");
+
     // Before </head> rather than after <head>, so the charset and viewport tags a browser
     // wants early stay early.
-    return withoutTitle.replace(/<\/head>/i, `  ${tags.join("\n  ")}\n  </head>`);
+    if (/<\/head>/i.test(withoutTitle)) {
+        return withoutTitle.replace(/<\/head>/i, `  ${block}\n  </head>`);
+    }
+
+    // No </head> to insert before. A blueprint always writes one, but a sourced design is
+    // somebody else's markup and need not: an unclosed head, or no head at all, is
+    // malformed HTML that browsers accept happily. A plain replace writes nothing when it
+    // matches nothing, so the site used to go live with no title, no description and no
+    // share card, and nothing anywhere said so (R3 D15).
+    //
+    // Each fallback puts the tags where a browser will still read them as head content.
+    if (/<head\b[^>]*>/i.test(withoutTitle)) {
+        return withoutTitle.replace(/(<head\b[^>]*>)/i, `$1\n  ${block}`);
+    }
+
+    if (/<html\b[^>]*>/i.test(withoutTitle)) {
+        return withoutTitle.replace(/(<html\b[^>]*>)/i, `$1\n<head>\n  ${block}\n</head>`);
+    }
+
+    // A fragment with no document structure at all. Prepending still gives the browser the
+    // tags before any body content, which is what they need to take effect.
+    return `<head>\n  ${block}\n</head>\n${withoutTitle}`;
 }
 
 /**
@@ -171,10 +195,31 @@ export async function projectPublishInputs(
         referencedAssetIds(project.contentJson, project.contentSchema, project.siteMeta),
     );
 
-    const html = tree.files["index.html"];
+    // The owner's words, written into the markup here rather than trusted to have been
+    // written already.
+    //
+    // The editor renders content into the working tree as you type, so the stored file is
+    // usually right. "Usually" is not good enough for the one step that decides what the
+    // world sees: content_json is the record of what the owner meant, and any path that
+    // updates it without a browser attached — the content API called directly, a restore, a
+    // fork — leaves the stored markup a version behind. Publishing that ships a page with
+    // the template's words on it, and the owner has no way to tell until someone reads
+    // their live site.
+    //
+    // Applying it again when it has already been applied is a no-op: the renderer writes
+    // values into slots, so writing the same values produces the same bytes.
+    const rendered = applyContentToFiles(
+        tree.files,
+        project.contentJson,
+        project.contentSchema,
+    );
+
+    // Then the images. The two renderers are halves of one job — to-files.ts deliberately
+    // skips image slots, which is what this fills in — so content has to land before assets.
+    const html = rendered["index.html"];
     const withAssets = html
         ? {
-              ...tree.files,
+              ...rendered,
               "index.html": applyAssetsToHtml(
                   html,
                   project.contentJson,
@@ -182,7 +227,7 @@ export async function projectPublishInputs(
                   bundled.paths,
               ),
           }
-        : tree.files;
+        : rendered;
 
     const files = publishableFiles({
         files: withAssets,

@@ -391,6 +391,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ImageSearchResult'
+  # The publish history behind screen 02 (R3 D13). Attempts, not successes: a failed
+  # publish is the row somebody debugging needs most.
+  /projects/{projectId}/deployments:
+    parameters:
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      operationId: listProjectDeployments
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Publish attempts, newest first, success and failure alike (V-7).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentListResult'
         default:
           $ref: '#/components/responses/Error'
   /projects/{projectId}/commits:
@@ -939,9 +955,38 @@ components:
         ogImageUrl:
           type: string
           format: uri
+    ProjectFailure:
+      type: object
+      description: >-
+        Why the newest publish attempt did not go live, in words the owner can act on.
+        Derived from the stored reason at read time, so improving the wording improves
+        attempts already recorded. Absent (null) once a site is live and for a project that
+        has never been published.
+      required: [reason, what, next, retryable]
+      properties:
+        reason:
+          type: string
+          description: Stable key, for a client that needs to branch rather than read.
+          enum:
+            - provisioning_failed
+            - upload_failed
+            - hosting_failed
+            - not_answering_yet
+            - nothing_to_publish
+            - not_paid_for
+            - unknown
+        what:
+          type: string
+          description: What happened. One sentence, no code and no jargon.
+        next:
+          type: string
+          description: What happens next, or what the owner can do about it.
+        retryable:
+          type: boolean
+          description: Whether offering "publish again" is sensible for this reason.
     ProjectSummary:
       type: object
-      required: [id, name, status, liveUrl, thumbnailUrl, updatedAt]
+      required: [id, name, status, liveUrl, thumbnailUrl, updatedAt, failure]
       properties:
         id:
           type: string
@@ -958,6 +1003,13 @@ components:
         updatedAt:
           type: string
           format: date-time
+        failure:
+          description: >-
+            V-7 — a failed publish has to be legible from the dashboard without opening the
+            project, and "it failed" with no reason sends the owner into the project anyway.
+          oneOf:
+            - $ref: '#/components/schemas/ProjectFailure'
+            - type: 'null'
     ProjectDetail:
       allOf:
         - $ref: '#/components/schemas/ProjectSummary'
@@ -982,6 +1034,39 @@ components:
             formEndpoint:
               type: [string, 'null']
               format: uri
+    Deployment:
+      type: object
+      required: [id, projectId, state, liveUrl, commitSha, error, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        state:
+          type: string
+          enum: [pending, provisioning, pushing, enabling_hosting, verifying, live, failed]
+        liveUrl:
+          type: [string, 'null']
+          format: uri
+          description: >-
+            Only ever set for an attempt that reached `live` (C-05) — never a URL that has
+            not been confirmed to respond.
+        commitSha: { type: [string, 'null'] }
+        error: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    DeploymentListResult:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          const: true
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Deployment'
     CreateProjectRequest:
       type: object
       required: [name]

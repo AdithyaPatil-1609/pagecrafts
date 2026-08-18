@@ -49,6 +49,14 @@ export const cloudflarePagesAdapter: DeployProvider = {
         };
     },
 
+    // Cloudflare Pages projects are named by the subdomain itself, so the id is the address.
+    addressFor(siteId: string) {
+        return {
+            subdomain: siteId,
+            url: `https://${siteId}.${deployConfig().rootDomain}`,
+        };
+    },
+
     async pushBuild(siteId: string, files: PublishFile[]) {
         const dir = await mkdtemp(join(tmpdir(), 'pagecraft-'));
 
