@@ -67,7 +67,18 @@ test.describe('axe across the funnel', () => {
     test('the design detail dialog has none either', async ({ page }) => {
         await page.goto('/templates');
         await page.locator('article button').first().click();
-        await expect(page.getByRole('dialog')).toBeVisible();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+
+        // The design has to have actually loaded before the sweep means anything.
+        //
+        // This test asserted only that the dialog was visible and named, and the modal's
+        // error state satisfies both — a "we could not load this design" panel is a visible,
+        // correctly-labelled, accessible dialog. So it passed happily while the detail fetch
+        // was failing, which is precisely what happened on a dev server whose route table had
+        // gone stale. A11y-clean and broken is still broken, and the test could not tell.
+        await expect(dialog.getByRole('heading', { name: /what you can change/i })).toBeVisible();
+        await expect(dialog).not.toContainText(/could not load|could not reach/i);
 
         const violations = await seriousViolations(page);
         expect(describeViolations(violations)).toBe('');
