@@ -1,6 +1,13 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AssetKind, ContentSchema, Field, SiteMeta } from '@/lib/contracts';
+import type { AssetKind, ContentSchema, ContentSection, Field, SiteMeta } from '@/lib/contracts';
+import {
+    fieldLabel,
+    itemFieldLabel,
+    itemLabel,
+    sectionLabel,
+} from '@/lib/editor/field-labels';
+import { cn } from '@/lib/utils';
 import { applyContentToFiles } from '@/lib/content/to-files';
 import { validateFieldValue } from '@/lib/content/apply-ops';
 import { addItem, moveItem, removeItem } from '@/lib/content/list-ops';
@@ -48,17 +55,37 @@ function TextRow({
     value,
     error,
     multiline = false,
+    maxLength,
     onChange,
 }: {
     label: string;
     value: string;
     error?: string;
     multiline?: boolean;
+    maxLength?: number;
     onChange: (value: string) => void;
 }) {
+    // The limit used to be part of the label — "Main Heading (max 60)" — which put a rule
+    // in front of somebody before they had written anything, and never said how much of it
+    // they had used. It sits beside the field now and counts, so it answers the question
+    // people actually have, which is "have I got room for one more word".
+    const over = maxLength !== undefined && value.length > maxLength;
+
     return (
         <label className="block">
-            <span className="mb-1 block text-sm">{label}</span>
+            <span className="mb-1 flex items-baseline justify-between gap-2">
+                <span className="text-sm">{label}</span>
+                {maxLength !== undefined && (
+                    <span
+                        className={cn(
+                            "text-xs tabular-nums",
+                            over ? "text-destructive" : "text-muted-foreground",
+                        )}
+                    >
+                        {value.length} / {maxLength}
+                    </span>
+                )}
+            </span>
             {multiline ? (
                 <textarea
                     className={INPUT_CLASS}
@@ -320,12 +347,15 @@ function ListRows({
     value,
     error,
     projectId,
+    section,
     onChange,
 }: {
     field: Field;
     value: unknown;
     error?: string;
     projectId: string;
+    /** The section this list belongs to, which is what its rows are named after. */
+    section?: Pick<ContentSection, 'key' | 'label'>;
     onChange: (value: unknown) => void;
 }) {
     const items = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
@@ -336,16 +366,22 @@ function ListRows({
         onChange(next);
     };
 
+    // "Menu Item" rather than "item", so the button says what it adds and each row says what
+    // it is. A panel with three lists on it otherwise has three identical "Add item" buttons.
+    const one = section ? itemLabel(section) : 'Item';
+
     return (
         <div className="block">
             <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="text-sm">{field.label}</span>
+                <span className="text-sm">
+                    {section ? fieldLabel(section, field) : field.label}
+                </span>
                 <button
                     type="button"
                     onClick={() => onChange(addItem(items, itemSchema))}
                     className="rounded border border-border px-2 py-0.5 text-xs text-foreground hover:bg-accent"
                 >
-                    Add item
+                    Add {one}
                 </button>
             </div>
 
@@ -359,7 +395,7 @@ function ListRows({
                         <li key={index} className="space-y-2 rounded border border-border p-2">
                             <div className="flex items-center justify-between gap-2">
                                 <span className="text-xs font-medium text-muted-foreground">
-                                    Item {index + 1}
+                                    {one} {index + 1}
                                 </span>
                                 <div className="flex items-center gap-1">
                                     {/* Hidden rather than disabled at the ends: a button that
@@ -368,7 +404,7 @@ function ListRows({
                                     {index > 0 && (
                                         <button
                                             type="button"
-                                            aria-label={`Move item ${index + 1} up`}
+                                            aria-label={`Move ${one} ${index + 1} up`}
                                             onClick={() => onChange(moveItem(items, index, -1))}
                                             className="rounded border border-border px-1.5 py-0.5 text-xs hover:bg-accent"
                                         >
@@ -378,7 +414,7 @@ function ListRows({
                                     {index < items.length - 1 && (
                                         <button
                                             type="button"
-                                            aria-label={`Move item ${index + 1} down`}
+                                            aria-label={`Move ${one} ${index + 1} down`}
                                             onClick={() => onChange(moveItem(items, index, 1))}
                                             className="rounded border border-border px-1.5 py-0.5 text-xs hover:bg-accent"
                                         >
@@ -387,7 +423,7 @@ function ListRows({
                                     )}
                                     <button
                                         type="button"
-                                        aria-label={`Remove item ${index + 1}`}
+                                        aria-label={`Remove ${one} ${index + 1}`}
                                         onClick={() => onChange(removeItem(items, index))}
                                         className="rounded border border-border px-1.5 py-0.5 text-xs text-destructive hover:bg-accent"
                                     >
@@ -402,6 +438,7 @@ function ListRows({
                                     field={itemField}
                                     value={item?.[itemField.key]}
                                     projectId={projectId}
+                                    item
                                     onChange={(cell) => editCell(index, itemField.key, cell)}
                                 />
                             ))}
@@ -424,15 +461,24 @@ export function FieldControl({
     value,
     error,
     projectId,
+    section,
+    item,
     onChange,
 }: {
     field: Field;
     value: unknown;
     error?: string;
     projectId: string;
+    /** The section this field belongs to, which is half of what its label says. */
+    section?: Pick<ContentSection, 'key' | 'label'>;
+    /** Set when the field is one cell of a list entry. */
+    item?: boolean;
     onChange: (value: unknown) => void;
 }) {
-    const label = field.maxLength ? `${field.label} (max ${field.maxLength})` : field.label;
+    // Named for what it is to the person editing it, not for what the schema calls it.
+    // `item` is set when this field sits inside a list, where the row already says which
+    // entry it belongs to and the field only has to say which part of it (R2, on request).
+    const label = item ? itemFieldLabel(field) : section ? fieldLabel(section, field) : field.label;
 
     switch (field.type) {
         case 'richtext':
@@ -442,6 +488,7 @@ export function FieldControl({
                     value={textValue(value)}
                     error={error}
                     multiline
+                    maxLength={field.maxLength}
                     onChange={onChange}
                 />
             );
@@ -501,6 +548,7 @@ export function FieldControl({
                     value={value}
                     error={error}
                     projectId={projectId}
+                    section={section}
                     onChange={onChange}
                 />
             );
@@ -508,7 +556,13 @@ export function FieldControl({
         case 'text':
         default:
             return (
-                <TextRow label={label} value={textValue(value)} error={error} onChange={onChange} />
+                <TextRow
+                    label={label}
+                    value={textValue(value)}
+                    error={error}
+                    maxLength={field.maxLength}
+                    onChange={onChange}
+                />
             );
     }
 }
@@ -677,7 +731,9 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
             ) : (
                 schema.sections.map((section) => (
                     <section key={section.key} className="space-y-3">
-                        <h2 className="text-sm font-semibold text-muted-foreground">{section.label}</h2>
+                        <h2 className="text-sm font-semibold text-muted-foreground">
+                            {sectionLabel(section)}
+                        </h2>
 
                         {section.fields.map((field) => (
                             <FieldControl
@@ -686,6 +742,7 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
                                 value={(content[section.key] as Record<string, unknown>)?.[field.key]}
                                 error={fieldErrors[`${section.key}.${field.key}`]}
                                 projectId={projectId}
+                                section={section}
                                 onChange={(value) => editField(section.key, field.key, value)}
                             />
                         ))}
@@ -694,19 +751,19 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
             )}
 
             <section className="space-y-3 border-t border-border pt-5">
-                <h2 className="text-sm font-semibold text-muted-foreground">Site details</h2>
+                <h2 className="text-sm font-semibold text-muted-foreground">Website Details</h2>
                 <p className="text-xs text-muted-foreground">
                     Used for the browser tab, and for the card people see when your site is shared.
                 </p>
 
                 <TextRow
-                    label="Title"
+                    label="Page Title"
                     value={siteMeta.title ?? ''}
                     error={fieldErrors['site_meta.title']}
                     onChange={(value) => editSiteMeta('title', value)}
                 />
                 <TextRow
-                    label="Description"
+                    label="Page Description"
                     value={siteMeta.description ?? ''}
                     error={fieldErrors['site_meta.description']}
                     multiline
@@ -716,7 +773,7 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
                 {/* Both are asset ids (S-3, S-4), so they behave like any other image slot
                     rather than inviting someone to type a uuid. */}
                 <AssetSlot
-                    label="Favicon"
+                    label="Website Icon"
                     assetId={siteMeta.faviconAssetId ?? null}
                     error={fieldErrors['site_meta.faviconAssetId']}
                     projectId={projectId}
@@ -725,7 +782,7 @@ export default function ContentPanel({ projectId }: { projectId: string }) {
                     onClear={() => clearSiteMetaAsset('faviconAssetId')}
                 />
                 <AssetSlot
-                    label="Social share image"
+                    label="Image for Sharing"
                     assetId={siteMeta.ogImageAssetId ?? null}
                     error={fieldErrors['site_meta.ogImageAssetId']}
                     projectId={projectId}
