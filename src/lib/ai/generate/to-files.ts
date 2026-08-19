@@ -176,7 +176,15 @@ function renderInner(
                     : '',
                 asString(p.hours) ? slot('p', `${key}.hours`, escapeHtml(asString(p.hours))) : '',
                 '</address>',
+                `<form class="form" action="" method="post">
+        <input type="text" name="name" placeholder="Your name" aria-label="Name" autocomplete="name" />
+        <input type="email" name="email" placeholder="you@example.com" aria-label="Email" autocomplete="email" required />
+        <textarea name="message" rows="4" placeholder="How can we help?" aria-label="Message"></textarea>
+        <button type="submit">${escapeHtml(send)}</button>
+      </form>`,
+                '</div>',
             ].join('');
+        }
         case 'footer':
             return slot('p', `${key}.tagline`, escapeHtml(asString(p.tagline)));
         default: {
