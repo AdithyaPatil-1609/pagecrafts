@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { BrandMark } from "@/components/landing/BrandMark";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import type { Viewer } from "@/lib/auth/session";
 
 export const DECK_NAV = [
@@ -12,6 +13,19 @@ export const DECK_NAV = [
 
 const LINK =
     "rounded-md text-sm font-medium text-foreground/80 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background";
+
+function GuestActions() {
+    return (
+        <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/signin" className="sign-in-quiet">
+                Sign in
+            </Link>
+            <Link href="/signup" className="sign-in-cta">
+                Sign up
+            </Link>
+        </div>
+    );
+}
 
 export function SiteHeader({
     user,
@@ -29,13 +43,11 @@ export function SiteHeader({
                 >
                     <Link
                         href="/#top"
-                        className="rounded-md font-mono text-[11px] font-medium uppercase tracking-[0.32em] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                        01 — PageCraft
+                        <BrandMark />
                     </Link>
-                    <Link href="/signin" className={LINK}>
-                        Sign in
-                    </Link>
+                    <GuestActions />
                 </nav>
             </header>
         );
@@ -88,14 +100,13 @@ export function SiteHeader({
                             <span className="hidden text-sm text-muted-foreground sm:inline">
                                 {user.name}
                             </span>
-                            <Link href="/#settings" className={LINK}>
+                            <Link href="/settings" className={LINK}>
                                 Settings
                             </Link>
+                            <LogoutButton className={LINK} />
                         </>
                     ) : (
-                        <Link href="/signin" className={LINK}>
-                            Sign in
-                        </Link>
+                        <GuestActions />
                     )}
                 </div>
             </nav>

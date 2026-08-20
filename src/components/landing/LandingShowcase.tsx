@@ -1,31 +1,8 @@
 import type { CSSProperties } from "react";
-import { CardIndex } from "@/components/ui/card-index";
+import { TemplateCard } from "@/components/discovery/TemplateCard";
+import type { TemplateSummary } from "@/lib/templates/query";
 
-const SITES = [
-    {
-        name: "Studio Nord",
-        kind: "Agency",
-        prompt: "clean, editorial, lots of air",
-        stage: "look-nord",
-        headline: "Spaces with room to breathe.",
-    },
-    {
-        name: "Ilya Vega",
-        kind: "Portfolio",
-        prompt: "dark, neon, a bit brutal",
-        stage: "look-vega",
-        headline: "Work that hits first.",
-    },
-    {
-        name: "Copper & Co",
-        kind: "Shop",
-        prompt: "warm, amber, friendly",
-        stage: "look-copper",
-        headline: "Goods made to last.",
-    },
-];
-
-export function LandingShowcase() {
+export function LandingShowcase({ templates }: { templates: TemplateSummary[] }) {
     return (
         <section id="showcase" className="page-slide" aria-labelledby="showcase-heading">
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6">
@@ -40,35 +17,18 @@ export function LandingShowcase() {
                         <span className="hero-gold">code</span>
                     </h2>
                     <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-                        One prompt each
+                        Free to edit. Price is at publish.
                     </p>
                 </div>
 
-                <ul className="grid gap-5 sm:grid-cols-3">
-                    {SITES.map((site, i) => (
+                <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    {templates.map((template, i) => (
                         <li
-                            key={site.name}
+                            key={template.id}
                             data-reveal
                             style={{ "--reveal": i } as CSSProperties}
-                            className="glass-panel card-hover relative overflow-hidden rounded-2xl"
                         >
-                            <CardIndex n={i + 1} />
-                            <div className={`relative h-44 overflow-hidden ${site.stage}`}>
-                                <p className="absolute bottom-4 left-4 right-4 font-display text-lg font-bold leading-tight text-white">
-                                    {site.headline}
-                                </p>
-                            </div>
-                            <div className="relative z-[1] flex items-start justify-between gap-3 px-4 py-4">
-                                <div>
-                                    <p className="font-semibold text-foreground">{site.name}</p>
-                                    <p className="mt-1 font-mono text-xs text-muted-foreground">
-                                        “{site.prompt}”
-                                    </p>
-                                </div>
-                                <span className="shrink-0 rounded-full border border-border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                    {site.kind}
-                                </span>
-                            </div>
+                            <TemplateCard template={template} index={i + 1} />
                         </li>
                     ))}
                 </ul>

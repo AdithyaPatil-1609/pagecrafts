@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { SiteScene } from "@/components/site/SiteScene";
 
-const SLIDE_ORDER = ["/", "/signin", "/new", "/templates", "/choose", "/sites", "/assistant", "/settings"];
+const SLIDE_ORDER = ["/", "/signin", "/signup", "/new", "/templates", "/choose", "/sites", "/assistant", "/settings"];
 
 function slideIndex(path: string): number {
     if (path.startsWith("/editor")) return -1;

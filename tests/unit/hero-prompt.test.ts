@@ -9,6 +9,7 @@ import {
     promptQuery,
     stepTypewriter,
     typedPrompt,
+    type TypewriterState,
 } from "@/lib/hero-prompt";
 
 const read = (...parts: string[]) => readFileSync(join(process.cwd(), ...parts), "utf8");
@@ -58,7 +59,7 @@ describe("hero prompt phrases", () => {
 
     it("wraps from the last phrase back to the first", () => {
         const phrases = ["a", "b"] as const;
-        let state = { index: 1, length: 0, phase: "delete" as const };
+        let state: TypewriterState = { index: 1, length: 0, phase: "delete" };
         state = stepTypewriter(state, phrases);
         expect(state).toEqual({ index: 0, length: 0, phase: "type" });
         expect(currentPhrase(state, phrases)).toBe("a");
@@ -104,7 +105,18 @@ describe("the prompt bar is shared", () => {
         expect(reduce).toContain("transform: none");
         expect(graphic).not.toContain("/new?q=");
         expect(prompt).toContain("/new?q=");
+        expect(prompt).not.toContain("Build it");
+        expect(prompt).not.toMatch(/<button/);
         expect(hero).toContain("<HeroPrompt />");
+        const artwork = read("src", "components", "landing", "HeroArtwork.tsx");
+        const deck = read("src", "components", "landing", "LandingDeck.tsx");
+        expect(artwork).toContain("thumbnailUrl");
+        expect(artwork).toContain("object-cover object-top");
+        expect(artwork).not.toContain("/landing/");
+        expect(deck).toContain("pickLandingHeroTemplates");
+        expect(deck).toContain("pickLandingShowcaseTemplates");
+        expect(deck).toContain("<HeroArtwork templates={templates} />");
+        expect(artwork).not.toContain("hero-pane");
         expect(welcome).toContain("<WelcomePrompt />");
         expect(welcome).not.toContain("HeroPrompt");
         expect(welcome).not.toMatch(/<input|<textarea|contentEditable|contenteditable/);
@@ -125,5 +137,35 @@ describe("the prompt bar is shared", () => {
         expect(welcome).toContain("Rs 249");
         expect(welcome).toContain("text-[3.5rem]");
         expect(welcome).toContain("text-lg");
+    });
+});
+
+describe("the public header", () => {
+    it("puts Sign in and Sign up next to each other, on their own pages", () => {
+        const header = read("src", "components", "landing", "SiteHeader.tsx");
+        const css = read("src", "app", "globals.css");
+        const signin = read("src", "app", "(auth)", "signin", "page.tsx");
+        const signup = read("src", "app", "(auth)", "signup", "page.tsx");
+        expect(header).toContain("<BrandMark");
+        expect(header).not.toContain("01 —");
+        expect(header).not.toContain("02 —");
+        expect(header).toContain('href="/signin"');
+        expect(header).toContain('href="/signup"');
+        expect(header).toContain("Sign in");
+        expect(header).toContain("Sign up");
+        expect(header).toContain("sign-in-quiet");
+        expect(header).toContain("sign-in-cta");
+        expect(css).toContain(".sign-in-cta");
+        expect(css).toContain("var(--gold)");
+        expect(css).toContain("--gold: #d4b56a");
+        const cta = css.slice(css.indexOf(".sign-in-cta {"), css.indexOf(".sign-in-cta:hover"));
+        expect(cta).not.toContain("var(--signal)");
+        expect(cta).not.toContain("var(--bloom-amber)");
+        expect(cta).not.toMatch(/#[0-9a-fA-F]{3,8}/);
+        expect(signin).toContain('initialMode="signin"');
+        expect(signin).not.toContain('initialMode="signup"');
+        expect(signup).toContain('initialMode="signup"');
+        expect(signup).toContain("Start");
+        expect(signup).not.toContain("Welcome");
     });
 });

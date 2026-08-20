@@ -67,6 +67,10 @@
   --mix-sage: #c5d5c0;
   --mix-tan: #e0c9a0;
   --mix-gold: #f0a04a;
+
+  /* Quiet gold — header Sign in / Sign up. Gold, not brass, not neon. */
+  --gold: #d4b56a;
+  --gold-foreground: #05070a;
 }
 
 .light {
@@ -119,6 +123,10 @@
   --mix-sage: #c5d5c0;
   --mix-tan: #e0c9a0;
   --mix-gold: #f0a04a;
+
+  /* Quiet gold — header Sign in / Sign up. Gold, not brass, not neon. */
+  --gold: #d4b56a;
+  --gold-foreground: #05070a;
 }
 
 .dark {
@@ -171,6 +179,10 @@
   --mix-sage: #c5d5c0;
   --mix-tan: #e0c9a0;
   --mix-gold: #f0a04a;
+
+  /* Quiet gold — header Sign in / Sign up. Gold, not brass, not neon. */
+  --gold: #d4b56a;
+  --gold-foreground: #05070a;
 }
 
 @theme inline {
@@ -208,6 +220,8 @@
   --color-brand-to: var(--brand-to);
   --color-signal: var(--signal);
   --color-signal-foreground: var(--signal-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
   --color-bloom-blue: var(--bloom-blue);
   --color-bloom-amber: var(--bloom-amber);
   --color-bloom-sky: var(--bloom-sky);
@@ -336,7 +350,7 @@
   width: 100%;
   text-align: left;
   border-radius: 9999px;
-  padding: 0.45rem 0.45rem 0.45rem 1.1rem;
+  padding: 0.7rem 1.25rem;
   border: 1px solid transparent;
   background:
     linear-gradient(
@@ -365,6 +379,52 @@
 .welcome-prompt .hero-prompt-line {
   min-height: 1.4rem;
   font-size: 0.9375rem;
+}
+
+.sign-in-quiet,
+.sign-in-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.sign-in-quiet {
+  color: var(--gold);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+}
+
+.sign-in-quiet:hover {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+}
+
+.sign-in-cta {
+  color: var(--gold-foreground);
+  background: var(--gold);
+  border: 1px solid var(--gold);
+}
+
+.sign-in-cta:hover {
+  background: color-mix(in srgb, var(--gold) 88%, #fff);
+  border-color: color-mix(in srgb, var(--gold) 88%, #fff);
+}
+
+.sign-in-quiet:focus-visible,
+.sign-in-cta:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--gold);
 }
 
 .welcome-prompt-cta {
@@ -448,34 +508,24 @@
   box-shadow: 0 24px 80px color-mix(in srgb, var(--bloom-blue) 18%, transparent);
 }
 
-.hero-pane {
+.hero-shot {
   border: 1px solid color-mix(in srgb, var(--bloom-sky) 45%, transparent);
-  background: color-mix(in srgb, var(--bloom-blue) 12%, transparent);
   box-shadow: 0 0 28px color-mix(in srgb, var(--bloom-blue) 28%, transparent);
 }
 
-.hero-pane-amber {
-  border-color: color-mix(in srgb, var(--bloom-amber) 50%, transparent);
-  background: color-mix(in srgb, var(--bloom-amber) 16%, transparent);
+.hero-shot-amber {
+  border: 1px solid color-mix(in srgb, var(--bloom-amber) 50%, transparent);
   box-shadow: 0 0 28px color-mix(in srgb, var(--bloom-amber) 24%, transparent);
 }
 
-.look-nord {
-  background:
-    radial-gradient(ellipse at 20% 80%, color-mix(in srgb, var(--bloom-blue) 38%, transparent), transparent 50%),
-    linear-gradient(165deg, color-mix(in srgb, var(--bloom-blue) 18%, var(--background)), var(--card));
-}
-
-.look-vega {
-  background:
-    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--bloom-sky) 55%, transparent), transparent 42%),
-    linear-gradient(180deg, var(--background), var(--card));
-}
-
-.look-copper {
-  background:
-    radial-gradient(ellipse at 70% 20%, color-mix(in srgb, var(--mix-gold) 50%, transparent), transparent 46%),
-    linear-gradient(165deg, color-mix(in srgb, var(--bloom-amber) 28%, var(--background)), color-mix(in srgb, var(--mix-gold) 40%, var(--card)));
+.hero-shot img,
+.hero-shot-amber img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
 }
 
 @utility glass-pill {
@@ -934,6 +984,8 @@ html.deck-snap .page-flow[data-dir="back"] {
     animation: none !important;
   }
 
+  .sign-in-cta:hover,
+  .sign-in-quiet:hover,
   .welcome-prompt-cta:hover,
   .welcome-prompt-cta:focus-visible {
     transform: none;

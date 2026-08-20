@@ -64,7 +64,7 @@ export function generationSteps(input: GenerationStepInput): GenerationStep[] {
     for (const [index, type] of planned.entries()) {
         const label = type ? writingLabel(type) : 'Writing a page';
         let state: StepState = 'pending';
-        if (failed && sectionsDone <= index && (status === 'streaming' || status === 'repairing')) {
+        if (failed && sectionsDone <= index) {
             state = sectionsDone === index ? 'active' : 'pending';
         } else if (assembling || sectionsDone > index) {
             state = 'done';
@@ -74,7 +74,7 @@ export function generationSteps(input: GenerationStepInput): GenerationStep[] {
         steps.push({ id: `section-${index}`, label, state });
     }
 
-    if (pastBrief || status === 'validating' || status === 'repairing') {
+    if (pastBrief) {
         steps.push({
             id: 'assemble',
             label: 'Putting the files together',
@@ -86,7 +86,7 @@ export function generationSteps(input: GenerationStepInput): GenerationStep[] {
         });
     }
 
-    if (pastBrief || variantCount > 0 || status === 'done') {
+    if (pastBrief || variantCount > 0) {
         const looksReady = variantCount >= 3 || (status === 'done' && variantCount > 0);
         steps.push({
             id: 'looks',
