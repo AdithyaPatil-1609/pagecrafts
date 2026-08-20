@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { dirname, join } from 'node:path';
+import { STATE } from './support/users';
 
 // The accessibility baseline (R2 D20).
 //
@@ -7,10 +8,12 @@ import { dirname, join } from 'node:path';
 // rather than as a sweep somebody did once, because an accessibility baseline that is not
 // enforced is a snapshot of one afternoon.
 //
-// These run unauthenticated, so they need no Upstash credential and go on every pull
-// request. The editor's content panel needs a session and is gated with the rest of the
-// signed-in specs — noted in docs/r2-week-4-plan.md as still owed.
-//
+// Public screens run unauthenticated on every pull request. The library is signed-in
+// only, so its axe and keyboard walks sit behind E2E_WITH_AUTH like the rest of the
+// signed-in specs. The editor's content panel is still owed — see docs/r2-week-4-plan.md.
+
+const withAuth = process.env.E2E_WITH_AUTH === '1';
+
 // What the D20 sweep found, for anyone reading a green run and wondering what it is worth:
 //   · aria-pressed on all forty filter chips. Only valid on a button; these are links, so
 //     an unsupported attribute meant no announcement at all and the active filter was
@@ -49,9 +52,8 @@ function describeViolations(violations: AxeViolation[]): string {
 
 const SCREENS = [
     { name: 'landing', url: '/' },
-    { name: 'the gallery', url: '/templates' },
-    { name: 'the gallery, filtered', url: '/templates?category=fitness&colour=dark&tier=free' },
-    { name: 'the gallery with nothing matching', url: '/templates?search=zzzznothingmatches' },
+    { name: 'sign in', url: '/signin' },
+    { name: 'sign up', url: '/signup' },
     { name: 'describe your site', url: '/new' },
 ];
 
@@ -63,6 +65,22 @@ test.describe('axe across the funnel', () => {
             expect(describeViolations(violations)).toBe('');
         });
     }
+
+    test('the library is not a signed-out destination', async ({ page }) => {
+        await page.goto('/templates');
+        await expect(page).toHaveURL(/\/signin/);
+    });
+});
+
+test.describe('axe across the signed-in library', () => {
+    test.skip(!withAuth, 'needs Upstash: set E2E_WITH_AUTH=1');
+    test.use({ storageState: STATE.first });
+
+    test('the gallery has no critical or serious violations', async ({ page }) => {
+        await page.goto('/templates');
+        const violations = await seriousViolations(page);
+        expect(describeViolations(violations)).toBe('');
+    });
 
     test('the design detail dialog has none either', async ({ page }) => {
         await page.goto('/templates');
@@ -86,6 +104,8 @@ test.describe('axe across the funnel', () => {
 });
 
 test.describe('the core flow, with only a keyboard', () => {
+    test.skip(!withAuth, 'needs Upstash: set E2E_WITH_AUTH=1');
+    test.use({ storageState: STATE.first });
     // Never walked end to end before D20. The browser drives real Tab presses here, which
     // is the part a hand-written focus() loop cannot stand in for — it is the browser's own
     // sequencing being tested, not our idea of it.

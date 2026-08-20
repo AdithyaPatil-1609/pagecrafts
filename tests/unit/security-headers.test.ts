@@ -20,12 +20,13 @@ describe('security headers (NFR-110, NFR-113)', () => {
         expect(find(false, 'Referrer-Policy')).toBe('strict-origin-when-cross-origin');
     });
 
-    it('turns off hardware the product never uses', () => {
+    it('turns off hardware the product never uses, except the mic on the brief', () => {
         const policy = find(false, 'Permissions-Policy') ?? '';
 
-        for (const feature of ['camera=()', 'microphone=()', 'geolocation=()']) {
-            expect(policy).toContain(feature);
-        }
+        expect(policy).toContain('camera=()');
+        expect(policy).toContain('geolocation=()');
+        expect(policy).toContain('microphone=(self)');
+        expect(policy).not.toMatch(/microphone=\(\)/);
     });
 
     it('never allows eval in production', () => {

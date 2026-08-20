@@ -19,9 +19,9 @@ const FEATURES: Feature[] = [
 
 export function PagecraftFeatures() {
     return (
-        <section className="rounded-2xl border border-border bg-card/40 p-6">
+        <section data-reveal className="glass-panel rounded-2xl p-6">
             <h2 className="text-xl font-bold tracking-tight text-foreground">
-                What can you do with PageCraft?
+                What can you do with PageCrafts?
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
                 Our AI-powered platform helps you create professional websites in minutes.

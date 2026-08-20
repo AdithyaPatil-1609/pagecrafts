@@ -44,7 +44,9 @@ test.describe('the happy path', () => {
         const detail = await page.request.get(`/api/v1/templates/${first.id}`);
 
         expect(detail.status()).toBe(200);
-        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await expect(page).toHaveURL(/\/templates/);
+        await expect(page.getByRole('heading', { name: /choose a design/i })).toBeVisible();
+        await expect(page.getByRole('link', { name: /back to build/i })).toBeVisible();
     });
 
     // Its own context: signing out of the shared session would leave every test after

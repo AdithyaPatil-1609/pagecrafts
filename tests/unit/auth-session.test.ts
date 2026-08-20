@@ -27,7 +27,7 @@ describe("toSessionUser", () => {
     });
 
     it("treats a missing confirmation timestamp as unverified", () => {
-        expect(toSessionUser({ ...user, email_confirmed_at: null }).emailVerified).toBe(false);
+        expect(toSessionUser({ ...user, email_confirmed_at: undefined }).emailVerified).toBe(false);
     });
 });
 

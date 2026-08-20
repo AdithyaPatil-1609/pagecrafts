@@ -3,6 +3,7 @@ import type { TemplateSummary } from "@/lib/templates/query";
 import { TemplatePreview } from "@/components/discovery/TemplatePreview";
 import { TemplateDetailModal } from "@/components/discovery/TemplateDetailModal";
 import { PriceBadge } from "@/components/discovery/PriceBadge";
+import { CardIndex } from "@/components/ui/card-index";
 
 // A tile: the design, its name, and what it costs.
 //
@@ -11,18 +12,27 @@ import { PriceBadge } from "@/components/discovery/PriceBadge";
 export function TemplateCard({
     template,
     index,
+    compact = false,
+    showPrice = true,
 }: {
     template: TemplateSummary;
     index: number;
+    compact?: boolean;
+    showPrice?: boolean;
 }) {
     return (
-        <article className="group overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/40 focus-within:border-primary/40">
-            <TemplateDetailModal templateId={template.id} templateName={template.name}>
+        <article className="card-hover group relative overflow-hidden rounded-xl border border-border bg-card focus-within:border-primary/40">
+            <TemplateDetailModal
+                templateId={template.id}
+                templateName={template.name}
+                showPrice={showPrice}
+            >
                 <button
                     type="button"
                     className="block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                    <span className="relative block">
+                    <span className="relative block overflow-hidden">
+                        <CardIndex n={index} compact={compact} />
                         {/* The rendered thumbnail where the library has one, the parsed
                             miniature where it does not. Never a live iframe either way
                             (D-3, AC-F3-2).
@@ -55,24 +65,30 @@ export function TemplateCard({
                             <TemplatePreview preview={template.preview} priority={index <= 4} />
                         )}
 
-                        {/* The price, on the design, before any choice (UI Spec §7.5). */}
-                        <PriceBadge
-                            tier={template.tier}
-                            priceInr={template.priceInr}
-                            className="absolute right-2 top-2 shadow-sm"
-                        />
+                        {showPrice ? (
+                            <PriceBadge
+                                tier={template.tier}
+                                priceInr={template.priceInr}
+                                className="absolute right-2 top-2 z-[1] shadow-sm"
+                            />
+                        ) : null}
                     </span>
 
-                    <span className="flex items-center justify-between gap-3 border-t border-border px-3 py-2.5">
-                        <span className="flex min-w-0 items-baseline gap-2.5 text-sm font-semibold text-foreground">
-                            <span className="font-mono text-xs font-normal text-muted-foreground">
-                                {String(index).padStart(2, "0")}
+                    <span
+                        className={
+                            compact
+                                ? "relative z-[1] flex items-center justify-between gap-2 border-t border-border px-2 py-1.5"
+                                : "relative z-[1] flex items-center justify-between gap-3 border-t border-border px-3 py-2.5"
+                        }
+                    >
+                        <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                            {template.name}
+                        </span>
+                        {compact ? null : (
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                                {CATEGORY_LABELS[template.category]}
                             </span>
-                            <span className="truncate">{template.name}</span>
-                        </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                            {CATEGORY_LABELS[template.category]}
-                        </span>
+                        )}
                     </span>
 
                     {/* Kept for screen readers and search: the tile itself stays visual. */}

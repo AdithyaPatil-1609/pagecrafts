@@ -170,14 +170,29 @@ describe('editor QA (D16–D20)', () => {
         expect(preview).toContain('absolute inset-0');
     });
 
-    it('keeps the default editor as content plus your site', () => {
+    it('keeps the default editor as chat plus your site', () => {
         const shell = readFileSync('src/components/editor/EditorShell.tsx', 'utf8');
-        expect(shell).toContain('ContentPanel');
-        expect(shell).toContain('askOpen || pendingChange');
+        expect(shell).not.toContain('ContentPanel');
+        expect(shell).toContain('ChatPanel');
+        expect(shell).toContain('EditorSplit');
+        const split = readFileSync('src/components/editor/EditorSplit.tsx', 'utf8');
+        expect(split).toContain('DEFAULT_LEFT = 30');
+        expect(split).toContain('role="separator"');
         expect(shell).toContain('sectionsOpen && composition');
+        expect(shell).toContain("get('ask') === '1'");
         const preview = readFileSync('src/components/editor/PreviewPane.tsx', 'utf8');
         expect(preview).toContain('Your site');
         expect(preview).toContain('Phone');
+        expect(preview).toContain('Preview');
+        const composer = readFileSync('src/components/editor/ChatComposer.tsx', 'utf8');
+        expect(composer).toContain('Queue follow-up');
+        expect(composer).toContain('Set up a custom domain');
+        expect(composer).toContain('Get started');
+        expect(composer).toContain('Custom domains are coming');
+        const topBar = readFileSync('src/components/editor/TopBar.tsx', 'utf8');
+        expect(topBar).toContain('Back to Templates');
+        expect(topBar).toContain('href="/#build"');
+        expect(topBar).toContain('Save');
     });
 
     it('loads Your site from a blob URL instead of srcDoc', () => {
@@ -196,10 +211,13 @@ describe('editor QA (D16–D20)', () => {
 
     it('lets Ask generate a whole site from a prompt', () => {
         const chat = readFileSync('src/components/editor/ChatPanel.tsx', 'utf8');
-        expect(chat).toContain('Create a sweet shop website');
         expect(chat).toContain('whole new website');
+        expect(chat).toContain('Suggested next steps');
+        const suggestions = readFileSync('src/lib/editor/chat-suggestions.ts', 'utf8');
+        expect(suggestions).toContain('Create a sweet shop website');
         const store = readFileSync('src/lib/editor-store.ts', 'utf8');
         expect(store).toContain('isSiteGenerationRequest');
         expect(store).toContain('generateSiteProposal');
+        expect(store).toContain('cancelAiEdit');
     });
 });

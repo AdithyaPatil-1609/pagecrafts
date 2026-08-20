@@ -5,6 +5,7 @@ import type { Category } from "@/lib/contracts";
 import { CATEGORY_LABELS } from "@/lib/discovery/categories";
 import type { SortKey, TemplateSummary } from "@/lib/templates/query";
 import { TemplateCard } from "@/components/discovery/TemplateCard";
+import { CardIndex } from "@/components/ui/card-index";
 import { SortSelect } from "@/components/discovery/SortSelect";
 import { GalleryEmpty } from "@/components/discovery/GalleryStates";
 
@@ -14,9 +15,10 @@ function DesignSomethingNewCard({ index }: { index: number }) {
     return (
         <Link
             href="/new"
-            className="group flex flex-col overflow-hidden rounded-xl border border-dashed border-primary/40 bg-card transition-colors hover:border-primary hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="card-hover group relative flex flex-col overflow-hidden rounded-xl border border-dashed border-primary/40 bg-card transition-colors hover:border-primary hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-            <div className="relative flex aspect-16/10 flex-col items-center justify-center gap-1.5 px-6 text-center">
+            <CardIndex n={index} />
+            <div className="relative z-[1] flex aspect-16/10 flex-col items-center justify-center gap-1.5 px-6 text-center">
                 <span
                     aria-hidden
                     className="brand-halo flex size-10 items-center justify-center rounded-full border border-primary/40 bg-accent"
@@ -30,11 +32,8 @@ function DesignSomethingNewCard({ index }: { index: number }) {
                     Describe it and we build it
                 </span>
             </div>
-            <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2.5">
-                <span className="flex items-baseline gap-2 text-sm font-medium text-foreground">
-                    <span className="font-mono text-xs text-muted-foreground">
-                        {String(index).padStart(2, "0")}
-                    </span>
+            <div className="relative z-[1] flex items-center justify-between gap-3 border-t border-border px-3 py-2.5">
+                <span className="text-sm font-medium text-foreground">
                     Start from scratch
                 </span>
             </div>
@@ -103,7 +102,7 @@ export function GalleryGrid({
             {templates.length === 0 && <GalleryEmpty resetHref={resetHref} />}
 
             {templates.length > 0 && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {(split ? matched : templates).map((template, index) => (
                         <TemplateCard key={template.id} template={template} index={index + 1} />
                     ))}
@@ -115,7 +114,7 @@ export function GalleryGrid({
                     <h3 className="text-sm font-medium text-muted-foreground">
                         Everything else in the library
                     </h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {rest.map((template, index) => (
                             <TemplateCard
                                 key={template.id}
@@ -131,7 +130,7 @@ export function GalleryGrid({
                 <h2 className="text-xl font-bold tracking-tight text-foreground">
                     Want something else?
                 </h2>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     <DesignSomethingNewCard index={templates.length + 1} />
                 </div>
             </section>

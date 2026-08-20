@@ -65,11 +65,22 @@ export interface ProjectDetail extends ProjectSummary {
 }
 
 // POST /projects — fork a template (synchronous) or start a generation (async).
+/** Facts for a template fork — written onto the design instead of generating a new site. */
+export interface ProjectBrief {
+  name: string;
+  offer: string;
+  place: string;
+  phone?: string;
+  hours?: string;
+  extra?: string;
+}
+
 export interface CreateProjectRequest {
   name: string;
   sourceTemplateId?: string; // fork path
   mode?: "generate"; // generation path
   prompt?: string; // generation path
+  brief?: ProjectBrief; // fork path: replace placeholder copy
 }
 
 export interface CreateProjectResponse {
@@ -83,4 +94,10 @@ export interface PatchProjectRequest {
   name?: string;
   siteMeta?: SiteMeta;
   formEndpoint?: string | null;
+}
+
+// DELETE /projects/{id} — same email + password shape as sign-in (C-11).
+export interface DeleteProjectRequest {
+  email: string;
+  password: string;
 }

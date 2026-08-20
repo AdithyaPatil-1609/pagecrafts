@@ -1,12 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Rocket } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { credentialsSchema, credentialsIssue, MIN_PASSWORD_LENGTH } from "@/lib/auth/credentials";
+import { safeNext } from "@/lib/auth/safe-next";
 import { signUpFormSchema, passwordResetRequestSchema } from "@/lib/contracts/auth";
 import type { ApiResult, ErrorCode } from "@/lib/contracts";
 
@@ -53,26 +55,28 @@ const COPY: Record<Mode, { title: string; blurb: string; action: string }> = {
 };
 
 const PANEL =
-    "w-full max-w-md scroll-mt-8 rounded-3xl border border-border bg-card/70 p-8 backdrop-blur-xl brand-halo sm:p-10";
+    "w-full max-w-md scroll-mt-8 rounded-3xl glass-panel p-8 sm:p-10";
 const LABEL = "block text-sm font-medium text-foreground";
 
 function PanelHeader({ title, blurb }: { title: string; blurb: string }) {
     return (
-        <div className="flex flex-col items-center text-center">
-            <span
-                aria-hidden
-                className="brand-halo flex size-16 items-center justify-center rounded-full border border-primary/40 bg-accent"
-            >
-                <Rocket className="size-7 text-primary" strokeWidth={1.75} />
-            </span>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight text-card-foreground">{title}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{blurb}</p>
+        <div className="flex flex-col">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-foreground">{title}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{blurb}</p>
         </div>
     );
 }
 
-export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
+export function AuthCard({
+    initialMode = "signup",
+    next = "/",
+}: {
+    initialMode?: Mode;
+    next?: string;
+}) {
     const router = useRouter();
+    const destination = safeNext(next);
+    const nextQs = destination !== "/" ? `?next=${encodeURIComponent(destination)}` : "";
     const [mode, setMode] = useState<Mode>(initialMode);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -151,26 +155,22 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
                 return;
             }
             setBusy(true);
-            try {
-                const result = await post<SignUpData>("/api/v1/auth/signup", {
-                    email: parsed.data.email,
-                    password: parsed.data.password,
-                    name: name.trim() || undefined,
-                });
-                if (!result.ok) {
-                    setError(visibleError(result));
-                    return;
-                }
-                await afterSession(
-                    result.data.pending
-                        ? `/verify?email=${encodeURIComponent(parsed.data.email)}`
-                        : "/new",
-                );
-            } catch {
-                setError(MESSAGES.internal!);
-            } finally {
-                setBusy(false);
-            }
+            const result = await post<SignUpData>("/api/v1/auth/signup", {
+                email: parsed.data.email,
+                password: parsed.data.password,
+                // Optional: stored on the account so we can greet people by name.
+                name: name.trim() || undefined,
+            }).catch(() => null);
+            setBusy(false);
+
+            if (result === null) { setError(MESSAGES.internal!); return; }
+            if (!result.ok) { setError(visibleError(result)); return; }
+            router.push(
+                result.data.pending
+                    ? `/verify?email=${encodeURIComponent(parsed.data.email)}`
+                    : destination,
+            );
+            if (!result.data.pending) router.refresh();
             return;
         }
 
@@ -181,23 +181,18 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
         }
         const parsed = credentialsSchema.parse({ email, password });
         setBusy(true);
-        try {
-            const result = await post<unknown>("/api/v1/auth/login", parsed);
-            if (!result.ok) {
-                setError(visibleError(result));
-                return;
-            }
-            await afterSession("/new");
-        } catch {
-            setError(MESSAGES.internal!);
-        } finally {
-            setBusy(false);
-        }
+        const result = await post<unknown>("/api/v1/auth/login", parsed).catch(() => null);
+        setBusy(false);
+
+        if (result === null) { setError(MESSAGES.internal!); return; }
+        if (!result.ok) { setError(visibleError(result)); return; }
+        router.push(destination);
+        router.refresh();
     }
 
     if (mode === "forgot" && sent) {
         return (
-            <div id="sign-in" className={`${PANEL} text-center`} aria-live="polite">
+            <div className={`${PANEL} text-center`} aria-live="polite">
                 <PanelHeader
                     title="Check your email"
                     blurb="The link lasts one hour."
@@ -221,13 +216,13 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
     const copy = COPY[mode];
 
     return (
-        <form id="sign-in" onSubmit={handleSubmit} noValidate className={PANEL}>
+        <form onSubmit={handleSubmit} noValidate className={PANEL}>
             <PanelHeader title={copy.title} blurb={copy.blurb} />
 
             {mode !== "forgot" && (
                 <>
                     <a
-                        href="/api/v1/auth/google"
+                        href={`/api/v1/auth/google?next=${encodeURIComponent(destination)}`}
                         className="mt-7 flex h-13 w-full items-center justify-center gap-3 rounded-lg border border-primary/40 bg-transparent px-4 text-base font-semibold text-foreground transition-colors hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                         <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -344,18 +339,18 @@ export function AuthCard({ initialMode = "signup" }: { initialMode?: Mode }) {
                         </button>
                         <span>
                             New here?{" "}
-                            <button type="button" onClick={() => switchTo("signup")} className="font-medium text-brand-ink underline underline-offset-4">
+                            <Link href={`/signup${nextQs}`} className="font-medium text-brand-ink underline underline-offset-4">
                                 Create an account
-                            </button>
+                            </Link>
                         </span>
                     </>
                 )}
                 {mode === "signup" && (
                     <span>
                         Already have an account?{" "}
-                        <button type="button" onClick={() => switchTo("signin")} className="font-medium text-primary underline underline-offset-4">
+                        <Link href={`/signin${nextQs}`} className="font-medium text-primary underline underline-offset-4">
                             Sign in
-                        </button>
+                        </Link>
                     </span>
                 )}
                 {mode === "forgot" && (

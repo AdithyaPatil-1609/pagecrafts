@@ -21,7 +21,11 @@ export async function requireUser() {
         throw new ApiError("unauthorized", "Please sign in.");
     }
 
-    return { supabase, userId: data.user.id };
+  return {
+    supabase,
+    userId: data.user.id,
+    email: (data.user.email ?? "").trim().toLowerCase(),
+  };
 }
 
 export type SessionUser = {
@@ -59,6 +63,8 @@ export function toViewer(user: User): Viewer {
     return { ...session, name: name || session.email.split("@")[0] || "Your account" };
 }
 
+// The signed-in user as seen from a Server Component — who to show in the app shell.
+// Signed out is an ordinary answer here, not an error: several screens are public.
 export async function viewer(): Promise<Viewer | null> {
     const supabase = await supabaseViewerClient();
     const { data, error } = await supabase.auth.getUser();

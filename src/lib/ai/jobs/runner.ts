@@ -11,7 +11,9 @@ import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
 import { CostLedger, type LedgerRow } from '../cost/ledger';
 import type { RankableTemplate, RankAttributes } from '../rank';
-import type { FileMap, SectionProps, Usage } from '@/lib/contracts';
+import type {
+    FileMap, SectionInstance, SectionProps, Tone, Usage, VerticalProfile,
+} from '@/lib/contracts';
 import { jobStore } from './store';
 import type { Job, JobEventName, JobStatus } from './types';
 
@@ -86,7 +88,10 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         bill('plan', planned.usage);
         fallbackAttrs.sections = planned.data.map((section) => section.type);
 
-        await emit('plan', { sections: planned.data.length });
+        await emit('plan', {
+            sections: planned.data.length,
+            types: planned.data.map((section) => section.type),
+        });
         await advance('streaming', {
             provider,
             sectionsTotal: planned.data.length,
@@ -119,7 +124,12 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             if (outcome.repaired) await emit('repair', { section: section.type });
 
             props.set(section.id, outcome.data.data);
-            await advance('streaming', { sectionsDone: i + 1, ledger: [...ledger.all()] });
+            const preview = previewFiles(planned.data, props, intent.data.vertical, p.data, job.prompt, intent.data.tone);
+            await advance('streaming', {
+                sectionsDone: i + 1,
+                ledger: [...ledger.all()],
+                ...(preview ? { files: preview } : {}),
+            });
             await emit('section', { type: section.type, variant: section.variant });
         }
 
@@ -260,6 +270,32 @@ function usageFromError(err: unknown): Usage | undefined {
 function filesOf(template: RankableTemplate): FileMap | undefined {
     if (!template.files || Object.keys(template.files).length === 0) return undefined;
     return template.files;
+}
+
+/** Partial HTML as soon as a section has copy — live preview, not a spinner. */
+function previewFiles(
+    planned: readonly SectionInstance[],
+    props: Map<string, SectionProps>,
+    vertical: string,
+    profile: VerticalProfile,
+    prompt: string,
+    tone?: Tone,
+): FileMap | undefined {
+    const filled = planned.filter((section) => props.has(section.id));
+    if (filled.length === 0) return undefined;
+    try {
+        return compositionToFiles(assemble({
+            vertical,
+            profile,
+            sections: filled,
+            props,
+            title: profile.label,
+            description: prompt.slice(0, 160),
+            tone,
+        }));
+    } catch {
+        return undefined;
+    }
 }
 
 async function lookupPhoto(query: string): Promise<string> {

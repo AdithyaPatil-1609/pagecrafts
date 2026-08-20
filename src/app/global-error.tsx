@@ -16,15 +16,12 @@ import { captureError } from '@/lib/observability/capture';
 // the product — a `var(--background)` here would resolve to nothing, since globals.css is
 // exactly what may not have loaded.
 //
-// They are the dark palette's values, copied from globals.css and named below. This screen
-// rendered white until R2 D19, which made the last thing a person sees look like a different
-// product: PageCraft is dark-first, and the near-black surface is the identity rather than a
-// preference (docs/design-tokens.md). If the palette changes, change these with it — nothing
-// can do it automatically, which is the price of a screen that works when nothing else does.
-// The dark palette, from src/app/globals.css. Kept together so the drift is obvious.
-const BACKGROUND = '#07070b'; // --background
-const FOREGROUND = '#f5f5f7'; // --foreground
-const MUTED = '#9b9ba6'; // --muted-foreground
+// They are the dark-glass palette's values, copied from globals.css and named below. If the
+// palette changes, change these with it — nothing can do it automatically, which is the
+// price of a screen that works when nothing else does.
+const BACKGROUND = '#05070a'; // --background
+const FOREGROUND = '#f4f7fb'; // --foreground
+const MUTED = '#a8b4c4'; // --muted-foreground
 const BRAND = '#dc2626'; // --primary
 const ON_BRAND = '#ffffff'; // --primary-foreground
 
@@ -49,14 +46,26 @@ export default function GlobalError({
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '2rem',
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontFamily: 'system-ui, -apple-system',
                     background: BACKGROUND,
                     color: FOREGROUND,
                 }}
             >
                 <main style={{ maxWidth: '28rem', textAlign: 'center' }}>
+                    <img
+                        src="/brand/pagecrafts-lockup.png"
+                        alt="PageCrafts"
+                        width={496}
+                        height={161}
+                        style={{
+                            display: 'block',
+                            height: '3rem',
+                            width: 'auto',
+                            margin: '0 auto 1.25rem',
+                        }}
+                    />
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0 0 0.75rem' }}>
-                        PageCraft could not load
+                        PageCrafts could not load
                     </h1>
 
                     <p style={{ fontSize: '0.875rem', lineHeight: 1.6, color: MUTED, margin: 0 }}>

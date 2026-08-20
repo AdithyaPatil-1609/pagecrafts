@@ -111,13 +111,14 @@ describe('prompt versions — v1 is frozen, v2 sits alongside', () => {
         expect(listTemplates()).toContain('plan.v3.md');
         expect(listTemplates()).toContain('fill-section.v3.md');
         expect(loadTemplate('plan.v3').system).toMatch(/drop testimonials, team or faq/i);
+        expect(loadTemplate('plan.v3').system).toMatch(/Do not include gallery unless/i);
         expect(loadTemplate('plan.v3').system).toMatch(/The page does the verb/i);
         expect(loadTemplate('plan.v3').system).toMatch(/resume-writing/i);
         expect(loadTemplate('fill-section.v3').system).toMatch(/empty optional field is correct/i);
         expect(loadTemplate('fill-section.v3').system).toMatch(/Never "Add/i);
         expect(loadTemplate('fill-section.v3').system).not.toMatch(/Add a customer quote here/);
         expect(loadTemplate('plan.v3').system).toMatch(/not to transliterate/i);
-        expect(loadTemplate('fill-section.v3').system).toMatch(/do not transliterate/i);
+        expect(loadTemplate('fill-section.v3').system).toMatch(/mithai shop/i);
     });
 
     it('keeps the containment paragraph out of nothing — v2 fill still forbids HTML', () => {

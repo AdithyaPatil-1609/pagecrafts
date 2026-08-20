@@ -15,11 +15,11 @@ export async function GET(request: NextRequest) {
 
     if (providerError) {
         console.error("[auth/callback]", providerError, url.searchParams.get("error_description"));
-        redirect("/?error=google_denied");
+        redirect("/signin?error=google_denied");
     }
 
     if (!code) {
-        redirect("/?error=google_failed");
+        redirect("/signin?error=google_failed");
     }
 
     const supabase = await supabaseRouteClient();
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
         console.error("[auth/callback]", error.code ?? error.status, error.message);
-        redirect("/?error=google_failed");
+        redirect("/signin?error=google_failed");
     }
 
     redirect(next);

@@ -11,12 +11,15 @@ import type {
   ProjectFailure,
   ProjectSummary,
   SiteMeta,
+  TemplateTier,
 } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
 import { putProjectFiles } from "./project-files";
 import { createCommit } from "./commits";
 import { contentFromFiles } from "@/lib/content/from-files";
+import { personaliseContent, personaliseFiles } from "@/lib/content/personalise";
+import { expandTemplateSite } from "@/lib/content/expand-template";
 import { asContentSchema } from "@/lib/content/schema";
 import { PROJECTS_PER_USER } from "@/lib/limits/config";
 import { failureMessage, toFailureReason } from "@/lib/deploy/failure";
@@ -302,9 +305,20 @@ export async function createProject(
     }
     if (!template) throw new ApiError("not_found", "That design does not exist.");
 
-    // Editing is not gated on the design's listed price. Free / premium / signature
-    // stay on the catalogue row as metadata; publish is still paid for later.
-    const files = (template.files ?? {}) as FileMap;
+    let contentSchema = (template.content_schema ?? { sections: [] }) as ContentSchema;
+    let files = (template.files ?? {}) as FileMap;
+    let content = contentFromFiles(files, contentSchema);
+
+    // The brief screen after "Use this design" writes the business onto this layout
+    // and adds About, Contact and Settings in the same chrome — not a generated look.
+    if (req.brief) {
+      const next = personaliseContent(contentSchema, content, req.brief);
+      files = personaliseFiles(files, contentSchema, next, req.brief);
+      const expanded = expandTemplateSite(files, contentSchema, req.brief);
+      files = expanded.files;
+      contentSchema = expanded.schema;
+      content = contentFromFiles(files, contentSchema);
+    }
     await putProjectFiles(supabase, projectId, files);
 
     // The schema is copied for the same reason the files are (R3 D7). Read live through
@@ -314,12 +328,11 @@ export async function createProject(
     //
     // content_json is seeded from the markup at the same time, so the panel opens showing
     // the words that are on the page instead of a column of blanks. See content/from-files.
-    const contentSchema = (template.content_schema ?? { sections: [] }) as ContentSchema;
     const { error: seedError } = await supabase
       .from("projects")
       .update({
         content_schema: contentSchema,
-        content_json: contentFromFiles(files, contentSchema),
+        content_json: content,
         // Enough for publish to emit a real <title> and description on day one (S-2). Both
         // are the owner's to change from the settings panel; what they must not be is
         // absent, because a site that publishes with no title is one nobody finds and the
@@ -327,8 +340,12 @@ export async function createProject(
         // the description is the design's own, which at least describes the page they are
         // looking at.
         site_meta: {
-          title: req.name,
-          ...(template.description ? { description: template.description as string } : {}),
+          title: req.brief?.name ?? req.name,
+          ...(req.brief
+            ? { description: `${req.brief.offer} in ${req.brief.place}` }
+            : template.description
+              ? { description: template.description as string }
+              : {}),
         },
       })
       .eq("id", projectId);

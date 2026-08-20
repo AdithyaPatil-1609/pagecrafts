@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { applyStyle, STYLE_SPECS, STYLE_IDS } from '@/lib/ai/generate/styles';
 import { buildStyleOptions } from '@/lib/ai/generate/options';
-import { bankPhotoUrl } from '@/lib/ai/generate/photos';
+import {
+    bankPhotoUrl,
+    CLOTHING_PHOTO_ID,
+    DESSERT_PHOTO_ID,
+    MITHAI_SEARCH,
+    photoSearchQuery,
+    stampPhotoUrls,
+} from '@/lib/ai/generate/photos';
 import { SCHEMA_VERSION, type ArtDirection, type Composition, type SectionInstance } from '@/lib/contracts';
 
 const ART: ArtDirection = {
@@ -29,7 +36,11 @@ const composition: Composition = {
             heading: 'Mithas Sweets',
             image: { query: 'indian sweets mithai', alt: 'Trays of mithai' },
         }),
-        section('s_02', 'about', 'text', { heading: 'About', body: 'Family recipes.' }),
+        section('s_02', 'about', 'text', {
+            heading: 'About',
+            body: 'Family recipes.',
+            image: { query: 'sweet shop counter', alt: 'The counter' },
+        }),
         section('s_03', 'menu', 'simple', {
             heading: 'What we make',
             items: [{ name: 'Laddu', description: 'Besan.', price: 'Varies' }],
@@ -54,32 +65,81 @@ describe('style presets — three looks from one brief', () => {
         expect(photos.artDirection.motionId).not.toBe(STYLE_SPECS.motion.art.motionId);
         expect(photos.sections.find((s) => s.type === 'hero')?.variant).toBe('image-bg');
         expect(applyStyle(composition, STYLE_SPECS.casual).sections.find((s) => s.type === 'hero')?.variant)
-            .toBe('centred');
+            .toBe('split-image');
+        expect(applyStyle(composition, STYLE_SPECS.casual).artDirection.themeId).toBe('sunlit-craft');
         expect(applyStyle(composition, STYLE_SPECS.motion).artDirection.motionId).toBe('kinetic');
     });
 
     it('picks a mithai photograph for a sweets query', () => {
-        expect(bankPhotoUrl('indian sweets mithai')).toContain('images.unsplash.com');
+        expect(bankPhotoUrl('indian sweets mithai')).toContain(DESSERT_PHOTO_ID);
         expect(bankPhotoUrl('indian sweets mithai')).not.toBe(bankPhotoUrl('a gym in koramangala'));
     });
 
-    it('builds three finished sites, and only the photo look has pictures', async () => {
+    it('does not use a clothing shop photo for a sweet shop, even if the slot says shop interior', async () => {
+        const shoppy = {
+            ...composition,
+            sections: composition.sections.map((section) =>
+                section.type === 'hero'
+                    ? { ...section, props: { ...section.props, image: { query: 'shop interior', alt: 'Store' } } }
+                    : section,
+            ),
+        };
+        const search = photoSearchQuery(shoppy.vertical, shoppy.meta.title, 'shop interior');
+        expect(search).toBe(MITHAI_SEARCH);
+        expect(bankPhotoUrl(search)).toContain(DESSERT_PHOTO_ID);
+        expect(bankPhotoUrl(search)).not.toContain(CLOTHING_PHOTO_ID);
+
+        const stamped = await stampPhotoUrls(shoppy);
+        const heroImage = stamped.sections.find((section) => section.type === 'hero')?.props.image as { url?: string };
+        expect(heroImage.url).toContain(DESSERT_PHOTO_ID);
+        expect(heroImage.url).not.toContain(CLOTHING_PHOTO_ID);
+
+        expect(bankPhotoUrl('saree boutique dresses')).toContain(CLOTHING_PHOTO_ID);
+    });
+
+    it('builds three finished sites; Casual gets one hero photo, Photo-rich gets photos throughout', async () => {
         const options = await buildStyleOptions(composition);
         expect(options.map((o) => o.id)).toEqual(['casual', 'photos', 'motion']);
 
-        const html = Object.fromEntries(options.map((o) => [o.id, o.files['index.html'] ?? '']));
-        expect(html.casual).toContain('data-style="casual"');
-        expect(html.photos).toContain('data-style="photos"');
-        expect(html.motion).toContain('data-style="motion"');
+        const home = Object.fromEntries(options.map((o) => [o.id, o.files['index.html'] ?? '']));
+        const about = Object.fromEntries(options.map((o) => [o.id, o.files['about.html'] ?? '']));
+        const allHtml = Object.fromEntries(
+            options.map((o) => [o.id, Object.values(o.files).join('\n')]),
+        );
 
-        expect(html.casual).not.toContain('images.unsplash.com');
-        expect(html.photos).toContain('images.unsplash.com');
-        expect(html.photos).toContain('<img src="');
-        expect(html.casual).toContain('data-motion="none"');
-        expect(html.photos).toContain('data-motion="editorial"');
-        expect(html.motion).toContain('data-motion="kinetic"');
-        expect(html.casual).toContain('Mithas Sweets');
-        expect(html.photos).toContain('Mithas Sweets');
-        expect(html.motion).toContain('Mithas Sweets');
+        expect(home.casual).toContain('data-style="casual"');
+        expect(home.photos).toContain('data-style="photos"');
+        expect(home.motion).toContain('data-style="motion"');
+
+        // Casual shows one hero photograph in a split layout (not a grey wall of type).
+        expect(home.casual).toContain('images.unsplash.com');
+        expect(home.casual).toContain('<img src="');
+        expect(home.casual).toContain('data-type="hero" data-variant="split-image"');
+        // About lives on about.html after the multi-page split.
+        expect(about.casual).toContain('data-type="about" data-variant="text"');
+        // Photo-rich goes further: cinematic hero + media-split About + more photos site-wide.
+        expect(home.photos).toContain('images.unsplash.com');
+        expect(home.photos).toContain('data-type="hero" data-variant="image-bg"');
+        expect(about.photos).toContain('data-type="about" data-variant="media-split"');
+        expect((allHtml.photos.match(/images\.unsplash\.com/g) ?? []).length)
+            .toBeGreaterThan((allHtml.casual.match(/images\.unsplash\.com/g) ?? []).length);
+        expect(home.casual).toContain('data-motion="none"');
+        expect(home.photos).toContain('data-motion="editorial"');
+        expect(home.motion).toContain('data-motion="kinetic"');
+        expect(home.motion).toContain('data-motif="jalebi"');
+        expect(home.motion).toContain('jalebi-coil');
+        expect(home.motion).toContain('honey-drip');
+        expect(home.motion).toContain('motion-stage');
+        expect(home.motion).toContain('motion-ticker');
+        expect(home.motion).toContain('--bg: #06040c');
+        expect(home.motion).not.toContain('pc-orb');
+        expect(home.casual).not.toContain('data-motif="jalebi"');
+        expect(home.casual).not.toContain('motion-stage');
+        expect(home.photos).not.toContain('data-motif="jalebi"');
+        expect(home.photos).not.toContain('motion-stage');
+        expect(home.motion).toContain('pc-pulse 1.4s ease-in-out infinite');
+        expect(home.casual).toContain('Mithas Sweets');
+        expect(home.photos).toContain('Mithas Sweets');
+        expect(home.motion).toContain('Mithas Sweets');
     });
 });

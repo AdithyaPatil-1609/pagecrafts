@@ -32,10 +32,10 @@ AI_PROMPT_PLAN=plan.v2 AI_PROMPT_FILL=fill-section.v2 npm run grade -- --label=v
 | `edit.v1.md` ← | edit | v1 | strong | `20f46ad7214a` | one section + instruction → changed fields |
 | `fill-section.v1.md` | fill-section | v1 | strong | `5418e9b0cf10` | one section → typed content fields |
 | `fill-section.v2.md` | fill-section | v2 | strong | `890073b7b30a` | one section → typed content fields |
-| `fill-section.v3.md` ← | fill-section | v3 | strong | `736a689cd280` | one section → typed content fields |
+| `fill-section.v3.md` ← | fill-section | v3 | strong | `e409bb5aa1b6` | one section → typed content fields |
 | `plan.v1.md` | plan | v1 | strong | `d67841ff84fd` | recipe + description → ordered sections with layout variants |
 | `plan.v2.md` | plan | v2 | strong | `938aa19e682b` | recipe + description → ordered sections with layout variants |
-| `plan.v3.md` ← | plan | v3 | strong | `f287b4d9624c` | recipe + description → ordered sections with layout variants |
+| `plan.v3.md` ← | plan | v3 | strong | `da088eb562d2` | recipe + description → ordered sections with layout variants |
 | `profile.v1.md` ← | profile | v1 | strong | `4bfa7d530f1c` | vertical → section recipe, art direction, vocabulary |
 
 ## Variables
@@ -76,10 +76,10 @@ the general rules in the prompt body and nothing more.
 
 | Section | File | Digest | First line |
 |---|---|---|---|
-| hero | `guidance/hero.md` | `a7f2d9337626` | A hero has seconds. Say what the business is and where, in the first line. |
+| hero | `guidance/hero.md` | `764d5ec4d070` | A hero has seconds. Say what the business is and where, in the first line. |
 | about | `guidance/about.md` | `915c8fdab8a5` | Say who runs this and how long they have been doing it. Concrete beats warm. |
 | services | `guidance/services.md` | `2da823f70243` | One item per thing the business actually does, named the way the business names |
-| menu | `guidance/menu.md` | `ee61bf702dcb` | Real dishes with the names the kitchen uses. Regional names stay in their own |
+| menu | `guidance/menu.md` | `d87969547c9a` | Real dishes with the names the kitchen uses. Regional names stay in their own |
 | gallery | `guidance/gallery.md` | `f9b2d753eb51` | Each image is a photo search, not a caption. |
 | team | `guidance/team.md` | `f424f945cacd` | Only name people the description names. If it does not name anyone, write roles |
 | testimonials | `guidance/testimonials.md` | `726d7d789280` | These are quotes attributed to real customers, so they carry a risk the other |

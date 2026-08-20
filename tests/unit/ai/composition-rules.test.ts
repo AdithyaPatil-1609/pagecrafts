@@ -94,8 +94,8 @@ describe('normalisePlan', () => {
         ], { prompt: 'two day design conference, venue and a register link' });
 
         expect(out.sections.some((s) => s.type === 'contact')).toBe(true);
-        expect(out.sections).toHaveLength(MAX_SECTIONS);
         expect(out.sections.some((s) => s.type === 'testimonials')).toBe(false);
+        expect(out.sections.some((s) => s.type === 'gallery')).toBe(false);
         expect(out.repairs.some((r) => /contact/i.test(r))).toBe(true);
     });
 
@@ -113,7 +113,7 @@ describe('normalisePlan', () => {
         expect(out.sections.map((s) => s.type)).toContain('contact');
     });
 
-    it('does not rewrite a full plan when the prompt has no contact hint', () => {
+    it('drops gallery and testimonials unless the description asked for them', () => {
         const out = normalisePlan([
             { type: 'hero', variant: 'centred', brief: 'a' },
             { type: 'about', variant: 'text', brief: 'b' },
@@ -125,9 +125,21 @@ describe('normalisePlan', () => {
         ], { prompt: 'calm simple page for my yoga studio' });
 
         expect(show(out)).toEqual([
-            'hero/centred', 'about/text', 'services/cards', 'team/grid',
-            'testimonials/quotes', 'gallery/masonry', 'footer/columns',
+            'hero/centred', 'about/text', 'services/cards', 'footer/columns',
         ]);
+        expect(out.repairs.some((r) => /gallery\/testimonials\/team/i.test(r))).toBe(true);
+    });
+
+    it('keeps gallery when they asked for photos', () => {
+        const out = normalisePlan([
+            { type: 'hero', variant: 'centred', brief: 'a' },
+            { type: 'gallery', variant: 'masonry', brief: 'b' },
+            { type: 'contact', variant: 'simple', brief: 'c' },
+            { type: 'footer', variant: 'columns', brief: 'd' },
+        ], { prompt: 'sweet shop in old delhi, with photos of the mithai trays' });
+
+        expect(out.sections.map((s) => s.type)).toContain('gallery');
+        expect(out.sections.map((s) => s.type)).not.toContain('testimonials');
     });
 
     it('does not treat "post surgery" as a writing ask (D15 v14)', () => {
@@ -226,7 +238,7 @@ describe('normalisePlan', () => {
             { type: 'hero', variant: 'centred', brief: 'a' },
             { type: 'team', variant: 'grid', brief: 'photos, names, years of practice for each attorney' },
             { type: 'footer', variant: 'columns', brief: 'c' },
-        ], { prompt: 'site for a small law firm doing property and family matters' });
+        ], { prompt: 'site for a small law firm doing property and family matters — meet the lawyers' });
 
         expect(out.sections.find((s) => s.type === 'team')?.brief).toMatch(/never "Attorney Name"/i);
         expect(out.sections.find((s) => s.type === 'team')?.brief).not.toMatch(/photos, names/i);

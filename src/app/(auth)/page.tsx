@@ -1,52 +1,99 @@
-import { Hero } from "@/components/landing/Hero";
-import { LandingBackdrop } from "@/components/landing/LandingBackdrop";
+import { Suspense } from "react";
+import { LandingDeck } from "@/components/landing/LandingDeck";
 import { SiteHeader } from "@/components/landing/SiteHeader";
+import { SlideNav } from "@/components/landing/SlideNav";
 import { ValueProps } from "@/components/landing/ValueProps";
-import { redirect } from "next/navigation";
-import { AuthCard } from "@/components/auth/AuthCard";
-import { landingError } from "@/lib/auth/landing-errors";
-import { currentUser } from "@/lib/auth/session";
+import { viewer, type Viewer } from "@/lib/auth/session";
+import { supabaseViewerClient } from "@/lib/auth/server";
+import { listProjects } from "@/lib/data/projects";
+import { getAccount } from "@/lib/data/account";
+import type { AccountResponse, ProjectSummary } from "@/lib/contracts";
+import { parseTemplateQuery, queryTemplates, type TemplateSummary } from "@/lib/templates/query";
+import { WelcomeSlide } from "@/components/deck/WelcomeSlide";
+import { BuildSlide } from "@/components/deck/BuildSlide";
+import { SitesSlide } from "@/components/deck/SitesSlide";
+import { SettingsSlide } from "@/components/deck/SettingsSlide";
+import { SlideTo } from "@/components/deck/SlideTo";
 
-export default async function LandingPage({
+export const dynamic = "force-dynamic";
+
+export const HOME_SLIDES = [
+    { id: "welcome", label: "Welcome" },
+    { id: "how-it-works", label: "How it works" },
+    { id: "build", label: "Build" },
+    { id: "sites", label: "Your sites" },
+    { id: "settings", label: "Settings" },
+] as const;
+
+type Params = Record<string, string | string[] | undefined>;
+
+export default async function RootPage({
     searchParams,
 }: {
-    searchParams: Promise<{ error?: string; mode?: string }>;
+    searchParams: Promise<Params>;
 }) {
-    const { error, mode } = await searchParams;
+    await searchParams;
+    const user = await viewer();
 
-    // Somebody already signed in has no business being shown a sign-in form. This is
-    // what made confirming an email look like it had not worked: the session was
-    // created, but anything that landed on / showed the form again, so the only
-    // evidence of being signed in was invisible.
-    if (!error && (await currentUser())) {
-        redirect("/new");
+    if (!user) {
+        return <LandingDeck />;
     }
 
-    const message = landingError(error);
-    const initialMode = mode === "signin" || mode === "forgot" ? mode : "signup";
+    let sites: ProjectSummary[] | null = [];
+    let account: AccountResponse | null = null;
+    try {
+        const supabase = await supabaseViewerClient();
+        try {
+            sites = await listProjects(supabase, user.id);
+        } catch {
+            sites = null;
+        }
+        try {
+            account = await getAccount(supabase);
+        } catch {
+            account = null;
+        }
+    } catch {
+        sites = null;
+        account = null;
+    }
 
+    // Build always shows the first twelve from the full library. URL filters belong
+    // on /templates — carrying them onto home emptied the grid (a leftover `q`
+    // from describe used to leave one tile where twelve belong).
+    const templates = queryTemplates(parseTemplateQuery(new URLSearchParams())).items;
+
+    return <Home user={user} sites={sites} account={account} templates={templates} />;
+}
+
+function Home({
+    user,
+    sites,
+    account,
+    templates,
+}: {
+    user: Viewer;
+    sites: ProjectSummary[] | null;
+    account: AccountResponse | null;
+    templates: TemplateSummary[];
+}) {
     return (
-        <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
-            <LandingBackdrop />
-            <SiteHeader />
+        <div className="relative">
+            <SiteHeader user={user} />
+            <SlideNav slides={HOME_SLIDES} />
+            <Suspense fallback={null}>
+                <SlideTo />
+            </Suspense>
 
-            <main className="relative z-10 mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 items-start gap-16 px-6 pt-10 pb-24 lg:grid-cols-[1fr_minmax(0,28rem)] lg:gap-14 lg:pt-16">
-                <Hero />
-
-                <div className="flex w-full flex-col items-center gap-3 justify-self-center lg:justify-self-end">
-                    {message && (
-                        <p
-                            role="status"
-                            className="w-full max-w-md rounded-lg border border-border bg-secondary p-3 text-center text-sm text-secondary-foreground"
-                        >
-                            {message}
-                        </p>
-                    )}
-                    <AuthCard initialMode={initialMode} />
-                </div>
-            </main>
-
-            <ValueProps />
+            <div className="page-deck">
+                <main>
+                    <WelcomeSlide name={user.name} templates={templates} />
+                    <ValueProps />
+                    <BuildSlide templates={templates} />
+                    <SitesSlide signedIn sites={sites} email={user.email} />
+                    <SettingsSlide account={account} />
+                </main>
+            </div>
         </div>
     );
 }

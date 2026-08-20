@@ -13,6 +13,8 @@ import {
     createCommit,
     pickEntryFile,
     proposeProjectEdit,
+    proposeCopyEdit,
+    type GenerationJobStatus,
 } from '@/lib/project-source';
 import { parseComposition } from '@/lib/editor/parse-composition';
 import { applyEditPatch } from '@/lib/editor/apply-patch';
@@ -20,6 +22,11 @@ import { writeCompositionFiles, writeRenderedSite } from '@/lib/editor/sync-site
 import { sanitise } from '@/lib/ai/sanitise';
 import { sectionVariants } from '@/lib/editor/section-registry';
 import { isSiteGenerationRequest } from '@/lib/editor/site-intent';
+import {
+    parseRenameIntent,
+    renameComposition,
+    renameExplanation,
+} from '@/lib/editor/rename-site';
 import { generateSiteProposal, generationExplanation } from '@/lib/editor/generate-site';
 import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
 import { debounceTrigger } from '@/lib/debounce';
@@ -52,6 +59,8 @@ import { asContentSchema } from '@/lib/content/schema';
 
 const vfs = new VFS();
 const AUTOSAVE_DELAY_MS = 1500;
+/** Bumped to ignore an in-flight Ask once the person taps stop. */
+let chatEpoch = 0;
 // Structured content goes to the server on its own beat: the markup is already updated
 // locally, so this is the canonical copy catching up rather than anything the person waits
 // for. Slower than autosave, because a batch of keystrokes is one op.
@@ -97,6 +106,7 @@ interface EditorState {
     chatBusy: boolean;
     chatError: string | null;
     chatProgress: string | null;
+    chatJob: GenerationJobStatus | null;
     projectName: string | null;
     contentSchema: ContentSchema | null;
     content: ContentValues;
@@ -127,6 +137,7 @@ interface EditorState {
     loadComposition: (composition: Composition) => void;
     selectSection: (id: string) => void;
     requestAiEdit: (instruction: string) => Promise<void>;
+    cancelAiEdit: () => void;
     moveSectionUp: (id: string) => void;
     moveSectionDown: (id: string) => void;
     toggleSectionVisible: (id: string) => void;
@@ -193,6 +204,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     chatBusy: false,
     chatError: null,
     chatProgress: null,
+    chatJob: null,
     projectName: null,
     contentSchema: null,
     content: {},
@@ -223,6 +235,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             chatBusy: false,
             chatError: null,
             chatProgress: null,
+            chatJob: null,
             contentError: null,
             contentIssues: {},
             content: {},
@@ -278,6 +291,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                     : {},
             siteMeta: detail?.siteMeta ?? {},
             formEndpoint: detail?.formEndpoint ?? null,
+            chatMessages:
+                schema && schema.sections.length > 0 && !composition
+                    ? [
+                          {
+                              role: 'assistant',
+                              text: 'Your facts are on this design. Ask for a change, or pick a suggestion.',
+                          },
+                      ]
+                    : [],
             // A project that opens but whose settings did not is worth saying; it is not
             // worth refusing to open over.
             contentError: detailError,
@@ -406,6 +428,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 });
                 writeCompositionFiles(vfs, parsed);
             }
+        } else if (/\.html?$/i.test(pendingChange.path)) {
+            const schema = get().contentSchema;
+            if (schema) {
+                set({
+                    content: mergeContent(
+                        readContentFromHtml(pendingChange.after, schema),
+                        get().content,
+                    ),
+                });
+            }
         }
 
         set({ pendingChange: null });
@@ -423,6 +455,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         writeCompositionFiles(vfs, composition);
     },
     selectSection: (id) => set({ selectedSectionId: id }),
+    cancelAiEdit: () => {
+        chatEpoch += 1;
+        set({ chatBusy: false, chatProgress: null, chatJob: null });
+    },
     requestAiEdit: async (instruction) => {
         const text = instruction.trim();
         const {
@@ -450,6 +486,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }
 
         const sectionCount = composition?.sections.length ?? 0;
+        const { contentSchema } = get();
+        const htmlSite = Boolean(contentSchema?.sections.length) && sectionCount === 0;
+        if (htmlSite) {
+            if (text.length > 300) {
+                set({ chatError: 'Keep the request under 300 characters.' });
+                return;
+            }
+            await requestCopyRewrite(get, set, text);
+            return;
+        }
         if (isSiteGenerationRequest(text, sectionCount)) {
             if (text.length > MAX_CLASSIFY_CHARS) {
                 set({ chatError: 'Keep the request under 500 characters.' });
@@ -468,6 +514,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             return;
         }
 
+        // "Change Ravi Clothing to Pragna Clothing" is a whole-site rename, not a
+        // single-section AI tweak. Doing it here avoids the LLM and updates the
+        // title, footer, and every other place the old name appears.
+        const rename = parseRenameIntent(text, composition.meta.title);
+        if (rename) {
+            await requestSiteRename(get, set, text, rename.from, rename.to);
+            return;
+        }
+
         const section =
             composition.sections.find((item) => item.id === selectedSectionId) ??
             composition.sections.find((item) => !item.locked) ??
@@ -482,6 +537,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             return;
         }
 
+        const epoch = ++chatEpoch;
         set({
             chatBusy: true,
             chatError: null,
@@ -490,11 +546,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
         autosave.cancel();
         await get().saveProject();
+        if (epoch !== chatEpoch) return;
 
         const { sha, error: commitError } = await createCommit(
             projectId,
             'Saved before a suggested change',
         );
+        if (epoch !== chatEpoch) return;
         if (sha) set({ lastCommitSha: sha });
         if (!sha) {
             set({
@@ -515,6 +573,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 props: section.props,
             },
         });
+        if (epoch !== chatEpoch) return;
 
         if (error || !proposal) {
             set({
@@ -643,6 +702,137 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     },
 }));
 
+/** Deterministic whole-site rename — no LLM, so it cannot return the generic internal error. */
+async function requestSiteRename(
+    get: () => EditorState,
+    set: (partial: Partial<EditorState>) => void,
+    text: string,
+    from: string,
+    to: string,
+) {
+    const { projectId, chatMessages, composition, vfs } = get();
+    if (!projectId || !composition) return;
+
+    const epoch = ++chatEpoch;
+    set({
+        chatBusy: true,
+        chatError: null,
+        chatProgress: 'Updating the name across the site…',
+        chatMessages: [...chatMessages, { role: 'user', text }],
+    });
+
+    autosave.cancel();
+    await get().saveProject();
+    if (epoch !== chatEpoch) return;
+
+    const { sha, error: commitError } = await createCommit(
+        projectId,
+        'Saved before renaming the site',
+    );
+    if (epoch !== chatEpoch) return;
+    if (sha) set({ lastCommitSha: sha });
+    if (!sha) {
+        set({
+            chatBusy: false,
+            chatProgress: null,
+            chatError: commitError ?? 'Could not save a version first. Try again.',
+        });
+        return;
+    }
+
+    const { next, hits } = renameComposition(composition, from, to);
+    const explanation = renameExplanation(from, to, hits);
+
+    if (hits <= 0) {
+        set({
+            chatBusy: false,
+            chatProgress: null,
+            chatError: explanation,
+            chatMessages: [...get().chatMessages, { role: 'assistant', text: explanation }],
+        });
+        return;
+    }
+
+    if (vfs.read('composition.json') === null) {
+        vfs.write('composition.json', JSON.stringify(composition, null, 2));
+    }
+
+    get().proposeChange({
+        path: 'composition.json',
+        after: JSON.stringify(next, null, 2),
+        explanation,
+    });
+
+    set({
+        chatBusy: false,
+        chatProgress: null,
+        chatMessages: [...get().chatMessages, { role: 'assistant', text: explanation }],
+    });
+}
+
+async function requestCopyRewrite(
+    get: () => EditorState,
+    set: (partial: Partial<EditorState>) => void,
+    text: string,
+) {
+    const { projectId, chatMessages } = get();
+    if (!projectId) return;
+
+    const epoch = ++chatEpoch;
+    set({
+        chatBusy: true,
+        chatError: null,
+        chatProgress: 'Rewriting the words…',
+        chatMessages: [...chatMessages, { role: 'user', text }],
+    });
+
+    autosave.cancel();
+    await get().saveProject();
+    if (epoch !== chatEpoch) return;
+
+    const { sha, error: commitError } = await createCommit(
+        projectId,
+        'Saved before a suggested change',
+    );
+    if (epoch !== chatEpoch) return;
+    if (sha) set({ lastCommitSha: sha });
+    if (!sha) {
+        set({
+            chatBusy: false,
+            chatProgress: null,
+            chatError: commitError ?? 'Could not save a version first. Try again.',
+        });
+        return;
+    }
+
+    const { proposal, error } = await proposeCopyEdit(projectId, text);
+    if (epoch !== chatEpoch) return;
+
+    if (error || !proposal) {
+        set({
+            chatBusy: false,
+            chatProgress: null,
+            chatError: error ?? 'The suggestion could not be prepared. Try again.',
+        });
+        return;
+    }
+
+    get().proposeChange({
+        path: proposal.path,
+        after: proposal.after,
+        explanation: proposal.explanation,
+    });
+
+    set({
+        chatBusy: false,
+        chatProgress: null,
+        chatMessages: [
+            ...get().chatMessages,
+            { role: 'assistant', text: proposal.explanation },
+        ],
+    });
+}
+
 /** One-page generation from Ask. The result is a suggestion until Keep. */
 async function requestFullSite(
     get: () => EditorState,
@@ -652,29 +842,38 @@ async function requestFullSite(
     const { projectId, chatMessages, composition } = get();
     if (!projectId) return;
 
+    const epoch = ++chatEpoch;
     set({
         chatBusy: true,
         chatError: null,
         chatProgress: 'Preparing your site…',
+        chatJob: { status: 'queued', sections_done: 0, sections_total: 0, files_ready: false, elapsed_ms: 0 },
         chatMessages: [...chatMessages, { role: 'user', text }],
     });
 
     autosave.cancel();
     await get().saveProject();
+    if (epoch !== chatEpoch) return;
 
     const { sha } = await createCommit(projectId, 'Saved before generating a site');
+    if (epoch !== chatEpoch) return;
     if (sha) set({ lastCommitSha: sha });
 
     const { composition: next, error } = await generateSiteProposal(
         projectId,
         text,
-        (message) => set({ chatProgress: message }),
+        (message, job) => {
+            if (epoch !== chatEpoch) return;
+            set({ chatProgress: message, chatJob: job });
+        },
     );
+    if (epoch !== chatEpoch) return;
 
     if (error || !next) {
         set({
             chatBusy: false,
             chatProgress: null,
+            chatJob: null,
             chatError: error ?? 'The site could not be generated.',
         });
         return;
@@ -692,6 +891,7 @@ async function requestFullSite(
     set({
         chatBusy: false,
         chatProgress: null,
+        chatJob: null,
         chatMessages: [
             ...get().chatMessages,
             { role: 'assistant', text: explanation },

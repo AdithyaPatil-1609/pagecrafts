@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     if (error || !data.url) {
         console.error("[auth/google]", error?.code ?? error?.status, error?.message);
-        redirect("/?error=google_unavailable");
+        redirect("/signin?error=google_unavailable");
     }
 
     redirect(data.url);

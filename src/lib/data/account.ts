@@ -13,20 +13,47 @@ import { supabaseAdmin } from "./supabase-admin";
 // is no user id parameter here on purpose: a function that took one could be called with
 // somebody else's.
 
+const ACCOUNT_SELECT =
+  "email, email_verified, training_opt_in, created_at, handle, phone, billing_line, billing_city, gstin";
+const ACCOUNT_SELECT_CORE = "email, email_verified, training_opt_in, created_at, handle";
+
+function missingBillingColumn(message: string): boolean {
+  return (
+    /column .* does not exist/i.test(message) ||
+    /could not find .* column/i.test(message)
+  );
+}
+
 export async function getAccount(supabase: SupabaseClient): Promise<AccountResponse> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("email, email_verified, training_opt_in, created_at")
-    .maybeSingle();
+  const full = await supabase.from("users").select(ACCOUNT_SELECT).maybeSingle();
 
-  if (error) throw new ApiError("internal", "Could not read your account.", error.message);
-  if (!data) throw new ApiError("not_found", "That account does not exist.");
+  if (!full.error) {
+    if (!full.data) throw new ApiError("not_found", "That account does not exist.");
+    return mapAccount(full.data as Record<string, unknown>, true);
+  }
 
+  if (!missingBillingColumn(full.error.message)) {
+    throw new ApiError("internal", "Could not read your account.", full.error.message);
+  }
+
+  const core = await supabase.from("users").select(ACCOUNT_SELECT_CORE).maybeSingle();
+  if (core.error) throw new ApiError("internal", "Could not read your account.", core.error.message);
+  if (!core.data) throw new ApiError("not_found", "That account does not exist.");
+  return mapAccount(core.data as Record<string, unknown>, false);
+}
+
+function mapAccount(data: Record<string, unknown>, billingReady: boolean): AccountResponse {
   return {
-    email: data.email as string,
+    email: String(data.email ?? ""),
     emailVerified: Boolean(data.email_verified),
     trainingOptIn: Boolean(data.training_opt_in),
-    createdAt: data.created_at as string,
+    createdAt: String(data.created_at ?? ""),
+    displayName: typeof data.handle === "string" ? data.handle : "",
+    phone: typeof data.phone === "string" ? data.phone : "",
+    billingLine: typeof data.billing_line === "string" ? data.billing_line : "",
+    billingCity: typeof data.billing_city === "string" ? data.billing_city : "",
+    gstin: typeof data.gstin === "string" ? data.gstin : "",
+    billingReady,
   };
 }
 
@@ -53,6 +80,34 @@ export async function setTrainingConsent(
 
   if (error) {
     throw new ApiError("internal", "Could not save that preference.", error.message);
+  }
+
+  return getAccount(supabase);
+}
+
+export async function setBillingProfile(
+  supabase: SupabaseClient,
+  profile: {
+    displayName: string;
+    phone: string;
+    billingLine: string;
+    billingCity: string;
+    gstin: string;
+  },
+): Promise<AccountResponse> {
+  const { error } = await supabase
+    .from("users")
+    .update({
+      handle: profile.displayName || null,
+      phone: profile.phone || null,
+      billing_line: profile.billingLine || null,
+      billing_city: profile.billingCity || null,
+      gstin: profile.gstin || null,
+    })
+    .not("id", "is", null);
+
+  if (error) {
+    throw new ApiError("internal", "Could not save those details.", error.message);
   }
 
   return getAccount(supabase);
