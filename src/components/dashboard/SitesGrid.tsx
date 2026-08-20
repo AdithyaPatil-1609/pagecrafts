@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { SiteCard } from "@/components/dashboard/SiteCard";
@@ -15,15 +15,12 @@ export function SitesGrid({
     email: string;
 }) {
     const router = useRouter();
-    const [remaining, setRemaining] = useState(sites);
+    const [deletedIds, setDeletedIds] = useState<string[]>([]);
     const [removedName, setRemovedName] = useState<string | null>(null);
-
-    useEffect(() => {
-        setRemaining(sites);
-    }, [sites]);
+    const remaining = sites.filter((site) => !deletedIds.includes(site.id));
 
     function handleDeleted(site: ProjectSummary) {
-        setRemaining((current) => current.filter((item) => item.id !== site.id));
+        setDeletedIds((ids) => [...ids, site.id]);
         setRemovedName(site.name);
         router.refresh();
     }
