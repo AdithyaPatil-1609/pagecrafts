@@ -14,11 +14,12 @@ import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr }
 
 // The gate at publish (R3 · Doc 22 P2/P3, Amendment A1).
 //
-// Opening a premium/signature template, or a Pro/Premium look, needs account Pro — that
-// gate lives on createProject and generate/choose, not here. What this file still buys is a
-// `publish` entitlement on one project. Two things decide it and both are read from the
-// database rather than taken from the request: whether this project is the caller's, and
-// what its design costs. A paywall the client is trusted to describe is not a paywall.
+// Opening a premium template or Pro look needs account Pro; signature templates and
+// Premium looks need account Premium. That gate lives on createProject and generate/choose,
+// not here. What this file still buys is a `publish` entitlement on one project. Two things
+// decide it and both are read from the database rather than taken from the request: whether
+// this project is the caller's, and what its design costs. A paywall the client is trusted
+// to describe is not a paywall.
 
 export interface CheckoutResponse {
     /** Nothing to pay — the entitlement is already granted and publish will go through. */

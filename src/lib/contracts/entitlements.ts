@@ -2,7 +2,7 @@
 // never on connecting an external account (A1). Entitlement state is server-side, so a
 // paid publish never re-charges on retry.
 //
-// - publish     : per-project — the site may go live (free launch offer, paid Rs 249, or Pro)
+// - publish     : per-project — the site may go live (launch offer, paid publish, or an account plan)
 // - edit_unlock : per-project — reopen editing on a published site (Doc 22 P5); the first
 //                 change within 7 days of publishing is free (goodwill window)
 // - pro         : per-user    — Pro plan (Rs 499)
