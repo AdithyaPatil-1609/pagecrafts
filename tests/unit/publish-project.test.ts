@@ -43,7 +43,14 @@ function tables(repoFullName: string | null = null): Record<string, TableRespond
 
     return {
         projects: row({ id: PROJECT_ID, repo_full_name: repoFullName }),
-        deployments: (query) => (query.op === "select" ? none(query) : written(query)),
+        deployments: (query) => {
+            // openDeployment selects in-flight rows. A blanket `row()` would make every
+            // publish look already running and never call the provider.
+            if (query.op === "select") {
+                return { data: query.shape === "many" ? [] : null, error: null };
+            }
+            return row({ id: DEPLOYMENT_ID })(query);
+        },
     };
 }
 
@@ -124,8 +131,6 @@ describe("publishProject", () => {
         expect(deploy.publish).toHaveBeenCalledWith(
             expect.objectContaining({ projectId: PROJECT_ID, files: FILES, idempotencyKey: KEY }),
             expect.any(Function),
-            // Three arguments, not two: publish() gained an injectable provider at D18 and
-            // toHaveBeenCalledWith matches on arity.
             expect.anything(),
         );
     });

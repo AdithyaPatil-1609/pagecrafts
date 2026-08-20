@@ -217,16 +217,12 @@ describe("what twenty-one migrations left behind", () => {
             "projects.repo_full_name",
             // Nobody has signed in with GitHub, and nobody has set a display name.
             "users.avatar_url",
-            "users.encrypted_token",
-            "users.github_id",
-            "users.handle",
-            // Billing details, added D20. Null in a seed is the correct state and not an
-            // oversight: they are typed by the owner at checkout, and a seeded user has
-            // never reached one. Listed rather than excluded so that if a future migration
-            // makes one of them required, this file is where that gets noticed.
             "users.billing_city",
             "users.billing_line",
+            "users.encrypted_token",
+            "users.github_id",
             "users.gstin",
+            "users.handle",
             "users.phone",
         ].sort());
     });

@@ -36,7 +36,7 @@ const NAV: NavItem[] = [
     // plainly does nothing.
     { label: "Domains", icon: Globe },
     { label: "Team", icon: Users },
-    { label: "Settings", icon: Settings, href: "/#settings" },
+    { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
 const ROW = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium";
@@ -103,7 +103,7 @@ export function AppSidebar({
                 href="/"
                 className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-                <BrandMark />
+                <BrandMark size="sidebar" />
             </Link>
 
             <Link

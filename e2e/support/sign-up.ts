@@ -31,7 +31,7 @@ export function newAccount(): NewAccount {
  * the caller is told which so it can decide whether the rest of the walk is possible.
  */
 export async function signUp(page: Page, who: NewAccount): Promise<'signed-in' | 'needs-email'> {
-    await page.goto('/');
+    await page.goto('/signup');
 
     await expect(page.getByRole('heading', { name: /get started today/i })).toBeVisible();
 

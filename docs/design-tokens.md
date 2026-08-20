@@ -30,7 +30,8 @@ Semantic, not literal — pick by role, not by hue.
 | `card` / `card-foreground` | `bg-card`, `text-card-foreground` | Cards and raised surfaces |
 | `popover` / `popover-foreground` | `bg-popover` | Dialogs, menus, popovers |
 | `primary` / `primary-foreground` | `bg-primary`, `text-primary-foreground` | Brand red; the one main action per screen |
-| `signal` / `signal-foreground` | `bg-signal`, `text-signal-foreground` | Bright orange — pill dots and the header CTA |
+| `signal` / `signal-foreground` | `bg-signal`, `text-signal-foreground` | Bright orange — pill dots and atmosphere |
+| `gold` / `gold-foreground` | `text-gold`, `bg-gold` | Quiet gold for Sign in / Sign up — `#d4b56a`, not brass, not neon |
 | `secondary` / `secondary-foreground` | `bg-secondary` | Secondary buttons, quiet fills |
 | `muted` / `muted-foreground` | `text-muted-foreground` | De-emphasised text and fills |
 | `accent` / `accent-foreground` | `bg-accent` | Hover states, subtle highlights |

@@ -146,6 +146,11 @@ describe("the audit covers every route under /projects/{id}", () => {
 });
 
 describe("a signed-in stranger, asking for somebody else's project", () => {
+    it("cannot rewrite copy on it", async () => {
+        const { db, theirs } = twoPeople();
+        await expectHidden("POST /copy-edits", () => getProject(db.asUser(STRANGER), theirs));
+    });
+
     it("cannot read the project", async () => {
         const { db, theirs } = twoPeople();
         await expectHidden("GET /projects/{id}", () => getProject(db.asUser(STRANGER), theirs));

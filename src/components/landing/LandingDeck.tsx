@@ -1,22 +1,29 @@
 import type { CSSProperties } from "react";
 import { Hero } from "@/components/landing/Hero";
 import { HeroArtwork } from "@/components/landing/HeroArtwork";
-import { LandingFinishes } from "@/components/landing/LandingFinishes";
 import { LandingMoves } from "@/components/landing/LandingMoves";
 import { LandingShowcase } from "@/components/landing/LandingShowcase";
 import { LandingTalk } from "@/components/landing/LandingTalk";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { SlideNav } from "@/components/landing/SlideNav";
+import { parseTemplateQuery, queryTemplates } from "@/lib/templates/query";
+import {
+    pickLandingHeroTemplates,
+    pickLandingShowcaseTemplates,
+} from "@/lib/templates/hero-frames";
 
 export const LANDING_SLIDES = [
     { id: "top", label: "Intro" },
     { id: "moves", label: "Moves" },
     { id: "canvas", label: "Canvas" },
     { id: "showcase", label: "Showcase" },
-    { id: "looks", label: "Looks" },
 ] as const;
 
 export function LandingDeck() {
+    const library = queryTemplates(parseTemplateQuery(new URLSearchParams())).items;
+    const templates = pickLandingHeroTemplates(library);
+    const showcase = pickLandingShowcaseTemplates(library);
+
     return (
         <div className="relative">
             <SiteHeader minimal />
@@ -32,14 +39,13 @@ export function LandingDeck() {
                                 style={{ "--reveal": 1 } as CSSProperties}
                                 className="hidden sm:block"
                             >
-                                <HeroArtwork />
+                                <HeroArtwork templates={templates} />
                             </div>
                         </div>
                     </section>
                     <LandingMoves />
                     <LandingTalk />
-                    <LandingShowcase />
-                    <LandingFinishes />
+                    <LandingShowcase templates={showcase} />
                 </main>
             </div>
         </div>
