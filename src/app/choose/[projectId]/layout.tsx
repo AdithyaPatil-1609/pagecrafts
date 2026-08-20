@@ -1,6 +1,6 @@
 import { viewer } from "@/lib/auth/session";
-import { AppSidebar } from "@/components/app/AppSidebar";
-import { AppTopBar } from "@/components/app/AppTopBar";
+import { FlowSteps } from "@/components/app/FlowSteps";
+import { SiteHeader } from "@/components/landing/SiteHeader";
 
 export default async function ChooseLayout({
     children,
@@ -10,12 +10,14 @@ export default async function ChooseLayout({
     const user = await viewer();
 
     return (
-        <div className="flex min-h-screen flex-1">
-            <AppSidebar user={user} activeHref="/new" className="hidden lg:flex" />
-            <div className="flex min-w-0 flex-1 flex-col">
-                <AppTopBar user={user} step={2} />
+        <>
+            <SiteHeader user={user} />
+            <div className="flex min-h-0 flex-1 flex-col pt-16">
+                <div className="flex shrink-0 justify-center border-b border-border/40 px-6 py-3">
+                    <FlowSteps current={2} />
+                </div>
                 {children}
             </div>
-        </div>
+        </>
     );
 }

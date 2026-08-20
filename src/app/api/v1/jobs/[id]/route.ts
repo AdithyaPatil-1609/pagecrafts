@@ -4,6 +4,7 @@ import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
 import { jobStore } from '@/lib/ai/jobs/store';
 import { attemptsFromJobs, publicVariant } from '@/lib/ai/jobs/attempts';
+import { jobPreviewHtml, plannedSectionTypes } from '@/lib/ai/jobs/progress';
 import { readGenerationQuota } from '@/lib/ai/jobs/quota';
 
 export const runtime = 'nodejs';
@@ -26,6 +27,7 @@ export const GET = withRoute<undefined, Params>({
         const siblings = await jobStore().listByProject(job.projectId);
         const attempts = attemptsFromJobs(siblings);
         const quota = await readGenerationQuota(job.projectId, userId, supabase);
+        const previewHtml = jobPreviewHtml(job);
 
         return ok({
             status: job.status,
@@ -40,6 +42,8 @@ export const GET = withRoute<undefined, Params>({
             ...(job.error ? { error: job.error } : {}),
             ...(job.composition ? { composition: job.composition } : {}),
             files_ready: Boolean(job.files && Object.keys(job.files).length),
+            planned_sections: plannedSectionTypes(job),
+            ...(previewHtml ? { preview_html: previewHtml } : {}),
             ...(job.variants?.length ? {
                 variants: job.variants.map(publicVariant),
             } : {}),

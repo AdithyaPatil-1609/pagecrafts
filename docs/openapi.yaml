@@ -1706,6 +1706,14 @@ components:
               type: integer
             provider:
               type: string
+            files_ready:
+              type: boolean
+            planned_sections:
+              type: array
+              items:
+                type: string
+            preview_html:
+              type: string
             fallback_template_id:
               type: string
             error:

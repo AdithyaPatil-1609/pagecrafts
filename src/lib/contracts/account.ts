@@ -11,6 +11,11 @@ export interface AccountResponse {
   /** Off by default, and consent cannot be retrofitted — see PATCH /account/consent. */
   trainingOptIn: boolean;
   createdAt: string;
+  displayName: string;
+  phone: string;
+  billingLine: string;
+  billingCity: string;
+  gstin: string;
 }
 
 // PATCH /account/consent — the one thing on this page that is the owner's to change.

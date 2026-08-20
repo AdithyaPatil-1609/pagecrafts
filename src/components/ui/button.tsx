@@ -13,6 +13,8 @@ const buttonVariants = cva(
         // "Create My Site", "Get started"). One per screen at most.
         brand:
           "brand-gradient text-primary-foreground shadow-[0_8px_30px_var(--brand-glow)] hover:brightness-110",
+        signal:
+          "bg-signal text-signal-foreground shadow-[0_8px_28px_color-mix(in_srgb,var(--signal)_35%,transparent)] hover:brightness-110",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         outline:
           "border border-border bg-background hover:bg-accent hover:text-accent-foreground",

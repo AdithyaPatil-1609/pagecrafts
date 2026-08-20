@@ -26,20 +26,20 @@ export async function GET(request: NextRequest) {
 
         if (error) {
             console.error("[auth/confirm]", error.code ?? error.status, error.message);
-            redirect("/?error=expired");
+            redirect("/signin?error=expired");
         }
 
         redirect(next);
     }
 
     if (!tokenHash || !type) {
-        redirect("/?error=expired");
+        redirect("/signin?error=expired");
     }
 
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
 
     if (error) {
-        redirect("/?error=expired");
+        redirect("/signin?error=expired");
     }
 
     redirect(next);

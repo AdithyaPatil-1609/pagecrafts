@@ -1,9 +1,9 @@
-// What the landing page says when an auth round trip sends somebody back (R4 D14).
+// What `/signin` says when an auth round trip sends somebody back (R4 D14).
 //
 // The email and Google routes cannot return an error envelope: a browser following a link
 // or coming back from Google gets a redirect, not JSON. They carry the reason in
-// `?error=`, and until now only `expired` had anything written for it — so a failed Google
-// sign-in dropped the user on an ordinary-looking landing page with no explanation at all,
+// `?error=` on `/signin`. Until now only `expired` had anything written for it — so a failed
+// Google sign-in dropped the user on an ordinary-looking page with no explanation at all,
 // which reads as the button being broken.
 //
 // Every value any auth route redirects with must have an entry here. The test in

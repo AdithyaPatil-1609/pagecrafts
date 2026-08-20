@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import { apiGet, apiPost } from "@/lib/api/client";
 import type { JobStatus } from "@/lib/ai/jobs/types";
 import type { StyleId, StyleTier } from "@/lib/ai/generate/styles";
 import { Button } from "@/components/ui/button";
+import { CardIndex } from "@/components/ui/card-index";
 import { GeneratingOverlay } from "@/components/editor/GeneratingOverlay";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,8 @@ interface JobProgress {
     sections_done: number;
     sections_total: number;
     files_ready?: boolean;
+    planned_sections?: string[];
+    preview_html?: string;
     fallback_template_id?: string;
     error?: string;
     variants?: VariantCard[];
@@ -188,34 +191,45 @@ export function StyleChooser({
         setRegenerating(false);
     }
 
-    const generating = progress && progress.status !== "done" && progress.status !== "failed";
+    const live = Boolean(progress && progress.status !== "done");
     const lookSets = attempts.length
         ? attempts
         : progress?.status === "done" && progress.variants?.length
             ? [{ job_id: activeJobId ?? "", index: 1, variants: progress.variants }]
             : [];
     const remaining = quota?.remaining ?? 0;
-    const retryAllowed = canGenerateAgain(quota) && Boolean(prompt) && !generating && !regenerating;
+    const retryAllowed = canGenerateAgain(quota) && Boolean(prompt) && !live && !regenerating;
+
+    if (live && progress) {
+        return (
+            <GeneratingOverlay
+                className="min-h-0 flex-1"
+                status={progress.status}
+                sectionsDone={progress.sections_done}
+                sectionsTotal={progress.sections_total}
+                filesReady={Boolean(progress.files_ready)}
+                plannedSections={progress.planned_sections ?? []}
+                previewHtml={progress.preview_html}
+                looks={(progress.variants ?? []).map((look) => ({
+                    id: look.id,
+                    label: look.label,
+                    html: look.html,
+                }))}
+                prompt={progress.prompt ?? prompt}
+                error={error ?? progress.error}
+            />
+        );
+    }
 
     return (
         <main className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pb-12 pt-4">
-            {generating && progress && (
-                <GeneratingOverlay
-                    status={progress.status}
-                    sectionsDone={progress.sections_done}
-                    sectionsTotal={progress.sections_total}
-                />
-            )}
-
-            <header className="flex flex-col items-center gap-2 text-center">
-                <span
-                    aria-hidden
-                    className="brand-halo flex size-10 items-center justify-center rounded-xl border border-primary/30 bg-accent/60 text-primary"
-                >
-                    <Sparkles className="size-5" strokeWidth={1.75} />
-                </span>
+            <header data-reveal className="flex flex-col items-center gap-3 text-center">
+                <p className="glass-pill w-fit font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-foreground">
+                    <span className="size-1.5 shrink-0 rounded-full bg-signal" aria-hidden />
+                    Three looks, one brief
+                </p>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                    Pick a <span className="text-primary">look</span>
+                    Pick a <span className="hero-mix">look</span>
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
                     Same business, three different sites. Casual is Free. Photo-rich will be Pro.
@@ -237,19 +251,20 @@ export function StyleChooser({
                         </h2>
                     )}
                     <ul className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-                        {attempt.variants.map((option) => (
+                        {attempt.variants.map((option, i) => (
                             <li key={`${attempt.job_id}-${option.id}`}>
-                                <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                                <article className="glass-panel card-hover relative flex h-full flex-col overflow-hidden rounded-2xl">
+                                    <CardIndex n={i + 1} />
                                     <div className="relative h-64 overflow-hidden bg-muted">
                                         <iframe
                                             title={`${option.label} preview`}
                                             srcDoc={option.html}
                                             sandbox="allow-scripts"
                                             tabIndex={-1}
-                                            className="pointer-events-none absolute left-0 top-0 h-[220%] w-[180%] origin-top-left scale-[0.56] border-0 bg-white"
+                                            className="pointer-events-none absolute left-0 top-0 h-[220%] w-[180%] origin-top-left scale-[0.56] border-0 bg-transparent"
                                         />
                                     </div>
-                                    <div className="flex flex-1 flex-col gap-3 p-4">
+                                    <div className="relative z-[1] flex flex-1 flex-col gap-3 p-4">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex flex-col gap-1">
                                                 <h2 className="text-base font-semibold text-foreground">
@@ -287,7 +302,7 @@ export function StyleChooser({
                 </section>
             ))}
 
-            {lookSets.length > 0 && !generating && (
+            {lookSets.length > 0 && (
                 <footer className="flex flex-col items-center gap-3 border-t border-border pt-6 text-center">
                     {retryAllowed ? (
                         <>

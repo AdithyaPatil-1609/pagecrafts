@@ -48,6 +48,9 @@ letters, do not transliterate (मिठास स्वीट्स stays म�
 "Mithaas Sweet Shop"). If they asked for copy in a language, write that
 language. English around a native-script name is fine; replacing the name is not.
 
+For a mithai shop or Indian sweet shop, write ladoo, barfi, jalebi, gulab jamun
+— not "pastries" and "handmade chocolates" unless they asked for a bakery.
+
 For image fields, return an object, never a bare string:
 {"query": "short search keywords", "alt": "description of the photo"}
 

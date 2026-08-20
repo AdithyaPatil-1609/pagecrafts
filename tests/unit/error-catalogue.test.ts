@@ -94,7 +94,7 @@ describe('every auth redirect explains itself', () => {
     const redirected = [
         ...new Set(
             routeFiles(authRoutes).flatMap((file) =>
-                [...readFileSync(file, 'utf8').matchAll(/redirect\("\/\?error=([a-z_]+)"\)/g)].map(
+                [...readFileSync(file, 'utf8').matchAll(/redirect\("\/(?:signin)?\?error=([a-z_]+)"\)/g)].map(
                     (match) => match[1],
                 ),
             ),

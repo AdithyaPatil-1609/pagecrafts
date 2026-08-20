@@ -65,6 +65,7 @@ beforeEach(() => {
         chatBusy: false,
         chatError: null,
         chatProgress: null,
+        chatJob: null,
         saving: false,
         saveError: null,
         lastCommitSha: null,

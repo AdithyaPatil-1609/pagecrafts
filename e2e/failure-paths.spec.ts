@@ -171,7 +171,7 @@ test.describe('the browser never sees a raw crash screen', () => {
     // that looked completely normal and simply had not worked.
     for (const reason of ['expired', 'google_denied', 'google_failed', 'google_unavailable']) {
         test(`?error=${reason} explains itself`, async ({ page }) => {
-            await page.goto(`/?error=${reason}`);
+            await page.goto(`/signin?error=${reason}`);
 
             const status = page.getByRole('status');
 
@@ -186,7 +186,7 @@ test.describe('the browser never sees a raw crash screen', () => {
 
     // The opposite guarantee: a value nobody recognises must not manufacture an alarm.
     test('an invented ?error= says nothing at all', async ({ page }) => {
-        await page.goto('/?error=completely_made_up');
+        await page.goto('/signin?error=completely_made_up');
 
         await expect(page.getByRole('status')).toHaveCount(0);
     });

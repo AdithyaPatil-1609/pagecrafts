@@ -6,104 +6,171 @@
   ad-hoc hex values or per-screen style forks (FR-001).
   Documented reference: docs/design-tokens.md
 
-  PageCraft is a dark-first product: the dark palette is the default in :root,
-  and the light palette is opt-in via a `.light` class on <html>.
+  PageCraft is dark-glass: a near-black navy canvas with electric blue bloom,
+  frosted panels, and a red brand. `.light` matches :root. `.dark` is the same
+  family, kept so every token still has both values.
   @theme inline exposes each token to Tailwind so `bg-primary`, `text-muted-foreground`,
   `border-border`, `ring-ring`, `rounded-lg`, etc. resolve to the values below.
 */
 
 :root {
-  color-scheme: dark; /* native scrollbars and controls follow the surface */
-  --radius: 0.625rem;
+  color-scheme: dark;
+  --radius: 0.75rem;
 
-  --background: #07070b;
-  --foreground: #f5f5f7;
+  --background: #05070a;
+  --foreground: #f4f7fb;
 
-  --card: #101015;
-  --card-foreground: #f5f5f7;
+  --card: #0b121e;
+  --card-foreground: #f4f7fb;
 
-  --popover: #101015;
-  --popover-foreground: #f5f5f7;
+  --popover: #0b121e;
+  --popover-foreground: #f4f7fb;
 
-  --primary: #dc2626; /* red-600 — PageCraft brand */
+  --primary: #dc2626; /* red-600 — PageCraft brand fills */
   --primary-foreground: #ffffff;
 
-  /* The brand red as *ink*, which is a different job from the brand red as a *fill*.
-     One value cannot do both: #dc2626 behind white text is 4.83:1 and correct, and the
-     same red as small text on this near-black surface is 4.16:1 — below the 4.5:1 that
-     WCAG AA asks for, which axe reported as serious at R2 D20. Lightening --primary to
-     fix the text would have taken the button down to 3.76:1, so the roles are split
-     instead. Red-500 here: 5.34:1 on the page surface, and visibly the same brand red
-     one stop up the same ramp.
-     Use for brand-coloured text. Fills, borders and icons stay on --primary; an icon
-     needs 3:1, which #dc2626 already clears. */
-  --brand-ink: #ef4444;
+  /* Small red text on this navy needs a lighter red than the fill. */
+  --brand-ink: #f87171;
 
-  --secondary: #17171d;
-  --secondary-foreground: #f5f5f7;
+  --secondary: #121a28;
+  --secondary-foreground: #f4f7fb;
 
-  --muted: #17171d;
-  --muted-foreground: #9b9ba6;
+  --muted: #121a28;
+  --muted-foreground: #a8b4c4;
 
-  --accent: #1e0d10; /* deep red tint for hover/highlight */
-  --accent-foreground: #fca5a5;
-
-  --destructive: #f87171;
-  --destructive-foreground: #07070b;
-
-  --border: #262630;
-  --input: #2a2a34;
-  --ring: #ef4444;
-
-  /* Field surface — inputs sit slightly above the card they live on. */
-  --field: #16161c;
-
-  /* Brand gradient and glow. The two stops drive every red gradient in the
-     product: hero headline, primary CTAs, logo mark, icon halos. */
-  --brand-from: #ff3b2f;
-  --brand-to: #c81018;
-  --brand-glow: rgba(220, 38, 38, 0.28);
-}
-
-.light {
-  color-scheme: light;
-  --background: #ffffff;
-  --foreground: #171717;
-
-  --card: #ffffff;
-  --card-foreground: #171717;
-
-  --popover: #ffffff;
-  --popover-foreground: #171717;
-
-  --primary: #dc2626;
-  --primary-foreground: #ffffff;
-
-  /* On white, red-600 is already 4.83:1, so the light theme keeps the brand red exactly.
-     The token exists so a component does not have to know which theme it is in. */
-  --brand-ink: #dc2626;
-
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-
-  --muted: #f4f4f5;
-  --muted-foreground: #61616b;
-
-  --accent: #fef2f2; /* red-50 */
-  --accent-foreground: #991b1b; /* red-800 */
+  --accent: #152033;
+  --accent-foreground: #e8eef8;
 
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
-  --border: #e5e7eb;
-  --input: #e5e7eb;
+  --border: #243044;
+  --input: #243044;
   --ring: #dc2626;
 
-  --field: #ffffff;
+  --field: #151c2a;
 
   --brand-from: #f43f2f;
   --brand-to: #c81018;
-  --brand-glow: rgba(220, 38, 38, 0.16);
+  --brand-glow: rgba(220, 38, 38, 0.28);
+
+  --signal: #ff8a1a;
+  --signal-foreground: #05070a;
+
+  /* Atmosphere — blooms and the hero mix, never small body text. */
+  --bloom-blue: #00a3ff;
+  --bloom-amber: #f0a04a;
+  --bloom-sky: #5ec8ff;
+
+  --mix-from: #f4f7fb;
+  --mix-sky: #5ec8ff;
+  --mix-sage: #c5d5c0;
+  --mix-tan: #e0c9a0;
+  --mix-gold: #f0a04a;
+}
+
+.light {
+  color-scheme: dark;
+  --background: #05070a;
+  --foreground: #f4f7fb;
+
+  --card: #0b121e;
+  --card-foreground: #f4f7fb;
+
+  --popover: #0b121e;
+  --popover-foreground: #f4f7fb;
+
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+
+  --brand-ink: #f87171;
+
+  --secondary: #121a28;
+  --secondary-foreground: #f4f7fb;
+
+  --muted: #121a28;
+  --muted-foreground: #a8b4c4;
+
+  --accent: #152033;
+  --accent-foreground: #e8eef8;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #243044;
+  --input: #243044;
+  --ring: #dc2626;
+
+  --field: #151c2a;
+
+  --brand-from: #f43f2f;
+  --brand-to: #c81018;
+  --brand-glow: rgba(220, 38, 38, 0.28);
+
+  --signal: #ff8a1a;
+  --signal-foreground: #05070a;
+
+  --bloom-blue: #00a3ff;
+  --bloom-amber: #f0a04a;
+  --bloom-sky: #5ec8ff;
+
+  --mix-from: #f4f7fb;
+  --mix-sky: #5ec8ff;
+  --mix-sage: #c5d5c0;
+  --mix-tan: #e0c9a0;
+  --mix-gold: #f0a04a;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #05070a;
+  --foreground: #f4f7fb;
+
+  --card: #0b121e;
+  --card-foreground: #f4f7fb;
+
+  --popover: #0b121e;
+  --popover-foreground: #f4f7fb;
+
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+
+  --brand-ink: #f87171;
+
+  --secondary: #121a28;
+  --secondary-foreground: #f4f7fb;
+
+  --muted: #121a28;
+  --muted-foreground: #a8b4c4;
+
+  --accent: #152033;
+  --accent-foreground: #e8eef8;
+
+  --destructive: #f87171;
+  --destructive-foreground: #05070a;
+
+  --border: #243044;
+  --input: #243044;
+  --ring: #f87171;
+
+  --field: #151c2a;
+
+  --brand-from: #ff5a4a;
+  --brand-to: #c81018;
+  --brand-glow: rgba(248, 113, 113, 0.32);
+
+  --signal: #ff8a1a;
+  --signal-foreground: #05070a;
+
+  --bloom-blue: #00a3ff;
+  --bloom-amber: #f0a04a;
+  --bloom-sky: #5ec8ff;
+
+  --mix-from: #f4f7fb;
+  --mix-sky: #5ec8ff;
+  --mix-sage: #c5d5c0;
+  --mix-tan: #e0c9a0;
+  --mix-gold: #f0a04a;
 }
 
 @theme inline {
@@ -139,8 +206,14 @@
   --color-field: var(--field);
   --color-brand-from: var(--brand-from);
   --color-brand-to: var(--brand-to);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-bloom-blue: var(--bloom-blue);
+  --color-bloom-amber: var(--bloom-amber);
+  --color-bloom-sky: var(--bloom-sky);
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui;
+  --font-display: var(--font-outfit), var(--font-plus-jakarta), ui-sans-serif, system-ui;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -161,20 +234,645 @@
   color: transparent;
 }
 
+/* Hero accent line: white → electric blue → sage → tan → gold. */
+@utility hero-mix {
+  background-image: linear-gradient(
+    90deg,
+    var(--mix-from) 0%,
+    var(--mix-sky) 28%,
+    var(--mix-sage) 52%,
+    var(--mix-tan) 76%,
+    var(--mix-gold) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility hero-gold {
+  background-image: linear-gradient(90deg, var(--mix-tan), var(--mix-gold));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
 /* Soft red halo behind hero art, icon badges and the sign-up panel. */
 @utility brand-halo {
   box-shadow: 0 0 60px var(--brand-glow);
 }
 
-/* Ambient light source — the landing backdrop's red bloom. */
+/* Ambient light source — colourful blooms behind the site scene. */
 @utility brand-bloom {
   background-image: radial-gradient(circle at center, var(--brand-glow), transparent 70%);
 }
 
+@utility bloom-blue {
+  background-image: radial-gradient(circle at center, color-mix(in srgb, var(--bloom-blue) 72%, transparent), transparent 70%);
+}
+
+@utility bloom-amber {
+  background-image: radial-gradient(circle at center, color-mix(in srgb, var(--bloom-amber) 55%, transparent), transparent 70%);
+}
+
+@utility bloom-sky {
+  background-image: radial-gradient(circle at center, color-mix(in srgb, var(--bloom-sky) 70%, transparent), transparent 70%);
+}
+
+@utility glass-panel {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--foreground) 10%, transparent),
+    color-mix(in srgb, var(--card) 62%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  backdrop-filter: blur(24px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 16%, transparent),
+    0 24px 60px color-mix(in srgb, black 45%, transparent);
+}
+
+.card-index {
+  position: absolute;
+  top: -0.18em;
+  right: -0.12em;
+  z-index: 0;
+  font-family: var(--font-display);
+  font-size: clamp(5.75rem, 14vw, 9.25rem);
+  font-weight: 800;
+  line-height: 0.72;
+  letter-spacing: -0.08em;
+  color: color-mix(in srgb, var(--bloom-sky) 24%, transparent);
+  pointer-events: none;
+  user-select: none;
+}
+
+.card-index-compact {
+  font-size: clamp(3.5rem, 8vw, 5.25rem);
+  top: -0.3em;
+}
+
+.card-hover {
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-hover:hover {
+    transform: translate3d(0, -8px, 0);
+    border-color: color-mix(in srgb, var(--bloom-sky) 50%, var(--border));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--foreground) 22%, transparent),
+      0 20px 48px color-mix(in srgb, var(--bloom-blue) 30%, transparent),
+      0 0 40px color-mix(in srgb, var(--bloom-blue) 22%, transparent);
+  }
+}
+
+.hero-prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  border-radius: 9999px;
+  padding: 0.45rem 0.45rem 0.45rem 1.1rem;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 88%, transparent),
+      color-mix(in srgb, var(--background) 70%, transparent)
+    ) padding-box,
+    linear-gradient(90deg, var(--bloom-sky), var(--signal)) border-box;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 0 28px color-mix(in srgb, var(--bloom-blue) 22%, transparent),
+    0 0 36px color-mix(in srgb, var(--bloom-amber) 12%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.hero-prompt input {
+  font-family: var(--font-mono);
+  caret-color: var(--signal);
+}
+
+.welcome-prompt {
+  padding: 0.62rem 0.58rem 0.62rem 1.35rem;
+  gap: 0.9rem;
+}
+
+.welcome-prompt .hero-prompt-line {
+  min-height: 1.4rem;
+  font-size: 0.9375rem;
+}
+
+.welcome-prompt-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 0.7rem 1.35rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--background);
+  background: color-mix(in srgb, var(--bloom-blue) 78%, var(--background));
+  box-shadow:
+    0 0 22px color-mix(in srgb, var(--bloom-blue) 36%, transparent),
+    0 8px 22px color-mix(in srgb, var(--bloom-blue) 20%, transparent);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+.welcome-prompt-cta:hover {
+  transform: scale(1.045);
+  filter: brightness(1.05);
+  box-shadow:
+    0 0 28px color-mix(in srgb, var(--bloom-blue) 46%, transparent),
+    0 10px 26px color-mix(in srgb, var(--bloom-blue) 26%, transparent);
+}
+
+.welcome-prompt-cta:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--bloom-sky),
+    0 0 22px color-mix(in srgb, var(--bloom-blue) 36%, transparent);
+}
+
+.hero-prompt-caret {
+  flex-shrink: 0;
+  margin-left: 1px;
+  color: var(--signal);
+  animation: hero-prompt-caret 1.1s ease-in-out infinite;
+}
+
+@keyframes hero-prompt-caret {
+  0%,
+  42% {
+    opacity: 1;
+  }
+  58%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.card-tick {
+  display: block;
+  width: 2rem;
+  height: 2px;
+  margin-top: auto;
+  background: var(--signal);
+}
+
+.hero-blueprint {
+  position: relative;
+  overflow: hidden;
+  min-height: 26rem;
+  border-radius: 1.75rem;
+  border: 1px solid color-mix(in srgb, var(--bloom-sky) 22%, var(--border));
+  background:
+    radial-gradient(ellipse at 30% 20%, color-mix(in srgb, var(--bloom-blue) 28%, transparent), transparent 46%),
+    radial-gradient(ellipse at 78% 80%, color-mix(in srgb, var(--bloom-amber) 22%, transparent), transparent 48%),
+    linear-gradient(165deg, var(--card), var(--background));
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--bloom-blue) 18%, transparent);
+}
+
+.hero-pane {
+  border: 1px solid color-mix(in srgb, var(--bloom-sky) 45%, transparent);
+  background: color-mix(in srgb, var(--bloom-blue) 12%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--bloom-blue) 28%, transparent);
+}
+
+.hero-pane-amber {
+  border-color: color-mix(in srgb, var(--bloom-amber) 50%, transparent);
+  background: color-mix(in srgb, var(--bloom-amber) 16%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--bloom-amber) 24%, transparent);
+}
+
+.look-nord {
+  background:
+    radial-gradient(ellipse at 20% 80%, color-mix(in srgb, var(--bloom-blue) 38%, transparent), transparent 50%),
+    linear-gradient(165deg, color-mix(in srgb, var(--bloom-blue) 18%, var(--background)), var(--card));
+}
+
+.look-vega {
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--bloom-sky) 55%, transparent), transparent 42%),
+    linear-gradient(180deg, var(--background), var(--card));
+}
+
+.look-copper {
+  background:
+    radial-gradient(ellipse at 70% 20%, color-mix(in srgb, var(--mix-gold) 50%, transparent), transparent 46%),
+    linear-gradient(165deg, color-mix(in srgb, var(--bloom-amber) 28%, var(--background)), color-mix(in srgb, var(--mix-gold) 40%, var(--card)));
+}
+
+@utility glass-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  padding: 0.4rem 0.95rem 0.4rem 0.7rem;
+  background: color-mix(in srgb, var(--card) 58%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
 body {
-  background: var(--background);
+  background:
+    radial-gradient(ellipse at 14% 8%, color-mix(in srgb, var(--bloom-blue) 28%, transparent), transparent 46%),
+    radial-gradient(ellipse at 88% 14%, color-mix(in srgb, var(--bloom-sky) 18%, transparent), transparent 42%),
+    radial-gradient(ellipse at 78% 92%, color-mix(in srgb, var(--bloom-amber) 14%, transparent), transparent 44%),
+    linear-gradient(180deg, var(--card) 0%, var(--background) 42%, var(--background) 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* clip, not hidden: hidden forces overflow-y to auto and can trap the deck
+     inside a viewport-tall body, so later slides look missing. */
+  overflow-x: clip;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--bloom-blue) 35%, transparent);
+  color: var(--foreground);
+}
+
+.page-flow {
+  animation: page-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.page-flow[data-dir="forward"] {
+  animation: slide-forward 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.page-flow[data-dir="back"] {
+  animation: slide-back 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+html.deck-snap {
+  scroll-snap-type: y proximity;
+}
+
+.page-slide {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  justify-content: center;
+  justify-content: safe center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  padding: 6.5rem 0 3rem;
+}
+
+.page-slide-tall {
+  justify-content: flex-start;
+  scroll-snap-stop: normal;
+  padding-bottom: 4rem;
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--reveal, 0) * 90ms);
+}
+
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+.site-grain,
+.site-grid,
+.site-blob,
+.site-cursor,
+.site-frost,
+.site-ribbons {
+  pointer-events: none;
+}
+
+.site-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.2;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+}
+
+.site-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--bloom-blue) 32%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--bloom-blue) 28%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 18%, transparent 78%);
+}
+
+.site-blob {
+  position: fixed;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: blob-drift 22s ease-in-out infinite alternate;
+}
+
+.site-ribbons {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.72;
+}
+
+.site-ribbon-drift {
+  animation: ribbon-drift 20s ease-in-out infinite alternate;
+  transform-origin: 50% 45%;
+}
+
+@keyframes ribbon-drift {
+  from { transform: translate3d(-1.5%, 1%, 0) scale(1.02); }
+  to { transform: translate3d(2.5%, -2%, 0) scale(1.07); }
+}
+
+.site-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  opacity: 0.45;
+  background: radial-gradient(circle, color-mix(in srgb, var(--bloom-blue) 42%, transparent) 0%, transparent 68%);
+  will-change: transform;
+}
+
+.site-frost {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: color-mix(in srgb, var(--background) 28%, transparent);
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+
+.scene-card,
+.scene-phone {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.scene-card-a {
+  top: 11%;
+  left: -3%;
+  width: min(22rem, 34vw);
+  animation: float-y 7s ease-in-out infinite;
+}
+
+.scene-card-b {
+  top: 16%;
+  right: -4%;
+  width: min(20rem, 30vw);
+  animation: float-y 6.2s ease-in-out infinite reverse;
+}
+
+.scene-card-c {
+  bottom: 7%;
+  left: 6%;
+  width: min(18rem, 28vw);
+  animation: float-y 8s ease-in-out 0.4s infinite;
+}
+
+.scene-phone {
+  right: 5%;
+  bottom: 8%;
+  width: 9.5rem;
+  animation: float-y 5.6s ease-in-out infinite;
+}
+
+.scene-wash-blue {
+  background: color-mix(in srgb, var(--bloom-blue) 22%, var(--card));
+}
+
+.scene-wash-amber {
+  background: color-mix(in srgb, var(--bloom-amber) 18%, var(--card));
+}
+
+.scene-wash-sky {
+  background: color-mix(in srgb, var(--bloom-sky) 20%, var(--card));
+}
+
+.float-a { animation: float-y 6s ease-in-out infinite; }
+.float-b { animation: float-y 7.4s ease-in-out infinite reverse; }
+.float-c { animation: float-y 5.2s ease-in-out 0.6s infinite; }
+
+.welcome-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.welcome-field .site-grain,
+.welcome-field .site-grid {
+  position: absolute;
+}
+
+.welcome-field .site-grain {
+  opacity: 0.28;
+}
+
+.welcome-field .site-grid {
+  opacity: 0.2;
+  mask-image: radial-gradient(ellipse at 50% 44%, transparent 24%, #000 58%, transparent 84%);
+}
+
+.welcome-bloom {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(52px);
+  animation: blob-drift 26s ease-in-out infinite alternate;
+}
+
+.welcome-ribbons {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+}
+
+.welcome-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 48% 42% at 50% 44%,
+    var(--background) 0%,
+    color-mix(in srgb, var(--background) 58%, transparent) 46%,
+    transparent 74%
+  );
+}
+
+.welcome-chips {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.welcome-chip {
+  overflow: hidden;
+  border-radius: 0.9rem;
+  opacity: 1;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 20%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--bloom-sky) 34%, var(--border)),
+    0 16px 36px color-mix(in srgb, var(--background) 62%, transparent),
+    0 0 28px color-mix(in srgb, var(--bloom-blue) 20%, transparent);
+}
+
+.welcome-chip-near {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--bloom-sky) 46%, var(--border)),
+    0 22px 50px color-mix(in srgb, var(--background) 52%, transparent),
+    0 0 40px color-mix(in srgb, var(--bloom-blue) 28%, transparent);
+}
+
+.welcome-chip-mid {
+  opacity: 0.94;
+}
+
+.welcome-chip-far {
+  opacity: 0.72;
+  filter: blur(1.1px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent),
+    0 10px 24px color-mix(in srgb, var(--background) 48%, transparent);
+}
+
+.welcome-chip-gold {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--signal) 38%, var(--border)),
+    0 16px 36px color-mix(in srgb, var(--background) 58%, transparent),
+    0 0 32px color-mix(in srgb, var(--bloom-amber) 26%, transparent);
+}
+
+.look-marquee {
+  display: flex;
+  width: max-content;
+  gap: 3rem;
+  animation: marquee 28s linear infinite;
+}
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes slide-forward {
+  from { opacity: 0; transform: translate3d(10%, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes slide-back {
+  from { opacity: 0; transform: translate3d(-10%, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes blob-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(6%, -4%, 0) scale(1.12); }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -14px, 0); }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.look-paper {
+  background: #f6f1ea;
+  color: #2a211c;
+}
+
+.look-paper-muted { color: #6b564c; }
+.look-paper-quiet { color: #9a7b6a; }
+
+.look-paper-cta {
+  background: #2a211c;
+  color: #f6f1ea;
+}
+
+.look-motion {
+  background: #08060f;
+  color: #f4efe6;
+}
+
+.look-photo-hero {
+  background:
+    radial-gradient(ellipse at 28% 16%, color-mix(in srgb, var(--mix-gold) 42%, transparent), transparent 46%),
+    radial-gradient(ellipse at 78% 88%, color-mix(in srgb, var(--bloom-amber) 32%, transparent), transparent 48%),
+    linear-gradient(165deg, var(--background), color-mix(in srgb, var(--bloom-amber) 24%, var(--card)));
+}
+
+.look-photo-tile {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--mix-tan) 55%, var(--card)), color-mix(in srgb, var(--bloom-amber) 40%, var(--background)));
+}
+
+.look-aurora {
+  background: radial-gradient(circle, color-mix(in srgb, var(--bloom-blue) 55%, transparent), transparent 70%);
+  filter: blur(12px);
+}
+
+.look-aurora-b {
+  background: radial-gradient(circle, color-mix(in srgb, var(--bloom-amber) 40%, transparent), transparent 70%);
+  filter: blur(16px);
+}
+
+.look-coil {
+  animation: look-spin 10s linear infinite;
+}
+
+@keyframes look-spin {
+  to { transform: rotate(360deg); }
 }
 
 .skeleton-pulse {
@@ -192,6 +890,10 @@ body {
     scroll-behavior: auto;
   }
 
+  html.deck-snap {
+    scroll-snap-type: none;
+  }
+
   *,
   *::before,
   *::after {
@@ -201,7 +903,34 @@ body {
     scroll-behavior: auto !important;
   }
 
-  .skeleton-pulse {
+  .skeleton-pulse,
+  .page-flow,
+  .page-flow[data-dir="forward"],
+  .page-flow[data-dir="back"],
+  .site-blob,
+  .site-ribbon-drift,
+  .welcome-bloom,
+  .float-a,
+  .float-b,
+  .float-c,
+  .welcome-chip,
+  .look-marquee,
+  .look-coil,
+  .scene-card-a,
+  .scene-card-b,
+  .scene-card-c,
+  .scene-phone,
+  .hero-prompt-caret {
     animation: none !important;
+  }
+
+  .welcome-prompt-cta:hover,
+  .welcome-prompt-cta:focus-visible {
+    transform: none;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
   }
 }

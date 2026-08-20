@@ -1,52 +1,26 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { HeroArtwork } from "@/components/landing/HeroArtwork";
-import { buttonVariants } from "@/components/ui/button";
+import { HeroPrompt } from "@/components/landing/HeroPrompt";
 
 export function Hero() {
     return (
-        <section className="flex flex-col">
-            <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-                Build your business{" "}
-                {/* The reference break, but only where the line actually fits. */}
-                <br className="hidden lg:inline" />
-                website in <span className="brand-text">minutes</span>
+        <section data-reveal className="flex flex-col">
+            <p className="glass-pill mb-6 w-fit font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-foreground">
+                <span className="size-1.5 shrink-0 rounded-full bg-signal" aria-hidden />
+                No code. Your words. Your site.
+            </p>
+            <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+                <span className="text-foreground">Say it. </span>
+                <span className="text-bloom-sky">See it </span>
+                <span className="hero-gold">built.</span>
             </h1>
 
             <p className="mt-7 max-w-xl text-lg leading-8 text-muted-foreground">
-                Pick a ready-made design, make it yours with a few clicks, and go live.
-                Your site, your name — no developer required.
+                Describe the website living in your head. PageCraft turns those words into a
+                real site — while it comes together in front of you.
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-4">
-                <a
-                    href="#sign-in"
-                    className={buttonVariants({
-                        variant: "brand",
-                        size: "xl",
-                        className: "rounded-xl font-semibold",
-                    })}
-                >
-                    Start building — it&apos;s free
-                    <ArrowRight aria-hidden />
-                </a>
-                <Link
-                    href="/templates"
-                    className={buttonVariants({
-                        variant: "outline-brand",
-                        size: "xl",
-                        className: "rounded-xl font-semibold",
-                    })}
-                >
-                    Browse templates
-                </Link>
+            <div className="mt-9 max-w-xl">
+                <HeroPrompt />
             </div>
-
-            <p className="mt-6 text-sm text-muted-foreground">
-                Building and editing are free. You pay Rs 249 only when you go live.
-            </p>
-
-            <HeroArtwork />
         </section>
     );
 }

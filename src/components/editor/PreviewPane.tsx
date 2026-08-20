@@ -1,11 +1,14 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Monitor, RefreshCw, Smartphone } from 'lucide-react';
 import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
 import { PREVIEW_IFRAME_SANDBOX, withPreviewCsp } from '@/lib/preview-security';
 import { friendlyPreviewIssue } from '@/lib/editor/preview-copy';
 import { previewDocumentUrl } from '@/lib/editor/preview-frame';
 import { filesForPreview } from '@/lib/editor/preview-files';
+import { sectionLabel } from '@/lib/editor/section-registry';
+import { cn } from '@/lib/utils';
 
 const DEBOUNCE_MS = 120;
 
@@ -16,9 +19,13 @@ export default function PreviewPane() {
     const dirtyPaths = useEditorStore((s) => s.dirtyPaths);
     const tree = useEditorStore((s) => s.tree);
     const pendingChange = useEditorStore((s) => s.pendingChange);
+    const composition = useEditorStore((s) => s.composition);
+    const selectedSectionId = useEditorStore((s) => s.selectedSectionId);
+    const selectSection = useEditorStore((s) => s.selectSection);
 
     const frame = useRef<HTMLIFrameElement>(null);
     const [viewport, setViewport] = useState<Viewport>('full');
+    const [reloadTick, setReloadTick] = useState(0);
     const [preview, setPreview] = useState(() => {
         const r = assemblePreview(vfs.toMap());
         return { doc: withPreviewCsp(injectErrorHook(r.html)), warnings: r.warnings };
@@ -38,18 +45,8 @@ export default function PreviewPane() {
             setDismissed(false);
         }, DEBOUNCE_MS);
         return () => clearTimeout(t);
-    }, [vfs, dirtyPaths, tree, pendingChange]);
+    }, [vfs, dirtyPaths, tree, pendingChange, reloadTick]);
 
-    // Derived during render, not written into state from an effect.
-    //
-    // This was a useLayoutEffect that called setFrameUrl, which React's lint rule flags as
-    // an error: setting state synchronously inside an effect renders the component, then
-    // immediately renders it again with the new state. Every keystroke in the editor paid
-    // for two renders of the preview pane and the frame flashed empty on the first of them.
-    //
-    // The blob still has to be revoked, so that stays in an effect — a cleanup, which is
-    // what effects are for. Keyed on the url so the previous one is released the moment a
-    // new document replaces it rather than only on unmount.
     const frameUrl = useMemo(() => previewDocumentUrl(preview.doc), [preview.doc]);
 
     useEffect(() => {
@@ -74,58 +71,101 @@ export default function PreviewPane() {
     const uniqueIssues = [...new Set(issues)];
     const showNotice = uniqueIssues.length > 0 && !dismissed;
     const empty = !preview.doc.trim();
+    const sections = composition?.sections ?? [];
 
     return (
-        <div id="editor-preview" className="flex h-full min-h-0 w-full flex-col bg-muted/40">
-            <header className="flex h-10 shrink-0 items-center justify-between border-b border-border px-3">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Your site
-                </h2>
-                <div className="flex items-center gap-1">
+        <div id="editor-preview" className="flex h-full min-h-0 w-full flex-col">
+            <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/60 px-3">
+                <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                    Preview
+                </span>
+                <div className="flex items-center gap-0.5">
                     <button
                         type="button"
+                        aria-label="Desktop"
                         aria-pressed={viewport === 'full'}
+                        title="Desktop"
                         onClick={() => setViewport('full')}
-                        className={`rounded-md px-2 py-0.5 text-xs ${
-                            viewport === 'full' ? 'bg-background text-foreground' : 'text-muted-foreground hover:bg-muted'
-                        }`}
+                        className={cn(
+                            'flex size-11 cursor-pointer items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            viewport === 'full'
+                                ? 'bg-accent text-foreground'
+                                : 'text-muted-foreground hover:bg-muted',
+                        )}
                     >
-                        Full
+                        <Monitor className="size-4" strokeWidth={1.75} />
                     </button>
                     <button
                         type="button"
+                        aria-label="Phone"
                         aria-pressed={viewport === 'phone'}
+                        title="Phone"
                         onClick={() => setViewport('phone')}
-                        className={`rounded-md px-2 py-0.5 text-xs ${
-                            viewport === 'phone' ? 'bg-background text-foreground' : 'text-muted-foreground hover:bg-muted'
-                        }`}
+                        className={cn(
+                            'flex size-11 cursor-pointer items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            viewport === 'phone'
+                                ? 'bg-accent text-foreground'
+                                : 'text-muted-foreground hover:bg-muted',
+                        )}
                     >
-                        Phone
+                        <Smartphone className="size-4" strokeWidth={1.75} />
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="Refresh preview"
+                        title="Refresh"
+                        onClick={() => {
+                            last.current = '';
+                            setReloadTick((n) => n + 1);
+                        }}
+                        className="flex size-11 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                        <RefreshCw className="size-4" strokeWidth={1.75} />
                     </button>
                 </div>
+                {sections.length > 0 ? (
+                    <label className="ml-auto min-w-0">
+                        <span className="sr-only">Page section</span>
+                        <select
+                            value={selectedSectionId ?? ''}
+                            onChange={(e) => selectSection(e.target.value)}
+                            className="h-11 max-w-48 cursor-pointer truncate rounded-full border border-border bg-background px-3 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            {sections.map((section) => (
+                                <option key={section.id} value={section.id}>
+                                    {sectionLabel(section.type)}
+                                    {section.locked ? ' (locked)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                ) : (
+                    <span className="ml-auto truncate text-xs text-muted-foreground">Homepage</span>
+                )}
             </header>
 
             <div className="relative min-h-0 flex-1 overflow-hidden p-3">
                 <div
                     className={
                         viewport === 'phone'
-                            ? 'relative mx-auto h-full w-[min(100%,390px)] overflow-hidden rounded-xl border border-border bg-white shadow-lg'
-                            : 'relative h-full min-h-[320px] w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm'
+                            ? 'relative mx-auto h-full w-[min(100%,390px)] overflow-hidden rounded-xl border border-border bg-card shadow-lg'
+                            : 'relative h-full min-h-[320px] w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm'
                     }
                 >
                     {empty || !frameUrl ? (
                         <div className="flex h-full items-center justify-center p-6">
-                            <p className="max-w-xs text-center text-sm text-neutral-600">
+                            <p className="max-w-xs text-center text-sm text-muted-foreground">
                                 Your site will show up here as you edit.
                             </p>
                         </div>
                     ) : (
                         <iframe
+                            key={reloadTick}
                             ref={frame}
                             title="Your site"
                             sandbox={PREVIEW_IFRAME_SANDBOX}
                             src={frameUrl}
-                            className="pointer-events-auto absolute inset-0 z-0 h-full w-full border-0 bg-white"
+                            className="pointer-events-auto absolute inset-0 z-0 h-full w-full border-0 bg-card"
                         />
                     )}
                 </div>
@@ -147,9 +187,9 @@ export default function PreviewPane() {
                             <button
                                 onClick={() => setDismissed(true)}
                                 aria-label="Dismiss"
-                                className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted"
+                                className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                                ✕
+                                ×
                             </button>
                         </div>
                     </div>

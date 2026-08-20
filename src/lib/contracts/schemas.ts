@@ -8,6 +8,16 @@ export const createProjectSchema = z.object({
   sourceTemplateId: z.string().uuid().optional(),
   mode: z.literal("generate").optional(),
   prompt: z.string().max(500).optional(),
+  brief: z
+    .object({
+      name: z.string().trim().min(1).max(80),
+      offer: z.string().trim().min(1).max(500),
+      place: z.string().trim().min(1).max(80),
+      phone: z.string().trim().max(20).optional(),
+      hours: z.string().trim().max(80).optional(),
+      extra: z.string().trim().max(200).optional(),
+    })
+    .optional(),
 });
 
 export const patchProjectSchema = z.object({
@@ -84,5 +94,13 @@ export const restoreSchema = z.object({
 // consent wrong.
 export const consentSchema = z.object({
   trainingOptIn: z.boolean(),
+});
+
+export const billingProfileSchema = z.object({
+  displayName: z.string().trim().max(80),
+  phone: z.string().trim().max(20),
+  billingLine: z.string().trim().max(120),
+  billingCity: z.string().trim().max(80),
+  gstin: z.string().trim().max(15),
 });
 

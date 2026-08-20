@@ -15,7 +15,7 @@ export function AppTopBar({
     step: 1 | 2 | 3;
 }) {
     return (
-        <header className="flex h-20 w-full shrink-0 items-center gap-4 border-b border-border px-6 lg:border-b-0">
+        <header className="flex h-20 w-full shrink-0 items-center gap-4 border-b border-border/60 bg-background/40 px-6 backdrop-blur-xl lg:border-b-0 lg:bg-transparent lg:backdrop-blur-none">
             {/* The sidebar carries the lockup from lg up; below that it lives here. */}
             <Link href="/" className="lg:hidden">
                 <BrandMark />
@@ -70,7 +70,7 @@ export function AppTopBar({
                     </span>
                 ) : (
                     <Link
-                        href="/#sign-in"
+                        href="/signin"
                         // Padded to a thumb-sized target rather than the 46x20 the text
                         // alone gave it. It sits beside a 36px avatar when signed in, so
                         // matching that height also stops the bar shifting at sign-in.

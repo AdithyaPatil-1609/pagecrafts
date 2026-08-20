@@ -7,6 +7,7 @@ import { ExternalLink, Globe, PencilLine } from "lucide-react";
 import type { ProjectStatus, ProjectSummary } from "@/lib/contracts";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { CardIndex } from "@/components/ui/card-index";
 import { cn } from "@/lib/utils";
 
 // One site on the dashboard (V-7).
@@ -55,7 +56,7 @@ function updatedAgo(iso: string, now: number): string {
     return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
-export function SiteCard({ site }: { site: ProjectSummary }) {
+export function SiteCard({ site, index }: { site: ProjectSummary; index?: number }) {
     const status = site.status;
 
     const [now, setNow] = useState(() => Date.now());
@@ -67,8 +68,9 @@ export function SiteCard({ site }: { site: ProjectSummary }) {
     }, []);
 
     return (
-        <li className="flex flex-col rounded-2xl border border-border bg-card/60 p-5 transition-colors hover:border-primary/30">
-            <div className="flex items-start gap-3">
+        <li className="glass-panel card-hover relative flex flex-col overflow-hidden rounded-2xl p-5">
+            {index != null ? <CardIndex n={index} /> : null}
+            <div className="relative z-[1] flex items-start gap-3">
                 <h3 className="min-w-0 flex-1 truncate text-base font-semibold text-foreground">
                     {site.name}
                 </h3>
@@ -80,7 +82,7 @@ export function SiteCard({ site }: { site: ProjectSummary }) {
                 </Badge>
             </div>
 
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="relative z-[1] mt-1.5 text-xs text-muted-foreground">
                 Edited {updatedAgo(site.updatedAt, now)}
             </p>
 
@@ -88,7 +90,7 @@ export function SiteCard({ site }: { site: ProjectSummary }) {
                 is the whole reason the dashboard reads deployments at all (V-7). The words
                 come from the failure map, so they are the same ones the publish screen used. */}
             {site.failure ? (
-                <p className="mt-3 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                <p className="relative z-[1] mt-3 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs leading-5 text-muted-foreground">
                     <span className="text-foreground">{site.failure.what}</span> {site.failure.next}
                 </p>
             ) : null}
@@ -101,7 +103,7 @@ export function SiteCard({ site }: { site: ProjectSummary }) {
                     href={site.liveUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 truncate text-xs font-medium text-primary hover:underline"
+                    className="relative z-[1] mt-3 inline-flex items-center gap-1.5 truncate text-xs font-medium text-primary hover:underline"
                 >
                     <Globe className="size-3.5 shrink-0" aria-hidden />
                     <span className="truncate">{site.liveUrl.replace(/^https:\/\//, "")}</span>
@@ -109,7 +111,7 @@ export function SiteCard({ site }: { site: ProjectSummary }) {
                 </a>
             ) : null}
 
-            <div className="mt-auto flex gap-2 pt-5">
+            <div className="relative z-[1] mt-auto flex gap-2 pt-5">
                 <Link
                     href={`/editor/${site.id}`}
                     className={buttonVariants({

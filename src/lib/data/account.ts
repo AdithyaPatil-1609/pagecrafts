@@ -16,17 +16,26 @@ import { supabaseAdmin } from "./supabase-admin";
 export async function getAccount(supabase: SupabaseClient): Promise<AccountResponse> {
   const { data, error } = await supabase
     .from("users")
-    .select("email, email_verified, training_opt_in, created_at")
+    .select("email, email_verified, training_opt_in, created_at, handle, phone, billing_line, billing_city, gstin")
     .maybeSingle();
 
   if (error) throw new ApiError("internal", "Could not read your account.", error.message);
   if (!data) throw new ApiError("not_found", "That account does not exist.");
 
+  return mapAccount(data);
+}
+
+function mapAccount(data: Record<string, unknown>): AccountResponse {
   return {
-    email: data.email as string,
+    email: String(data.email ?? ""),
     emailVerified: Boolean(data.email_verified),
     trainingOptIn: Boolean(data.training_opt_in),
-    createdAt: data.created_at as string,
+    createdAt: String(data.created_at ?? ""),
+    displayName: typeof data.handle === "string" ? data.handle : "",
+    phone: typeof data.phone === "string" ? data.phone : "",
+    billingLine: typeof data.billing_line === "string" ? data.billing_line : "",
+    billingCity: typeof data.billing_city === "string" ? data.billing_city : "",
+    gstin: typeof data.gstin === "string" ? data.gstin : "",
   };
 }
 
@@ -53,6 +62,34 @@ export async function setTrainingConsent(
 
   if (error) {
     throw new ApiError("internal", "Could not save that preference.", error.message);
+  }
+
+  return getAccount(supabase);
+}
+
+export async function setBillingProfile(
+  supabase: SupabaseClient,
+  profile: {
+    displayName: string;
+    phone: string;
+    billingLine: string;
+    billingCity: string;
+    gstin: string;
+  },
+): Promise<AccountResponse> {
+  const { error } = await supabase
+    .from("users")
+    .update({
+      handle: profile.displayName || null,
+      phone: profile.phone || null,
+      billing_line: profile.billingLine || null,
+      billing_city: profile.billingCity || null,
+      gstin: profile.gstin || null,
+    })
+    .not("id", "is", null);
+
+  if (error) {
+    throw new ApiError("internal", "Could not save those details.", error.message);
   }
 
   return getAccount(supabase);

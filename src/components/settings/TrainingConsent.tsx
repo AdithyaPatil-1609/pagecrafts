@@ -40,7 +40,7 @@ export function TrainingConsent({ initial }: { initial: boolean }) {
     }
 
     return (
-        <div className="rounded-2xl border border-border bg-card/60 p-5">
+        <div className="rounded-2xl glass-panel p-5">
             <p className="text-base font-semibold text-foreground">Help improve PageCraft</p>
 
             <p className="mt-1.5 text-sm leading-6 text-muted-foreground">

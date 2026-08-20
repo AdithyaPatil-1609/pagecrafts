@@ -21,15 +21,46 @@ const BANK = [
     'photo-1534438327276-14e5300c3a48', // gym
 ] as const;
 
+/** Colourful plated desserts — not a clothing rail. */
+export const DESSERT_PHOTO_ID = 'photo-1551024506-0bccd828d307';
+/** Fashion retail interior. Only for clothing/saree/boutique queries. */
+export const CLOTHING_PHOTO_ID = 'photo-1441986300917-64674bd600d8';
+
 const KEYWORD_PHOTO: Array<[RegExp, string]> = [
-    [/\b(sweet|mithai|dessert|laddu|jalebi|halwa|ladoo)\b/i, 'photo-1578985545062-69928b1d9587'],
-    [/\b(bakery|bread|pastry|cake)\b/i, 'photo-1509440159596-0249088772ff'],
+    [/\b(sweet|mithai|dessert|laddu|ladoo|jalebi|halwa|peda|barfi|gulab|confection|chocolate|cupcake)\b/i, DESSERT_PHOTO_ID],
+    [/\b(bakery|bread|pastry|cake|patisserie)\b/i, 'photo-1509440159596-0249088772ff'],
     [/\b(cafe|coffee|chai)\b/i, 'photo-1554118811-1e0d58224f24'],
-    [/\b(restaurant|food|dining)\b/i, 'photo-1414235077428-338989a2e8c0'],
+    [/\b(restaurant|dining|kitchen)\b/i, 'photo-1414235077428-338989a2e8c0'],
     [/\b(gym|fitness|yoga)\b/i, 'photo-1534438327276-14e5300c3a48'],
-    [/\b(clinic|dental|hospital|doctor)\b/i, 'photo-1519494026892-80bbd2d6fd0d'],
-    [/\b(shop|store|retail)\b/i, 'photo-1441986300917-64674bd600d8'],
+    [/\b(clinic|dental|hospital|doctor|veterinary|vet)\b/i, 'photo-1519494026892-80bbd2d6fd0d'],
+    [/\b(saree|clothing|fashion|boutique|apparel|garment|dress|textile)\b/i, CLOTHING_PHOTO_ID],
 ];
+
+/** Search Unsplash for Indian mithai, never "sweet shop" (that returns villas). */
+export const MITHAI_SEARCH = 'indian mithai ladoo barfi gulab jamun tray';
+
+export function isMithaiShop(vertical: string, title = '', query = ''): boolean {
+    const text = `${vertical.replace(/[-_]/g, ' ')} ${title} ${query}`;
+    return /\b(sweet|mithai|halwai|ladoo|laddu|barfi|jalebi)\b/i.test(text)
+        || /sweetshop/i.test(text);
+}
+
+/** Vertical + title + slot query, so "shop interior" on a sweet shop still searches for sweets. */
+export function photoSearchQuery(vertical: string, title: string, query: string): string {
+    if (isMithaiShop(vertical, title, query)) return MITHAI_SEARCH;
+    const bits = [vertical.replace(/[-_]/g, ' '), title, query]
+        .map((part) => part.trim())
+        .filter(Boolean);
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const bit of bits) {
+        const key = bit.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push(bit);
+    }
+    return unique.join(' ');
+}
 
 export function bankPhotoUrl(query: string): string {
     const text = query.trim();
@@ -69,12 +100,17 @@ export async function stampPhotoUrls(
     lookup: (query: string) => Promise<string> = async (query) => bankPhotoUrl(query),
 ): Promise<Composition> {
     const cache = new Map<string, string>();
+    const title = composition.meta.title ?? '';
 
     const resolve = async (query: string, fallback: string): Promise<string> => {
-        const key = (query || fallback).toLowerCase();
+        const search = photoSearchQuery(composition.vertical, title, query || fallback);
+        const key = search.toLowerCase();
         const hit = cache.get(key);
         if (hit) return hit;
-        const url = await lookup(query || fallback);
+        // Live Unsplash on "sweet shop" returns villas and clothing rails.
+        const url = isMithaiShop(composition.vertical, title, search)
+            ? bankPhotoUrl(search)
+            : await lookup(search);
         cache.set(key, url);
         return url;
     };

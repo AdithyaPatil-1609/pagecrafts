@@ -27,18 +27,16 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-    { label: "Your sites", icon: LayoutGrid, href: "/sites" },
-    { label: "Templates", icon: LayoutTemplate, href: "/templates" },
-    // The assistant lives inside the editor, where it has a project and a section to talk
-    // about. /assistant is only the way in: it asks which site, then hands over.
-    { label: "AI Assistant", icon: Sparkles, href: "/assistant", badge: "Beta" },
+    { label: "Build", icon: LayoutTemplate, href: "/#build" },
+    { label: "Ask AI", icon: Sparkles, href: "/#build", badge: "Beta" },
+    { label: "Your sites", icon: LayoutGrid, href: "/#sites" },
     // Still inert, and deliberately. Domains and Team are post-MVP (Amendment A1 §22.3) with
     // nothing behind them at all — no registrar code, no team or member concept in the
     // database. A row that navigates to "coming soon" is a worse answer than a row that
     // plainly does nothing.
     { label: "Domains", icon: Globe },
     { label: "Team", icon: Users },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Settings", icon: Settings, href: "/#settings" },
 ];
 
 const ROW = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium";
@@ -97,7 +95,7 @@ export function AppSidebar({
     return (
         <aside
             className={cn(
-                "w-65 shrink-0 flex-col border-r border-border bg-card/40 px-5 py-6",
+                "w-65 shrink-0 flex-col border-r border-border/60 bg-card/30 px-5 py-6 backdrop-blur-xl",
                 className,
             )}
         >
@@ -167,7 +165,7 @@ export function AppSidebar({
                     </div>
                 ) : (
                     <Link
-                        href="/#sign-in"
+                        href="/signin"
                         className={buttonVariants({
                             variant: "outline-brand",
                             className: "w-full rounded-xl font-semibold",

@@ -79,7 +79,7 @@ export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
     motion: {
         id: 'motion',
         label: 'Animated',
-        blurb: 'Bold colour and motion as you scroll. Built to feel alive.',
+        blurb: 'A kinetic canvas — oversized type, glow, and motion drawn from this business, not generic blobs.',
         tier: 'premium',
         priceInr: 999,
         art: {
@@ -90,8 +90,8 @@ export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
             imageryId: 'bold-contrast',
         },
         variants: {
-            hero: 'split-image',
-            about: 'media-split',
+            hero: 'centred',
+            about: 'text',
             services: 'timeline',
             faq: 'accordion',
             contact: 'form',

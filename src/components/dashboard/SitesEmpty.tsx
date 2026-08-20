@@ -14,7 +14,7 @@ export function SitesEmpty() {
             </p>
 
             <Link
-                href="/new"
+                href="/#build"
                 className={buttonVariants({
                     variant: "brand",
                     className: "mt-6 rounded-xl font-semibold",
