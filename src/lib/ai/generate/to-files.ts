@@ -363,6 +363,30 @@ body:has([data-style="motion"]) {
   background: #06040c;
   color: #f6f3ff;
 }
+
+/* The motif already knows the business -- motifFor() maps restaurant to steam,
+   dentist to tooth, sweets to jalebi. The colour did not follow, so every Animated
+   site came out the same hot pink on the same near-black, and a pure-veg restaurant
+   in RR Nagar looked like a nightclub flyer. These read the motif the hero already
+   carries, so nothing upstream has to change. */
+body:has([data-motif="steam"]) { --accent: #f7a23b; --bg: #0c0703; background: #0c0703; } /* a kitchen, warm not neon */
+body:has([data-motif="jalebi"]) { --accent: #f4b942; --bg: #0d0702; background: #0d0702; } /* syrup and ghee */
+body:has([data-motif="tooth"]) { --accent: #3ad6e8; --bg: #03080c; background: #03080c; } /* clinical, cool, clean */
+body:has([data-motif="leaf"]) { --accent: #4ade80; --bg: #030906; background: #030906; } /* growing things */
+body:has([data-motif="scale"]) { --accent: #d9b86a; --bg: #05060c; background: #05060c; } /* chambers and old brass */
+body:has([data-motif="note"]) { --accent: #a78bfa; --bg: #07050e; background: #07050e; } /* stage light */
+body:has([data-motif="paw"]) { --accent: #fb923c; --bg: #0c0705; background: #0c0705; } /* warm, friendly */
+body:has([data-motif="flame"]) { --accent: #f97316; --bg: #0c0503; background: #0c0503; } /* heat and effort */
+body:has([data-motif="needle"]) { --accent: #ec4899; --bg: #0b040a; background: #0b040a; } /* thread and cloth */
+body:has([data-motif="wheel"]) { --accent: #38bdf8; --bg: #03070c; background: #03070c; } /* steel and glass */
+body:has([data-motif="building"]) { --accent: #7dd3fc; --bg: #04070b; background: #04070b; } /* blueprint blue */
+body:has([data-motif="crate"]) { --accent: #fbbf24; --bg: #0b0803; background: #0b0803; } /* hi-vis, shipping */
+body:has([data-motif="cap"]) { --accent: #818cf8; --bg: #05060d; background: #05060d; } /* ink and paper */
+body:has([data-motif="heart"]) { --accent: #fb7185; --bg: #0c0406; background: #0c0406; } /* human, not corporate */
+body:has([data-motif="flower"]) { --accent: #f472b6; --bg: #0b050a; background: #0b050a; } /* petals */
+body:has([data-motif="bolt"]) { --accent: #22d3ee; --bg: #03070c; background: #03070c; } /* current */
+body:has([data-motif="coin"]) { --accent: #eab308; --bg: #0a0803; background: #0a0803; } /* gold, not gaudy */
+body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #0b0605; } /* terracotta and linen */
 [data-style="motion"] .site-header {
   position: sticky;
   top: 0;
@@ -404,12 +428,18 @@ body:has([data-style="motion"]) {
   color: rgba(246, 243, 255, 0.72);
 }
 [data-style="motion"] [data-type="hero"] h1 {
-  font-size: clamp(3.1rem, 11vw, 7.4rem);
+  font-size: clamp(2.4rem, 8.2vw, 6.6rem);
   font-weight: 800;
-  letter-spacing: -0.07em;
-  line-height: 0.88;
+  letter-spacing: -0.055em;
+  line-height: 0.94;
   margin: 0 auto 0.7em;
-  max-width: 12ch;
+  /* 12ch clipped "1947 Restaurant - Pure Veg Restaurant" mid-word: thirty-seven
+     characters, nowhere to go, nothing telling it to wrap. min() keeps it inside the
+     box whatever the business is called, balance evens the lines, and break-word is
+     the last resort for a single word wider than the column. */
+  max-width: min(16ch, 100%);
+  overflow-wrap: break-word;
+  text-wrap: balance;
   background: linear-gradient(115deg, #fff 8%, #fff 32%, var(--accent) 52%, #fbbf24 74%, #fff 100%);
   background-size: 220% 100%;
   -webkit-background-clip: text;
@@ -439,8 +469,11 @@ body:has([data-style="motion"]) {
   inset: 0;
   background:
     radial-gradient(ellipse 52% 42% at 16% 28%, color-mix(in srgb, var(--accent) 58%, transparent), transparent 62%),
-    radial-gradient(ellipse 46% 36% at 86% 12%, rgba(124, 58, 237, 0.55), transparent 64%),
-    radial-gradient(ellipse 42% 38% at 72% 86%, rgba(245, 158, 11, 0.34), transparent 62%);
+    /* These two were a fixed violet and a fixed amber, so the canvas glowed the same
+       colour behind every business no matter what the accent was. Derived from the
+       accent now: one deeper, one lighter, so the whole stage belongs to the trade. */
+    radial-gradient(ellipse 46% 36% at 86% 12%, color-mix(in srgb, var(--accent) 42%, #140b22), transparent 64%),
+    radial-gradient(ellipse 42% 38% at 72% 86%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 62%);
   filter: blur(30px);
   animation: pc-aurora 16s ease-in-out infinite alternate;
 }
