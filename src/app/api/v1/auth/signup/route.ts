@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       email: credentials.value.email,
       password: credentials.value.password,
       options: {
-        emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm?next=/new`,
+        emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm`,
         ...(name ? { data: { full_name: name } } : {}),
       },
     });

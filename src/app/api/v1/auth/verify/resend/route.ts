@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         await supabase.auth.resend({
             type: "signup",
             email: parsed.data.email,
-            options: { emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm?next=/new` },
+            options: { emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm` },
         });
 
         return ok({ status: "accepted" as const }, 202);
