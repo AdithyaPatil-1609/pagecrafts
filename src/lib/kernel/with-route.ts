@@ -57,11 +57,20 @@ export function withRoute<
 
         const parsed = opts.schema.safeParse(json);
         if (!parsed.success) {
+          const issues = parsed.error.issues.map(
+            (i) => `${i.path.join(".") || "body"}: ${i.message}`,
+          );
           console.warn("[api] rejected body", {
             path: new URL(req.url).pathname,
-            issues: parsed.error.issues.map((i) => i.path.join(".")),
+            json: JSON.stringify(json)?.slice(0, 300),
+            issues,
           });
-          return fail("validation_failed", "Some fields were invalid.");
+          return fail(
+            "validation_failed",
+            process.env.NODE_ENV === "production"
+              ? "Some fields were invalid."
+              : `Some fields were invalid — ${issues.join("; ")}`,
+          );
         }
         body = parsed.data;
       }
