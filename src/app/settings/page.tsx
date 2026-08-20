@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 // this is rather than a user id passed down from the page.
 export default async function SettingsPage() {
   const user = await viewer();
-  if (!user) redirect("/#sign-in");
+  if (!user) redirect("/?mode=signin#sign-in");
 
   let account: AccountResponse | null = null;
 

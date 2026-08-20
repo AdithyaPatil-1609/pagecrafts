@@ -10,9 +10,9 @@ import { currentUser } from "@/lib/auth/session";
 export default async function LandingPage({
     searchParams,
 }: {
-    searchParams: Promise<{ error?: string }>;
+    searchParams: Promise<{ error?: string; mode?: string }>;
 }) {
-    const { error } = await searchParams;
+    const { error, mode } = await searchParams;
 
     // Somebody already signed in has no business being shown a sign-in form. This is
     // what made confirming an email look like it had not worked: the session was
@@ -23,6 +23,7 @@ export default async function LandingPage({
     }
 
     const message = landingError(error);
+    const initialMode = mode === "signin" || mode === "forgot" ? mode : "signup";
 
     return (
         <div className="relative flex flex-1 flex-col overflow-hidden bg-background">
@@ -41,7 +42,7 @@ export default async function LandingPage({
                             {message}
                         </p>
                     )}
-                    <AuthCard />
+                    <AuthCard initialMode={initialMode} />
                 </div>
             </main>
 

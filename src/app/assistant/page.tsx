@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 // anything would be worse than no row at all.
 export default async function AssistantPage() {
   const user = await viewer();
-  if (!user) redirect("/#sign-in");
+  if (!user) redirect("/?mode=signin#sign-in");
 
   let sites: ProjectSummary[] | null = null;
 

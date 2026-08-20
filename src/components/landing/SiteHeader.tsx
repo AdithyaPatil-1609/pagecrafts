@@ -36,13 +36,13 @@ export function SiteHeader() {
 
                 <div className="flex items-center gap-3 sm:gap-6">
                     <a
-                        href="#sign-in"
+                        href="/?mode=signin#sign-in"
                         className="rounded-md text-sm font-semibold text-foreground transition-colors hover:text-brand-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
                     >
                         Sign in
                     </a>
                     <a
-                        href="#sign-in"
+                        href="/#sign-in"
                         className={buttonVariants({ variant: "brand", size: "lg", className: "rounded-lg font-semibold" })}
                     >
                         Get started

@@ -10,6 +10,7 @@ export function ResendVerification({ email }: { email: string }) {
         setState("busy");
         await fetch("/api/v1/auth/verify/resend", {
             method: "POST",
+            credentials: "same-origin",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
         }).catch(() => null);

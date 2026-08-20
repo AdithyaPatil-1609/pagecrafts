@@ -29,7 +29,7 @@ export default async function SitesPage() {
 
   // Not an error — just not signed in. Sent to the door rather than shown an empty page
   // that looks like their sites have vanished.
-  if (!user) redirect("/#sign-in");
+  if (!user) redirect("/?mode=signin#sign-in");
 
   let sites: ProjectSummary[] | null = null;
 

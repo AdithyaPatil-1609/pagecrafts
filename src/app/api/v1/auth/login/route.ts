@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return fail("unauthorized", GENERIC_FAILURE);
     }
 
-    const email = credentials.value.email.trim().toLowerCase();
+    const email = credentials.value.email;
     const byEmail = await consume("login:email", email, LOGIN_PER_EMAIL);
 
     if (!byEmail.allowed) {
@@ -58,12 +58,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = await supabaseRouteClient();
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.value.email,
+      email,
       password: credentials.value.password,
     });
 
     if (error) {
-      if (error.status === 429) {
+      if (error.status === 429 || error.code === "over_request_rate_limit") {
         return fail("rate_limited", THROTTLED);
       }
       if (error.code === "email_not_confirmed") {
@@ -71,6 +71,9 @@ export async function POST(request: NextRequest) {
           "forbidden",
           "Confirm your email address to finish setting up your account.",
         );
+      }
+      if (error.code === "user_banned") {
+        return fail("forbidden", "This account is not allowed to sign in.");
       }
       return fail("unauthorized", GENERIC_FAILURE);
     }

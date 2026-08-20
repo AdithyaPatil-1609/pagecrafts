@@ -14,6 +14,7 @@ import type { Viewer } from "@/lib/auth/session";
 import { BrandMark } from "@/components/landing/BrandMark";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 import { cn } from "@/lib/utils";
 
 // The product shell's navigation. Destinations that do not exist yet are rendered as
@@ -163,11 +164,14 @@ export function AppSidebar({
                             <span className="block truncate text-xs text-muted-foreground">
                                 {user.email}
                             </span>
+                            <span className="mt-1 block">
+                                <SignOutButton />
+                            </span>
                         </span>
                     </div>
                 ) : (
                     <Link
-                        href="/#sign-in"
+                        href="/?mode=signin#sign-in"
                         className={buttonVariants({
                             variant: "outline-brand",
                             className: "w-full rounded-xl font-semibold",

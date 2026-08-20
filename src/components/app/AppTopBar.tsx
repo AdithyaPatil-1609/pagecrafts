@@ -70,7 +70,7 @@ export function AppTopBar({
                     </span>
                 ) : (
                     <Link
-                        href="/#sign-in"
+                        href="/?mode=signin#sign-in"
                         // Padded to a thumb-sized target rather than the 46x20 the text
                         // alone gave it. It sits beside a 36px avatar when signed in, so
                         // matching that height also stops the bar shifting at sign-in.
