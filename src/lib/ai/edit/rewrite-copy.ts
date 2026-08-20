@@ -1,4 +1,5 @@
 import { model } from '../gateway';
+import { contain } from '../containment/envelope';
 import { stripFences, sanitise, sanitiseDeep } from '../sanitise';
 import type { ContentSchema, Field } from '@/lib/contracts';
 
@@ -108,14 +109,27 @@ export async function rewriteTemplateCopy(
     latencyMs: number;
 } }> {
     const copy = currentCopy(schema, content);
+
+    // SEC-43 / FR-110, same split as propose.ts: the page's current copy is the untrusted
+    // half and the instruction is not. The instruction was typed by the person who owns the
+    // project; the copy may have arrived from a template, from an earlier model turn, or
+    // from a previous injection that got as far as the content -- so it is the string that
+    // has to cross the boundary inside an envelope.
+    //
+    // This was missing when the route shipped, which put the one AI call site in the
+    // product that reads back its own previous output outside containment (R3 D20).
+    const contained = contain(
+        'Rewrite the words on a website. Keep the same structure. Do not invent a phone, email, address or price that the instruction does not give. Return JSON only.',
+        { copy: JSON.stringify(copy) },
+    );
+
     const reply = await model.fast.complete({
         job: 'edit',
-        system:
-            'Rewrite the words on a website. Keep the same structure. Do not invent a phone, email, address or price that the instruction does not give. Return JSON only.',
+        system: contained.system,
         user: [
             'Rewrite the words on this page.',
             `Instruction: ${instruction.trim()}`,
-            `Current copy: ${JSON.stringify(copy)}`,
+            `Current copy: ${contained.values.copy}`,
             'Reply with JSON: {"explanation":"...","values":{"hero":{"headline":"..."}}}',
             'Only include fields you are changing. Never include image fields.',
         ].join('\n'),
