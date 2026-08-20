@@ -1,14 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { SiteScene } from "@/components/site/SiteScene";
 
-const SLIDE_ORDER = ["/", "/signin", "/signup", "/new", "/templates", "/choose", "/sites", "/assistant", "/settings"];
+const SLIDE_ORDER = [
+    "/",
+    "/signin",
+    "/signup",
+    "/new",
+    "/templates",
+    "/choose",
+    "/editor",
+    "/sites",
+    "/assistant",
+    "/settings",
+];
+
+const GLIDE_MS = 880;
 
 function slideIndex(path: string): number {
-    if (path.startsWith("/editor")) return -1;
+    if (path.startsWith("/editor")) return SLIDE_ORDER.indexOf("/editor");
     if (path.startsWith("/choose")) return SLIDE_ORDER.indexOf("/choose");
     const exact = SLIDE_ORDER.indexOf(path);
     return exact;
@@ -17,17 +30,35 @@ function slideIndex(path: string): number {
 export function PageFlow({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const rootRef = useRef<HTMLDivElement>(null);
+    const shownPath = useRef(pathname);
+    const lastChildren = useRef<ReactNode>(children);
     const [previousPath, setPreviousPath] = useState(pathname);
+    const [outgoing, setOutgoing] = useState<ReactNode>(null);
     const quiet = pathname.startsWith("/editor");
     const landing = pathname === "/";
 
-    if (previousPath !== pathname) {
-        setPreviousPath(pathname);
-    }
-
     const from = slideIndex(previousPath);
     const to = slideIndex(pathname);
-    const dir = from < 0 || to < 0 || from === to ? "in" : to > from ? "forward" : "back";
+    const dir: "forward" | "back" | "in" =
+        from < 0 || to < 0 || from === to ? "in" : to > from ? "forward" : "back";
+
+    useLayoutEffect(() => {
+        if (shownPath.current === pathname) {
+            lastChildren.current = children;
+            return;
+        }
+
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const skip = landing || reduce;
+        setOutgoing(skip ? null : lastChildren.current);
+        shownPath.current = pathname;
+        lastChildren.current = children;
+        setPreviousPath(pathname);
+        if (skip) return;
+
+        const timer = window.setTimeout(() => setOutgoing(null), GLIDE_MS);
+        return () => window.clearTimeout(timer);
+    }, [pathname, children, landing]);
 
     useEffect(() => {
         document.documentElement.classList.toggle("deck-snap", landing);
@@ -102,13 +133,24 @@ export function PageFlow({ children }: { children: React.ReactNode }) {
             <SiteAtmosphere quiet={quiet} />
             <SiteScene quiet={quiet} soft={!landing && !quiet} />
             <div aria-hidden className="site-frost" />
-            <div
-                key={pathname}
-                ref={rootRef}
-                data-dir={dir}
-                className="page-flow relative z-[1] flex min-h-full flex-1 flex-col"
-            >
-                {children}
+            <div className="page-flow-stage relative z-[1] flex min-h-full flex-1 flex-col">
+                {outgoing ? (
+                    <div
+                        aria-hidden
+                        data-dir={dir}
+                        className="page-glide-out"
+                    >
+                        {outgoing}
+                    </div>
+                ) : null}
+                <div
+                    key={pathname}
+                    ref={rootRef}
+                    data-dir={dir}
+                    className="page-flow relative flex min-h-full flex-1 flex-col"
+                >
+                    {children}
+                </div>
             </div>
         </>
     );
