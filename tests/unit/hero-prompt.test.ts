@@ -9,6 +9,7 @@ import {
     promptQuery,
     stepTypewriter,
     typedPrompt,
+    type TypewriterState,
 } from "@/lib/hero-prompt";
 
 const read = (...parts: string[]) => readFileSync(join(process.cwd(), ...parts), "utf8");
@@ -58,7 +59,7 @@ describe("hero prompt phrases", () => {
 
     it("wraps from the last phrase back to the first", () => {
         const phrases = ["a", "b"] as const;
-        let state = { index: 1, length: 0, phase: "delete" as const };
+        let state: TypewriterState = { index: 1, length: 0, phase: "delete" };
         state = stepTypewriter(state, phrases);
         expect(state).toEqual({ index: 0, length: 0, phase: "type" });
         expect(currentPhrase(state, phrases)).toBe("a");
