@@ -24,8 +24,23 @@ vi.mock("@/lib/data/entitlements", () => ({ assertCanPublish: gate.assertCanPubl
 
 const FILES = [{ path: "index.html", content: "<h1>hi</h1>", encoding: "utf-8" as const }];
 
-/** projects answers the repo_full_name read; deployments answers the insert and updates. */
+/**
+ * projects answers the repo_full_name read; deployments answers the insert and updates,
+ * and answers *reads* with nothing.
+ *
+ * That last part is the whole of a four-test outage. D18 moved the "is a publish already
+ * running?" guard out of the route and into publishProject, and this fake had been
+ * answering every deployments query -- reads included -- with a row. So openDeployment
+ * found a publish in flight on every call, publishProject returned early, and the provider
+ * was never reached. Four tests went quiet at once, among them both of the ones that hold
+ * FR-087: that a retry is one site and not two, and that a failure lands on the row.
+ *
+ * They did not fail loudly enough to stop anyone, which is the part worth remembering. A
+ * fake that says yes to everything will happily agree that nothing happened.
+ */
 function tables(repoFullName: string | null = null): Record<string, TableResponder> {
+    const written = row({ id: DEPLOYMENT_ID });
+
     return {
         projects: row({ id: PROJECT_ID, repo_full_name: repoFullName }),
         deployments: (query) => {

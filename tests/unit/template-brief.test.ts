@@ -13,12 +13,26 @@ describe("choosing a template", () => {
     expect(button).toContain("/new?template=");
     expect(button).not.toContain("/editor/");
     expect(page).toContain("sourceTemplateId");
+    expect(page).toContain("add About, Contact and Settings");
     expect(capture).toContain("startFromDesign");
     expect(capture).toContain("Put this on the design");
     expect(capture).toContain("/generate");
     expect(capture).toContain("/editor/");
     expect(capture).toContain("?job=");
     expect(capture).toContain("visual reference");
+
+    const fromDesign = capture.slice(
+      capture.indexOf("async function startFromDesign"),
+      capture.indexOf("async function startGeneration"),
+    );
+    expect(fromDesign).toContain("`/editor/${encodeURIComponent(created.data.id)}`");
+    expect(fromDesign).not.toContain("/generate");
+    expect(fromDesign).not.toContain("/choose/");
+    expect(fromDesign).not.toContain("visual reference");
+
+    const fromScratch = capture.slice(capture.indexOf("async function startGeneration"));
+    expect(fromScratch).toContain("/generate");
+    expect(fromScratch).toContain("/choose/");
   });
 
   it("keeps the editor as chat on the left and live preview on the right", () => {

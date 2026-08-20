@@ -94,12 +94,14 @@ export default function EditorShell({
 
             setGeneration(data);
 
-            if (data.status === 'done' || data.status === 'failed') {
+            if (data.status === "done" || data.status === "failed") {
                 await loadProject(projectId);
                 if (cancelled) return;
-                if (data.status === 'done') {
-                    setGeneration(null);
-                    router.replace(`/editor/${encodeURIComponent(projectId)}`);
+                if (data.status === "done") {
+                    router.replace(
+                        `/choose/${encodeURIComponent(projectId)}?job=${encodeURIComponent(jobId)}`,
+                    );
+                    return;
                 }
                 return;
             }

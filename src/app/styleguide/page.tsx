@@ -32,6 +32,7 @@ const COLOR_TOKENS = [
   { name: "destructive", className: "bg-destructive" },
   { name: "border", className: "bg-border" },
   { name: "field", className: "bg-field border border-input" },
+  { name: "gold", className: "bg-gold" },
   { name: "brand gradient", className: "brand-gradient" },
 ] as const;
 
@@ -156,7 +157,7 @@ export default function StyleguidePage() {
             <Badge variant="secondary">Free</Badge>
           </CardContent>
           <CardFooter>
-            <Button className="w-full">Use this design</Button>
+            <Button variant="brand" className="w-full">Use this design</Button>
           </CardFooter>
         </Card>
       </Section>
