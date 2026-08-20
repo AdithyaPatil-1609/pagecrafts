@@ -305,19 +305,6 @@ export async function createProject(
     }
     if (!template) throw new ApiError("not_found", "That design does not exist.");
 
-    // Doc 22 P2/P3: a premium or signature design is paid for once, before the fork runs.
-    // The price is read from the row and never from the request — a paywall the caller is
-    // trusted to declare is not a paywall. Thrown inside the try, so the catch below removes
-    // the empty project rather than leaving a site nobody paid for sitting in a dashboard.
-    const tier = (template.tier ?? "free") as TemplateTier;
-    if (tier !== "free" && !pro) {
-      throw new ApiError(
-        "payment_required",
-        "This design needs to be paid for before you can use it.",
-        `tier=${tier}`,
-      );
-    }
-
     let contentSchema = (template.content_schema ?? { sections: [] }) as ContentSchema;
     let files = (template.files ?? {}) as FileMap;
     let content = contentFromFiles(files, contentSchema);
@@ -332,7 +319,6 @@ export async function createProject(
       contentSchema = expanded.schema;
       content = contentFromFiles(files, contentSchema);
     }
-
     await putProjectFiles(supabase, projectId, files);
 
     // The schema is copied for the same reason the files are (R3 D7). Read live through
