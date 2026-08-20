@@ -75,7 +75,10 @@ function heroMarkup(bp: Blueprint, motif: MotifId): string {
     // Either way it sits in the hero.image slot, so swapping it is a content edit — not a
     // template change — and the slot/schema parity the editor relies on holds.
     const art = bp.heroImage
-        ? `<img class="hero-photo" src="${escapeHtml(bp.heroImage.src)}" alt="${escapeHtml(bp.heroImage.alt)}" loading="lazy" decoding="async" />`
+        // Eager: the hero is above the fold (and LCP). Lazy here left Chromium with an
+        // empty frame when thumbnails were rendered, which is why the gallery shipped
+        // blank dark tiles for some designs.
+        ? `<img class="hero-photo" src="${escapeHtml(bp.heroImage.src)}" alt="${escapeHtml(bp.heroImage.alt)}" loading="eager" decoding="async" fetchpriority="high" />`
         : motifToSvg(motif, bp.palette);
 
     return `    <section class="hero">
