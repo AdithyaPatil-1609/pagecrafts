@@ -149,6 +149,20 @@ describe("pro", () => {
     });
 });
 
+describe("premium", () => {
+    it("covers publishing without a per-project grant, and is not the same as a pro row", async () => {
+        const { db, projectId } = account();
+        db.insert("entitlements", { user_id: "u1", kind: "premium", source: "paid", status: "active" });
+
+        await expect(assertCanPublish(db.asUser("u1"), "u1", projectId)).resolves.toMatchObject({
+            granted: true,
+            source: "pro",
+        });
+        expect(await hasPro(db.asUser("u1"), "u1")).toBe(true);
+        expect(db.rows("entitlements").some((row) => row.kind === "pro")).toBe(false);
+    });
+});
+
 describe("asking twice", () => {
     it("grants twice and changes nothing", async () => {
         // What makes a retried publish safe: the check is a read. If it charged, or consumed

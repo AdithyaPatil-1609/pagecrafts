@@ -4,7 +4,10 @@ import { createFakeDb } from '../support/fake-db';
 
 const auth = vi.hoisted(() => ({ requireUser: vi.fn() }));
 const ledger = vi.hoisted(() => ({ persist: vi.fn() }));
-const entitlements = vi.hoisted(() => ({ hasPro: vi.fn(async () => false) }));
+const entitlements = vi.hoisted(() => ({
+    hasPro: vi.fn(async () => false),
+    hasPremium: vi.fn(async () => false),
+}));
 vi.mock('@/lib/auth/session', () => ({
     requireUser: auth.requireUser,
     supabaseRoute: async () => ({}),
@@ -14,7 +17,7 @@ vi.mock('@/lib/ai/cost/persist', () => ({
 }));
 vi.mock('@/lib/data/entitlements', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@/lib/data/entitlements')>();
-    return { ...actual, hasPro: entitlements.hasPro };
+    return { ...actual, hasPro: entitlements.hasPro, hasPremium: entitlements.hasPremium };
 });
 
 vi.mock('@/lib/limits/redis', async () => {
@@ -87,6 +90,7 @@ beforeEach(() => {
     resetDiversityStore();
     resetFreeGenerationQuota();
     entitlements.hasPro.mockResolvedValue(false);
+    entitlements.hasPremium.mockResolvedValue(false);
     setGateway(new MockGateway());
 });
 
@@ -306,6 +310,26 @@ describe('POST /api/v1/projects/{id}/generate/choose', () => {
             new Request('http://x/api/v1/projects/p_1/generate/choose', {
                 method: 'POST',
                 body: JSON.stringify({ jobId: data.job_id, variantId: 'photos' }),
+                headers: { 'content-type': 'application/json' },
+            }) as never,
+            { params: Promise.resolve({ id: 'p_1' }) } as never,
+        );
+        const json = await picked.json();
+
+        expect(picked.status).toBe(402);
+        expect(json.error.code).toBe('payment_required');
+    });
+
+    it('refuses a Premium look until the account has Premium', async () => {
+        entitlements.hasPro.mockResolvedValue(true);
+        const res = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const { data } = await res.json();
+        await settled(data.job_id);
+
+        const picked = await choose(
+            new Request('http://x/api/v1/projects/p_1/generate/choose', {
+                method: 'POST',
+                body: JSON.stringify({ jobId: data.job_id, variantId: 'motion' }),
                 headers: { 'content-type': 'application/json' },
             }) as never,
             { params: Promise.resolve({ id: 'p_1' }) } as never,

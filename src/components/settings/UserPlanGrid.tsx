@@ -1,55 +1,15 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Check } from "lucide-react";
 
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
-import { ACCOUNT_PLAN_LABEL } from "@/lib/contracts";
 import { apiGet, apiPost } from "@/lib/api/client";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
+import { PLAN_COPY } from "@/lib/payments/plans";
 import { cn } from "@/lib/utils";
 
-const PLANS: {
-  id: AccountPlan;
-  price: string;
-  blurb: string;
-  points: string[];
-}[] = [
-  {
-    id: "starter",
-    price: "Free",
-    blurb:
-      "The default plan. Describe a site, pick a design, and edit with AI. Free designs go live at no charge; a paid design is billed when you publish that site. AI generations are capped per site.",
-    points: [
-      "Build and edit sites with AI",
-      "Publish free designs at no charge",
-      "Pay per paid design when that site goes live",
-    ],
-  },
-  {
-    id: "pro",
-    price: "Rs 499",
-    blurb:
-      "One payment through Razorpay. Publish any design without a separate publish checkout, keep editing after a site is live, and drop the per-site AI cap. Not a subscription — it stays until you change plan.",
-    points: [
-      "Everything in Starter",
-      "Publish any design without a per-site checkout",
-      "Unlimited AI generations",
-      "Edit live sites after the free window",
-    ],
-  },
-  {
-    id: "premium",
-    price: "Rs 999",
-    blurb:
-      "Everything in Pro, as the top account unlock — for people who publish often or keep several sites. One payment, no auto-renew, same Razorpay checkout.",
-    points: [
-      "Everything in Pro",
-      "The top one-time account unlock",
-      "Stays until you change plan",
-    ],
-  },
-];
+const ORDER: AccountPlan[] = ["starter", "pro", "premium"];
 
 export function UserPlanGrid({
   initial,
@@ -60,6 +20,7 @@ export function UserPlanGrid({
 }) {
   const [billing, setBilling] = useState<BillingSummary>(initial);
   const [target, setTarget] = useState<"pro" | "premium" | null>(null);
+  const pendingPlan = useRef<"pro" | "premium" | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [switching, setSwitching] = useState(false);
 
@@ -94,7 +55,8 @@ export function UserPlanGrid({
       void refresh();
     },
     onSuccess: () => {
-      if (target) void waitForPlan(target);
+      const wanted = pendingPlan.current;
+      if (wanted) void waitForPlan(wanted);
     },
   });
 
@@ -120,12 +82,13 @@ export function UserPlanGrid({
   return (
     <div>
       <div className="grid gap-4 lg:grid-cols-3">
-        {PLANS.map((option) => {
-          const current = plan === option.id;
-          const highlighted = option.id === "pro";
+        {ORDER.map((id) => {
+          const option = PLAN_COPY[id];
+          const current = plan === id;
+          const highlighted = id === "pro";
           let action: { label: string; onClick?: () => void; disabled: boolean } | null = null;
 
-          if (option.id === "starter") {
+          if (id === "starter") {
             action = current
               ? { label: "Current plan", disabled: true }
               : {
@@ -133,7 +96,7 @@ export function UserPlanGrid({
                   onClick: () => void switchToStarter(),
                   disabled: busy,
                 };
-          } else if (option.id === "pro") {
+          } else if (id === "pro") {
             if (plan === "premium") {
               action = { label: "Included in Premium", disabled: true };
             } else if (current) {
@@ -147,6 +110,7 @@ export function UserPlanGrid({
                       ? "Confirming…"
                       : "Choose Pro",
                 onClick: () => {
+                  pendingPlan.current = "pro";
                   setTarget("pro");
                   setNote(null);
                   void openPlanCheckout("pro");
@@ -165,6 +129,7 @@ export function UserPlanGrid({
                     ? "Confirming…"
                     : "Choose Premium",
               onClick: () => {
+                pendingPlan.current = "premium";
                 setTarget("premium");
                 setNote(null);
                 void openPlanCheckout("premium");
@@ -175,7 +140,7 @@ export function UserPlanGrid({
 
           return (
             <article
-              key={option.id}
+              key={id}
               className={cn(
                 "flex flex-col rounded-2xl glass-panel p-5",
                 current && "ring-2 ring-gold/70",
@@ -183,9 +148,7 @@ export function UserPlanGrid({
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {ACCOUNT_PLAN_LABEL[option.id]}
-                </h2>
+                <h2 className="text-lg font-semibold text-foreground">{option.name}</h2>
                 {highlighted ? (
                   <span className="rounded-full border border-gold/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">
                     Popular
@@ -194,11 +157,11 @@ export function UserPlanGrid({
               </div>
               <p className="mt-2 font-display text-3xl font-bold tracking-tight text-foreground">
                 {option.price}
-                {option.id !== "starter" ? (
+                {id !== "starter" ? (
                   <span className="ml-1.5 text-sm font-medium text-muted-foreground">once</span>
                 ) : null}
               </p>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{option.blurb}</p>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{option.description}</p>
               <ul className="mt-4 space-y-2 text-sm text-foreground">
                 {option.points.map((point) => (
                   <li key={point} className="flex gap-2">
@@ -214,9 +177,9 @@ export function UserPlanGrid({
                   onClick={action.onClick}
                   className={cn(
                     "mt-6 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60",
-                    option.id === "premium" && !current
+                    id === "premium" && !current
                       ? "border border-primary/40 bg-primary text-primary-foreground"
-                      : option.id === "pro" && !current
+                      : id === "pro" && !current
                         ? "border border-gold bg-gold text-gold-foreground"
                         : "border border-border text-foreground",
                   )}
