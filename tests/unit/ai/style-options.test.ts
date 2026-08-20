@@ -101,37 +101,45 @@ describe('style presets — three looks from one brief', () => {
         const options = await buildStyleOptions(composition);
         expect(options.map((o) => o.id)).toEqual(['casual', 'photos', 'motion']);
 
-        const html = Object.fromEntries(options.map((o) => [o.id, o.files['index.html'] ?? '']));
-        expect(html.casual).toContain('data-style="casual"');
-        expect(html.photos).toContain('data-style="photos"');
-        expect(html.motion).toContain('data-style="motion"');
+        const home = Object.fromEntries(options.map((o) => [o.id, o.files['index.html'] ?? '']));
+        const about = Object.fromEntries(options.map((o) => [o.id, o.files['about.html'] ?? '']));
+        const allHtml = Object.fromEntries(
+            options.map((o) => [o.id, Object.values(o.files).join('\n')]),
+        );
 
-        // Casual is no longer a grey wall of type — it shows one hero photograph.
-        expect(html.casual).toContain('images.unsplash.com');
-        expect(html.casual).toContain('<img src="');
-        expect(html.casual).toContain('data-variant="split-image"');
-        // Photo-rich still goes further: cinematic hero + photos in other sections.
-        expect(html.photos).toContain('images.unsplash.com');
-        expect(html.photos).toContain('data-variant="image-bg"');
-        expect((html.photos.match(/images\.unsplash\.com/g) ?? []).length)
-            .toBeGreaterThan((html.casual.match(/images\.unsplash\.com/g) ?? []).length);
-        expect(html.casual).toContain('data-motion="none"');
-        expect(html.photos).toContain('data-motion="editorial"');
-        expect(html.motion).toContain('data-motion="kinetic"');
-        expect(html.motion).toContain('data-motif="jalebi"');
-        expect(html.motion).toContain('jalebi-coil');
-        expect(html.motion).toContain('honey-drip');
-        expect(html.motion).toContain('motion-stage');
-        expect(html.motion).toContain('motion-ticker');
-        expect(html.motion).toContain('--bg: #06040c');
-        expect(html.motion).not.toContain('pc-orb');
-        expect(html.casual).not.toContain('data-motif="jalebi"');
-        expect(html.casual).not.toContain('motion-stage');
-        expect(html.photos).not.toContain('data-motif="jalebi"');
-        expect(html.photos).not.toContain('motion-stage');
-        expect(html.motion).toContain('pc-pulse 1.4s ease-in-out infinite');
-        expect(html.casual).toContain('Mithas Sweets');
-        expect(html.photos).toContain('Mithas Sweets');
-        expect(html.motion).toContain('Mithas Sweets');
+        expect(home.casual).toContain('data-style="casual"');
+        expect(home.photos).toContain('data-style="photos"');
+        expect(home.motion).toContain('data-style="motion"');
+
+        // Casual shows one hero photograph in a split layout (not a grey wall of type).
+        expect(home.casual).toContain('images.unsplash.com');
+        expect(home.casual).toContain('<img src="');
+        expect(home.casual).toContain('data-type="hero" data-variant="split-image"');
+        // About lives on about.html after the multi-page split.
+        expect(about.casual).toContain('data-type="about" data-variant="text"');
+        // Photo-rich goes further: cinematic hero + media-split About + more photos site-wide.
+        expect(home.photos).toContain('images.unsplash.com');
+        expect(home.photos).toContain('data-type="hero" data-variant="image-bg"');
+        expect(about.photos).toContain('data-type="about" data-variant="media-split"');
+        expect((allHtml.photos.match(/images\.unsplash\.com/g) ?? []).length)
+            .toBeGreaterThan((allHtml.casual.match(/images\.unsplash\.com/g) ?? []).length);
+        expect(home.casual).toContain('data-motion="none"');
+        expect(home.photos).toContain('data-motion="editorial"');
+        expect(home.motion).toContain('data-motion="kinetic"');
+        expect(home.motion).toContain('data-motif="jalebi"');
+        expect(home.motion).toContain('jalebi-coil');
+        expect(home.motion).toContain('honey-drip');
+        expect(home.motion).toContain('motion-stage');
+        expect(home.motion).toContain('motion-ticker');
+        expect(home.motion).toContain('--bg: #06040c');
+        expect(home.motion).not.toContain('pc-orb');
+        expect(home.casual).not.toContain('data-motif="jalebi"');
+        expect(home.casual).not.toContain('motion-stage');
+        expect(home.photos).not.toContain('data-motif="jalebi"');
+        expect(home.photos).not.toContain('motion-stage');
+        expect(home.motion).toContain('pc-pulse 1.4s ease-in-out infinite');
+        expect(home.casual).toContain('Mithas Sweets');
+        expect(home.photos).toContain('Mithas Sweets');
+        expect(home.motion).toContain('Mithas Sweets');
     });
 });
