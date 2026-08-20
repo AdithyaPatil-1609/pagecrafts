@@ -1,19 +1,24 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { TemplateTier } from "@/lib/contracts";
+import type { AccountPlan, BillingSummary, TemplateTier } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { supabaseAdmin } from "@/lib/data/supabase-admin";
 import { checkEntitlement } from "@/lib/data/entitlements";
-import { createOrder, publishableKeyId, type OrderNotes } from "./razorpay";
-import { inrToPaise, isFree, publishPriceInr } from "./pricing";
+import {
+    createOrder,
+    paymentsConfigured,
+    publishableKeyId,
+    type OrderNotes,
+} from "./razorpay";
+import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr } from "./pricing";
 
 // The gate at publish (R3 · Doc 22 P2/P3, Amendment A1).
 //
-// Everything before publish is free. The price appears once, here, stated plainly, and what
-// it buys is a `publish` entitlement on one project. Two things decide it and both are read
-// from the database rather than taken from the request: whether this project is the
-// caller's, and what its design costs. A paywall the client is trusted to describe is not a
-// paywall.
+// Opening a premium/signature template, or a Pro/Premium look, needs account Pro — that
+// gate lives on createProject and generate/choose, not here. What this file still buys is a
+// `publish` entitlement on one project. Two things decide it and both are read from the
+// database rather than taken from the request: whether this project is the caller's, and
+// what its design costs. A paywall the client is trusted to describe is not a paywall.
 
 export interface CheckoutResponse {
     /** Nothing to pay — the entitlement is already granted and publish will go through. */
@@ -141,5 +146,176 @@ export async function startPublishCheckout(
         currency: "INR",
         keyId: publishableKeyId(),
         priceInr,
+    };
+}
+
+/**
+ * Grant a per-user plan. Server-side only.
+ *
+ * One row per user per kind. A second payment, a webhook retry, or a return after they
+ * switched to Starter all land here — insert once, and if that row already exists, turn it
+ * back to active rather than inventing a second grant.
+ */
+async function grantAccountKind(userId: string, kind: "pro" | "premium"): Promise<void> {
+    const admin = supabaseAdmin();
+    const label = kind === "premium" ? "Premium" : "Pro";
+
+    const existing = await admin
+        .from("entitlements")
+        .select("id, status")
+        .eq("user_id", userId)
+        .eq("kind", kind)
+        .maybeSingle();
+
+    if (existing.error) {
+        throw new ApiError("internal", `Could not unlock ${label}.`, existing.error.message);
+    }
+
+    if (existing.data) {
+        if (existing.data.status === "active") return;
+
+        const { error } = await admin
+            .from("entitlements")
+            .update({
+                status: "active",
+                source: "paid",
+                granted_at: new Date().toISOString(),
+            })
+            .eq("id", existing.data.id);
+
+        if (error) throw new ApiError("internal", `Could not unlock ${label}.`, error.message);
+        return;
+    }
+
+    const { error } = await admin.from("entitlements").insert({
+        user_id: userId,
+        project_id: null,
+        kind,
+        source: "paid",
+        status: "active",
+    });
+
+    if (!error) return;
+    if (error.code === "23505") return;
+
+    throw new ApiError("internal", `Could not unlock ${label}.`, error.message);
+}
+
+export async function grantPro(userId: string): Promise<void> {
+    await grantAccountKind(userId, "pro");
+}
+
+export async function grantPremium(userId: string): Promise<void> {
+    await grantAccountKind(userId, "premium");
+}
+
+/** Stop paid plans on this account. Does not refund, and does not touch published sites. */
+export async function revokePro(userId: string): Promise<void> {
+    const admin = supabaseAdmin();
+
+    const { error } = await admin
+        .from("entitlements")
+        .update({ status: "revoked" })
+        .eq("user_id", userId)
+        .in("kind", ["pro", "premium"])
+        .eq("status", "active");
+
+    if (error) throw new ApiError("internal", "Could not switch to Starter.", error.message);
+}
+
+function isLivePlanRow(row: { status: string; expires_at?: string | null }, now: number): boolean {
+    if (row.status !== "active") return false;
+    if (!row.expires_at) return true;
+    const expiry = Date.parse(row.expires_at);
+    return Number.isFinite(expiry) && expiry > now;
+}
+
+function currentPlanFromRows(
+    rows: { kind: string; status: string; expires_at?: string | null }[],
+): AccountPlan {
+    const now = Date.now();
+    const live = rows.filter((row) => isLivePlanRow(row, now));
+    if (live.some((row) => row.kind === "premium")) return "premium";
+    if (live.some((row) => row.kind === "pro")) return "pro";
+    return "starter";
+}
+
+/**
+ * Start paying for Pro or Premium, or discover they already hold it (or a higher plan).
+ */
+export async function startPlanCheckout(
+    supabase: SupabaseClient,
+    userId: string,
+    plan: "pro" | "premium",
+): Promise<CheckoutResponse> {
+    const billing = await getBilling(supabase, userId);
+    if (plan === "pro" && (billing.plan === "pro" || billing.plan === "premium")) {
+        return { granted: true };
+    }
+    if (plan === "premium" && billing.plan === "premium") return { granted: true };
+
+    const priceInr = plan === "premium" ? PREMIUM_PRICE_INR : PRO_PRICE_INR;
+    const notes: OrderNotes = { userId, kind: plan };
+    const order = await createOrder(
+        inrToPaise(priceInr),
+        `${plan}_${userId.slice(0, 8)}_${Date.now()}`,
+        notes,
+    );
+
+    return {
+        granted: false,
+        orderId: order.id,
+        amountInPaise: order.amount,
+        currency: "INR",
+        keyId: publishableKeyId(),
+        priceInr,
+    };
+}
+
+export async function startProCheckout(
+    supabase: SupabaseClient,
+    userId: string,
+): Promise<CheckoutResponse> {
+    return startPlanCheckout(supabase, userId, "pro");
+}
+
+/** What Settings and /plans show: the live plan, whether checkout can open, and every grant. */
+export async function getBilling(
+    supabase: SupabaseClient,
+    userId: string,
+): Promise<BillingSummary> {
+    const { data, error } = await supabase
+        .from("entitlements")
+        .select("id, kind, source, status, granted_at, expires_at, project_id")
+        .eq("user_id", userId)
+        .order("granted_at", { ascending: false });
+
+    if (error) throw new ApiError("internal", "Could not read billing.", error.message);
+
+    const rows = data ?? [];
+
+    return {
+        plan: currentPlanFromRows(rows as { kind: string; status: string; expires_at?: string | null }[]),
+        paymentsReady: paymentsConfigured(),
+        proPriceInr: PRO_PRICE_INR,
+        premiumPriceInr: PREMIUM_PRICE_INR,
+        history: rows.map((row) => {
+            const item = row as {
+                id: string;
+                kind: BillingSummary["history"][number]["kind"];
+                source: BillingSummary["history"][number]["source"];
+                status: BillingSummary["history"][number]["status"];
+                granted_at: string;
+                project_id: string | null;
+            };
+            return {
+                id: String(item.id),
+                kind: item.kind,
+                source: item.source,
+                status: item.status,
+                grantedAt: String(item.granted_at),
+                projectId: item.project_id ?? null,
+            };
+        }),
     };
 }

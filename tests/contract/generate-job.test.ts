@@ -275,6 +275,7 @@ describe('GET /api/v1/jobs/{id}', () => {
 
 describe('POST /api/v1/projects/{id}/generate/choose', () => {
     it('records the photo-rich look on the job', async () => {
+        entitlements.hasPro.mockResolvedValue(true);
         const res = await generate({ prompt: 'a family dental clinic in koramangala' });
         const { data } = await res.json();
         await settled(data.job_id);
@@ -294,6 +295,43 @@ describe('POST /api/v1/projects/{id}/generate/choose', () => {
         const job = await jobStore().get(data.job_id);
         expect(job?.composition?.artDirection.themeId).toBe('warm-editorial');
         expect(job?.files?.['index.html']).toContain('data-style="photos"');
+    });
+
+    it('refuses a Pro look until the account has paid', async () => {
+        const res = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const { data } = await res.json();
+        await settled(data.job_id);
+
+        const picked = await choose(
+            new Request('http://x/api/v1/projects/p_1/generate/choose', {
+                method: 'POST',
+                body: JSON.stringify({ jobId: data.job_id, variantId: 'photos' }),
+                headers: { 'content-type': 'application/json' },
+            }) as never,
+            { params: Promise.resolve({ id: 'p_1' }) } as never,
+        );
+        const json = await picked.json();
+
+        expect(picked.status).toBe(402);
+        expect(json.error.code).toBe('payment_required');
+    });
+
+    it('lets them pick the free look without paying', async () => {
+        const res = await generate({ prompt: 'a family dental clinic in koramangala' });
+        const { data } = await res.json();
+        await settled(data.job_id);
+
+        const picked = await choose(
+            new Request('http://x/api/v1/projects/p_1/generate/choose', {
+                method: 'POST',
+                body: JSON.stringify({ jobId: data.job_id, variantId: 'casual' }),
+                headers: { 'content-type': 'application/json' },
+            }) as never,
+            { params: Promise.resolve({ id: 'p_1' }) } as never,
+        );
+
+        expect(picked.status).toBe(200);
+        expect((await picked.json()).data.variant_id).toBe('casual');
     });
 
     it('refuses a look that was not generated', async () => {

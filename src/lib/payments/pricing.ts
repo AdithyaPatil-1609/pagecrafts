@@ -20,6 +20,10 @@ export const TIER_PRICE_INR: Record<TemplateTier, number> = {
     signature: 999,
 };
 
+/** Account Pro and Premium — one payment each, until they switch back to Starter. */
+export const PRO_PRICE_INR = TIER_PRICE_INR.premium;
+export const PREMIUM_PRICE_INR = TIER_PRICE_INR.signature;
+
 /**
  * Rupees as Razorpay wants them.
  *
@@ -38,4 +42,30 @@ export function publishPriceInr(tier: TemplateTier): number {
 /** A free design needs no order, no checkout and no webhook — just the grant. */
 export function isFree(tier: TemplateTier): boolean {
     return publishPriceInr(tier) === 0;
+}
+
+/**
+ * Whether opening this design or look needs a payment.
+ *
+ * Catalogue tiers are `free` | `premium` | `signature`. Generated looks add `pro`.
+ * Anything else — missing, unknown, or `free` — stays free to open.
+ */
+export function isPaidTier(tier: string | null | undefined): boolean {
+    return requiredPlanForTemplate(tier) !== null || requiredPlanForStyle(tier) !== null;
+}
+
+export type PaidPlan = "pro" | "premium";
+
+/** Catalogue `premium` is the Pro plan (Rs 499); `signature` is Premium (Rs 999). */
+export function requiredPlanForTemplate(tier: string | null | undefined): PaidPlan | null {
+    if (tier === "premium") return "pro";
+    if (tier === "signature") return "premium";
+    return null;
+}
+
+/** Generated looks: Photo-rich is Pro; Animated is Premium. */
+export function requiredPlanForStyle(tier: string | null | undefined): PaidPlan | null {
+    if (tier === "pro") return "pro";
+    if (tier === "premium") return "premium";
+    return null;
 }

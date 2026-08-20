@@ -59,8 +59,8 @@ async function liveEntitlements(
         .filter((row) => {
             const r = row as unknown as EntitlementRow & { project_id: string | null };
             if (!isLive(r, now)) return false;
-            // A project-scoped grant only counts for its own project; `pro` counts always.
-            return r.kind === "pro" || r.project_id === projectId;
+            // Account-scoped grants count always; a project-scoped grant only for its project.
+            return r.kind === "pro" || r.kind === "premium" || r.project_id === projectId;
         })
         .map((row) => row as unknown as EntitlementRow);
 }
@@ -85,15 +85,48 @@ export async function checkEntitlement(
         return { kind, granted: true, source: exact.source, expiresAt: exact.expires_at };
     }
 
+    // Premium covers Pro and every per-project kind. Pro covers those kinds but not Premium.
+    const premium = rows.find((row) => row.kind === "premium");
+    if (premium && kind !== "premium") {
+        return { kind, granted: true, source: "pro", expiresAt: premium.expires_at };
+    }
+
     const pro = rows.find((row) => row.kind === "pro");
-    if (pro) return { kind, granted: true, source: "pro", expiresAt: pro.expires_at };
+    if (pro && kind !== "premium") return { kind, granted: true, source: "pro", expiresAt: pro.expires_at };
 
     return { kind, granted: false };
 }
 
-/** True when the account holds a live `pro` subscription. */
+/** True when the account holds a live Pro or Premium plan. Premium covers Pro. */
 export async function hasPro(supabase: SupabaseClient, userId: string): Promise<boolean> {
     return (await checkEntitlement(supabase, userId, null, "pro")).granted;
+}
+
+/** True when the account holds a live Premium plan. Pro does not cover this. */
+export async function hasPremium(supabase: SupabaseClient, userId: string): Promise<boolean> {
+    return (await checkEntitlement(supabase, userId, null, "premium")).granted;
+}
+
+export const PAID_DESIGN_MESSAGE =
+    "This design is paid. Pay with Razorpay to use it — Pro unlocks Pro designs, Premium unlocks Premium and Signature.";
+
+/**
+ * Opening a paid template or a Pro/Premium look.
+ *
+ * Pro covers Pro designs; Premium covers those and Signature/Premium looks. The grant is
+ * written only when the signed webhook arrives, never because the browser reported success.
+ */
+export async function assertCanUsePaidDesign(
+    supabase: SupabaseClient,
+    userId: string,
+    plan: "pro" | "premium" = "pro",
+): Promise<void> {
+    const granted =
+        plan === "premium"
+            ? await hasPremium(supabase, userId)
+            : await hasPro(supabase, userId);
+    if (granted) return;
+    throw new ApiError("payment_required", PAID_DESIGN_MESSAGE, `userId=${userId} plan=${plan}`);
 }
 
 /**

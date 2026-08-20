@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { assertCanPublish, checkEntitlement, hasPro } from "@/lib/data/entitlements";
+import { assertCanPublish, assertCanUsePaidDesign, checkEntitlement, hasPro } from "@/lib/data/entitlements";
 import { createFakeDb } from "../support/fake-db";
 
 // R3 D9 — the check publish makes before a site goes live (A-5, Doc 22 §6).
@@ -167,5 +167,42 @@ describe("asking twice", () => {
             granted: true,
         });
         expect(db.rows("entitlements")).toHaveLength(1);
+    });
+});
+
+describe("opening a paid design", () => {
+    it("lets a Pro account through", async () => {
+        const db = createFakeDb({ users: [{ id: "u1" }] });
+        db.insert("entitlements", { user_id: "u1", kind: "pro", source: "paid", status: "active" });
+
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1")).resolves.toBeUndefined();
+    });
+
+    it("lets a Premium account through for a Premium design", async () => {
+        const db = createFakeDb({ users: [{ id: "u1" }] });
+        db.insert("entitlements", { user_id: "u1", kind: "premium", source: "paid", status: "active" });
+
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "premium")).resolves.toBeUndefined();
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "pro")).resolves.toBeUndefined();
+    });
+
+    it("does not let Pro cover a Premium design", async () => {
+        const db = createFakeDb({ users: [{ id: "u1" }] });
+        db.insert("entitlements", { user_id: "u1", kind: "pro", source: "paid", status: "active" });
+
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "pro")).resolves.toBeUndefined();
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "premium")).rejects.toMatchObject({
+            code: "payment_required",
+        });
+    });
+
+    it("refuses everyone else, and does not invent a grant", async () => {
+        const db = createFakeDb({ users: [{ id: "u1" }] });
+
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1")).rejects.toMatchObject({
+            code: "payment_required",
+            message: expect.stringMatching(/Razorpay/i),
+        });
+        expect(db.rows("entitlements")).toHaveLength(0);
     });
 });

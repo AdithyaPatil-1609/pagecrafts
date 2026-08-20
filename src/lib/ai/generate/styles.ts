@@ -3,7 +3,7 @@ import type { ArtDirection, Composition, SectionKey } from '@/lib/contracts';
 export const STYLE_IDS = ['casual', 'photos', 'motion'] as const;
 export type StyleId = (typeof STYLE_IDS)[number];
 
-/** Planned product plans — not charged yet, but each look is born into one. */
+/** Product plans. Casual is free to use; Pro and Premium looks need account Pro. */
 export const STYLE_TIERS = ['free', 'pro', 'premium'] as const;
 export type StyleTier = (typeof STYLE_TIERS)[number];
 

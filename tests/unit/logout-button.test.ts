@@ -8,6 +8,7 @@ describe("log out", () => {
   it("posts to the logout route and leaves the session", () => {
     const button = read("src", "components", "auth", "LogoutButton.tsx");
     const header = read("src", "components", "landing", "SiteHeader.tsx");
+    const menu = read("src", "components", "settings", "ProfileMenu.tsx");
     const route = read("src", "app", "api", "v1", "auth", "logout", "route.ts");
     const settings = read("src", "app", "settings", "page.tsx");
 
@@ -16,8 +17,9 @@ describe("log out", () => {
     expect(button).toContain('window.location.href = "/"');
     expect(button).toContain("Log out");
     expect(button).toContain("cursor-pointer");
-    expect(header).toContain("<LogoutButton");
-    expect(header).toContain('href="/settings"');
+    expect(header).toContain("<ProfileMenu");
+    expect(menu).toContain("<LogoutButton");
+    expect(menu).toContain('href="/settings"');
     expect(settings).toContain('redirect("/?slide=settings")');
     expect(route).toContain("signOut");
   });

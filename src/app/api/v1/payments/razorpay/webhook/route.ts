@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { capturedPayment, verifyWebhook } from "@/lib/payments/razorpay";
-import { grantPublish } from "@/lib/payments/checkout";
+import { grantPremium, grantPro, grantPublish } from "@/lib/payments/checkout";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,8 +48,34 @@ export async function POST(req: NextRequest) {
   // The notes were written by us when the order was created. If they are not here, this
   // payment was not for something we know how to unlock — worth saying loudly, because it
   // means money moved and nothing happened.
-  if (kind !== "publish" || !projectId || !userId) {
+  if (!userId || (kind !== "publish" && kind !== "pro" && kind !== "premium")) {
     console.error("[payments] captured payment carries no usable notes", {
+      paymentId: payment.paymentId,
+      orderId: payment.orderId,
+    });
+    return NextResponse.json({ ok: true, ignored: true });
+  }
+
+  if (kind === "pro" || kind === "premium") {
+    const label = kind === "premium" ? "Premium" : "Pro";
+    try {
+      if (kind === "premium") await grantPremium(userId);
+      else await grantPro(userId);
+    } catch (error) {
+      console.error(`[payments] could not grant ${label} after payment`, {
+        paymentId: payment.paymentId,
+        userId,
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      return NextResponse.json({ ok: false }, { status: 500 });
+    }
+
+    console.info(`[payments] ${label} unlocked`, { userId, paymentId: payment.paymentId });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!projectId) {
+    console.error("[payments] captured publish payment carries no project", {
       paymentId: payment.paymentId,
       orderId: payment.orderId,
     });
