@@ -53,6 +53,7 @@ function describeViolations(violations: AxeViolation[]): string {
 const SCREENS = [
     { name: 'landing', url: '/' },
     { name: 'sign in', url: '/signin' },
+    { name: 'sign up', url: '/signup' },
     { name: 'describe your site', url: '/new' },
 ];
 

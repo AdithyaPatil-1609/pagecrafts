@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
@@ -77,6 +78,7 @@ export function AuthCard({
 }) {
     const router = useRouter();
     const destination = safeNext(next);
+    const nextQs = destination !== "/" ? `?next=${encodeURIComponent(destination)}` : "";
     const [mode, setMode] = useState<Mode>(initialMode);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -312,18 +314,18 @@ export function AuthCard({
                         </button>
                         <span>
                             New here?{" "}
-                            <button type="button" onClick={() => switchTo("signup")} className="font-medium text-brand-ink underline underline-offset-4">
+                            <Link href={`/signup${nextQs}`} className="font-medium text-brand-ink underline underline-offset-4">
                                 Create an account
-                            </button>
+                            </Link>
                         </span>
                     </>
                 )}
                 {mode === "signup" && (
                     <span>
                         Already have an account?{" "}
-                        <button type="button" onClick={() => switchTo("signin")} className="font-medium text-primary underline underline-offset-4">
+                        <Link href={`/signin${nextQs}`} className="font-medium text-primary underline underline-offset-4">
                             Sign in
-                        </button>
+                        </Link>
                     </span>
                 )}
                 {mode === "forgot" && (

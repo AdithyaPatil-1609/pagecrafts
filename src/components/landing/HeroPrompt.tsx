@@ -13,9 +13,6 @@ import {
     useTypewriterLoop,
 } from "@/components/landing/prompt-typewriter";
 
-const CTA =
-    "shrink-0 cursor-pointer rounded-full bg-bloom-blue px-5 py-2 text-sm font-semibold text-background shadow-[0_0_28px_color-mix(in_srgb,var(--bloom-blue)_45%,transparent)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloom-sky";
-
 export function HeroPrompt() {
     const router = useRouter();
     const reduce = usePrefersReducedMotion();
@@ -59,9 +56,6 @@ export function HeroPrompt() {
                     </span>
                 ) : null}
             </div>
-            <button type="submit" className={CTA}>
-                Build it
-            </button>
         </form>
     );
 }
