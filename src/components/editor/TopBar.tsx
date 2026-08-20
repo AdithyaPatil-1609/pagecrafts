@@ -103,7 +103,7 @@ export default function TopBar({
                     type="button"
                     disabled={dirtyPaths.length === 0 || saving}
                     onClick={() => saveProject({ commit: true })}
-                    className="h-11 cursor-pointer rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                    className="h-11 cursor-pointer rounded-full border border-gold bg-gold px-4 text-sm font-semibold text-gold-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     {saving ? 'Saving…' : 'Save'}
                 </button>
