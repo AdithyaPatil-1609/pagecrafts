@@ -101,7 +101,7 @@ function writeImage(inner: string, url: string | null, alt: string): string {
     return inner.replace(IMG_TAG, withAlt);
   }
 
-  return `<img class="hero-photo" src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`;
+  return `<img class="hero-photo" src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="eager" decoding="async" fetchpriority="high" />`;
 }
 
 /* --------------------------------------------------------------- colours */
