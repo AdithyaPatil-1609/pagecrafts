@@ -8,6 +8,9 @@ import type { Category, CreateProjectResponse } from "@/lib/contracts";
 // Template chosen is a visual reference for generation.
 import { INTENT_CARDS } from "@/lib/discovery/intent-cards";
 import { apiPost } from "@/lib/api/client";
+import { useUnlockPaidDesign } from "@/hooks/useUnlockPaidDesign";
+import { waitForPlanGrant } from "@/lib/payments/wait-for-pro";
+import type { PaidPlan } from "@/lib/payments/pricing";
 import {
     briefErrors,
     briefFromQuery,
@@ -50,13 +53,16 @@ export function IntentCapture({
     initialCategory = null,
     library = true,
     sourceTemplateId = null,
+    paidPlan = null,
 }: {
     initialDescribe?: string;
     initialCategory?: Category | null;
     library?: boolean;
     sourceTemplateId?: string | null;
+    paidPlan?: PaidPlan | null;
 } = {}) {
     const router = useRouter();
+    const { unlockIfNeeded, status: payStatus } = useUnlockPaidDesign();
     const [brief, setBrief] = useState<SiteBrief>(() => briefFromQuery(initialDescribe));
     const [busy, setBusy] = useState<"generate" | Category | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -75,11 +81,8 @@ export function IntentCapture({
         router.push("/signin");
     }
 
-    async function startFromDesign(next: SiteBrief, templateId: string) {
-        setBusy("generate");
-        setError(null);
-
-        const created = await apiPost<CreateProjectResponse>("/api/v1/projects", {
+    async function createFromDesign(next: SiteBrief, templateId: string) {
+        return apiPost<CreateProjectResponse>("/api/v1/projects", {
             name: projectNameFromBrief(next),
             sourceTemplateId: templateId,
             brief: {
@@ -91,19 +94,62 @@ export function IntentCapture({
                 extra: next.extra,
             },
         });
+    }
 
-        if (created.error || !created.data) {
-            const message = created.error ?? "The site could not be created.";
-            if (looksLikeSignIn(message)) {
-                rememberAndSignIn(next, composeBrief(next), templateId);
+    async function startFromDesign(next: SiteBrief, templateId: string) {
+        setBusy("generate");
+        setError(null);
+
+        try {
+            if (paidPlan) {
+                const unlocked = await unlockIfNeeded(paidPlan);
+                if (!unlocked) {
+                    setError(
+                        "Pay with Razorpay to use this design. Pro unlocks Pro templates; Premium unlocks Signature.",
+                    );
+                    setBusy(null);
+                    return;
+                }
+            }
+
+            let created = await createFromDesign(next, templateId);
+
+            if (created.code === "payment_required") {
+                const need = paidPlan ?? "pro";
+                const unlocked =
+                    (await waitForPlanGrant(need, { attempts: 5, delayMs: 600 })) ||
+                    (await unlockIfNeeded(need));
+                if (!unlocked) {
+                    const message = created.error ?? "This design is paid.";
+                    if (looksLikeSignIn(message)) {
+                        rememberAndSignIn(next, composeBrief(next), templateId);
+                        return;
+                    }
+                    setError(
+                        "Pay with Razorpay to use this design. Pro unlocks Pro templates; Premium unlocks Signature.",
+                    );
+                    setBusy(null);
+                    return;
+                }
+                created = await createFromDesign(next, templateId);
+            }
+
+            if (created.error || !created.data) {
+                const message = created.error ?? "The site could not be created.";
+                if (looksLikeSignIn(message)) {
+                    rememberAndSignIn(next, composeBrief(next), templateId);
+                    return;
+                }
+                setError(message);
+                setBusy(null);
                 return;
             }
-            setError(message);
-            setBusy(null);
-            return;
-        }
 
-        router.push(`/editor/${encodeURIComponent(created.data.id)}`);
+            router.push(`/editor/${encodeURIComponent(created.data.id)}`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Payment failed.");
+            setBusy(null);
+        }
     }
 
     async function startGeneration(next: SiteBrief) {
@@ -219,14 +265,20 @@ export function IntentCapture({
                         onClick={() => void generate()}
                         disabled={busy !== null}
                         variant="brand"
-                        className="rounded-lg font-semibold sm:ml-auto"
+                        className="cursor-pointer rounded-lg font-semibold sm:ml-auto"
                     >
                         {busy === "generate"
-                            ? fromDesign
-                                ? "Putting it on the design…"
-                                : "Generating…"
+                            ? payStatus === "open" || payStatus === "loading"
+                                ? "Opening Razorpay…"
+                                : payStatus === "verifying"
+                                  ? "Confirming payment…"
+                                  : fromDesign
+                                    ? "Putting it on the design…"
+                                    : "Generating…"
                             : fromDesign
-                              ? "Put this on the design"
+                              ? paidPlan
+                                  ? "Pay & put this on the design"
+                                  : "Put this on the design"
                               : "Create my website"}
                         <ArrowRight aria-hidden />
                     </Button>

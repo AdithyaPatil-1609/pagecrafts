@@ -21,9 +21,15 @@ const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET?.trim();
 const ORDERS_URL = "https://api.razorpay.com/v1/orders";
 
 export interface OrderNotes {
-    projectId: string;
     userId: string;
-    kind: "publish";
+    kind: "publish" | "pro" | "premium";
+    /** Present for a publish order; omitted for account Pro. */
+    projectId?: string;
+}
+
+/** True when this process can create an order. Missing keys fail at checkout, not at boot. */
+export function paymentsConfigured(): boolean {
+    return Boolean(KEY_ID && KEY_SECRET);
 }
 
 export interface RazorpayOrder {

@@ -23,19 +23,21 @@ describe("the assistant hand-off", () => {
 
   it("puts the home deck on the top bar", () => {
     const header = read("src", "components", "landing", "SiteHeader.tsx");
+    const menu = read("src", "components", "settings", "ProfileMenu.tsx");
 
     expect(header).toContain('href: "/#welcome"');
     expect(header).toContain('href: "/#how-it-works"');
     expect(header).toContain('href: "/#build"');
     expect(header).toContain('href: "/#sites"');
-    expect(header).toContain('href="/settings"');
-    expect(header).toContain("LogoutButton");
-    const settings = header
+    expect(header).toContain("<ProfileMenu");
+    expect(menu).toContain('href="/settings"');
+    expect(menu).toContain("LogoutButton");
+    const settingsLink = menu
       .split("\n")
       .find((line) => line.includes('href="/settings"'));
-    expect(settings).toBeTruthy();
-    expect(settings).not.toContain("hidden");
-    expect(settings).not.toContain("/#settings");
+    expect(settingsLink).toBeTruthy();
+    expect(settingsLink).not.toContain("hidden");
+    expect(settingsLink).not.toContain("/#settings");
   });
 
   it("keeps every signed-in slide reachable instead of clipping it", () => {
@@ -69,6 +71,9 @@ describe("the assistant hand-off", () => {
     expect(sites).toContain("Your sites");
     expect(sites).not.toContain("data-reveal");
     expect(settings).toContain("Settings");
+    expect(settings).toContain("NotificationPrefs");
+    expect(settings).toContain("BillingPlans");
+    expect(settings).toContain("PrivacyAndData");
     expect(settings).not.toContain("data-reveal");
     expect(flow).toContain("revealVisible");
   });

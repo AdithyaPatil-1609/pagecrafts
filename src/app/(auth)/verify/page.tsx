@@ -36,7 +36,8 @@ export default async function VerifyPage({
                     </Link>
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">
-                    Nothing arrived? Check the spam folder, then wait a minute before asking for another.
+                    Nothing arrived? Check spam, wait a minute, then send it again. The
+                    message comes from the address your project uses for Auth mail.
                 </p>
             </div>
         </main>

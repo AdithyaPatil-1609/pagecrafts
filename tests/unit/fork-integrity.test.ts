@@ -142,6 +142,14 @@ describe("a forked project", () => {
 
         for (const design of samples) {
             const db = createFakeDb({ users: [{ id: "u1" }] });
+            if (design.tier !== "free") {
+                db.insert("entitlements", {
+                    user_id: "u1",
+                    kind: "pro",
+                    source: "pro",
+                    status: "active",
+                });
+            }
             const { id } = await createProject(db.asUser("u1"), "u1", {
                 name: design.name,
                 sourceTemplateId: templateUuid(design.id),
@@ -154,8 +162,9 @@ describe("a forked project", () => {
     });
 });
 
-// Editing a listed-price design is not a paywall. The catalogue still records
-// free / premium / signature as metadata; publish is what costs money.
+// Opening a listed-price design is a paywall. The catalogue records free / premium /
+// signature; Pro unlocks the paid ones. Publish is a separate charge for accounts that
+// never bought Pro.
 describe("a design that lists a price", () => {
     function libraryWithPaidDesign() {
         const db = createFakeDb({ users: [{ id: "u1" }] });
@@ -163,7 +172,7 @@ describe("a design that lists a price", () => {
         return db;
     }
 
-    it("opens in the editor without asking for a plan", async () => {
+    it("refuses to open until the account has Pro", async () => {
         const db = libraryWithPaidDesign();
 
         await expect(
@@ -171,10 +180,12 @@ describe("a design that lists a price", () => {
                 name: PAID_DESIGN.name,
                 sourceTemplateId: templateUuid(PAID_DESIGN.id),
             }),
-        ).resolves.toMatchObject({ firstCommit: expect.any(String) });
+        ).rejects.toMatchObject({
+            code: "payment_required",
+            message: expect.stringMatching(/paid/i),
+        });
 
-        expect(db.rows("projects")).toHaveLength(1);
-        expect(db.rows("project_files").length).toBeGreaterThan(0);
+        expect(db.rows("projects")).toHaveLength(0);
     });
 
     it("still copies the files from the row, never from the caller", async () => {
@@ -189,7 +200,7 @@ describe("a design that lists a price", () => {
         ).resolves.toMatchObject({ id: expect.any(String) });
     });
 
-    it("still opens for an account holding pro", async () => {
+    it("opens for an account holding pro", async () => {
         const db = libraryWithPaidDesign();
         db.insert("entitlements", { user_id: "u1", kind: "pro", source: "pro", status: "active" });
 

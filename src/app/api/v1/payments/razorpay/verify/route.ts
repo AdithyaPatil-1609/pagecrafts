@@ -1,17 +1,15 @@
 import "server-only";
+import type { z } from "zod";
 
 import { withRoute } from "@/lib/kernel/with-route";
 import { ok, fail } from "@/lib/errors/respond";
+import { paymentVerifySchema } from "@/lib/contracts/schemas";
 import { verifyPaymentSignature } from "@/lib/payments/razorpay";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-interface VerifyBody {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-}
+type Body = z.infer<typeof paymentVerifySchema>;
 
 // POST /api/v1/payments/razorpay/verify — immediate feedback after checkout.
 //
@@ -23,27 +21,20 @@ interface VerifyBody {
 // Status codes are addressed to the browser:
 //   200 — signature matches, the payment is genuine.
 //   400 — signature mismatch or missing fields. Do not show success.
-export const POST = withRoute<VerifyBody>({
+export const POST = withRoute<Body>({
+    auth: "required",
+    schema: paymentVerifySchema,
     handler: async ({ body }) => {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
-
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return fail(
-                "validation_failed",
-                "Missing payment details. Please try again.",
-            );
-        }
-
         const valid = verifyPaymentSignature(
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
+            body.razorpay_order_id,
+            body.razorpay_payment_id,
+            body.razorpay_signature,
         );
 
         if (!valid) {
             console.error("[payments] checkout signature mismatch", {
-                orderId: razorpay_order_id,
-                paymentId: razorpay_payment_id,
+                orderId: body.razorpay_order_id,
+                paymentId: body.razorpay_payment_id,
             });
             return fail(
                 "validation_failed",
@@ -52,8 +43,8 @@ export const POST = withRoute<VerifyBody>({
         }
 
         console.info("[payments] checkout signature verified", {
-            orderId: razorpay_order_id,
-            paymentId: razorpay_payment_id,
+            orderId: body.razorpay_order_id,
+            paymentId: body.razorpay_payment_id,
         });
 
         return ok({ verified: true });

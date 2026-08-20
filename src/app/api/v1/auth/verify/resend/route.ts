@@ -2,7 +2,7 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { supabaseRouteClient } from "@/lib/auth/server";
 import { passwordResetRequestSchema } from "@/lib/contracts/auth";
-import { publicEnv } from "@/lib/config/env";
+import { authConfirmUrl } from "@/lib/auth/confirm-url";
 import { ok, fail, guard } from "@/lib/errors/respond";
 import { readJson } from "@/lib/kernel/body";
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         const { error } = await supabase.auth.resend({
             type: "signup",
             email: parsed.data.email,
-            options: { emailRedirectTo: `${publicEnv.appUrl}/api/v1/auth/confirm?next=/new` },
+            options: { emailRedirectTo: authConfirmUrl() },
         });
 
         if (error) {

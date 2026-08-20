@@ -100,8 +100,12 @@ interface UseRazorpayCheckoutOptions {
 }
 
 interface UseRazorpayCheckoutReturn {
-    /** Start the checkout flow for a project. */
+    /** Start the checkout flow for publishing a project. */
     openCheckout: (projectId: string) => Promise<void>;
+    /** Start checkout for account Pro or Premium. */
+    openPlanCheckout: (plan: 'pro' | 'premium') => Promise<void>;
+    /** Start the checkout flow for account Pro. */
+    openProCheckout: () => Promise<void>;
     /** Current status of the checkout flow. */
     status: CheckoutStatus;
     /** Human-readable error, set when status is 'error'. */
@@ -113,7 +117,7 @@ export function useRazorpayCheckout(
 ): UseRazorpayCheckoutReturn {
     const {
         appName = 'PageCrafts',
-        themeColor = '#6366f1',
+        themeColor = '#dc2626',
         onAlreadyGranted,
         onSuccess,
         onDismiss,
@@ -127,28 +131,26 @@ export function useRazorpayCheckout(
     // Guard against double-clicks while a checkout is in progress.
     const busyRef = useRef(false);
 
-    const openCheckout = useCallback(
-        async (projectId: string) => {
+    const startOrder = useCallback(
+        async (
+            path: string,
+            descriptionFor: (data: CheckoutData) => string,
+            payload: Record<string, unknown> = {},
+        ) => {
             if (busyRef.current) return;
             busyRef.current = true;
             setStatus('loading');
             setError(null);
 
             try {
-                // 1. Load the Razorpay script (no-op if already loaded).
                 await loadScript();
 
-                // 2. Call our backend to create an order (or discover it's free).
-                const { data, error: apiError } = await apiPost<CheckoutData>(
-                    `/api/v1/projects/${encodeURIComponent(projectId)}/checkout`,
-                    {},
-                );
+                const { data, error: apiError } = await apiPost<CheckoutData>(path, payload);
 
                 if (apiError || !data) {
                     throw new Error(apiError ?? 'Could not start checkout.');
                 }
 
-                // Free design — already granted, no modal.
                 if (data.granted) {
                     setStatus('success');
                     onAlreadyGranted?.();
@@ -159,7 +161,6 @@ export function useRazorpayCheckout(
                     throw new Error('The server did not return a complete order.');
                 }
 
-                // 3. Open the Razorpay modal.
                 if (!window.Razorpay) {
                     throw new Error('Razorpay checkout script is not available.');
                 }
@@ -171,10 +172,9 @@ export function useRazorpayCheckout(
                     amount: data.amountInPaise,
                     currency: data.currency ?? 'INR',
                     name: appName,
-                    description: `Publish · Rs ${data.priceInr ?? data.amountInPaise / 100}`,
+                    description: descriptionFor(data),
                     order_id: data.orderId,
                     handler: async (response: RazorpaySuccessResponse) => {
-                        // 4. Verify the signature server-side.
                         setStatus('verifying');
 
                         const { error: verifyError } = await apiPost<{ verified: boolean }>(
@@ -219,5 +219,30 @@ export function useRazorpayCheckout(
         [appName, themeColor, onAlreadyGranted, onSuccess, onDismiss, onError, prefill],
     );
 
-    return { openCheckout, status, error };
+    const openCheckout = useCallback(
+        (projectId: string) =>
+            startOrder(
+                `/api/v1/projects/${encodeURIComponent(projectId)}/checkout`,
+                (data) => `Publish · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            ),
+        [startOrder],
+    );
+
+    const openProCheckout = useCallback(
+        () => startOrder('/api/v1/account/billing/checkout', (data) => `Pro · Rs ${data.priceInr ?? data.amountInPaise! / 100}`, { plan: 'pro' }),
+        [startOrder],
+    );
+
+    const openPlanCheckout = useCallback(
+        (plan: 'pro' | 'premium') =>
+            startOrder(
+                '/api/v1/account/billing/checkout',
+                (data) =>
+                    `${plan === 'premium' ? 'Premium' : 'Pro'} · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                { plan },
+            ),
+        [startOrder],
+    );
+
+    return { openCheckout, openPlanCheckout, openProCheckout, status, error };
 }
