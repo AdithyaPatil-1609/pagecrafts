@@ -15,6 +15,24 @@ function rule(selector: string): string {
     return CSS.slice(start, CSS.indexOf('}', start));
 }
 
+describe('the animated hero column', () => {
+    const copy = rule('[data-style="motion"] [data-type="hero"] .hero-copy {');
+
+    // 18ch here was measured against .hero-copy's own 1rem font, not the headline's,
+    // so the column was about 144px wide with a 105px headline inside it. The h1's
+    // own max-width is in ch on purpose -- there it resolves against the h1's font.
+    it('is sized in rem, not in characters of the wrong font', () => {
+        expect(copy).not.toMatch(/max-width:\s*\d+ch/);
+        expect(copy).toContain('min(52rem, 88vw)');
+    });
+
+    it('is wide enough that a two-word name never has to break', () => {
+        const [, rem] = copy.match(/max-width:\s*min\((\d+)rem/) ?? [];
+
+        expect(Number(rem)).toBeGreaterThanOrEqual(40);
+    });
+});
+
 describe('the animated hero headline', () => {
     const hero = rule('[data-style="motion"] [data-type="hero"] h1 {');
 

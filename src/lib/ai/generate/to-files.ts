@@ -420,11 +420,13 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
 [data-style="motion"] [data-type="hero"] .hero-copy {
   position: relative;
   z-index: 3;
-  max-width: 18ch;
+  max-width: min(52rem, 88vw);
 }
 [data-style="motion"] [data-type="hero"] .lede {
   margin-inline: auto;
-  font-size: 1.15rem;
+  max-width: 46ch;
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  line-height: 1.6;
   color: rgba(246, 243, 255, 0.72);
 }
 [data-style="motion"] [data-type="hero"] h1 {
