@@ -11,7 +11,7 @@ export function SettingsSlide({ account }: { account: AccountResponse | null }) 
             aria-labelledby="settings-heading"
         >
             <div className="mx-auto w-full max-w-3xl px-6">
-                <header data-reveal>
+                <header>
                     <h2
                         id="settings-heading"
                         className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"

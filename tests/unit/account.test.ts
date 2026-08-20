@@ -60,6 +60,29 @@ describe("getAccount", () => {
       billingLine: "",
       billingCity: "",
       gstin: "",
+      billingReady: true,
+    });
+  });
+
+  it("still returns email and consent when billing columns are not on the table yet", async () => {
+    const { client } = fakeSupabase({
+      users: [
+        { data: null, error: { message: "column users.phone does not exist" } },
+        { data: ROW, error: null },
+      ],
+    });
+
+    await expect(getAccount(client)).resolves.toEqual({
+      email: "someone@example.com",
+      emailVerified: true,
+      trainingOptIn: false,
+      createdAt: "2026-08-01T09:00:00.000Z",
+      displayName: "",
+      phone: "",
+      billingLine: "",
+      billingCity: "",
+      gstin: "",
+      billingReady: false,
     });
   });
 
