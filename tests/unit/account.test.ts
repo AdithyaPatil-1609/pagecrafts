@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getAccount, setTrainingConsent } from "@/lib/data/account";
-import { consentSchema } from "@/lib/contracts/schemas";
+import { getAccount, setTrainingConsent, setBillingProfile } from "@/lib/data/account";
+import { consentSchema, billingProfileSchema } from "@/lib/contracts/schemas";
 
 type Reply = { data: unknown; error: { message: string } | null };
 
@@ -55,6 +55,11 @@ describe("getAccount", () => {
       emailVerified: true,
       trainingOptIn: false,
       createdAt: "2026-08-01T09:00:00.000Z",
+      displayName: "",
+      phone: "",
+      billingLine: "",
+      billingCity: "",
+      gstin: "",
     });
   });
 
@@ -117,5 +122,55 @@ describe("consentSchema", () => {
     expect(consentSchema.safeParse({ trainingOptIn: "yes" }).success).toBe(false);
     expect(consentSchema.safeParse({ trainingOptIn: true }).success).toBe(true);
     expect(consentSchema.safeParse({ trainingOptIn: false }).success).toBe(true);
+  });
+});
+
+describe("setBillingProfile", () => {
+  it("writes name and bill-to fields, not a card or bank number", async () => {
+    const { client, updates } = fakeSupabase({
+      users: [
+        { data: null, error: null },
+        { data: { ...ROW, handle: "Ravi", phone: "9876543210" }, error: null },
+      ],
+    });
+
+    await setBillingProfile(client, {
+      displayName: "Ravi",
+      phone: "9876543210",
+      billingLine: "MG Road",
+      billingCity: "Pune",
+      gstin: "",
+    });
+
+    expect(updates[0].values).toEqual({
+      handle: "Ravi",
+      phone: "9876543210",
+      billing_line: "MG Road",
+      billing_city: "Pune",
+      gstin: null,
+    });
+  });
+});
+
+describe("billingProfileSchema", () => {
+  it("accepts empty optional fields and refuses a too-long GSTIN", () => {
+    expect(
+      billingProfileSchema.safeParse({
+        displayName: "",
+        phone: "",
+        billingLine: "",
+        billingCity: "",
+        gstin: "",
+      }).success,
+    ).toBe(true);
+    expect(
+      billingProfileSchema.safeParse({
+        displayName: "Ravi",
+        phone: "98",
+        billingLine: "x",
+        billingCity: "Pune",
+        gstin: "THISISTOOLONGFORGST",
+      }).success,
+    ).toBe(false);
   });
 });

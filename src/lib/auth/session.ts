@@ -74,7 +74,7 @@ export function toViewer(user: User): Viewer {
 }
 
 // The signed-in user as seen from a Server Component — who to show in the app shell.
-// Signed out is an ordinary answer here, not an error: /templates is public.
+// Signed out is an ordinary answer here, not an error: several screens are public.
 export async function viewer(): Promise<Viewer | null> {
   const supabase = await supabaseViewerClient();
   const { data, error } = await supabase.auth.getUser();

@@ -47,7 +47,8 @@ export function ResetPasswordForm() {
                 setError(MESSAGES[result.error.code] ?? MESSAGES.internal!);
                 return;
             }
-            router.push("/new");
+            router.push("/");
+            router.refresh();
         } catch {
             setError(MESSAGES.internal!);
         } finally {
@@ -56,7 +57,7 @@ export function ResetPasswordForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit} noValidate className="w-full max-w-sm rounded-lg border border-border bg-card p-6">
+        <form onSubmit={handleSubmit} noValidate className="w-full max-w-sm rounded-2xl glass-panel p-6">
             <h1 className="text-lg font-semibold text-card-foreground">Set a new password</h1>
             <p className="mt-1 text-sm text-muted-foreground">
                 At least {MIN_PASSWORD_LENGTH} characters. You will use this to sign in from now on.

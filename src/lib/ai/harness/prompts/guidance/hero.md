@@ -8,9 +8,13 @@ eyebrow ..... the place, or the one qualifier that matters. Two or three words.
 heading ..... what the business is. Plain words beat clever ones.
 sub ......... the two or three things it actually does, or the reason to trust it.
 ctaLabel .... the action, in the words the business would use — "Book a check-up",
-              "Get a quote", "Donate", "Volunteer". Never "Learn more", never "Click here".
+              "Get a quote", "Donate", "Volunteer", "Order mithai". Never "Learn more", never "Click here".
               If they asked for donations, the button is Donate — not Enroll.
               If they asked for volunteers, it is Volunteer — not a class booking.
+
+If this is a mithai shop, sweet shop, or halwai: the heading and sub name Indian
+sweets (ladoo, barfi, jalebi, gulab jamun, kaju katli). Do not invent a Western
+bakery of pastries and chocolates unless they described a bakery or patisserie.
 
 Never write "Your Name", "Your Business", "Studio Name", or "Add heading here".
 If the description did not give a name, say what they do.

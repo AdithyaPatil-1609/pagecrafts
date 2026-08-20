@@ -10,7 +10,7 @@ export function BrandMark({ className }: { className?: string }) {
             >
                 P
             </span>
-            <span className="text-xl font-bold tracking-tight text-foreground">
+            <span className="text-xl font-bold tracking-tight text-foreground font-display">
                 PageCraft
             </span>
         </span>

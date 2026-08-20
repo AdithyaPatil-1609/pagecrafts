@@ -131,6 +131,13 @@ export class MockGateway {
         if (p.includes('Recipe for this business:')) return this.reply(JSON.stringify(PLAN));
         if (p.includes('Fields to fill:')) return this.reply(JSON.stringify(fillFixtureFor(p)));
 
+        if (p.includes('Rewrite the words on this page')) {
+            return this.reply(JSON.stringify({
+                explanation: 'Updated the words to match the request.',
+                values: { hero: { headline: 'A clearer headline' } },
+            }));
+        }
+
         return this.reply(JSON.stringify(matchClassification(p)));
     }
 }

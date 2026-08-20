@@ -259,6 +259,9 @@ export interface GenerationJobStatus {
     error?: string;
     composition?: Composition;
     files_ready: boolean;
+    planned_sections?: string[];
+    preview_html?: string;
+    variants?: { id: string; html?: string }[];
 }
 
 /** Starts a full-site job. persist:false keeps files off the tree until Keep. */
@@ -273,6 +276,25 @@ export async function startProjectGenerate(
 
     if (error || !data?.job_id) return { jobId: null, error: error ?? EMPTY_REPLY };
     return { jobId: data.job_id, error: null };
+}
+
+export interface CopyEditProposal {
+    path: string;
+    after: string;
+    explanation: string;
+}
+
+export async function proposeCopyEdit(
+    projectId: string,
+    instruction: string,
+): Promise<{ proposal: CopyEditProposal | null; error: string | null }> {
+    const { data, error } = await apiPost<CopyEditProposal>(
+        `${projectUrl(projectId)}/copy-edits`,
+        { instruction },
+    );
+
+    if (error || !data) return { proposal: null, error: error ?? EMPTY_REPLY };
+    return { proposal: data, error: null };
 }
 
 export async function loadGenerationJob(

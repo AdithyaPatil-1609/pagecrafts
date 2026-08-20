@@ -4,6 +4,7 @@ import {
     type GenerationJobStatus,
 } from '@/lib/project-source';
 import type { Composition } from '@/lib/contracts';
+import { writingLabel } from '@/lib/editor/generation-steps';
 
 const POLL_MS = 400;
 const MAX_POLLS = 90;
@@ -15,6 +16,8 @@ export function generationProgressCopy(job: GenerationJobStatus): string {
         case 'planning':
             return 'Planning the pages…';
         case 'streaming': {
+            const current = job.planned_sections?.[job.sections_done];
+            if (current) return writingLabel(current);
             if (job.sections_total > 0) {
                 return `Writing the site… ${job.sections_done} of ${job.sections_total}`;
             }
@@ -50,7 +53,7 @@ export function generationExplanation(composition: Composition, replacing: boole
 export async function generateSiteProposal(
     projectId: string,
     prompt: string,
-    onProgress: (message: string) => void,
+    onProgress: (message: string, job: GenerationJobStatus) => void,
 ): Promise<{ composition: Composition | null; error: string | null }> {
     const { jobId, error } = await startProjectGenerate(projectId, prompt);
     if (error || !jobId) {
@@ -63,7 +66,7 @@ export async function generateSiteProposal(
             return { composition: null, error: pollError ?? 'The site could not be generated.' };
         }
 
-        onProgress(generationProgressCopy(job));
+        onProgress(generationProgressCopy(job), job);
 
         if (job.status === 'failed') {
             return {

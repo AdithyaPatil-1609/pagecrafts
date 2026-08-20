@@ -146,14 +146,16 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         expect(html).toContain('IntersectionObserver');
     });
 
-    it('links every content page from the header', () => {
+    it('links every content page from the header using this site\'s headings', () => {
         expect(html).toContain('aria-label="Site"');
         expect(html).toContain('href="#services"');
         expect(html).toContain('href="#faq"');
         expect(html).toContain('href="#contact"');
-        expect(html).toContain('>Services<');
-        expect(html).toContain('>FAQ<');
-        expect(html).toContain('>Contact<');
+        expect(html).toContain('>What we do<');
+        expect(html).toContain('>Questions<');
+        expect(html).toContain('>Find us<');
+        expect(html).not.toContain('>Gallery<');
+        expect(html).not.toContain('>Testimonials<');
     });
 
     it('tags copy with data-slot so the content panel can edit it', () => {

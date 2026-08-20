@@ -10,9 +10,10 @@ test.describe('the app is up', () => {
         await expect(page.locator('#password')).toBeVisible();
     });
 
-    test('shows the template gallery without signing in', async ({ page }) => {
+    test('sends a signed-out visitor to sign in rather than the library', async ({ page }) => {
         await page.goto('/templates');
 
+        await expect(page).toHaveURL(/\/signin/);
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     });
 

@@ -1,111 +1,160 @@
 'use client';
-import { FormEvent, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
-import { sectionLabel } from '@/lib/editor/section-registry';
+import { chatSuggestions } from '@/lib/editor/chat-suggestions';
+import {
+    editSuggestionSteps,
+    generationSteps,
+    generationThought,
+} from '@/lib/editor/generation-steps';
 import ChangeSummary from './ChangeSummary';
+import ChatComposer from './ChatComposer';
+import { GenerationTimeline } from './GenerationTimeline';
 
-export default function ChatPanel() {
+export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }) {
     const composition = useEditorStore((s) => s.composition);
-    const selectedSectionId = useEditorStore((s) => s.selectedSectionId);
-    const selectSection = useEditorStore((s) => s.selectSection);
+    const contentSchema = useEditorStore((s) => s.contentSchema);
     const requestAiEdit = useEditorStore((s) => s.requestAiEdit);
+    const cancelAiEdit = useEditorStore((s) => s.cancelAiEdit);
     const messages = useEditorStore((s) => s.chatMessages);
     const busy = useEditorStore((s) => s.chatBusy);
     const error = useEditorStore((s) => s.chatError);
     const progress = useEditorStore((s) => s.chatProgress);
+    const chatJob = useEditorStore((s) => s.chatJob);
     const pendingChange = useEditorStore((s) => s.pendingChange);
     const hasSections = (composition?.sections.length ?? 0) > 0;
 
     const [draft, setDraft] = useState('');
+    const endRef = useRef<HTMLDivElement>(null);
 
-    async function onSubmit(e: FormEvent) {
-        e.preventDefault();
-        const text = draft.trim();
-        if (!text || busy) return;
+    const lastUserText = [...messages].reverse().find((turn) => turn.role === 'user')?.text ?? null;
+    const hasPage = Boolean(contentSchema?.sections.length);
+    const suggestions = chatSuggestions({ composition, lastUserText, hasPage });
+    const showChoices = !busy && !pendingChange;
+
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ block: 'end' });
+    }, [messages, busy, pendingChange, error]);
+
+    async function send(text: string) {
+        const next = text.trim();
+        if (!next || busy) return;
         setDraft('');
-        await requestAiEdit(text);
+        await requestAiEdit(next);
     }
 
     return (
-        <section aria-label="Ask for a change" className="flex h-full min-h-0 flex-col">
-            <header className="shrink-0 border-b border-border px-3 py-2">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Ask
-                </h2>
-            </header>
-
-            <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
+        <section aria-label="Ask for a change" className="relative flex h-full min-h-0 flex-col">
+            <div className="min-h-0 flex-1 overflow-auto px-5 pb-44 pt-6 sm:px-7">
                 {messages.length === 0 && !busy ? (
-                    <p className="text-xs text-muted-foreground">
-                        {hasSections
-                            ? 'Describe a change to the selected section, or ask for a whole new website. Nothing is applied until you keep it.'
-                            : 'Describe the website you want. Nothing is applied until you keep it.'}
+                    <p className="max-w-md text-sm leading-6 text-muted-foreground">
+                        {hasPage
+                            ? 'Describe a change, or pick a suggestion. Nothing is applied until you keep it.'
+                            : hasSections
+                              ? 'Describe a change, or pick a suggestion. You can also ask for a whole new website. Nothing is applied until you keep it.'
+                              : 'Describe the website you want, or pick a suggestion. Nothing is applied until you keep it.'}
                     </p>
                 ) : (
-                    <ol className="space-y-3">
+                    <ol className="space-y-4">
                         {messages.map((turn, index) => (
-                            <li key={`${turn.role}-${index}`} className="text-sm">
-                                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                    {turn.role === 'user' ? 'You' : 'Suggestion'}
-                                </p>
-                                <p className="mt-0.5 text-foreground">{turn.text}</p>
+                            <li key={`${turn.role}-${index}`}>
+                                {turn.role === 'user' ? (
+                                    <div className="ml-auto max-w-[85%] rounded-2xl bg-accent px-4 py-3 text-sm leading-6 text-foreground">
+                                        <p className="sr-only">You</p>
+                                        <p>{turn.text}</p>
+                                    </div>
+                                ) : (
+                                    <div className="max-w-[90%] text-sm leading-6 text-foreground">
+                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                            Suggestion
+                                        </p>
+                                        <p className="mt-1">{turn.text}</p>
+                                    </div>
+                                )}
                             </li>
                         ))}
                     </ol>
                 )}
-                {busy && (
-                    <p role="status" className="mt-3 text-xs text-muted-foreground">
-                        {progress || 'Preparing a suggestion…'}
-                    </p>
-                )}
-                {error && (
-                    <p role="alert" className="mt-3 text-xs text-destructive">
-                        {error}
-                    </p>
-                )}
-            </div>
 
-            <form onSubmit={onSubmit} className="shrink-0 border-t border-border p-3">
-                {hasSections ? (
-                    <label className="mb-2 block text-xs text-muted-foreground">
-                        Section
-                        <select
-                            value={selectedSectionId ?? ''}
-                            onChange={(e) => selectSection(e.target.value)}
-                            className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
-                        >
-                            {composition?.sections.map((section) => (
-                                <option key={section.id} value={section.id}>
-                                    {sectionLabel(section.type)}
-                                    {section.locked ? ' (locked)' : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
+                {busy ? (
+                    <div className="mt-4">
+                        <GenerationTimeline
+                            compact
+                            steps={
+                                chatJob
+                                    ? generationSteps({
+                                        status: chatJob.status,
+                                        sectionsDone: chatJob.sections_done,
+                                        sectionsTotal: chatJob.sections_total,
+                                        filesReady: chatJob.files_ready,
+                                        plannedSections: chatJob.planned_sections,
+                                        variantCount: chatJob.variants?.length,
+                                    })
+                                    : editSuggestionSteps(true)
+                            }
+                            thought={
+                                chatJob
+                                    ? generationThought({
+                                        status: chatJob.status,
+                                        sectionsDone: chatJob.sections_done,
+                                        sectionsTotal: chatJob.sections_total,
+                                        filesReady: chatJob.files_ready,
+                                        plannedSections: chatJob.planned_sections,
+                                        variantCount: chatJob.variants?.length,
+                                    })
+                                    : (progress || 'Drafting a change.')
+                            }
+                        />
+                    </div>
                 ) : null}
 
-                <textarea
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    maxLength={500}
-                    rows={3}
-                    disabled={busy || !!pendingChange}
-                    placeholder="Create a sweet shop website"
-                    aria-label="Change request"
-                    className="w-full resize-none rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-                />
-                <div className="mt-2 flex items-center justify-end">
-                    <button
-                        type="submit"
-                        disabled={busy || !!pendingChange || !draft.trim()}
-                        className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground disabled:opacity-40"
-                    >
-                        {busy ? 'Sending…' : 'Send'}
-                    </button>
-                </div>
-            </form>
+                {error ? (
+                    <p role="alert" className="mt-4 text-sm text-destructive">
+                        {error}
+                    </p>
+                ) : null}
 
-            <ChangeSummary />
+                {showChoices && suggestions.length > 0 ? (
+                    <ul className="mt-6 flex flex-wrap gap-2" aria-label="Suggested next steps">
+                        {suggestions.map((item) => (
+                            <li key={item.id}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (item.compose) {
+                                            document.getElementById('editor-follow-up')?.focus();
+                                            return;
+                                        }
+                                        void send(item.send ?? item.label);
+                                    }}
+                                    className="cursor-pointer rounded-full border border-border bg-card/70 px-3.5 py-2 text-left text-sm text-foreground transition-colors hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    {item.label}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                ) : null}
+
+                <div className="mt-4">
+                    <ChangeSummary />
+                </div>
+                <div ref={endRef} />
+            </div>
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-4 sm:px-6">
+                <div className="pointer-events-auto">
+                    <ChatComposer
+                        draft={draft}
+                        onDraftChange={setDraft}
+                        onSubmit={() => void send(draft)}
+                        onStop={cancelAiEdit}
+                        busy={busy}
+                        locked={!!pendingChange}
+                        autoFocus={autoFocus}
+                    />
+                </div>
+            </div>
         </section>
     );
 }

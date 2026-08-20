@@ -25,8 +25,11 @@ If the description mentions register, book, venue, address, phone, email or a
 link to sign up, contact is required even when the recipe marks it optional.
 
 Do not include testimonials or team unless the description names people,
-customers, or a brand with a reputation to quote. A prompt that is just "a
-website" gets hero, about, contact and footer — nothing to invent a review for.
+customers, or a brand with a reputation to quote. Do not include gallery unless
+they asked for photos, a portfolio, or a picture grid. A sweet shop does not
+need Gallery and Testimonials copied from another vertical. A prompt that is
+just "a website" gets hero, about, contact and footer — nothing to invent a
+review for.
 D11's unspecified prompt died at fill because testimonials came back with empty
 quotes.
 

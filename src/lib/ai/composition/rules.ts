@@ -201,6 +201,13 @@ function rewriteBriefs(
     }
 }
 
+const ASKED_GALLERY =
+    /\b(galler(y|ies)|photos?|pictures?|portfolio|our work)\b/i;
+const ASKED_TESTIMONIALS =
+    /\b(testimonial|reviews?|what (customers|clients|patients) say|ratings?)\b/i;
+const ASKED_TEAM =
+    /\b(team|staff|teachers?|chefs?|doctors?|our people|who we are|meet (the|our))\b/i;
+
 export function normalisePlan(
     sections: PlannedSection[],
     opts: NormalisePlanOptions = {},
@@ -260,6 +267,20 @@ export function normalisePlan(
             s.type !== 'testimonials' && s.type !== 'faq' && s.type !== 'menu');
         if (middle.length < before) {
             repairs.push('dropped extras — description asked for a short page');
+        }
+    }
+
+    if (prompt) {
+        const unasked: SectionKey[] = [];
+        if (!ASKED_GALLERY.test(prompt)) unasked.push('gallery');
+        if (!ASKED_TESTIMONIALS.test(prompt)) unasked.push('testimonials');
+        if (!ASKED_TEAM.test(prompt)) unasked.push('team');
+        if (unasked.length) {
+            const before = middle.length;
+            middle = middle.filter((s) => !unasked.includes(s.type));
+            if (middle.length < before) {
+                repairs.push('dropped gallery/testimonials/team — description did not ask for them');
+            }
         }
     }
 

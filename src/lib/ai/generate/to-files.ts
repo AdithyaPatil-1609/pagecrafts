@@ -6,6 +6,7 @@ import { SITE_NAV_CSS } from '@/lib/render/site-chrome';
 import { contractFor } from '../sections/contracts';
 import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
+import { motionMotifMarkup, motionStageMarkup, motionTickerMarkup } from './motion-motif';
 
 /**
  * D15 — turn a composition into a file tree the rest of the product already
@@ -86,13 +87,15 @@ function renderSection(
     section: SectionInstance,
     index: number,
     visible: readonly SectionInstance[],
+    motifHtml: string,
 ): string {
     const p = section.props;
     const key = sectionContentKey(section, visible);
     const heading = asString(p.heading);
     const anchor = sectionAnchor(section, visible);
     const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate style="--i:${index}">`;
-    return `${open}${renderInner(section.type, key, p, heading, visible)}</section>`;
+    const motif = section.type === 'hero' ? motifHtml : '';
+    return `${open}${motif}${renderInner(section.type, key, p, heading, visible)}</section>`;
 }
 
 function contactHref(visible: readonly SectionInstance[]): string {
@@ -203,13 +206,20 @@ function renderInner(
 // in a commit called "assert site-header on generated pages", which is a clearer statement
 // of intent than the tests were. Their renderer, their call — this follows it, and all
 // three tests agree on it now.
+function navLabel(section: SectionInstance): string {
+    const heading = asString(section.props.heading).replace(/\s+/g, ' ').trim();
+    if (heading && heading.length <= 28 && !/^(add |your )/i.test(heading)) {
+        return heading;
+    }
+    return contractFor(section.type).label;
+}
+
 function siteNav(visible: readonly SectionInstance[], title: string): string {
     const links = visible
         .filter((s) => s.type !== 'hero' && s.type !== 'footer')
         .map((s) => {
-            const label = contractFor(s.type).label;
             const href = `#${sectionAnchor(s, visible)}`;
-            return `<a href="${href}">${escapeHtml(label)}</a>`;
+            return `<a href="${href}">${escapeHtml(navLabel(s))}</a>`;
         })
         .join('');
 
@@ -325,30 +335,396 @@ address { font-style: normal; }
 [data-variant="media-split"] .img-slot img {
   width: 100%; height: 100%; object-fit: cover; min-height: 16rem;
 }
+`;
 
+/** Premium look only — kinetic canvas CSS must not leak into Casual/Photo-rich HTML. */
+const MOTION_CSS = `
+body:has([data-style="motion"]) {
+  --bg: #06040c;
+  --ink: #f6f3ff;
+  --muted: #b7b0cc;
+  --accent: #ff2d6a;
+  --accent-ink: #ffffff;
+  --panel: rgba(255, 255, 255, 0.055);
+  --rule: rgba(255, 255, 255, 0.12);
+  --display-tracking: -0.06em;
+  background: #06040c;
+  color: #f6f3ff;
+}
+[data-style="motion"] .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  max-width: none;
+  padding-inline: 6vw;
+  background: color-mix(in srgb, #06040c 62%, transparent);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+[data-style="motion"] .site-header nav a { color: rgba(246, 243, 255, 0.72); }
+[data-style="motion"] .site-header nav a:hover { color: #fff; }
+[data-style="motion"] main {
+  max-width: none;
+  padding-inline: 0;
+  padding-bottom: 0;
+  counter-reset: pc-sec;
+}
 [data-style="motion"] [data-type="hero"] {
-  animation: pc-rise 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+  place-items: center;
+  text-align: center;
+  min-height: 92vh;
+  padding: 7rem 6vw 8.5rem;
+}
+[data-style="motion"] [data-type="hero"] .img-slot { display: none; }
+[data-style="motion"] [data-type="hero"] .hero-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 18ch;
+}
+[data-style="motion"] [data-type="hero"] .lede {
+  margin-inline: auto;
+  font-size: 1.15rem;
+  color: rgba(246, 243, 255, 0.72);
+}
+[data-style="motion"] [data-type="hero"] h1 {
+  font-size: clamp(3.1rem, 11vw, 7.4rem);
+  font-weight: 800;
+  letter-spacing: -0.07em;
+  line-height: 0.88;
+  margin: 0 auto 0.7em;
+  max-width: 12ch;
+  background: linear-gradient(115deg, #fff 8%, #fff 32%, var(--accent) 52%, #fbbf24 74%, #fff 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pc-type 9s ease-in-out infinite;
+}
+[data-style="motion"] .eyebrow {
+  display: inline-flex;
+  margin-bottom: 1.1rem;
+  padding: 0.38rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: #ffd0dc;
+  letter-spacing: 0.22em;
+  font-size: 0.68rem;
+}
+[data-style="motion"] .motion-stage {
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  pointer-events: none;
+}
+[data-style="motion"] .motion-aurora {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 52% 42% at 16% 28%, color-mix(in srgb, var(--accent) 58%, transparent), transparent 62%),
+    radial-gradient(ellipse 46% 36% at 86% 12%, rgba(124, 58, 237, 0.55), transparent 64%),
+    radial-gradient(ellipse 42% 38% at 72% 86%, rgba(245, 158, 11, 0.34), transparent 62%);
+  filter: blur(30px);
+  animation: pc-aurora 16s ease-in-out infinite alternate;
+}
+[data-style="motion"] .motion-grid {
+  position: absolute;
+  inset: 18% -10% -30%;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse at 50% 0%, #000 12%, transparent 72%);
+  transform: perspective(700px) rotateX(62deg);
+  transform-origin: 50% 0;
+  animation: pc-grid 22s linear infinite;
+}
+[data-style="motion"] .motion-grain {
+  position: absolute;
+  inset: -20%;
+  opacity: 0.2;
+  mix-blend-mode: overlay;
+  background-image:
+    repeating-radial-gradient(circle at 18% 22%, rgba(255,255,255,0.22) 0 1px, transparent 1px 3px),
+    repeating-radial-gradient(circle at 82% 78%, rgba(255,255,255,0.16) 0 1px, transparent 1px 4px);
+  animation: pc-grain 0.38s steps(3) infinite;
+}
+[data-style="motion"] .motion-flare {
+  position: absolute;
+  width: 130vmax;
+  height: 130vmax;
+  left: 50%;
+  top: 38%;
+  translate: -50% -50%;
+  background: conic-gradient(from 200deg, transparent 0 58%, color-mix(in srgb, var(--accent) 20%, transparent) 70%, transparent 86%);
+  animation: pc-flare 24s linear infinite;
+  opacity: 0.65;
+}
+[data-style="motion"] .motion-motif {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  color: var(--accent);
+  pointer-events: none;
+}
+[data-style="motion"] .motif-halo {
+  position: absolute;
+  right: 4%;
+  top: 12%;
+  width: min(46vw, 420px);
+  height: min(46vw, 420px);
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 0 80px color-mix(in srgb, var(--accent) 28%, transparent);
+  animation: pc-halo 12s linear infinite;
+}
+[data-style="motion"] .motion-motif svg {
+  position: absolute;
+  right: 2%;
+  top: 8%;
+  width: min(52vw, 540px);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 36px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+[data-style="motion"] .motion-motif svg.motif-ghost {
+  right: -4%;
+  top: 2%;
+  width: min(62vw, 640px);
+  opacity: 0.18;
+  filter: blur(10px);
+  animation: pc-spin 28s linear infinite reverse;
+}
+[data-style="motion"] .motion-motif[data-motif="jalebi"] svg.motif-body {
+  animation: pc-spin 18s linear infinite;
+  color: #f59e0b;
+}
+[data-style="motion"] .motion-motif[data-motif="jalebi"] svg.motif-ghost {
+  color: #f59e0b;
+}
+[data-style="motion"] .jalebi-coil {
+  stroke-dasharray: 280;
+  animation: pc-draw 3.6s ease-in-out infinite alternate;
+}
+[data-style="motion"] .honey-drip {
+  position: absolute;
+  left: 72%;
+  top: 52%;
+  width: 16px;
+  height: 28px;
+  border-radius: 40% 40% 55% 55%;
+  background: linear-gradient(#fbbf24, #b45309);
+  box-shadow: 0 0 18px #f59e0b;
+  animation: pc-drip 1.8s ease-in infinite;
+  animation-delay: var(--d, 0s);
+}
+[data-style="motion"] .honey-drip-b { left: 78%; top: 44%; }
+[data-style="motion"] .honey-drip-c { left: 66%; top: 58%; width: 11px; height: 18px; }
+[data-style="motion"] .motif-spark {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  right: calc(18% + (var(--s, 0) * 7%));
+  top: calc(22% + (var(--s, 0) * 11%));
+  background: #fff;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: pc-spark 1.9s ease-in-out infinite;
+  animation-delay: calc(var(--s, 0) * 0.28s);
+}
+[data-style="motion"] .motion-motif[data-motif="tooth"] svg {
+  animation: pc-float 4.6s ease-in-out infinite;
+  color: #e8eef5;
+}
+[data-style="motion"] .motion-motif[data-motif="leaf"] svg,
+[data-style="motion"] .motion-motif[data-motif="flame"] svg,
+[data-style="motion"] .motion-motif[data-motif="flower"] svg,
+[data-style="motion"] .motion-motif[data-motif="drape"] svg {
+  animation: pc-sway 3.4s ease-in-out infinite;
+  transform-origin: 70% 80%;
+}
+[data-style="motion"] .motion-motif[data-motif="heart"] svg,
+[data-style="motion"] .motion-motif[data-motif="bolt"] svg {
+  animation: pc-pulse 1.4s ease-in-out infinite;
+}
+[data-style="motion"] .motion-motif[data-motif="wheel"] svg {
+  animation: pc-spin 8s linear infinite;
+}
+[data-style="motion"] .motion-motif[data-motif="steam"] svg {
+  animation: pc-nudge 3.2s ease-in-out infinite;
+}
+[data-style="motion"] .motion-motif[data-motif="scale"] svg,
+[data-style="motion"] .motion-motif[data-motif="note"] svg,
+[data-style="motion"] .motion-motif[data-motif="paw"] svg,
+[data-style="motion"] .motion-motif[data-motif="needle"] svg,
+[data-style="motion"] .motion-motif[data-motif="building"] svg,
+[data-style="motion"] .motion-motif[data-motif="crate"] svg,
+[data-style="motion"] .motion-motif[data-motif="cap"] svg,
+[data-style="motion"] .motion-motif[data-motif="coin"] svg {
+  animation: pc-float 5s ease-in-out infinite;
+}
+[data-style="motion"] .motion-ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7%;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  font-size: clamp(2.4rem, 7vw, 5.4rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  white-space: nowrap;
+  color: #fff;
+  opacity: 0.1;
+}
+[data-style="motion"] .motion-ticker p {
+  display: inline-block;
+  max-width: none;
+  margin: 0;
+  animation: pc-marquee 22s linear infinite;
 }
 [data-style="motion"] .cta {
-  animation: pc-pulse 2.2s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  margin-top: 1.4rem;
+  padding: 0.95rem 1.7rem;
+  border-radius: 999px;
+  animation: pc-pulse 1.4s ease-in-out infinite;
+  box-shadow:
+    0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent),
+    0 16px 40px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+[data-style="motion"] .cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.45), transparent 72%);
+  transform: translateX(-130%);
+  animation: pc-shine 2.8s ease-in-out infinite;
+}
+[data-style="motion"] section:not([data-type="hero"]):not([data-type="footer"]) {
+  counter-increment: pc-sec;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 6vw;
+}
+[data-style="motion"] section:not([data-type="hero"]):not([data-type="footer"]) h2::before {
+  content: counter(pc-sec, decimal-leading-zero);
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+}
+[data-style="motion"] [data-type="footer"] {
+  padding-inline: 6vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 [data-style="motion"] .card {
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
 }
 [data-style="motion"] .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 22%, transparent);
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--accent) 22%, transparent);
 }
-@keyframes pc-rise {
-  from { opacity: 0; transform: translateY(28px) scale(0.96); }
-  to { opacity: 1; transform: none; }
+[data-style="motion"] .form input,
+[data-style="motion"] .form textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+@keyframes pc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes pc-draw {
+  from { stroke-dashoffset: 220; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes pc-drip {
+  0% { transform: translateY(0); opacity: 0.95; }
+  70% { transform: translateY(22px); opacity: 0.7; }
+  100% { transform: translateY(36px); opacity: 0; }
+}
+@keyframes pc-sway {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(7deg); }
+}
+@keyframes pc-nudge {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-10px) rotate(4deg); }
+}
+@keyframes pc-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-5deg); }
+  50% { transform: translate3d(0, -18px, 0) rotate(4deg); }
 }
 @keyframes pc-pulse {
-  50% { filter: brightness(1.12); transform: translateY(-1px); }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent), 0 16px 40px color-mix(in srgb, var(--accent) 38%, transparent); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 14px transparent, 0 16px 40px color-mix(in srgb, var(--accent) 38%, transparent); }
+}
+@keyframes pc-aurora {
+  from { transform: translate3d(-4%, -2%, 0) scale(1); }
+  to { transform: translate3d(5%, 3%, 0) scale(1.08); }
+}
+@keyframes pc-grid {
+  from { background-position: 0 0; }
+  to { background-position: 72px 72px; }
+}
+@keyframes pc-grain {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(-1.2%, 0.8%); }
+  66% { transform: translate(1%, -1%); }
+}
+@keyframes pc-flare {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes pc-halo {
+  from { transform: rotate(0deg) scale(1); opacity: 0.7; }
+  50% { transform: rotate(180deg) scale(1.06); opacity: 1; }
+  to { transform: rotate(360deg) scale(1); opacity: 0.7; }
+}
+@keyframes pc-spark {
+  0%, 100% { transform: scale(0.4) rotate(0deg); opacity: 0.35; }
+  50% { transform: scale(1) rotate(18deg); opacity: 1; }
+}
+@keyframes pc-type {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes pc-shine {
+  0%, 55% { transform: translateX(-130%); }
+  100% { transform: translateX(130%); }
+}
+@keyframes pc-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-style="motion"] [data-type="hero"],
-  [data-style="motion"] .cta { animation: none; }
+  [data-style="motion"] .motion-motif svg,
+  [data-style="motion"] .honey-drip,
+  [data-style="motion"] .motif-spark,
+  [data-style="motion"] .motif-halo,
+  [data-style="motion"] .motion-aurora,
+  [data-style="motion"] .motion-grid,
+  [data-style="motion"] .motion-grain,
+  [data-style="motion"] .motion-flare,
+  [data-style="motion"] .motion-ticker p,
+  [data-style="motion"] [data-type="hero"] h1,
+  [data-style="motion"] .cta,
+  [data-style="motion"] .cta::after { animation: none; }
 }
 `;
 
@@ -357,12 +733,16 @@ export function compositionToFiles(composition: Composition, style?: StyleId): F
     const visible = composition.sections.filter((s) => s.visible);
     const title = composition.meta.title || 'Home';
     const styleAttr = style ? ` data-style="${escapeHtml(style)}"` : '';
+    const motif = style === 'motion'
+        ? `${motionStageMarkup()}${motionMotifMarkup(composition.vertical, `${composition.meta.title} ${composition.meta.description}`)}${motionTickerMarkup(composition.meta.title)}`
+        : '';
+    const css = style === 'motion' ? `${PAGE_CSS}${MOTION_CSS}` : PAGE_CSS;
     const body = [
-        `<style>${PAGE_CSS}</style>`,
+        `<style>${css}</style>`,
         `<div class="site"${styleAttr}>`,
         siteNav(visible, title),
         `<main id="top">`,
-        visible.map((section, index) => renderSection(section, index, visible)).join('\n'),
+        visible.map((section, index) => renderSection(section, index, visible, motif)).join('\n'),
         `</main>`,
         `</div>`,
     ].join('\n');

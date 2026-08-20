@@ -171,6 +171,8 @@ describe('the job runner', () => {
         expect(names).toContain('validate');
         expect(names.at(-1)).toBe('done');
         expect(names.indexOf('validate')).toBeGreaterThan(names.lastIndexOf('section'));
+        const plan = job.events.find((e) => e.name === 'plan');
+        expect(plan?.data?.types).toEqual(expect.arrayContaining(['hero']));
     });
 
     it('R5: enters repairing at most once per section', async () => {
@@ -242,6 +244,8 @@ describe('GET /api/v1/jobs/{id}', () => {
             'casual', 'photos', 'motion',
         ]);
         expect(json.data.variants.every((v: { html: string }) => v.html.startsWith('<!doctype html>'))).toBe(true);
+        expect(json.data.preview_html).toMatch(/^<!doctype html>/i);
+        expect(json.data.planned_sections).toEqual(expect.arrayContaining(['hero']));
         expect(json.data.attempts).toHaveLength(1);
         expect(json.data.quota).toMatchObject({
             used: 1,
