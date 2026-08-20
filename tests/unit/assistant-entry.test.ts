@@ -41,6 +41,9 @@ describe("the assistant hand-off", () => {
     const home = read("src", "app", "(auth)", "page.tsx");
     const how = read("src", "components", "landing", "ValueProps.tsx");
     const build = read("src", "components", "deck", "BuildSlide.tsx");
+    const sites = read("src", "components", "deck", "SitesSlide.tsx");
+    const settings = read("src", "components", "deck", "SettingsSlide.tsx");
+    const flow = read("src", "components", "site", "PageFlow.tsx");
 
     expect(css).toContain("scroll-snap-type: y proximity");
     expect(css).toContain("isolation: isolate");
@@ -51,7 +54,20 @@ describe("the assistant hand-off", () => {
     expect(home).toContain("<SettingsSlide");
     expect(how).toContain("page-slide-tall");
     expect(how).toContain('id="how-it-works"');
+    expect(how).toContain("How it works");
+    expect(how).not.toContain("data-reveal");
     expect(build).toContain("Explore more");
     expect(build).toContain('href="/templates"');
+    expect(build).toContain("lg:grid-cols-2");
+    expect(build).toContain("sm:grid-cols-3");
+    expect(build).not.toContain("lg:grid-cols-4");
+    expect(build).toContain("IntentCapture");
+    expect(build).toContain("library={false}");
+    expect(build).not.toContain("data-reveal");
+    expect(sites).toContain("Your sites");
+    expect(sites).not.toContain("data-reveal");
+    expect(settings).toContain("Settings");
+    expect(settings).not.toContain("data-reveal");
+    expect(flow).toContain("revealVisible");
   });
 });

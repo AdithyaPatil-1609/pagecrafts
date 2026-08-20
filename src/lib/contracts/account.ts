@@ -16,6 +16,8 @@ export interface AccountResponse {
   billingLine: string;
   billingCity: string;
   gstin: string;
+  /** False when the billing columns are not on `users` yet. Never invents a card or bank number. */
+  billingReady: boolean;
 }
 
 // PATCH /account/consent — the one thing on this page that is the owner's to change.

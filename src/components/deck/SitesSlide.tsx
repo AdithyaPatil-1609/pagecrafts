@@ -13,7 +13,7 @@ export function SitesSlide({
     return (
         <section id="sites" className="page-slide page-slide-tall" aria-labelledby="sites-heading">
             <div className="mx-auto w-full max-w-6xl px-6">
-                <div data-reveal className="flex flex-wrap items-end justify-between gap-4">
+                <div className="flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <h2 id="sites-heading" className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
                             Your sites

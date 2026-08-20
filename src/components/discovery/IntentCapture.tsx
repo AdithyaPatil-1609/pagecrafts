@@ -195,7 +195,7 @@ export function IntentCapture({
 
     return (
         <div className="flex flex-col gap-7">
-            <div data-reveal className="w-full rounded-2xl glass-panel p-5 sm:p-6">
+            <div className="w-full rounded-2xl glass-panel p-5 sm:p-6">
                 <BriefFields
                     value={brief}
                     disabled={busy !== null}

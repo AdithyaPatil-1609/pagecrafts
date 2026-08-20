@@ -13,19 +13,36 @@ import { supabaseAdmin } from "./supabase-admin";
 // is no user id parameter here on purpose: a function that took one could be called with
 // somebody else's.
 
-export async function getAccount(supabase: SupabaseClient): Promise<AccountResponse> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("email, email_verified, training_opt_in, created_at, handle, phone, billing_line, billing_city, gstin")
-    .maybeSingle();
+const ACCOUNT_SELECT =
+  "email, email_verified, training_opt_in, created_at, handle, phone, billing_line, billing_city, gstin";
+const ACCOUNT_SELECT_CORE = "email, email_verified, training_opt_in, created_at, handle";
 
-  if (error) throw new ApiError("internal", "Could not read your account.", error.message);
-  if (!data) throw new ApiError("not_found", "That account does not exist.");
-
-  return mapAccount(data);
+function missingBillingColumn(message: string): boolean {
+  return (
+    /column .* does not exist/i.test(message) ||
+    /could not find .* column/i.test(message)
+  );
 }
 
-function mapAccount(data: Record<string, unknown>): AccountResponse {
+export async function getAccount(supabase: SupabaseClient): Promise<AccountResponse> {
+  const full = await supabase.from("users").select(ACCOUNT_SELECT).maybeSingle();
+
+  if (!full.error) {
+    if (!full.data) throw new ApiError("not_found", "That account does not exist.");
+    return mapAccount(full.data as Record<string, unknown>, true);
+  }
+
+  if (!missingBillingColumn(full.error.message)) {
+    throw new ApiError("internal", "Could not read your account.", full.error.message);
+  }
+
+  const core = await supabase.from("users").select(ACCOUNT_SELECT_CORE).maybeSingle();
+  if (core.error) throw new ApiError("internal", "Could not read your account.", core.error.message);
+  if (!core.data) throw new ApiError("not_found", "That account does not exist.");
+  return mapAccount(core.data as Record<string, unknown>, false);
+}
+
+function mapAccount(data: Record<string, unknown>, billingReady: boolean): AccountResponse {
   return {
     email: String(data.email ?? ""),
     emailVerified: Boolean(data.email_verified),
@@ -36,6 +53,7 @@ function mapAccount(data: Record<string, unknown>): AccountResponse {
     billingLine: typeof data.billing_line === "string" ? data.billing_line : "",
     billingCity: typeof data.billing_city === "string" ? data.billing_city : "",
     gstin: typeof data.gstin === "string" ? data.gstin : "",
+    billingReady,
   };
 }
 

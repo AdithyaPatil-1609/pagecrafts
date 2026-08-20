@@ -30,6 +30,18 @@ export function BillingProfile({ initial }: { initial: AccountResponse }) {
         }
     }
 
+    if (!initial.billingReady) {
+        return (
+            <div className="rounded-2xl glass-panel p-5">
+                <p className="text-base font-semibold text-foreground">You, and the bill</p>
+                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                    Receipt name and address are not stored on this account yet. We never keep a
+                    card or bank number — those stay with Razorpay when you go live.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <form onSubmit={(event) => void save(event)} className="rounded-2xl glass-panel p-5">
             <p className="text-base font-semibold text-foreground">You, and the bill</p>

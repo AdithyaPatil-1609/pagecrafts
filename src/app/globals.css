@@ -379,12 +379,13 @@
   border-radius: 9999px;
   padding: 0.7rem 1.35rem;
   font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--background);
-  background: color-mix(in srgb, var(--bloom-blue) 78%, var(--background));
+  font-weight: 700;
+  color: var(--signal-foreground);
+  background: color-mix(in srgb, var(--signal) 62%, var(--mix-gold));
   box-shadow:
-    0 0 22px color-mix(in srgb, var(--bloom-blue) 36%, transparent),
-    0 8px 22px color-mix(in srgb, var(--bloom-blue) 20%, transparent);
+    0 0 36px color-mix(in srgb, var(--signal) 58%, transparent),
+    0 0 58px color-mix(in srgb, var(--bloom-amber) 46%, transparent),
+    0 10px 28px color-mix(in srgb, var(--mix-gold) 34%, transparent);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
@@ -393,18 +394,19 @@
 
 .welcome-prompt-cta:hover {
   transform: scale(1.045);
-  filter: brightness(1.05);
+  filter: brightness(1.08);
   box-shadow:
-    0 0 28px color-mix(in srgb, var(--bloom-blue) 46%, transparent),
-    0 10px 26px color-mix(in srgb, var(--bloom-blue) 26%, transparent);
+    0 0 44px color-mix(in srgb, var(--signal) 70%, transparent),
+    0 0 68px color-mix(in srgb, var(--bloom-amber) 54%, transparent),
+    0 12px 32px color-mix(in srgb, var(--mix-gold) 42%, transparent);
 }
 
 .welcome-prompt-cta:focus-visible {
   outline: none;
   box-shadow:
     0 0 0 2px var(--background),
-    0 0 0 4px var(--bloom-sky),
-    0 0 22px color-mix(in srgb, var(--bloom-blue) 36%, transparent);
+    0 0 0 4px var(--signal),
+    0 0 36px color-mix(in srgb, var(--bloom-amber) 46%, transparent);
 }
 
 .hero-prompt-caret {
@@ -530,6 +532,14 @@ body {
 
 html.deck-snap {
   scroll-snap-type: y proximity;
+}
+
+/* Transform on .page-flow turns position:fixed into slide-relative, so the
+   header would scroll away after Welcome. Keep snap; drop the page animation. */
+html.deck-snap .page-flow,
+html.deck-snap .page-flow[data-dir="forward"],
+html.deck-snap .page-flow[data-dir="back"] {
+  animation: none;
 }
 
 .page-slide {

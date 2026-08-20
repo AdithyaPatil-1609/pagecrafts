@@ -41,26 +41,63 @@ export function PageFlow({ children }: { children: React.ReactNode }) {
         const root = rootRef.current;
         if (!root) return;
 
-        const nodes = () => Array.from(root.querySelectorAll<HTMLElement>("[data-reveal]"));
+        const revealNodes = () => Array.from(root.querySelectorAll<HTMLElement>("[data-reveal]"));
+        const slides = () => Array.from(root.querySelectorAll<HTMLElement>(".page-slide"));
+        const reveal = (el: Element) => el.classList.add("is-in");
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
         if (reduce || !("IntersectionObserver" in window)) {
-            nodes().forEach((el) => el.classList.add("is-in"));
+            revealNodes().forEach(reveal);
             return;
         }
+
+        // Snap scrolling on html often never notifies IntersectionObserver: later
+        // slides sit outside the first viewport and stay at opacity 0. Reveal a
+        // whole slide when any part of it is on screen, and do the same check on
+        // scroll so Build / Sites / Settings cannot stay blank.
+        const revealVisible = () => {
+            const vh = window.innerHeight;
+            const vw = window.innerWidth;
+            for (const slide of slides()) {
+                const box = slide.getBoundingClientRect();
+                if (box.bottom < -40 || box.top > vh + 40 || box.right < 0 || box.left > vw) continue;
+                slide.querySelectorAll("[data-reveal]").forEach(reveal);
+            }
+            for (const el of revealNodes()) {
+                if (el.classList.contains("is-in")) continue;
+                const box = el.getBoundingClientRect();
+                if (box.bottom > 0 && box.top < vh && box.right > 0 && box.left < vw) reveal(el);
+            }
+        };
 
         const io = new IntersectionObserver(
             (entries) => {
                 for (const entry of entries) {
                     if (!entry.isIntersecting) continue;
-                    entry.target.classList.add("is-in");
-                    io.unobserve(entry.target);
+                    const slide = entry.target.classList.contains("page-slide")
+                        ? entry.target
+                        : entry.target.closest(".page-slide");
+                    if (slide) {
+                        slide.querySelectorAll("[data-reveal]").forEach(reveal);
+                    } else {
+                        reveal(entry.target);
+                    }
                 }
             },
-            { rootMargin: "0px 0px -12% 0px", threshold: 0.12 },
+            { root: null, rootMargin: "30% 0px 30% 0px", threshold: 0 },
         );
 
-        nodes().forEach((el) => io.observe(el));
-        return () => io.disconnect();
+        slides().forEach((el) => io.observe(el));
+        revealNodes().forEach((el) => io.observe(el));
+        revealVisible();
+
+        window.addEventListener("scroll", revealVisible, { passive: true });
+        window.addEventListener("hashchange", revealVisible);
+        return () => {
+            io.disconnect();
+            window.removeEventListener("scroll", revealVisible);
+            window.removeEventListener("hashchange", revealVisible);
+        };
     }, [pathname]);
 
     return (

@@ -38,7 +38,7 @@ export function ValueProps() {
             className="page-slide page-slide-tall"
         >
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 lg:gap-8">
-                <header data-reveal className="mx-auto max-w-2xl text-center">
+                <header className="mx-auto max-w-2xl text-center">
                     <h2
                         id="how-it-works-heading"
                         className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
@@ -55,7 +55,6 @@ export function ValueProps() {
                     {PROPS.map(({ icon: Icon, step, title, body }, i) => (
                         <Card
                             key={title}
-                            data-reveal
                             style={{ "--reveal": i } as CSSProperties}
                             className="glass-panel card-hover relative h-full overflow-hidden rounded-2xl"
                         >
@@ -75,7 +74,7 @@ export function ValueProps() {
                 </div>
 
                 <div className="grid items-center gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
-                    <div data-reveal>
+                    <div>
                         <h3 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                             Editing feels like <span className="hero-mix">talking</span>
                         </h3>
@@ -107,7 +106,7 @@ export function ValueProps() {
 
 function TalkCanvas() {
     return (
-        <div data-reveal className="glass-panel card-hover overflow-hidden rounded-3xl" aria-hidden>
+        <div className="glass-panel card-hover overflow-hidden rounded-3xl" aria-hidden>
             <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3">
                 <span className="size-2 rounded-full bg-primary/80" />
                 <span className="size-2 rounded-full bg-signal" />

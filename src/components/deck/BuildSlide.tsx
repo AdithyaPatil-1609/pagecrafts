@@ -15,9 +15,9 @@ export function BuildSlide({ templates }: { templates: TemplateSummary[] }) {
             className="page-slide page-slide-tall"
             aria-labelledby="build-heading"
         >
-            <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,22rem)] lg:items-start">
+            <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 lg:grid-cols-2 lg:items-start">
                 <div>
-                    <header data-reveal className="mb-5">
+                    <header className="mb-5">
                         <h2
                             id="build-heading"
                             className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
@@ -28,7 +28,7 @@ export function BuildSlide({ templates }: { templates: TemplateSummary[] }) {
                             Twelve of ours. Open one and make it yours.
                         </p>
                     </header>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {tiles.map((template, index) => (
                             <TemplateCard
                                 key={template.id}

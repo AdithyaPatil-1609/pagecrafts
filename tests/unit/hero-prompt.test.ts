@@ -87,6 +87,21 @@ describe("the prompt bar is shared", () => {
         expect(graphic).toContain("welcome-prompt-cta");
         expect(graphic).toContain("Build it →");
         expect(graphic).not.toMatch(/<input|<textarea|contentEditable|contenteditable/);
+
+        const css = read("src", "app", "globals.css");
+        const cta = css.slice(css.indexOf(".welcome-prompt-cta {"), css.indexOf(".welcome-prompt-cta:hover"));
+        expect(cta).toContain("font-weight: 700");
+        expect(cta).toContain("var(--signal)");
+        expect(cta).toContain("var(--signal-foreground)");
+        expect(cta).toContain("var(--mix-gold)");
+        expect(cta).toContain("var(--bloom-amber)");
+        expect(cta).not.toContain("var(--bloom-blue)");
+        expect(cta).not.toMatch(/#[0-9a-fA-F]{3,8}/);
+        expect(css).toContain(".welcome-prompt-cta:hover");
+        expect(css).toContain("transform: scale(1.045)");
+        const reduce = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
+        expect(reduce).toContain(".welcome-prompt-cta:hover");
+        expect(reduce).toContain("transform: none");
         expect(graphic).not.toContain("/new?q=");
         expect(prompt).toContain("/new?q=");
         expect(hero).toContain("<HeroPrompt />");
