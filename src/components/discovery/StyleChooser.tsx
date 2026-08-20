@@ -132,7 +132,9 @@ export function StyleChooser({
 
             const hasLooks = (data.attempts?.length ?? 0) > 0 || (data.variants?.length ?? 0) > 0;
             if (!hasLooks && data.fallback_template_id) {
-                router.replace(`/editor/${encodeURIComponent(projectId)}`);
+                router.replace(
+                    `/editor/${encodeURIComponent(projectId)}?job=${encodeURIComponent(activeJobId)}`,
+                );
             }
         };
 

@@ -25,7 +25,14 @@ interface JobProgress {
     preview_html?: string;
     prompt?: string;
     error?: string;
+    fallback_template_id?: string;
 }
+
+// A job that fell back reports `done`, because a site did get written and the editor does
+// have something to open. What it is not is the site the person asked for, and the screen
+// used to greet them as though it were. This is the sentence that says otherwise.
+const FALLBACK_NOTICE =
+    'I could not build a site from your description, so this is a ready-made design to start from — your details are not on it yet. Tell me what to change, or try describing it again.';
 
 export default function EditorShell({
     projectId,
@@ -46,6 +53,7 @@ export default function EditorShell({
     const loading = useEditorStore((s) => s.loading);
     const loadError = useEditorStore((s) => s.loadError);
     const loadProject = useEditorStore((s) => s.loadProject);
+    const setGenerationNotice = useEditorStore((s) => s.setGenerationNotice);
     const saveProject = useEditorStore((s) => s.saveProject);
     const flushPendingSave = useEditorStore((s) => s.flushPendingSave);
     const composition = useEditorStore((s) => s.composition);
@@ -95,6 +103,7 @@ export default function EditorShell({
             setGeneration(data);
 
             if (data.status === "done" || data.status === "failed") {
+                setGenerationNotice(data.fallback_template_id ? FALLBACK_NOTICE : null);
                 await loadProject(projectId);
                 if (cancelled) return;
                 if (data.status === "done") {
@@ -114,7 +123,7 @@ export default function EditorShell({
             cancelled = true;
             if (timer) clearTimeout(timer);
         };
-    }, [jobId, projectId, loadProject, router]);
+    }, [jobId, projectId, loadProject, router, setGenerationNotice]);
 
     useEffect(() => {
         function onKey(e: KeyboardEvent) {

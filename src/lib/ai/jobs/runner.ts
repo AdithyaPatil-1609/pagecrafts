@@ -180,6 +180,8 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
 
+        console.error(`[generate] job ${job.id} failed, falling back — ${message}`);
+
         const fallback = nearestTemplate(
             fallbackAttrs,
             deps.templates ?? [],
