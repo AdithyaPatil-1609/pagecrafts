@@ -11,7 +11,6 @@ import type {
   ProjectFailure,
   ProjectSummary,
   SiteMeta,
-  TemplateTier,
 } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { clientFault } from "./pg-errors";
@@ -303,19 +302,8 @@ export async function createProject(
     }
     if (!template) throw new ApiError("not_found", "That design does not exist.");
 
-    // Doc 22 P2/P3: a premium or signature design is paid for once, before the fork runs.
-    // The price is read from the row and never from the request — a paywall the caller is
-    // trusted to declare is not a paywall. Thrown inside the try, so the catch below removes
-    // the empty project rather than leaving a site nobody paid for sitting in a dashboard.
-    const tier = (template.tier ?? "free") as TemplateTier;
-    if (tier !== "free" && !pro) {
-      throw new ApiError(
-        "payment_required",
-        "This design needs to be paid for before you can use it.",
-        `tier=${tier}`,
-      );
-    }
-
+    // Editing is not gated on the design's listed price. Free / premium / signature
+    // stay on the catalogue row as metadata; publish is still paid for later.
     const files = (template.files ?? {}) as FileMap;
     await putProjectFiles(supabase, projectId, files);
 

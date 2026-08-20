@@ -79,7 +79,7 @@ export default async function TemplatesPage({
         </h1>
         <p className="text-muted-foreground">
           {prompt
-            ? "Closest matches first. Choose a design you love — you can customize it in the next step."
+            ? "Closest matches first. Choose a design — Edit opens it in the editor."
             : "Every design is free to edit — you only pay when you go live."}
         </p>
         {prompt && (

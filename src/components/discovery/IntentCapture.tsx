@@ -74,7 +74,7 @@ export function IntentCapture({
     }
 
     router.push(
-      `/choose/${encodeURIComponent(created.data.id)}?job=${encodeURIComponent(started.data.job_id)}`,
+      `/editor/${encodeURIComponent(created.data.id)}?job=${encodeURIComponent(started.data.job_id)}`,
     );
   }
 

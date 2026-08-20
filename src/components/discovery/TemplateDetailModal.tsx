@@ -274,14 +274,13 @@ export function TemplateDetailModal({
                                         {price}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        one-time, for this design
+                                        listed price
                                     </span>
                                 </span>
                             ) : null}
                             <UseDesignButton
                                 forkId={detail.forkId}
                                 name={detail.name}
-                                tier={detail.tier}
                             />
                         </div>
                     </div>
