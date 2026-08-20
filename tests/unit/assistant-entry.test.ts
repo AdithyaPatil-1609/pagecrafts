@@ -28,12 +28,14 @@ describe("the assistant hand-off", () => {
     expect(header).toContain('href: "/#how-it-works"');
     expect(header).toContain('href: "/#build"');
     expect(header).toContain('href: "/#sites"');
-    expect(header).toContain('href="/#settings"');
+    expect(header).toContain('href="/settings"');
+    expect(header).toContain("LogoutButton");
     const settings = header
       .split("\n")
-      .find((line) => line.includes('href="/#settings"'));
+      .find((line) => line.includes('href="/settings"'));
     expect(settings).toBeTruthy();
     expect(settings).not.toContain("hidden");
+    expect(settings).not.toContain("/#settings");
   });
 
   it("keeps every signed-in slide reachable instead of clipping it", () => {
