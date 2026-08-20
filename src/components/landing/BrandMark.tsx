@@ -1,16 +1,16 @@
 import { cn } from "@/lib/utils";
 
-/** The PageCraft lockup: gradient "P" tile plus the wordmark. */
+/** The PageCraft lockup: gold "PC" tile plus the wordmark. */
 export function BrandMark({ className }: { className?: string }) {
     return (
         <span className={cn("flex items-center gap-3", className)}>
             <span
                 aria-hidden
-                className="brand-gradient flex size-9 items-center justify-center rounded-xl text-lg font-bold leading-none text-primary-foreground shadow-[0_4px_20px_var(--brand-glow)]"
+                className="flex size-9 items-center justify-center rounded-xl border border-gold/45 bg-card font-display text-[0.68rem] font-bold tracking-[0.12em] text-gold"
             >
-                P
+                PC
             </span>
-            <span className="text-xl font-bold tracking-tight text-foreground font-display">
+            <span className="font-display text-xl font-bold tracking-tight text-foreground">
                 PageCraft
             </span>
         </span>
