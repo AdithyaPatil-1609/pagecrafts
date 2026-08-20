@@ -16,6 +16,10 @@ describe("choosing a template", () => {
     expect(page).toContain("add About, Contact and Settings");
     expect(capture).toContain("startFromDesign");
     expect(capture).toContain("Put this on the design");
+    expect(capture).toContain("/generate");
+    expect(capture).toContain("/editor/");
+    expect(capture).toContain("?job=");
+    expect(capture).toContain("visual reference");
 
     const fromDesign = capture.slice(
       capture.indexOf("async function startFromDesign"),

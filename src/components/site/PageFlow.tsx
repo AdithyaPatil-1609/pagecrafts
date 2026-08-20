@@ -30,6 +30,17 @@ function slideIndex(path: string): number {
 export function PageFlow({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const rootRef = useRef<HTMLDivElement>(null);
+    const [previousPath, setPreviousPath] = useState(pathname);
+    const quiet = pathname.startsWith("/editor");
+    const landing = pathname === "/";
+
+    if (previousPath !== pathname) {
+        setPreviousPath(pathname);
+    }
+
+    const from = slideIndex(previousPath);
+    const to = slideIndex(pathname);
+    const dir = from < 0 || to < 0 || from === to ? "in" : to > from ? "forward" : "back";
     const shownPath = useRef(pathname);
     const lastChildren = useRef<ReactNode>(children);
     const [previousPath, setPreviousPath] = useState(pathname);
