@@ -36,7 +36,11 @@ const composition: Composition = {
             heading: 'Mithas Sweets',
             image: { query: 'indian sweets mithai', alt: 'Trays of mithai' },
         }),
-        section('s_02', 'about', 'text', { heading: 'About', body: 'Family recipes.' }),
+        section('s_02', 'about', 'text', {
+            heading: 'About',
+            body: 'Family recipes.',
+            image: { query: 'sweet shop counter', alt: 'The counter' },
+        }),
         section('s_03', 'menu', 'simple', {
             heading: 'What we make',
             items: [{ name: 'Laddu', description: 'Besan.', price: 'Varies' }],
@@ -61,7 +65,8 @@ describe('style presets — three looks from one brief', () => {
         expect(photos.artDirection.motionId).not.toBe(STYLE_SPECS.motion.art.motionId);
         expect(photos.sections.find((s) => s.type === 'hero')?.variant).toBe('image-bg');
         expect(applyStyle(composition, STYLE_SPECS.casual).sections.find((s) => s.type === 'hero')?.variant)
-            .toBe('centred');
+            .toBe('split-image');
+        expect(applyStyle(composition, STYLE_SPECS.casual).artDirection.themeId).toBe('sunlit-craft');
         expect(applyStyle(composition, STYLE_SPECS.motion).artDirection.motionId).toBe('kinetic');
     });
 
@@ -92,7 +97,7 @@ describe('style presets — three looks from one brief', () => {
         expect(bankPhotoUrl('saree boutique dresses')).toContain(CLOTHING_PHOTO_ID);
     });
 
-    it('builds three finished sites, and only the photo look has pictures', async () => {
+    it('builds three finished sites; Casual gets one hero photo, Photo-rich gets photos throughout', async () => {
         const options = await buildStyleOptions(composition);
         expect(options.map((o) => o.id)).toEqual(['casual', 'photos', 'motion']);
 
@@ -101,9 +106,15 @@ describe('style presets — three looks from one brief', () => {
         expect(html.photos).toContain('data-style="photos"');
         expect(html.motion).toContain('data-style="motion"');
 
-        expect(html.casual).not.toContain('images.unsplash.com');
+        // Casual is no longer a grey wall of type — it shows one hero photograph.
+        expect(html.casual).toContain('images.unsplash.com');
+        expect(html.casual).toContain('<img src="');
+        expect(html.casual).toContain('data-variant="split-image"');
+        // Photo-rich still goes further: cinematic hero + photos in other sections.
         expect(html.photos).toContain('images.unsplash.com');
-        expect(html.photos).toContain('<img src="');
+        expect(html.photos).toContain('data-variant="image-bg"');
+        expect((html.photos.match(/images\.unsplash\.com/g) ?? []).length)
+            .toBeGreaterThan((html.casual.match(/images\.unsplash\.com/g) ?? []).length);
         expect(html.casual).toContain('data-motion="none"');
         expect(html.photos).toContain('data-motion="editorial"');
         expect(html.motion).toContain('data-motion="kinetic"');

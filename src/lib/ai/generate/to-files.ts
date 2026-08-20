@@ -295,11 +295,23 @@ address { font-style: normal; }
 }
 [data-type="footer"] { color: var(--muted); font-size: 0.9rem; padding-block: 2rem; }
 
-[data-style="casual"] [data-type="hero"] { grid-template-columns: 1fr; }
-[data-style="casual"] [data-type="hero"] .img-slot { display: none; }
-[data-style="casual"] [data-type="hero"] { text-align: center; }
-[data-style="casual"] [data-type="hero"] .lede { margin-inline: auto; }
-[data-style="casual"] [data-type="about"] .img-slot { display: none; }
+/* Casual keeps one hero photograph (split beside the copy) and hides the rest —
+   Photo-rich is the look that paints pictures through about/gallery. */
+[data-style="casual"] [data-type="hero"] {
+  gap: 2rem;
+  padding: 1.25rem;
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--rule));
+  border-radius: var(--radius-lg, 1rem);
+}
+[data-style="casual"] [data-type="hero"] .img-slot {
+  min-height: 14rem;
+  border: 0;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+[data-style="casual"] [data-type="about"] .img-slot,
+[data-style="casual"] [data-type="services"] .img-slot,
+[data-style="casual"] [data-type="gallery"] .img-slot { display: none; }
 
 [data-variant="image-bg"] {
   display: grid !important;

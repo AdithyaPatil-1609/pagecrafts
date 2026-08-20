@@ -12,8 +12,8 @@ const FINISHES = [
         badge: null as string | null,
         featured: false,
         preview: "casual" as const,
-        body: `${SHOP} gets a clean shopfront — a hero line, three sweets, and a way to get in touch.`,
-        points: ["Words first, no photographs", "Quiet type on a simple page", "Free to build"],
+        body: `${SHOP} gets a friendly shopfront — warm colour, a hero photo, three sweets, and a way to get in touch.`,
+        points: ["One photo up top, warm colour", "Simple layout — not a full gallery", "Free to build"],
     },
     {
         look: "Pro",
