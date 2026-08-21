@@ -143,7 +143,7 @@ export function ProfileMenu({
             onChange={(on) => void setEmail(on)}
           />
         </div>
-        <Link href="/settings" className={MENU_LINK}>
+        <Link href="/#settings" className={MENU_LINK}>
           Account settings
         </Link>
         <LogoutButton className={cn(MENU_LINK, "w-full text-left")} />
