@@ -8,7 +8,7 @@ import { Lock } from "lucide-react";
 import type { ApiResult } from "@/lib/contracts";
 import type { TemplatePreview as PreviewSpec } from "@/lib/discovery/preview";
 import { CATEGORY_LABELS } from "@/lib/discovery/categories";
-import { madeOfLine, priceLine, type TemplateDetail } from "@/lib/templates/detail";
+import { madeOfLine, type TemplateDetail } from "@/lib/templates/detail";
 import { canAccessTier, lockLabelForTier, type PlanId } from "@/lib/plans/catalog";
 import { Badge } from "@/components/ui/badge";
 import { UseDesignButton } from "./UseDesignButton";
@@ -161,7 +161,6 @@ export function TemplateDetailModal({
 
     const detail = state.status === "ready" ? state.detail : null;
     const locked = detail ? !canAccessTier(plan, detail.tier) : false;
-    const price = detail && !locked ? priceLine(detail.tier, detail.priceInr) : null;
 
     return (
         <Dialog onOpenChange={onOpenChange}>
@@ -291,21 +290,12 @@ export function TemplateDetailModal({
                             </div>
                         ) : (
                             <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
-                                {price ? (
-                                    <span className="mr-auto flex flex-col">
-                                        <span className="text-base font-semibold text-foreground">
-                                            {price}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            one-time, for this design
-                                        </span>
+                                {detail.tier !== "free" ? (
+                                    <span className="mr-auto text-xs text-muted-foreground">
+                                        Included with your {lockLabelForTier(detail.tier)} plan.
                                     </span>
                                 ) : null}
-                                <UseDesignButton
-                                    forkId={detail.forkId}
-                                    name={detail.name}
-                                    tier={detail.tier}
-                                />
+                                <UseDesignButton forkId={detail.forkId} name={detail.name} />
                             </div>
                         )}
                     </div>
