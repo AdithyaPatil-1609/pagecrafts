@@ -33,7 +33,8 @@ export function UseDesignButton({
             </Link>
             {showPayNote && tier !== "free" ? (
                 <span className="text-xs text-muted-foreground">
-                    Razorpay opens when you set this up. Pro unlocks every paid design.
+                    Razorpay opens when you set this up. Pro for premium templates, Premium
+                    for signature.
                 </span>
             ) : null}
         </div>

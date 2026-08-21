@@ -39,6 +39,7 @@ export function UserPlanGrid({
         if (next?.plan === wanted) {
           setNote(null);
           setTarget(null);
+          pendingPlan.current = null;
           return;
         }
       }
@@ -194,8 +195,8 @@ export function UserPlanGrid({
 
       <p className="mt-6 text-sm leading-6 text-muted-foreground">
         Pro is Rs {billing.proPriceInr} and Premium is Rs {billing.premiumPriceInr}, each paid
-        once through Razorpay. They are not auto-renewing subscriptions. Cards stay with
-        Razorpay — we never store a card or bank number here.
+        once through Razorpay. They are not auto-renewing subscriptions. Cards stay with Razorpay
+        — we never store a card or bank number here.
       </p>
 
       {!billing.paymentsReady ? (
