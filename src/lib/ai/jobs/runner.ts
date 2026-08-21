@@ -162,7 +162,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             }
         }
 
-        const variants = await buildStyleOptions(composition, lookupPhoto);
+        const variants = await buildStyleOptions(composition, (q) => lookupPhoto(q, job.id));
         const picked = variants[0];
         const files = picked?.files ?? compositionToFiles(composition);
         const endedAt = Date.now();
@@ -300,12 +300,25 @@ function previewFiles(
     }
 }
 
-async function lookupPhoto(query: string): Promise<string> {
+function pickIndex(salt: string, length: number): number {
+    if (length <= 1) return 0;
+    let hash = 0;
+    for (let i = 0; i < salt.length; i += 1) {
+        hash = (hash * 31 + salt.charCodeAt(i)) >>> 0;
+    }
+    return hash % length;
+}
+
+// A whole page of results comes back and only items[0] was ever read, so every restaurant
+// in the country got the same photograph and generating again returned it a second time.
+// The salt is the job id, which is why two attempts differ and two businesses differ.
+async function lookupPhoto(query: string, salt = ''): Promise<string> {
     try {
         const { isImageSearchConfigured, searchImages } = await import('@/lib/images/unsplash');
         if (!isImageSearchConfigured()) return bankPhotoUrl(query);
         const { items } = await searchImages(query, 1);
-        return items[0]?.fullUrl ?? bankPhotoUrl(query);
+        if (!items.length) return bankPhotoUrl(query);
+        return items[pickIndex(`${salt}:${query}`, items.length)]?.fullUrl ?? bankPhotoUrl(query);
     } catch {
         return bankPhotoUrl(query);
     }

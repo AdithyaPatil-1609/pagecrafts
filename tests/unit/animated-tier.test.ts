@@ -135,3 +135,30 @@ describe('the animated palette follows the business', () => {
         expect(aurora).toContain('var(--accent)');
     });
 });
+
+describe('the premium tier is given a photograph to show', () => {
+    const STYLES = readFileSync(join(process.cwd(), 'src/lib/ai/generate/styles.ts'), 'utf8');
+
+    // photos: false meant stampPhotoUrls skipped the Animated look entirely, so the hero
+    // image slot was empty markup. Revealing it in CSS achieved nothing until this changed.
+    it('asks for the hero photo rather than opting out', () => {
+        const motion = STYLES.slice(STYLES.indexOf('motion: {'));
+        const [, value] = motion.match(/photos:\s*([^,\n]+)/) ?? [];
+
+        expect(value?.trim()).toBe("'hero'");
+        expect(value?.trim()).not.toBe('false');
+    });
+});
+
+describe('two people, or two attempts, do not get the same picture', () => {
+    const RUNNER = readFileSync(join(process.cwd(), 'src/lib/ai/jobs/runner.ts'), 'utf8');
+
+    it('reads across the results page instead of always taking the first', () => {
+        expect(RUNNER).not.toMatch(/return items\[0\]\?\.fullUrl/);
+        expect(RUNNER).toContain('pickIndex(');
+    });
+
+    it('varies by job, so generating again is not a duplicate', () => {
+        expect(RUNNER).toContain('lookupPhoto(q, job.id)');
+    });
+});
