@@ -20,7 +20,7 @@ import { createFakeDb } from "../support/fake-db";
 // paid path has its own tests below — picking a premium design here would have made every
 // one of them fail for a reason that has nothing to do with what it is checking.
 const DESIGN = TEMPLATES.find((t) => t.id === "portfolio")!;
-const PAID_DESIGN = TEMPLATES.find((t) => t.id === "gym")!;
+const PAID_DESIGN = TEMPLATES.find((t) => t.id === "fitness-coach")!;
 
 function libraryInTheTable() {
     const db = createFakeDb({ users: [{ id: "u1" }] });

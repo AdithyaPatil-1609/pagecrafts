@@ -27,7 +27,7 @@ function Chrome({ children }: { children: React.ReactNode }) {
     );
 }
 
-function CasualExample() {
+function StarterExample() {
     return (
         <Chrome>
             <div className="look-paper grid min-h-52 grid-cols-[1.05fr_0.95fr] gap-2 p-3">
@@ -90,7 +90,7 @@ function PhotoExample() {
     );
 }
 
-function AnimatedExample() {
+function PremiumExample() {
     return (
         <Chrome>
             <div className="look-motion relative flex min-h-52 flex-col justify-between overflow-hidden px-4 py-4">
@@ -119,9 +119,9 @@ function AnimatedExample() {
 }
 
 const LOOKS = [
-    { label: "Casual", line: "Colourful and simple — one photo, still free.", Preview: CasualExample },
-    { label: "Photo-rich", line: "A cinematic hero and a gallery of stills.", Preview: PhotoExample },
-    { label: "Animated", line: "A kinetic canvas drawn from this business.", Preview: AnimatedExample },
+    { label: "Starter", line: "Sidebar with every page and a simple image hero — free.", Preview: StarterExample },
+    { label: "Pro", line: "Photo-rich cinematic hero, blended top bar, separate pages.", Preview: PhotoExample },
+    { label: "Premium", line: "Liquid PageCrafts-like deck — continuous scroll.", Preview: PremiumExample },
 ];
 
 export function LookExamples() {

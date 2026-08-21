@@ -1,8 +1,11 @@
 import Link from "next/link";
 import {
+    CircleDollarSign,
+    Columns2,
     Globe,
     LayoutGrid,
     LayoutTemplate,
+    Package,
     Plus,
     Settings,
     Sparkles,
@@ -13,7 +16,6 @@ import type { LucideIcon } from "lucide-react";
 import type { Viewer } from "@/lib/auth/session";
 import { BrandMark } from "@/components/landing/BrandMark";
 import { ProfileMenu } from "@/components/settings/ProfileMenu";
-import { UpgradeToProButton } from "@/components/settings/UpgradeToProButton";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,9 @@ interface NavItem {
 const NAV: NavItem[] = [
     { label: "Build", icon: LayoutTemplate, href: "/#build" },
     { label: "Ask AI", icon: Sparkles, href: "/#build", badge: "Beta" },
+    { label: "Packages", icon: Package, href: "/packages" },
+    { label: "Pricing", icon: CircleDollarSign, href: "/#pricing" },
+    { label: "Compare", icon: Columns2, href: "/#compare" },
     { label: "Your sites", icon: LayoutGrid, href: "/#sites" },
     // Still inert, and deliberately. Domains and Team are post-MVP (Amendment A1 §22.3) with
     // nothing behind them at all — no registrar code, no team or member concept in the
@@ -38,7 +43,7 @@ const NAV: NavItem[] = [
     // plainly does nothing.
     { label: "Domains", icon: Globe },
     { label: "Team", icon: Users },
-    { label: "Settings", icon: Settings, href: "/settings" },
+    { label: "Settings", icon: Settings, href: "/?slide=settings" },
 ];
 
 const ROW = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium";
@@ -134,20 +139,17 @@ export function AppSidebar({
             <div className="mt-auto flex flex-col gap-4 pt-8">
                 <div className="rounded-2xl border border-primary/30 bg-accent/40 p-5">
                     <Sparkles className="size-5 text-primary" strokeWidth={1.75} aria-hidden />
-                    <p className="mt-3 text-base font-semibold text-foreground">User Plan</p>
+                    <p className="mt-3 text-base font-semibold text-foreground">Designs</p>
                     <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                        Starter, Pro (Rs 499), and Premium (Rs 999).
+                        Free designs you can use straight away. Pro and Premium designs unlock
+                        one at a time.
                     </p>
-                    {user ? (
-                        <UpgradeToProButton />
-                    ) : (
-                        <Link
-                            href="/signin"
-                            className="mt-4 flex w-full cursor-pointer items-center justify-center rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-brand-ink"
-                        >
-                            See plans
-                        </Link>
-                    )}
+                    <Link
+                        href="/templates"
+                        className="mt-4 flex w-full cursor-pointer items-center justify-center rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-brand-ink"
+                    >
+                        Browse designs
+                    </Link>
                 </div>
 
                 {user ? (

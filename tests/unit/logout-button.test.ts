@@ -19,7 +19,7 @@ describe("log out", () => {
     expect(button).toContain("cursor-pointer");
     expect(header).toContain("<ProfileMenu");
     expect(menu).toContain("<LogoutButton");
-    expect(menu).toContain('href="/settings"');
+    expect(menu).toContain('href="/?slide=settings"');
     expect(settings).toContain('redirect("/?slide=settings")');
     expect(route).toContain("signOut");
   });

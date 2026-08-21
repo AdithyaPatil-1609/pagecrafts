@@ -4,6 +4,7 @@ import { getProject } from "@/lib/data/projects";
 import { getProjectFiles } from "@/lib/data/project-files";
 import { applyContentToFiles } from "@/lib/content/to-files";
 import { applyAssetsToHtml, bundleAssets, referencedAssetIds } from "./publish-assets";
+import { wireOrderPayments } from "@/lib/sites/pay-page";
 
 // The file set that actually goes live (R3 D9).
 //
@@ -165,6 +166,14 @@ export function publishableFiles({
             next[path] = wired;
             changed = true;
         }
+    }
+
+    if (siteMeta.upiId) {
+        const paid = wireOrderPayments(next, {
+            businessName: siteMeta.title?.trim() || "This shop",
+            upiId: siteMeta.upiId,
+        });
+        return paid;
     }
 
     return changed ? next : files;

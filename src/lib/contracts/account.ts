@@ -79,6 +79,16 @@ export interface BillingSummary {
   paymentsReady: boolean;
   proPriceInr: number;
   premiumPriceInr: number;
+  /** AI usage package — Free or Advanced (not catalogue Starter/Pro/Premium). */
+  aiPackage: "free" | "advanced";
+  advancedPriceInr: number;
+  generationPassPriceInr: number;
+  /** Extra AI rounds bought after the package allowance. */
+  generationPasses: number;
+  /** Catalogue designs this account has unlocked (legacy plans expand to every matching tier). */
+  unlockedTemplateIds: string[];
+  /** Generated looks this account has unlocked (`photos`, `motion`). */
+  unlockedStyleIds: string[];
   history: BillingHistoryItem[];
 }
 
@@ -87,6 +97,12 @@ export const DEFAULT_BILLING: BillingSummary = {
   paymentsReady: false,
   proPriceInr: 499,
   premiumPriceInr: 999,
+  aiPackage: "free",
+  advancedPriceInr: 699,
+  generationPassPriceInr: 199,
+  generationPasses: 0,
+  unlockedTemplateIds: [],
+  unlockedStyleIds: [],
   history: [],
 };
 

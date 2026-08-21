@@ -3,182 +3,164 @@
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
+import { PasswordField } from "@/components/auth/PasswordField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { friendlyMessage } from "@/lib/api/messages";
-import type { ApiResult } from "@/lib/contracts";
+import type { ApiResult, ErrorCode } from "@/lib/contracts";
+import { MIN_PASSWORD_LENGTH } from "@/lib/auth/credentials";
 
 const CONFIRM = "delete my account";
 
+const MESSAGES: Partial<Record<ErrorCode, string>> = {
+    validation_failed: "Check the details above and try again.",
+    unauthorized: "That email and password do not match. Try again.",
+    rate_limited: "Too many attempts. Wait a few minutes and try again.",
+    internal:
+        "We could not finish that just now. Nothing is wrong with your details — try again in a moment.",
+};
+
 // Closing an account (M-account, C-12).
 //
-// Irreversible, so the confirmation is deliberately awkward: the person types the words, and
-// then proves it is them. Typing guards against an accident; the password guards against
-// somebody else at an unlocked laptop. Accounts created through Google have no password, so
-// the field is optional here and the route decides — it knows which identities exist.
-//
-// What it says it will remove is what it removes. Sites, files, version history and every
-// paid unlock cascade from the account row. A published site does not: it is theirs, on
-// hosting they were given, and closing an account is not a request to take a website off the
-// internet. Saying so here is the difference between a promise kept and a nasty surprise.
-export function DeleteAccount() {
+// Irreversible, so confirmation is deliberate: type the words, then re-enter the password.
+// Bought templates and looks are revoked with the account — that has to be said out loud.
+export function DeleteAccount({ email }: { email: string }) {
     const [open, setOpen] = useState(false);
     const [typed, setTyped] = useState("");
     const [password, setPassword] = useState("");
     const [state, setState] = useState<"idle" | "deleting" | "failed">("idle");
-    const [problem, setProblem] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const armed = typed.trim().toLowerCase() === CONFIRM;
+    const armed =
+        typed.trim().toLowerCase() === CONFIRM && password.length >= MIN_PASSWORD_LENGTH;
 
-    function close() {
+    function reset() {
         setOpen(false);
         setTyped("");
         setPassword("");
         setState("idle");
-        setProblem(null);
+        setError(null);
     }
 
     async function remove() {
+        if (!armed) return;
         setState("deleting");
-        setProblem(null);
+        setError(null);
 
         try {
             const response = await fetch("/api/v1/account", {
                 method: "DELETE",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ password }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
             });
+            const body = (await response.json()) as ApiResult<{ deleted: true }>;
 
-            if (!response.ok) {
-                const body = (await response.json().catch(() => null)) as ApiResult<unknown> | null;
-                const said =
-                    body && "ok" in body && !body.ok
-                        ? friendlyMessage(body.error.code, body.error.message)
-                        : "That did not work. Your account is still here.";
-
-                setProblem(said);
+            if (!body?.ok) {
                 setState("failed");
+                setError(
+                    MESSAGES[body?.error?.code ?? "internal"] ??
+                        body?.error?.message ??
+                        MESSAGES.internal!,
+                );
                 return;
             }
 
-            // A full navigation, not a router push: the session this page was rendered with
-            // no longer refers to anything, and every cached server component belongs to a
-            // user who has just stopped existing.
+            // Full navigation: the session this page was rendered with no longer refers
+            // to anything, and every cached server component belongs to a gone user.
             window.location.href = "/";
         } catch {
-            setProblem("We could not reach PageCrafts. Your account is still here.");
             setState("failed");
+            setError(MESSAGES.internal!);
         }
     }
 
     return (
-        <div className="rounded-2xl border-2 border-destructive/60 bg-destructive/10 p-5">
-            <p className="text-base font-semibold text-destructive">Delete your account</p>
-
-            <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                This cannot be undone.{" "}
-                <span className="text-foreground">
-                    Sites you have already published stay online — they are yours.
+        <div className="rounded-2xl border-2 border-destructive/60 bg-destructive/15 p-5 shadow-[0_0_0_1px_color-mix(in_srgb,var(--destructive)_35%,transparent)]">
+            <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/25 text-destructive">
+                    <AlertTriangle className="size-4" strokeWidth={2} aria-hidden />
                 </span>
-            </p>
+                <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-destructive">Delete your account</p>
+                    <p className="mt-1.5 text-sm leading-6 text-foreground/90">
+                        This permanently removes your account, every site you have made, their
+                        files, and their version history.{" "}
+                        <span className="font-semibold text-destructive">
+                            Any templates or looks you bought will be lost and cannot be restored.
+                        </span>{" "}
+                        Sites you have already published stay online — they are yours.
+                    </p>
+                </div>
+            </div>
 
             {!open ? (
                 <Button
                     variant="destructive"
                     size="sm"
-                    className="mt-4 rounded-lg font-semibold"
+                    className="mt-4 min-h-11 rounded-lg font-semibold"
                     onClick={() => setOpen(true)}
                 >
                     Delete my account
                 </Button>
             ) : (
-                <div
-                    role="alertdialog"
-                    aria-labelledby="delete-heading"
-                    className="mt-4 rounded-xl border-2 border-destructive bg-background p-4"
-                >
-                    <p
-                        id="delete-heading"
-                        className="flex items-center gap-2 text-base font-bold text-destructive"
-                    >
-                        <AlertTriangle className="size-5 shrink-0" aria-hidden />
-                        Are you sure? This cannot be undone.
+                <div className="mt-5 space-y-4 rounded-xl border border-destructive/40 bg-background/40 p-4">
+                    <p className="text-sm font-medium text-destructive" role="status">
+                        Are you sure? This cannot be undone. Bought designs will be gone with the
+                        account.
                     </p>
 
-                    <p className="mt-3 text-sm font-medium text-foreground">
-                        Deleting your account permanently destroys:
-                    </p>
+                    <div>
+                        <label htmlFor="confirm-delete" className="text-sm text-muted-foreground">
+                            Type <span className="font-semibold text-foreground">{CONFIRM}</span>{" "}
+                            to confirm.
+                        </label>
+                        <Input
+                            id="confirm-delete"
+                            value={typed}
+                            onChange={(event) => setTyped(event.target.value)}
+                            autoComplete="off"
+                            className="mt-2 max-w-sm border-destructive/40"
+                            placeholder={CONFIRM}
+                        />
+                    </div>
 
-                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                        <li>
-                            <span className="font-semibold text-destructive">
-                                Every design you have paid for.
-                            </span>{" "}
-                            Paid designs and unlocks are tied to this account. They are not
-                            refunded and they cannot be moved to another account.
-                        </li>
-                        <li>Your plan, and any time remaining on it.</li>
-                        <li>Every site you have made, with its files and version history.</li>
-                    </ul>
-
-                    <label
-                        htmlFor="confirm-delete"
-                        className="mt-4 block text-sm text-muted-foreground"
-                    >
-                        Type <span className="font-semibold text-foreground">{CONFIRM}</span> to
-                        confirm.
-                    </label>
-
-                    <Input
-                        id="confirm-delete"
-                        value={typed}
-                        onChange={(event) => setTyped(event.target.value)}
-                        autoComplete="off"
-                        className="mt-2 max-w-sm"
-                        placeholder={CONFIRM}
-                    />
-
-                    <label
-                        htmlFor="delete-password"
-                        className="mt-4 block text-sm text-muted-foreground"
-                    >
-                        Enter your password.{" "}
-                        <span className="text-xs">
-                            Leave blank if you only ever signed in with Google.
-                        </span>
-                    </label>
-
-                    <Input
-                        id="delete-password"
-                        type="password"
+                    <PasswordField
+                        id="confirm-delete-password"
+                        label="Enter your password"
                         value={password}
-                        onChange={(event) => setPassword(event.target.value)}
+                        onChange={setPassword}
                         autoComplete="current-password"
-                        className="mt-2 max-w-sm"
+                        invalid={Boolean(error)}
+                        describedBy={error ? "delete-account-error" : undefined}
+                        placeholder="Your PageCrafts password"
                     />
 
-                    <div className="mt-5 flex flex-wrap items-center gap-3">
-                        <Button
-                            size="sm"
-                            className="rounded-lg font-medium"
-                            onClick={close}
-                        >
-                            Keep my account
-                        </Button>
-
+                    <div className="flex flex-wrap items-center gap-3">
                         <Button
                             variant="destructive"
                             size="sm"
-                            className="rounded-lg font-semibold"
+                            className="min-h-11 rounded-lg font-semibold"
                             disabled={!armed || state === "deleting"}
-                            onClick={remove}
+                            onClick={() => void remove()}
                         >
-                            {state === "deleting" ? "Deleting…" : "Delete everything"}
+                            {state === "deleting" ? "Deleting…" : "Yes, delete everything"}
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="min-h-11 rounded-lg font-medium"
+                            onClick={reset}
+                        >
+                            Keep my account
                         </Button>
                     </div>
 
-                    <p aria-live="polite" className="mt-3 text-sm text-destructive">
-                        {state === "failed" ? problem : null}
+                    <p
+                        id="delete-account-error"
+                        aria-live="polite"
+                        className="text-xs text-destructive"
+                    >
+                        {error}
                     </p>
                 </div>
             )}

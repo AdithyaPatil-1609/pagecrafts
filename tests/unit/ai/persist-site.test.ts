@@ -237,6 +237,6 @@ describe('persistGeneratedSite', () => {
 
         const files = db.rows('project_files').filter((f) => f.project_id === id);
         expect(String(files.find((f) => f.path === 'index.html')?.content)).toContain('data-style="casual"');
-        expect(db.rows('commits')[0]?.message).toBe('Generated — Casual look');
+        expect(db.rows('commits')[0]?.message).toBe('Generated — Starter look');
     });
 });

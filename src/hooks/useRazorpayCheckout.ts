@@ -43,6 +43,11 @@ declare global {
 const SCRIPT_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
 let scriptPromise: Promise<void> | null = null;
 
+function paintRazorpayBackdrop(on: boolean) {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('pagecrafts-rzp-open', on);
+}
+
 function loadScript(): Promise<void> {
     if (scriptPromise) return scriptPromise;
 
@@ -102,10 +107,14 @@ interface UseRazorpayCheckoutOptions {
 interface UseRazorpayCheckoutReturn {
     /** Start the checkout flow for publishing a project. */
     openCheckout: (projectId: string) => Promise<void>;
-    /** Start checkout for account Pro or Premium. */
-    openPlanCheckout: (plan: 'pro' | 'premium') => Promise<void>;
-    /** Start the checkout flow for account Pro. */
-    openProCheckout: () => Promise<void>;
+    /** Buy one catalogue design. */
+    openTemplateCheckout: (templateId: string) => Promise<void>;
+    /** Buy one generated look (`photos` or `motion`). */
+    openStyleCheckout: (styleId: string) => Promise<void>;
+    /** Buy the Advanced AI usage package. */
+    openAdvancedCheckout: () => Promise<void>;
+    /** Buy one extra AI generation round. */
+    openGenerationPassCheckout: () => Promise<void>;
     /** Current status of the checkout flow. */
     status: CheckoutStatus;
     /** Human-readable error, set when status is 'error'. */
@@ -166,6 +175,7 @@ export function useRazorpayCheckout(
                 }
 
                 setStatus('open');
+                paintRazorpayBackdrop(true);
 
                 const rzp = new window.Razorpay({
                     key: data.keyId,
@@ -175,6 +185,7 @@ export function useRazorpayCheckout(
                     description: descriptionFor(data),
                     order_id: data.orderId,
                     handler: async (response: RazorpaySuccessResponse) => {
+                        paintRazorpayBackdrop(false);
                         setStatus('verifying');
 
                         const { error: verifyError } = await apiPost<{ verified: boolean }>(
@@ -198,6 +209,7 @@ export function useRazorpayCheckout(
                     },
                     modal: {
                         ondismiss: () => {
+                            paintRazorpayBackdrop(false);
                             setStatus('idle');
                             onDismiss?.();
                         },
@@ -208,6 +220,7 @@ export function useRazorpayCheckout(
 
                 rzp.open();
             } catch (err) {
+                paintRazorpayBackdrop(false);
                 const message = err instanceof Error ? err.message : 'Payment failed.';
                 setStatus('error');
                 setError(message);
@@ -228,21 +241,49 @@ export function useRazorpayCheckout(
         [startOrder],
     );
 
-    const openProCheckout = useCallback(
-        () => startOrder('/api/v1/account/billing/checkout', (data) => `Pro · Rs ${data.priceInr ?? data.amountInPaise! / 100}`, { plan: 'pro' }),
-        [startOrder],
-    );
-
-    const openPlanCheckout = useCallback(
-        (plan: 'pro' | 'premium') =>
+    const openTemplateCheckout = useCallback(
+        (templateId: string) =>
             startOrder(
-                '/api/v1/account/billing/checkout',
-                (data) =>
-                    `${plan === 'premium' ? 'Premium' : 'Pro'} · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
-                { plan },
+                `/api/v1/templates/${encodeURIComponent(templateId)}/checkout`,
+                (data) => `Design · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
             ),
         [startOrder],
     );
 
-    return { openCheckout, openPlanCheckout, openProCheckout, status, error };
+    const openStyleCheckout = useCallback(
+        (styleId: string) =>
+            startOrder(
+                `/api/v1/styles/${encodeURIComponent(styleId)}/checkout`,
+                (data) => `Look · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            ),
+        [startOrder],
+    );
+
+    const openAdvancedCheckout = useCallback(
+        () =>
+            startOrder(
+                "/api/v1/account/packages/advanced/checkout",
+                (data) => `Advanced AI · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            ),
+        [startOrder],
+    );
+
+    const openGenerationPassCheckout = useCallback(
+        () =>
+            startOrder(
+                "/api/v1/account/packages/generation/checkout",
+                (data) => `Extra generation · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            ),
+        [startOrder],
+    );
+
+    return {
+        openCheckout,
+        openTemplateCheckout,
+        openStyleCheckout,
+        openAdvancedCheckout,
+        openGenerationPassCheckout,
+        status,
+        error,
+    };
 }

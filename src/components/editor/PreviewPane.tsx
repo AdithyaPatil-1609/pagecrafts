@@ -5,11 +5,13 @@ import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
 import { PREVIEW_IFRAME_SANDBOX, withPreviewCsp } from '@/lib/preview-security';
 import { friendlyPreviewIssue } from '@/lib/editor/preview-copy';
+import { explainPreviewIssues } from '@/lib/editor/ai-fix';
 import { previewDocumentUrl } from '@/lib/editor/preview-frame';
 import { filesForPreview } from '@/lib/editor/preview-files';
 import { sectionLabel } from '@/lib/editor/section-registry';
 import { htmlPagesOf } from '@/lib/ai/generate/pages';
 import { cn } from '@/lib/utils';
+import { AskAiFixDialog } from './AskAiFixDialog';
 
 const DEBOUNCE_MS = 120;
 
@@ -23,6 +25,8 @@ export default function PreviewPane() {
     const composition = useEditorStore((s) => s.composition);
     const selectedSectionId = useEditorStore((s) => s.selectedSectionId);
     const selectSection = useEditorStore((s) => s.selectSection);
+    const requestAiEdit = useEditorStore((s) => s.requestAiEdit);
+    const chatBusy = useEditorStore((s) => s.chatBusy);
 
     const frame = useRef<HTMLIFrameElement>(null);
     const [viewport, setViewport] = useState<Viewport>('full');
@@ -33,7 +37,7 @@ export default function PreviewPane() {
         return { doc: withPreviewCsp(injectErrorHook(r.html)), warnings: r.warnings };
     });
     const [runtimeError, setRuntimeError] = useState<string | null>(null);
-    const [dismissed, setDismissed] = useState(false);
+    const [askOpen, setAskOpen] = useState(false);
     const last = useRef(preview.doc);
 
     useEffect(() => {
@@ -48,7 +52,7 @@ export default function PreviewPane() {
             last.current = next;
             setPreview({ doc: next, warnings: r.warnings });
             setRuntimeError(null);
-            setDismissed(false);
+            setAskOpen(false);
         }, DEBOUNCE_MS);
         return () => clearTimeout(t);
     }, [vfs, dirtyPaths, tree, pendingChange, reloadTick, entry]);
@@ -81,9 +85,10 @@ export default function PreviewPane() {
         .map(friendlyPreviewIssue);
     const uniqueIssues = [...new Set(issues)];
     const htmlPages = htmlPagesOf(vfs.toMap());
-    const showNotice = uniqueIssues.length > 0 && !dismissed;
+    const showNotice = uniqueIssues.length > 0;
     const empty = !preview.doc.trim();
     const sections = composition?.sections ?? [];
+    const fix = explainPreviewIssues(uniqueIssues);
 
     return (
         <div id="editor-preview" className="flex h-full min-h-0 w-full flex-col">
@@ -204,28 +209,36 @@ export default function PreviewPane() {
                 {showNotice && !empty && (
                     <div
                         role="status"
-                        className="pointer-events-auto absolute inset-x-6 bottom-6 z-10 rounded-md border border-border bg-background/95 px-3 py-2 text-xs shadow-md backdrop-blur"
+                        className="pointer-events-auto absolute inset-x-6 bottom-6 z-10 rounded-2xl border border-border/70 bg-card/95 px-4 py-3 text-sm shadow-md backdrop-blur"
                     >
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                                <p className="font-medium">Could not show the whole page</p>
-                                <ul className="mt-1 space-y-0.5 text-muted-foreground">
-                                    {uniqueIssues.slice(0, 2).map((m, i) => (
-                                        <li key={i} className="truncate">{m}</li>
-                                    ))}
-                                </ul>
+                                <p className="font-medium text-foreground">{fix.title}</p>
+                                <p className="mt-1 text-muted-foreground">{fix.what}</p>
                             </div>
                             <button
-                                onClick={() => setDismissed(true)}
-                                aria-label="Dismiss"
-                                className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                type="button"
+                                onClick={() => setAskOpen(true)}
+                                className="h-11 shrink-0 cursor-pointer rounded-full border border-gold bg-gold px-4 text-xs font-semibold text-gold-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
                             >
-                                ×
+                                Fix with AI
                             </button>
                         </div>
                     </div>
                 )}
             </div>
+
+            <AskAiFixDialog
+                open={askOpen}
+                title={fix.title}
+                what={fix.what}
+                busy={chatBusy}
+                onDismiss={() => setAskOpen(false)}
+                onConfirm={() => {
+                    setAskOpen(false);
+                    void requestAiEdit(fix.instruction);
+                }}
+            />
         </div>
     );
 }

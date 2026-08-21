@@ -56,16 +56,38 @@ export function isPaidTier(tier: string | null | undefined): boolean {
 
 export type PaidPlan = "pro" | "premium";
 
-/** Catalogue `premium` is the Pro plan (Rs 499); `signature` is Premium (Rs 999). */
+export type PaidBadge = "Pro" | "Premium";
+
+/** Catalogue `premium` is the Pro tile (Rs 499); `signature` is Premium (Rs 999). */
 export function requiredPlanForTemplate(tier: string | null | undefined): PaidPlan | null {
     if (tier === "premium") return "pro";
     if (tier === "signature") return "premium";
     return null;
 }
 
-/** Generated looks: Photo-rich is Pro; Animated is Premium. */
+/** Generated looks: photos is Pro; motion is Premium. */
 export function requiredPlanForStyle(tier: string | null | undefined): PaidPlan | null {
     if (tier === "pro") return "pro";
     if (tier === "premium") return "premium";
     return null;
+}
+
+/** Word on the tile. Paid catalogue designs stay labelled after unlock. */
+export function templateBadge(tier: string | null | undefined): PaidBadge | null {
+    if (tier === "premium") return "Pro";
+    if (tier === "signature") return "Premium";
+    return null;
+}
+
+/** Word on a generated look. Paid looks stay labelled after unlock. */
+export function styleBadge(tier: string | null | undefined): PaidBadge | null {
+    if (tier === "pro") return "Pro";
+    if (tier === "premium") return "Premium";
+    return null;
+}
+
+export function templatePriceInr(tier: string | null | undefined): number {
+    if (tier === "premium") return TIER_PRICE_INR.premium;
+    if (tier === "signature") return TIER_PRICE_INR.signature;
+    return 0;
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
-import type { AccountPlan, AccountResponse, BillingSummary, NotifyPrefs } from "@/lib/contracts";
-import { canUpgradePlan, DEFAULT_NOTIFY_PREFS } from "@/lib/contracts";
-import { planName } from "@/lib/payments/plans";
+import type { AccountResponse, NotifyPrefs } from "@/lib/contracts";
+import { DEFAULT_NOTIFY_PREFS } from "@/lib/contracts";
 import { apiGet, apiPatch } from "@/lib/api/client";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { PreferenceSwitch } from "@/components/settings/PreferenceSwitch";
@@ -14,6 +14,17 @@ import { cn } from "@/lib/utils";
 
 const MENU_LINK =
   "flex min-h-9 cursor-pointer items-center rounded-lg px-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+const SETTINGS_HREF = "/?slide=settings";
+
+function scrollToSettings() {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById("settings")?.scrollIntoView({
+    behavior: reduce ? "auto" : "smooth",
+    block: "start",
+  });
+  window.history.replaceState(null, "", SETTINGS_HREF);
+}
 
 export function ProfileMenu({
   user,
@@ -24,19 +35,15 @@ export function ProfileMenu({
   variant?: "name" | "avatar" | "card";
   placement?: "bottom" | "top";
 }) {
+  const pathname = usePathname();
   const [prefs, setPrefs] = useState<NotifyPrefs | null>(null);
-  const [plan, setPlan] = useState<AccountPlan>("starter");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([
-      apiGet<AccountResponse>("/api/v1/account"),
-      apiGet<BillingSummary>("/api/v1/account/billing"),
-    ]).then(([account, billing]) => {
+    void apiGet<AccountResponse>("/api/v1/account").then((account) => {
       if (cancelled) return;
       if (account.data) setPrefs(account.data.notifyPrefs);
-      if (billing.data) setPlan(billing.data.plan);
     });
     return () => {
       cancelled = true;
@@ -54,6 +61,16 @@ export function ProfileMenu({
     });
     if (error) setPrefs(previous);
     setSaving(false);
+  }
+
+  function openSettings(event: MouseEvent<HTMLAnchorElement>) {
+    // Already on the home deck — scroll in place. Going via /settings remounts the
+    // whole page and feels like a hang.
+    if (pathname !== "/") return;
+    event.preventDefault();
+    const details = event.currentTarget.closest("details");
+    if (details) details.open = false;
+    scrollToSettings();
   }
 
   const initial = user.name.slice(0, 1);
@@ -121,17 +138,6 @@ export function ProfileMenu({
         )}
       >
         <p className="truncate px-2 text-xs text-muted-foreground">{user.email}</p>
-        <div className="mt-2 flex min-h-9 items-center justify-between gap-2 px-2">
-          <p className="text-sm text-muted-foreground">Current plan</p>
-          <div className="flex min-h-9 items-center gap-2">
-            <p className="text-sm font-medium text-foreground">{planName(plan)}</p>
-            {canUpgradePlan(plan) ? (
-              <Link href="/plans" className={MENU_LINK}>
-                Upgrade
-              </Link>
-            ) : null}
-          </div>
-        </div>
         <div className="flex min-h-11 items-center justify-between gap-3 px-2">
           <p id="profile-email-notices" className="text-sm text-foreground">
             Email notices
@@ -143,7 +149,7 @@ export function ProfileMenu({
             onChange={(on) => void setEmail(on)}
           />
         </div>
-        <Link href="/#settings" className={MENU_LINK}>
+        <Link href="/#settings" onClick={openSettings} className={MENU_LINK}>
           Account settings
         </Link>
         <LogoutButton className={cn(MENU_LINK, "w-full text-left")} />

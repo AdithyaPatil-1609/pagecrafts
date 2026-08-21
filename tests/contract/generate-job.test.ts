@@ -7,6 +7,8 @@ const ledger = vi.hoisted(() => ({ persist: vi.fn() }));
 const entitlements = vi.hoisted(() => ({
     hasPro: vi.fn(async () => false),
     hasPremium: vi.fn(async () => false),
+    hasAdvanced: vi.fn(async () => false),
+    hasStyleAccess: vi.fn(async (_db: unknown, _userId: string, styleId: string) => styleId === 'casual'),
 }));
 vi.mock('@/lib/auth/session', () => ({
     requireUser: auth.requireUser,
@@ -17,7 +19,13 @@ vi.mock('@/lib/ai/cost/persist', () => ({
 }));
 vi.mock('@/lib/data/entitlements', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@/lib/data/entitlements')>();
-    return { ...actual, hasPro: entitlements.hasPro, hasPremium: entitlements.hasPremium };
+    return {
+        ...actual,
+        hasPro: entitlements.hasPro,
+        hasPremium: entitlements.hasPremium,
+        hasAdvanced: entitlements.hasAdvanced,
+        hasStyleAccess: entitlements.hasStyleAccess,
+    };
 });
 
 vi.mock('@/lib/limits/redis', async () => {
@@ -91,6 +99,10 @@ beforeEach(() => {
     resetFreeGenerationQuota();
     entitlements.hasPro.mockResolvedValue(false);
     entitlements.hasPremium.mockResolvedValue(false);
+    entitlements.hasAdvanced.mockResolvedValue(false);
+    entitlements.hasStyleAccess.mockImplementation(
+        async (_db: unknown, _userId: string, styleId: string) => styleId === 'casual',
+    );
     setGateway(new MockGateway());
 });
 
@@ -279,7 +291,10 @@ describe('GET /api/v1/jobs/{id}', () => {
 
 describe('POST /api/v1/projects/{id}/generate/choose', () => {
     it('records the photo-rich look on the job', async () => {
-        entitlements.hasPro.mockResolvedValue(true);
+        entitlements.hasStyleAccess.mockImplementation(
+            async (_db: unknown, _userId: string, styleId: string) =>
+                styleId === 'casual' || styleId === 'photos',
+        );
         const res = await generate({ prompt: 'a family dental clinic in koramangala' });
         const { data } = await res.json();
         await settled(data.job_id);
@@ -415,11 +430,11 @@ describe('free generation quota', () => {
 
         expect(res.status).toBe(402);
         expect(json.error.code).toBe('payment_required');
-        expect(json.error.message).toMatch(/5 free generations/i);
+        expect(json.error.message).toMatch(/Free AI generations/i);
     });
 
-    it('a Pro account can generate past the free cap', async () => {
-        entitlements.hasPro.mockResolvedValue(true);
+    it('an Advanced account can generate past the Free cap', async () => {
+        entitlements.hasAdvanced.mockResolvedValue(true);
         for (let i = 0; i < FREE_GENERATIONS_PER_PROJECT; i++) {
             await recordFreeGeneration('p_1');
         }
