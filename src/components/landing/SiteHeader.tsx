@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { BrandMark } from "@/components/landing/BrandMark";
-import { LogoutButton } from "@/components/auth/LogoutButton";
+import { PlansNavLink } from "@/components/settings/PlansNavLink";
+import { ProfileMenu } from "@/components/settings/ProfileMenu";
 import type { Viewer } from "@/lib/auth/session";
 
 export const DECK_NAV = [
@@ -97,13 +98,8 @@ export function SiteHeader({
 
                     {user ? (
                         <>
-                            <span className="hidden text-sm text-muted-foreground sm:inline">
-                                {user.name}
-                            </span>
-                            <Link href="/settings" className={LINK}>
-                                Settings
-                            </Link>
-                            <LogoutButton className={LINK} />
+                            <PlansNavLink />
+                            <ProfileMenu user={user} />
                         </>
                     ) : (
                         <GuestActions />

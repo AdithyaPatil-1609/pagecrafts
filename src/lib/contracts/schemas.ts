@@ -104,3 +104,26 @@ export const billingProfileSchema = z.object({
   gstin: z.string().trim().max(15),
 });
 
+export const notifyPrefsSchema = z.object({
+  email: z.boolean(),
+  published: z.boolean(),
+  updated: z.boolean(),
+  payments: z.boolean(),
+  product: z.boolean(),
+});
+
+export const notifyPrefsRequestSchema = z.object({
+  notifyPrefs: notifyPrefsSchema,
+});
+
+export const paymentVerifySchema = z.object({
+  razorpay_order_id: z.string().min(1),
+  razorpay_payment_id: z.string().min(1),
+  razorpay_signature: z.string().min(1),
+});
+
+/** POST /account/billing/checkout — which account unlock to start paying for. */
+export const planCheckoutSchema = z.object({
+  plan: z.enum(["pro", "premium"]),
+});
+

@@ -12,6 +12,8 @@ import type { LucideIcon } from "lucide-react";
 
 import type { Viewer } from "@/lib/auth/session";
 import { BrandMark } from "@/components/landing/BrandMark";
+import { ProfileMenu } from "@/components/settings/ProfileMenu";
+import { UpgradeToProButton } from "@/components/settings/UpgradeToProButton";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -132,37 +134,24 @@ export function AppSidebar({
             <div className="mt-auto flex flex-col gap-4 pt-8">
                 <div className="rounded-2xl border border-primary/30 bg-accent/40 p-5">
                     <Sparkles className="size-5 text-primary" strokeWidth={1.75} aria-hidden />
-                    <p className="mt-3 text-base font-semibold text-foreground">Upgrade to Pro</p>
+                    <p className="mt-3 text-base font-semibold text-foreground">User Plan</p>
                     <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-                        Unlock custom domains, more AI generations, and priority support.
+                        Starter, Pro (Rs 499), and Premium (Rs 999).
                     </p>
-                    <button
-                        type="button"
-                        disabled
-                        title="Billing is not live yet"
-                        className="mt-4 w-full rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-brand-ink disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                        Upgrade now
-                    </button>
+                    {user ? (
+                        <UpgradeToProButton />
+                    ) : (
+                        <Link
+                            href="/signin"
+                            className="mt-4 flex w-full cursor-pointer items-center justify-center rounded-lg border border-primary/40 px-3 py-2 text-sm font-semibold text-brand-ink"
+                        >
+                            See plans
+                        </Link>
+                    )}
                 </div>
 
                 {user ? (
-                    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-3">
-                        <span
-                            aria-hidden
-                            className="brand-gradient flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold uppercase text-primary-foreground"
-                        >
-                            {user.name.slice(0, 1)}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium text-foreground">
-                                {user.name}
-                            </span>
-                            <span className="block truncate text-xs text-muted-foreground">
-                                {user.email}
-                            </span>
-                        </span>
-                    </div>
+                    <ProfileMenu user={user} variant="card" placement="top" />
                 ) : (
                     <Link
                         href="/signin"

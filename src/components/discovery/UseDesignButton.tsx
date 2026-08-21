@@ -27,13 +27,14 @@ export function UseDesignButton({
             <Link
                 href={href}
                 aria-label={`Use ${name}`}
-                className={buttonVariants({ variant: "brand", size: "lg" })}
+                className={buttonVariants({ variant: "brand", size: "lg" }) + " cursor-pointer"}
             >
                 Use this design
             </Link>
             {showPayNote && tier !== "free" ? (
                 <span className="text-xs text-muted-foreground">
-                    You will be asked to pay for this design once, before it is set up.
+                    Razorpay opens when you set this up. Pro for premium templates, Premium
+                    for signature.
                 </span>
             ) : null}
         </div>

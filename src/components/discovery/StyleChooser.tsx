@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { CardIndex } from "@/components/ui/card-index";
 import { GeneratingOverlay } from "@/components/editor/GeneratingOverlay";
 import { cn } from "@/lib/utils";
+import { useUnlockPaidDesign } from "@/hooks/useUnlockPaidDesign";
+import { PREMIUM_PRICE_INR, PRO_PRICE_INR, requiredPlanForStyle } from "@/lib/payments/pricing";
+import { waitForPlanGrant } from "@/lib/payments/wait-for-pro";
 
 interface VariantCard {
     id: StyleId;
@@ -65,9 +68,10 @@ const TIER_BADGE: Record<StyleTier, string> = {
     premium: "brand-gradient text-primary-foreground",
 };
 
-function priceLabel(tier: StyleTier, priceInr: number): string {
+function priceLabel(tier: StyleTier): string {
     if (tier === "free") return "Free";
-    return `Rs ${priceInr}`;
+    if (tier === "premium") return `Rs ${PREMIUM_PRICE_INR}`;
+    return `Rs ${PRO_PRICE_INR}`;
 }
 
 function canGenerateAgain(quota: Quota | null): boolean {
@@ -93,6 +97,7 @@ export function StyleChooser({
     const [picking, setPicking] = useState<{ jobId: string; variantId: StyleId } | null>(null);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { unlockIfNeeded, status: payStatus } = useUnlockPaidDesign();
 
     useEffect(() => {
         if (!activeJobId) {
@@ -145,23 +150,60 @@ export function StyleChooser({
         };
     }, [activeJobId, projectId, router]);
 
-    async function choose(fromJobId: string, variantId: StyleId) {
+    async function persistLook(fromJobId: string, variantId: StyleId) {
+        return apiPost<{ id: string }>(
+            `/api/v1/projects/${encodeURIComponent(projectId)}/generate/choose`,
+            { jobId: fromJobId, variantId },
+        );
+    }
+
+    async function choose(fromJobId: string, variantId: StyleId, tier: StyleTier) {
         if (picking) return;
         setPicking({ jobId: fromJobId, variantId });
         setError(null);
 
-        const { error: failure } = await apiPost<{ id: string }>(
-            `/api/v1/projects/${encodeURIComponent(projectId)}/generate/choose`,
-            { jobId: fromJobId, variantId },
-        );
+        try {
+            const need = requiredPlanForStyle(tier);
+            if (need) {
+                const unlocked = await unlockIfNeeded(need);
+                if (!unlocked) {
+                    setError(
+                        "Pay with Razorpay to use this look. Pro unlocks Photo-rich; Premium unlocks Animated.",
+                    );
+                    setPicking(null);
+                    return;
+                }
+            }
 
-        if (failure) {
-            setError(failure);
+            let result = await persistLook(fromJobId, variantId);
+
+            if (result.code === "payment_required") {
+                const plan = need ?? "pro";
+                const unlocked =
+                    (await waitForPlanGrant(plan, { attempts: 5, delayMs: 600 })) ||
+                    (await unlockIfNeeded(plan));
+                if (!unlocked) {
+                    setError(
+                        result.error ??
+                            "Pay with Razorpay to use this look. Pro unlocks Photo-rich; Premium unlocks Animated.",
+                    );
+                    setPicking(null);
+                    return;
+                }
+                result = await persistLook(fromJobId, variantId);
+            }
+
+            if (result.error) {
+                setError(result.error);
+                setPicking(null);
+                return;
+            }
+
+            router.push(`/editor/${encodeURIComponent(projectId)}`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Payment failed.");
             setPicking(null);
-            return;
         }
-
-        router.push(`/editor/${encodeURIComponent(projectId)}`);
     }
 
     async function generateAgain() {
@@ -258,8 +300,9 @@ export function StyleChooser({
                     Pick a <span className="hero-mix">look</span>
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
-                    Same business, three different sites. Casual is Free. Photo-rich will be Pro.
-                    Animated will be Premium — for now you can use any of them.
+                    Same business, three different sites. Casual is Free. Photo-rich is Pro
+                    (Rs {PRO_PRICE_INR}). Animated is Premium (Rs {PREMIUM_PRICE_INR}) —
+                    Razorpay opens when you pick a paid look.
                 </p>
             </header>
 
@@ -313,12 +356,18 @@ export function StyleChooser({
                                             variant={option.tier === "free" ? "outline-brand" : "brand"}
                                             className="mt-auto w-full cursor-pointer rounded-lg font-semibold"
                                             disabled={picking !== null}
-                                            onClick={() => void choose(attempt.job_id, option.id)}
+                                            onClick={() =>
+                                                void choose(attempt.job_id, option.id, option.tier)
+                                            }
                                         >
                                             {picking?.jobId === attempt.job_id &&
                                             picking.variantId === option.id
-                                                ? "Setting up your site…"
-                                                : `Use ${option.label} · ${priceLabel(option.tier, option.price_inr)}`}
+                                                ? payStatus === "open" || payStatus === "loading"
+                                                    ? "Opening Razorpay…"
+                                                    : payStatus === "verifying"
+                                                      ? "Confirming payment…"
+                                                      : "Setting up your site…"
+                                                : `Use ${option.label} · ${priceLabel(option.tier)}`}
                                         </Button>
                                     </div>
                                 </article>
