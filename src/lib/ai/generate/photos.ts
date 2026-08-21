@@ -98,7 +98,7 @@ function withUrl(value: unknown, url: string): Record<string, unknown> {
 export async function stampPhotoUrls(
     composition: Composition,
     lookup: (query: string) => Promise<string> = async (query) => bankPhotoUrl(query),
-    /** When set, only these section types receive photographs (Casual stamps the hero alone). */
+    /** When set, only these section types receive photographs (Starter stamps the hero alone). */
     onlyTypes?: ReadonlyArray<Composition['sections'][number]['type']>,
 ): Promise<Composition> {
     const cache = new Map<string, string>();

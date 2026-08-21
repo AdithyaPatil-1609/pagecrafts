@@ -54,7 +54,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
 
-        await assertFreeGenerationAllowed(params.id, userId, supabase);
+        const quota = await assertFreeGenerationAllowed(params.id, userId, supabase);
 
         const admin = supabaseAdminOrNull();
         if (admin) setProfileStore(new SupabaseProfileStore(admin));
@@ -81,7 +81,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 events: [],
                 ledger: [],
             });
-            await recordFreeGeneration(params.id);
+            await recordFreeGeneration(params.id, userId, quota.limit);
 
             void runJob(job, {
                 templates: TEMPLATES,

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EntitlementCheck, EntitlementKind, EntitlementSource } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
+import { requiredPlanForTemplate } from "@/lib/payments/pricing";
 
 // The server-side entitlement check (R3 D9, A-5, Doc 22 §6).
 //
@@ -23,6 +24,8 @@ interface EntitlementRow {
     source: EntitlementSource;
     status: string;
     expires_at: string | null;
+    template_id?: string | null;
+    style_id?: string | null;
 }
 
 /**
@@ -50,7 +53,7 @@ async function liveEntitlements(
     // here — one round trip rather than one per kind.
     const { data, error } = await supabase
         .from("entitlements")
-        .select("kind, source, status, expires_at, project_id")
+        .select("kind, source, status, expires_at, project_id, template_id, style_id")
         .eq("user_id", userId);
     if (error) throw new ApiError("internal", "Could not check your account.", error.message);
 
@@ -60,7 +63,14 @@ async function liveEntitlements(
             const r = row as unknown as EntitlementRow & { project_id: string | null };
             if (!isLive(r, now)) return false;
             // Account-scoped grants count always; a project-scoped grant only for its project.
-            return r.kind === "pro" || r.kind === "premium" || r.project_id === projectId;
+            return (
+                r.kind === "pro" ||
+                r.kind === "premium" ||
+                r.kind === "advanced" ||
+                r.kind === "template" ||
+                r.kind === "style" ||
+                r.project_id === projectId
+            );
         })
         .map((row) => row as unknown as EntitlementRow);
 }
@@ -85,6 +95,11 @@ export async function checkEntitlement(
         return { kind, granted: true, source: exact.source, expiresAt: exact.expires_at };
     }
 
+    // AI Advanced is bought separately — legacy Pro/Premium never unlock it.
+    if (kind === "advanced") {
+        return { kind, granted: false };
+    }
+
     // Premium covers Pro and every per-project kind. Pro covers those kinds but not Premium.
     const premium = rows.find((row) => row.kind === "premium");
     if (premium && kind !== "premium") {
@@ -107,26 +122,71 @@ export async function hasPremium(supabase: SupabaseClient, userId: string): Prom
     return (await checkEntitlement(supabase, userId, null, "premium")).granted;
 }
 
+/** True when the account holds the Advanced AI usage package. */
+export async function hasAdvanced(supabase: SupabaseClient, userId: string): Promise<boolean> {
+    return (await checkEntitlement(supabase, userId, null, "advanced")).granted;
+}
+
 export const PAID_DESIGN_MESSAGE =
-    "This design is paid. Pay with Razorpay to use it — Pro unlocks Pro designs, Premium unlocks Premium and Signature.";
+    "This design is paid. Pay with Razorpay to unlock it — the price is the one on the tile.";
 
 /**
- * Opening a paid template or a Pro/Premium look.
+ * Opening a paid catalogue design.
  *
- * Pro covers Pro designs; Premium covers those and Signature/Premium looks. The grant is
+ * A row for that template, or a legacy Pro/Premium account grant, is enough. The grant is
  * written only when the signed webhook arrives, never because the browser reported success.
  */
+export async function hasTemplateAccess(
+    supabase: SupabaseClient,
+    userId: string,
+    templateId: string,
+    tier: string | null | undefined,
+): Promise<boolean> {
+    const rows = await liveEntitlements(supabase, userId, null);
+    if (rows.some((row) => row.kind === "template" && row.template_id === templateId)) {
+        return true;
+    }
+    if (rows.some((row) => row.kind === "premium")) return true;
+    if (requiredPlanForTemplate(tier) === "pro" && rows.some((row) => row.kind === "pro")) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Opening a paid generated look (`photos` / Pro or `motion` / Premium). Starter (`casual`) is always free.
+ */
+export async function hasStyleAccess(
+    supabase: SupabaseClient,
+    userId: string,
+    styleId: string,
+): Promise<boolean> {
+    if (styleId === "casual") return true;
+    const rows = await liveEntitlements(supabase, userId, null);
+    if (rows.some((row) => row.kind === "style" && row.style_id === styleId)) return true;
+    if (rows.some((row) => row.kind === "premium")) return true;
+    if (styleId === "photos" && rows.some((row) => row.kind === "pro")) return true;
+    return false;
+}
+
 export async function assertCanUsePaidDesign(
     supabase: SupabaseClient,
     userId: string,
-    plan: "pro" | "premium" = "pro",
+    templateId: string,
+    tier: string | null | undefined,
 ): Promise<void> {
-    const granted =
-        plan === "premium"
-            ? await hasPremium(supabase, userId)
-            : await hasPro(supabase, userId);
-    if (granted) return;
-    throw new ApiError("payment_required", PAID_DESIGN_MESSAGE, `userId=${userId} plan=${plan}`);
+    if (!requiredPlanForTemplate(tier)) return;
+    if (await hasTemplateAccess(supabase, userId, templateId, tier)) return;
+    throw new ApiError("payment_required", PAID_DESIGN_MESSAGE, `userId=${userId} templateId=${templateId}`);
+}
+
+export async function assertCanUseStyle(
+    supabase: SupabaseClient,
+    userId: string,
+    styleId: string,
+): Promise<void> {
+    if (await hasStyleAccess(supabase, userId, styleId)) return;
+    throw new ApiError("payment_required", PAID_DESIGN_MESSAGE, `userId=${userId} styleId=${styleId}`);
 }
 
 /**

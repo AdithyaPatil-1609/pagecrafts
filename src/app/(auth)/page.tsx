@@ -11,6 +11,8 @@ import { getBilling } from "@/lib/payments/checkout";
 import type { AccountResponse, BillingSummary, ProjectSummary } from "@/lib/contracts";
 import { parseTemplateQuery, queryTemplates, type TemplateSummary } from "@/lib/templates/query";
 import { WelcomeSlide } from "@/components/deck/WelcomeSlide";
+import { PricingSlide } from "@/components/deck/PricingSlide";
+import { CompareSlide } from "@/components/deck/CompareSlide";
 import { BuildSlide } from "@/components/deck/BuildSlide";
 import { SitesSlide } from "@/components/deck/SitesSlide";
 import { SettingsSlide } from "@/components/deck/SettingsSlide";
@@ -21,6 +23,8 @@ export const dynamic = "force-dynamic";
 export const HOME_SLIDES = [
     { id: "welcome", label: "Welcome" },
     { id: "how-it-works", label: "How it works" },
+    { id: "pricing", label: "Pricing" },
+    { id: "compare", label: "Compare" },
     { id: "build", label: "Build" },
     { id: "sites", label: "Your sites" },
     { id: "settings", label: "Settings" },
@@ -99,7 +103,12 @@ function Home({
                 <main>
                     <WelcomeSlide name={user.name} templates={templates} />
                     <ValueProps />
-                    <BuildSlide templates={templates} />
+                    <PricingSlide />
+                    <CompareSlide />
+                    <BuildSlide
+                        templates={templates}
+                        unlockedTemplateIds={billing?.unlockedTemplateIds ?? []}
+                    />
                     <SitesSlide signedIn sites={sites} email={user.email} />
                     <SettingsSlide account={account} billing={billing} />
                 </main>

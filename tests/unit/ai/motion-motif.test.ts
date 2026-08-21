@@ -57,7 +57,7 @@ describe('motion motif follows the business', () => {
         expect(motionTickerMarkup('<script>')).not.toContain('<script>');
     });
 
-    it('stamps the motif on the animated look only', () => {
+    it('renders the Premium liquid look without kinetic motifs', () => {
         const section = (
             id: string,
             type: SectionInstance['type'],
@@ -77,13 +77,17 @@ describe('motion motif follows the business', () => {
         };
         const motion = compositionToFiles(composition, 'motion')['index.html'] ?? '';
         const casual = compositionToFiles(composition, 'casual')['index.html'] ?? '';
-        expect(motion).toContain('data-motif="tooth"');
-        expect(motion).toContain('class="motion-stage"');
-        expect(motion).toContain('class="motion-ticker"');
+        expect(motion).toContain('data-style="motion"');
+        expect(motion).toContain('data-chrome="liquid"');
+        expect(motion).toContain('site-liquid');
+        expect(motion).toContain('liquid-deck');
         expect(motion).toContain('Smile Dental');
+        expect(motion).not.toContain('class="motion-stage"');
+        expect(motion).not.toContain('data-motif="tooth"');
+        expect(casual).toContain('data-chrome="sidebar"');
+        expect(casual).toContain('site-sidebar');
+        expect(casual).not.toContain('site-liquid');
         expect(casual).not.toContain('class="motion-motif"');
         expect(casual).not.toContain('data-motif="tooth"');
-        expect(casual).not.toContain('class="motion-stage"');
-        expect(casual).not.toContain('class="motion-ticker"');
     });
 });

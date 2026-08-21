@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { BrandMark } from "@/components/landing/BrandMark";
-import { PlansNavLink } from "@/components/settings/PlansNavLink";
 import { ProfileMenu } from "@/components/settings/ProfileMenu";
 import type { Viewer } from "@/lib/auth/session";
 
 export const DECK_NAV = [
     { label: "Welcome", href: "/#welcome" },
     { label: "How it works", href: "/#how-it-works" },
+    { label: "Pricing", href: "/#pricing" },
+    { label: "Compare", href: "/#compare" },
     { label: "Build", href: "/#build" },
     { label: "Your sites", href: "/#sites" },
+    { label: "Settings", href: "/#settings" },
 ] as const;
 
 const LINK =
@@ -48,7 +50,12 @@ export function SiteHeader({
                     >
                         <BrandMark />
                     </Link>
-                    <GuestActions />
+                    <div className="flex items-center gap-3 sm:gap-5">
+                        <Link href="/pricing" className={`${LINK} hidden sm:inline`}>
+                            Pricing
+                        </Link>
+                        <GuestActions />
+                    </div>
                 </nav>
             </header>
         );
@@ -93,12 +100,21 @@ export function SiteHeader({
                                     </a>
                                 </li>
                             ))}
+                            {user ? (
+                                <li>
+                                    <Link href="/packages" className={`${LINK} block px-3 py-2`}>
+                                        AI Packages
+                                    </Link>
+                                </li>
+                            ) : null}
                         </ul>
                     </details>
 
                     {user ? (
                         <>
-                            <PlansNavLink />
+                            <Link href="/packages" className={LINK}>
+                                AI Packages
+                            </Link>
                             <ProfileMenu user={user} />
                         </>
                     ) : (

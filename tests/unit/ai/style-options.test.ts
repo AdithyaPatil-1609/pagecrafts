@@ -51,7 +51,7 @@ const composition: Composition = {
 };
 
 describe('style presets — three looks from one brief', () => {
-    it('ships casual, photo-rich and animated', () => {
+    it('ships starter, pro and premium (ids casual / photos / motion)', () => {
         expect(STYLE_IDS).toEqual(['casual', 'photos', 'motion']);
         expect(STYLE_SPECS.casual.tier).toBe('free');
         expect(STYLE_SPECS.photos.tier).toBe('pro');
@@ -67,7 +67,7 @@ describe('style presets — three looks from one brief', () => {
         expect(applyStyle(composition, STYLE_SPECS.casual).sections.find((s) => s.type === 'hero')?.variant)
             .toBe('split-image');
         expect(applyStyle(composition, STYLE_SPECS.casual).artDirection.themeId).toBe('sunlit-craft');
-        expect(applyStyle(composition, STYLE_SPECS.motion).artDirection.motionId).toBe('kinetic');
+        expect(applyStyle(composition, STYLE_SPECS.motion).artDirection.motionId).toBe('calm');
     });
 
     it('picks a mithai photograph for a sweets query', () => {
@@ -97,9 +97,10 @@ describe('style presets — three looks from one brief', () => {
         expect(bankPhotoUrl('saree boutique dresses')).toContain(CLOTHING_PHOTO_ID);
     });
 
-    it('builds three finished sites; Casual gets one hero photo, Photo-rich gets photos throughout', async () => {
+    it('builds three finished sites; Starter gets one hero photo, Pro gets photos throughout', async () => {
         const options = await buildStyleOptions(composition);
         expect(options.map((o) => o.id)).toEqual(['casual', 'photos', 'motion']);
+        expect(options.map((o) => o.label)).toEqual(['Starter', 'Pro', 'Premium']);
 
         const home = Object.fromEntries(options.map((o) => [o.id, o.files['index.html'] ?? '']));
         const about = Object.fromEntries(options.map((o) => [o.id, o.files['about.html'] ?? '']));
@@ -110,14 +111,18 @@ describe('style presets — three looks from one brief', () => {
         expect(home.casual).toContain('data-style="casual"');
         expect(home.photos).toContain('data-style="photos"');
         expect(home.motion).toContain('data-style="motion"');
+        expect(home.casual).toContain('data-chrome="sidebar"');
+        expect(home.photos).toContain('data-chrome="topbar"');
+        expect(home.motion).toContain('data-chrome="liquid"');
 
-        // Casual shows one hero photograph in a split layout (not a grey wall of type).
+        // Starter shows one hero photograph in a split layout (not a grey wall of type).
         expect(home.casual).toContain('images.unsplash.com');
         expect(home.casual).toContain('<img src="');
         expect(home.casual).toContain('data-type="hero" data-variant="split-image"');
+        expect(home.casual).toContain('site-sidebar');
         // About lives on about.html after the multi-page split.
         expect(about.casual).toContain('data-type="about" data-variant="text"');
-        // Photo-rich goes further: cinematic hero + media-split About + more photos site-wide.
+        // Pro goes further: cinematic hero + media-split About + more photos site-wide.
         expect(home.photos).toContain('images.unsplash.com');
         expect(home.photos).toContain('data-type="hero" data-variant="image-bg"');
         expect(about.photos).toContain('data-type="about" data-variant="media-split"');
@@ -125,19 +130,13 @@ describe('style presets — three looks from one brief', () => {
             .toBeGreaterThan((allHtml.casual.match(/images\.unsplash\.com/g) ?? []).length);
         expect(home.casual).toContain('data-motion="none"');
         expect(home.photos).toContain('data-motion="editorial"');
-        expect(home.motion).toContain('data-motion="kinetic"');
-        expect(home.motion).toContain('data-motif="jalebi"');
-        expect(home.motion).toContain('jalebi-coil');
-        expect(home.motion).toContain('honey-drip');
-        expect(home.motion).toContain('motion-stage');
-        expect(home.motion).toContain('motion-ticker');
-        expect(home.motion).toContain('--bg: #06040c');
-        expect(home.motion).not.toContain('pc-orb');
-        expect(home.casual).not.toContain('data-motif="jalebi"');
+        expect(home.motion).toContain('data-motion="calm"');
+        expect(home.motion).toContain('site-liquid');
+        expect(home.motion).toContain('liquid-deck');
+        expect(home.motion).not.toContain('motion-stage');
+        expect(home.motion).not.toContain('jalebi-coil');
         expect(home.casual).not.toContain('motion-stage');
-        expect(home.photos).not.toContain('data-motif="jalebi"');
         expect(home.photos).not.toContain('motion-stage');
-        expect(home.motion).toContain('pc-pulse 1.4s ease-in-out infinite');
         expect(home.casual).toContain('Mithas Sweets');
         expect(home.photos).toContain('Mithas Sweets');
         expect(home.motion).toContain('Mithas Sweets');

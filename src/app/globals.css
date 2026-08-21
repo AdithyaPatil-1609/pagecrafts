@@ -68,8 +68,8 @@
   --mix-tan: #e0c9a0;
   --mix-gold: #f0a04a;
 
-  /* Quiet gold — header Sign in / Sign up. Gold, not brass, not neon. */
-  --gold: #d4b56a;
+  /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
+  --gold: #c4a86a;
   --gold-foreground: #05070a;
 }
 
@@ -124,8 +124,8 @@
   --mix-tan: #e0c9a0;
   --mix-gold: #f0a04a;
 
-  /* Quiet gold — header Sign in / Sign up. Gold, not brass, not neon. */
-  --gold: #d4b56a;
+  /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
+  --gold: #c4a86a;
   --gold-foreground: #05070a;
 }
 
@@ -180,8 +180,8 @@
   --mix-tan: #e0c9a0;
   --mix-gold: #f0a04a;
 
-  /* Quiet gold — header Sign in / Sign up. Gold, not brass, not neon. */
-  --gold: #d4b56a;
+  /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
+  --gold: #c4a86a;
   --gold-foreground: #05070a;
 }
 
@@ -607,6 +607,21 @@ body {
   animation: glide-in-forward 0.88s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes look-chunk-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.1rem) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.look-chunk-card {
+  animation: look-chunk-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 html.deck-snap {
   scroll-snap-type: y proximity;
 }
@@ -628,15 +643,15 @@ html.deck-snap .page-glide-out {
   flex-direction: column;
   justify-content: center;
   justify-content: safe center;
+  /* proximity + normal stop — `always` locks the deck between tall slides. */
   scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal;
   /* Equal inset so centered copy sits in the middle of the viewport, not below it. */
   padding: 4rem 0;
 }
 
 .page-slide-tall {
   justify-content: flex-start;
-  scroll-snap-stop: normal;
   padding-bottom: 4rem;
 }
 
@@ -1053,3 +1068,33 @@ html.deck-snap .page-glide-out {
     transform: none;
   }
 }
+
+/* Razorpay checkout sits in a portal — paint the PageCrafts landing behind it. */
+body.pagecrafts-rzp-open {
+  background:
+    radial-gradient(ellipse at 14% 8%, color-mix(in srgb, var(--bloom-blue) 28%, transparent), transparent 46%),
+    radial-gradient(ellipse at 88% 14%, color-mix(in srgb, var(--bloom-sky) 18%, transparent), transparent 42%),
+    radial-gradient(ellipse at 78% 92%, color-mix(in srgb, var(--bloom-amber) 14%, transparent), transparent 44%),
+    linear-gradient(180deg, var(--card) 0%, var(--background) 42%, var(--background) 100%) !important;
+}
+
+.razorpay-container,
+.razorpay-backdrop,
+div.razorpay-container,
+iframe.razorpay-checkout-frame {
+  background-color: transparent !important;
+}
+
+body.pagecrafts-rzp-open::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 14% 8%, color-mix(in srgb, var(--bloom-blue) 28%, transparent), transparent 46%),
+    radial-gradient(ellipse at 88% 14%, color-mix(in srgb, var(--bloom-sky) 18%, transparent), transparent 42%),
+    radial-gradient(ellipse at 78% 92%, color-mix(in srgb, var(--bloom-amber) 14%, transparent), transparent 44%),
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 92%, transparent) 0%, var(--background) 55%, var(--background) 100%);
+}
+

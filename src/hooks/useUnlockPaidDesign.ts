@@ -3,25 +3,29 @@
 import { useCallback, useRef } from "react";
 
 import { useRazorpayCheckout, type CheckoutStatus } from "@/hooks/useRazorpayCheckout";
-import { accountCoversPlan, waitForPlanGrant } from "@/lib/payments/wait-for-pro";
-import type { PaidPlan } from "@/lib/payments/pricing";
+import { waitForStyleGrant, waitForTemplateGrant } from "@/lib/payments/wait-for-pro";
 
 type Pending = {
     resolve: (ok: boolean) => void;
     reject: (error: Error) => void;
 };
 
+type Target =
+    | { type: "template"; id: string }
+    | { type: "style"; id: string };
+
 /**
- * Open Razorpay for the plan this design needs, then wait until the signed webhook has
+ * Open Razorpay for this design or look, then wait until the signed webhook has
  * actually granted it. The browser reporting success is not a grant.
  */
 export function useUnlockPaidDesign(): {
-    unlockIfNeeded: (plan: PaidPlan | null) => Promise<boolean>;
+    unlockTemplate: (templateId: string) => Promise<boolean>;
+    unlockStyle: (styleId: string) => Promise<boolean>;
     status: CheckoutStatus;
     error: string | null;
 } {
     const pendingRef = useRef<Pending | null>(null);
-    const pendingNeedRef = useRef<PaidPlan | null>(null);
+    const pendingTargetRef = useRef<Target | null>(null);
 
     const settle = (ok: boolean, error?: Error) => {
         const pending = pendingRef.current;
@@ -31,34 +35,46 @@ export function useUnlockPaidDesign(): {
         else pending.resolve(ok);
     };
 
-    const { openPlanCheckout, status, error } = useRazorpayCheckout({
+    const { openTemplateCheckout, openStyleCheckout, status, error } = useRazorpayCheckout({
         onAlreadyGranted: () => settle(true),
         onSuccess: () => {
-            const need = pendingNeedRef.current;
-            if (!need) {
+            const target = pendingTargetRef.current;
+            if (!target) {
                 settle(true);
                 return;
             }
-            void waitForPlanGrant(need).then((ok) => settle(ok));
+            const wait =
+                target.type === "style"
+                    ? waitForStyleGrant(target.id)
+                    : waitForTemplateGrant(target.id);
+            void wait.then((ok) => settle(ok));
         },
         onDismiss: () => settle(false),
         onError: (message) => settle(false, new Error(message)),
     });
 
-    const unlockIfNeeded = useCallback(
-        async (plan: PaidPlan | null): Promise<boolean> => {
-            if (!plan) return true;
-            if (await accountCoversPlan(plan)) return true;
-
-            pendingNeedRef.current = plan;
+    const run = useCallback(
+        async (target: Target, open: () => Promise<void>): Promise<boolean> => {
+            pendingTargetRef.current = target;
             const result = new Promise<boolean>((resolve, reject) => {
                 pendingRef.current = { resolve, reject };
             });
-            await openPlanCheckout(plan);
+            await open();
             return result;
         },
-        [openPlanCheckout],
+        [],
     );
 
-    return { unlockIfNeeded, status, error };
+    const unlockTemplate = useCallback(
+        (templateId: string) =>
+            run({ type: "template", id: templateId }, () => openTemplateCheckout(templateId)),
+        [openTemplateCheckout, run],
+    );
+
+    const unlockStyle = useCallback(
+        (styleId: string) => run({ type: "style", id: styleId }, () => openStyleCheckout(styleId)),
+        [openStyleCheckout, run],
+    );
+
+    return { unlockTemplate, unlockStyle, status, error };
 }

@@ -9,7 +9,6 @@ import type { Category, CreateProjectResponse } from "@/lib/contracts";
 import { INTENT_CARDS } from "@/lib/discovery/intent-cards";
 import { apiPost } from "@/lib/api/client";
 import { useUnlockPaidDesign } from "@/hooks/useUnlockPaidDesign";
-import { waitForPlanGrant } from "@/lib/payments/wait-for-pro";
 import type { PaidPlan } from "@/lib/payments/pricing";
 import {
     briefErrors,
@@ -62,7 +61,7 @@ export function IntentCapture({
     paidPlan?: PaidPlan | null;
 } = {}) {
     const router = useRouter();
-    const { unlockIfNeeded, status: payStatus } = useUnlockPaidDesign();
+    const { unlockTemplate, status: payStatus } = useUnlockPaidDesign();
     const [brief, setBrief] = useState<SiteBrief>(() => briefFromQuery(initialDescribe));
     const [busy, setBusy] = useState<"generate" | Category | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -101,12 +100,10 @@ export function IntentCapture({
         setError(null);
 
         try {
-            if (paidPlan) {
-                const unlocked = await unlockIfNeeded(paidPlan);
+            if (paidPlan && sourceTemplateId) {
+                const unlocked = await unlockTemplate(sourceTemplateId);
                 if (!unlocked) {
-                    setError(
-                        "Pay with Razorpay to use this design. Pro unlocks Pro templates; Premium unlocks Signature.",
-                    );
+                    setError("This design is paid. Pay with Razorpay to unlock it.");
                     setBusy(null);
                     return;
                 }
@@ -115,19 +112,24 @@ export function IntentCapture({
             let created = await createFromDesign(next, templateId);
 
             if (created.code === "payment_required") {
-                const need = paidPlan ?? "pro";
-                const unlocked =
-                    (await waitForPlanGrant(need, { attempts: 5, delayMs: 600 })) ||
-                    (await unlockIfNeeded(need));
+                if (!sourceTemplateId) {
+                    const message = created.error ?? "This design is paid.";
+                    if (looksLikeSignIn(message)) {
+                        rememberAndSignIn(next, composeBrief(next), templateId);
+                        return;
+                    }
+                    setError("This design is paid. Pay with Razorpay to unlock it.");
+                    setBusy(null);
+                    return;
+                }
+                const unlocked = await unlockTemplate(sourceTemplateId);
                 if (!unlocked) {
                     const message = created.error ?? "This design is paid.";
                     if (looksLikeSignIn(message)) {
                         rememberAndSignIn(next, composeBrief(next), templateId);
                         return;
                     }
-                    setError(
-                        "Pay with Razorpay to use this design. Pro unlocks Pro templates; Premium unlocks Signature.",
-                    );
+                    setError("This design is paid. Pay with Razorpay to unlock it.");
                     setBusy(null);
                     return;
                 }

@@ -22,6 +22,7 @@ import { writeCompositionFiles, writeRenderedSite } from '@/lib/editor/sync-site
 import { sanitise } from '@/lib/ai/sanitise';
 import { sectionVariants } from '@/lib/editor/section-registry';
 import { isSiteGenerationRequest } from '@/lib/editor/site-intent';
+import { styleUpgradeFirewall } from '@/lib/editor/style-firewall';
 import {
     parseRenameIntent,
     renameComposition,
@@ -41,6 +42,7 @@ import {
     type ListItem,
 } from '@/lib/content/slots';
 import { applySettingsToHtml } from '@/lib/content/site-meta';
+import { wireOrderPayments } from '@/lib/sites/pay-page';
 import {
     changeVariant, reorderSection, restyle, toggleLocked, toggleVisible,
 } from '@/lib/editor/section-action';
@@ -482,6 +484,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }
         if (!projectId) {
             set({ chatError: 'This project could not be found.' });
+            return;
+        }
+
+        const entry = entryPath(vfs);
+        const entryHtml = entry ? vfs.read(entry) : null;
+        const blocked = styleUpgradeFirewall({
+            instruction: text,
+            html: entryHtml,
+            composition,
+        });
+        if (blocked) {
+            set({ chatError: blocked });
             return;
         }
 
@@ -948,22 +962,38 @@ function writeContent(
 
 /** Site settings into the page, the same way a content edit lands (S-2, S-3, S-4). */
 function applySettings(get: () => EditorState, meta: SiteMeta, formEndpoint: string | null) {
-    const { vfs } = get();
+    const { vfs, projectName } = get();
+    const map = vfs.toMap();
+    const withPay = meta.upiId
+        ? wireOrderPayments(map, {
+            businessName: meta.title?.trim() || projectName || 'This shop',
+            upiId: meta.upiId,
+        })
+        : map;
+
+    let touched = false;
+    for (const [path, content] of Object.entries(withPay)) {
+        if (vfs.read(path) === content) continue;
+        vfs.write(path, content);
+        touched = true;
+    }
+
     const entry = entryPath(vfs);
     const html = entry ? vfs.read(entry) : null;
-    if (!entry || html === null) return;
-
-    const next = applySettingsToHtml(html, {
-        meta,
-        faviconUrl: meta.faviconUrl ?? null,
-        ogImageUrl: meta.ogImageUrl ?? null,
-        formEndpoint,
-    });
-
-    if (next !== html) {
-        vfs.write(entry, next);
-        autosave.trigger();
+    if (entry && html !== null) {
+        const next = applySettingsToHtml(html, {
+            meta,
+            faviconUrl: meta.faviconUrl ?? null,
+            ogImageUrl: meta.ogImageUrl ?? null,
+            formEndpoint,
+        });
+        if (next !== html) {
+            vfs.write(entry, next);
+            touched = true;
+        }
     }
+
+    if (touched) autosave.trigger();
 }
 
 // Ops waiting for their trip to the server, one per slot: typing a headline twice before the

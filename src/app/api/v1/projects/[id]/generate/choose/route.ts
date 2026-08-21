@@ -6,8 +6,7 @@ import { ok, ApiError } from '@/lib/errors/respond';
 import { jobStore } from '@/lib/ai/jobs/store';
 import { STYLE_IDS } from '@/lib/ai/generate/styles';
 import { persistStyleOption } from '@/lib/ai/generate/persist';
-import { hasPremium, hasPro, PAID_DESIGN_MESSAGE } from '@/lib/data/entitlements';
-import { requiredPlanForStyle } from '@/lib/payments/pricing';
+import { hasStyleAccess, PAID_DESIGN_MESSAGE } from '@/lib/data/entitlements';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,11 +36,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             throw new ApiError('validation_failed', 'That look is not available.');
         }
 
-        const need = requiredPlanForStyle(option.tier);
-        if (need === 'premium' && !(await hasPremium(supabase, userId))) {
-            throw new ApiError('payment_required', PAID_DESIGN_MESSAGE);
-        }
-        if (need === 'pro' && !(await hasPro(supabase, userId))) {
+        if (!(await hasStyleAccess(supabase, userId, option.id))) {
             throw new ApiError('payment_required', PAID_DESIGN_MESSAGE);
         }
 
