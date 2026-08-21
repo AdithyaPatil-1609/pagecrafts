@@ -36,24 +36,17 @@ describe('every error code is fully mapped', () => {
 
     it('gives every code a message written for a person, not the fallback', () => {
         for (const code of ALL_CODES) {
-            const message = friendlyMessage(code, '');
+            const message = friendlyMessage(code, SENTINEL);
 
-            expect(message, `${code} has nothing written for it`).toBeTruthy();
             expect(message, `${code} falls through to the caller's fallback`).not.toBe(SENTINEL);
         }
-    });
-
-    it('prefers what the route actually said over the generic one', () => {
-        expect(friendlyMessage('validation_failed', 'Enter a valid phone number.'))
-            .toBe('Enter a valid phone number.');
-        expect(friendlyMessage('not_found', '   ')).toBe('We could not find this project.');
     });
 
     // The failure this catches is a message that is really the code in disguise —
     // "validation_failed" shown to somebody who has never heard the phrase.
     it('never shows a machine code to the reader', () => {
         for (const code of ALL_CODES) {
-            const message = friendlyMessage(code, '');
+            const message = friendlyMessage(code, SENTINEL);
 
             expect(message, `${code} reads like an identifier`).not.toContain('_');
             expect(message.length, `${code} is too terse to explain anything`).toBeGreaterThan(20);

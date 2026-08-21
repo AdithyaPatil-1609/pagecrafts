@@ -25,20 +25,16 @@ const FRIENDLY: Record<ErrorCode, string> = {
 };
 
 /**
- * The server's own words, when it has any; ours only when it does not.
+ * Our vetted sentence for the code, and only ours.
  *
- * This used to read `FRIENDLY[code] ?? fallback`, and FRIENDLY is a Record over every
- * ErrorCode -- so the left side was never undefined and the fallback was dead code. The
- * effect was that a route which had gone to the trouble of saying "Enter a valid email
- * address" had it replaced with "Some of your files were rejected", on a form with no
- * files anywhere near it.
+ * I changed this once to prefer whatever the route said, because the describe form was
+ * showing "Some of your files were rejected" on a screen with no files. That was the wrong
+ * fix: a route's message is a developer's string -- "nope", a Postgres fault, a provider's
+ * refusal -- and api-client and project-source both assert those never reach a reader.
+ * copy-audit enforces the same rule across the whole catalogue.
  *
- * Ours are written for the case where a route gives nothing back, and they have to stay
- * vague because they cover every screen at once. A specific message beats a vague one,
- * so the specific one wins.
+ * The real fault was one badly worded entry, and the entry is what got fixed.
  */
-export function friendlyMessage(code: ErrorCode, fromServer: string): string {
-    const specific = fromServer?.trim();
-
-    return specific ? specific : FRIENDLY[code];
+export function friendlyMessage(code: ErrorCode, fallback: string): string {
+    return FRIENDLY[code] ?? fallback;
 }
