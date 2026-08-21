@@ -1,134 +1,121 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
-import { AI_PACKAGES, GENERATION_PASS } from "@/lib/payments/packages";
 import { TIER_PRICE_INR } from "@/lib/payments/pricing";
+import { cn } from "@/lib/utils";
 
-export function PricingGuide() {
-    const free = AI_PACKAGES.free;
-    const advanced = AI_PACKAGES.advanced;
+function openCompareBelow() {
+    const el = document.getElementById("compare");
+    if (!el) {
+        window.location.assign("/compare");
+        return;
+    }
 
+    const html = document.documentElement;
+    const hadSnap = html.classList.contains("deck-snap");
+    if (hadSnap) html.classList.remove("deck-snap");
+    el.scrollIntoView({ behavior: "auto", block: "start" });
+    window.history.replaceState(null, "", "/?slide=compare");
+    if (hadSnap) {
+        requestAnimationFrame(() => html.classList.add("deck-snap"));
+    }
+}
+
+const LOOKS = [
+    {
+        label: "Starter",
+        look: "Casual",
+        price: TIER_PRICE_INR.free,
+        blurb: "All Starter designs and the Casual look — free to use and publish.",
+    },
+    {
+        label: "Pro",
+        look: "Photo-rich",
+        price: TIER_PRICE_INR.premium,
+        blurb: "One upgrade unlocks every Pro template and the Photo-rich look.",
+    },
+    {
+        label: "Premium",
+        look: "Animated",
+        price: TIER_PRICE_INR.signature,
+        blurb: "One upgrade unlocks every Premium template, every Pro template, and Animated.",
+    },
+] as const;
+
+/** One public price story: Starter / Pro / Premium plans. AI rebuilds live under /packages. */
+export function PricingGuide({ signedIn = false }: { signedIn?: boolean }) {
     return (
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-10">
             <header className="space-y-3">
                 <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
-                    How pricing works
+                    Pricing
                 </p>
                 <h1
                     id="pricing-heading"
                     className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
                 >
-                    Two kinds of price — designs and AI
+                    Starter, Pro, or <span className="hero-mix">Premium</span>
                 </h1>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                    PageCrafts charges for what you unlock, not a monthly plan you forget about.
-                    Template tiers and AI packages are separate products — do not mix them up.
+                    No monthly subscription. Start free. Upgrade once to unlock every design
+                    marked for that plan — not one template at a time.{" "}
+                    <Link
+                        href="/plans"
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                        See User Plans
+                    </Link>
+                    .
                 </p>
             </header>
 
-            <aside className="rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm leading-6">
-                <p className="font-semibold text-foreground">Keep these apart</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-                    <li>
-                        <span className="text-foreground">Starter / Pro / Premium</span> — which
-                        design or AI look you use (paid once per design when locked)
-                    </li>
-                    <li>
-                        <span className="text-foreground">Free / Advanced</span> — how many times
-                        you can ask AI to create or regenerate a site
-                    </li>
-                </ul>
-            </aside>
-
             <section className="space-y-4">
-                <h2 className="text-xl font-semibold tracking-tight">1. Template & look pricing</h2>
-                <p className="text-sm leading-6 text-muted-foreground">
-                    Catalogue designs and generated looks use the same three tiers. You pay once to
-                    unlock that design for your account — publishing a free design stays free.
-                </p>
                 <div className="grid gap-3 sm:grid-cols-3">
-                    <article className="rounded-2xl border border-border p-4">
-                        <p className="text-sm font-medium text-muted-foreground">Starter</p>
-                        <p className="mt-1 text-2xl font-bold">Rs {TIER_PRICE_INR.free}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Sidebar chrome, simple image hero, every page in the nav.
-                        </p>
-                    </article>
-                    <article className="rounded-2xl border border-border p-4">
-                        <p className="text-sm font-medium text-muted-foreground">Pro</p>
-                        <p className="mt-1 text-2xl font-bold">Rs {TIER_PRICE_INR.premium}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Blended top bar, separate photo-led pages, richer layouts.
-                        </p>
-                    </article>
-                    <article className="rounded-2xl border border-border p-4">
-                        <p className="text-sm font-medium text-muted-foreground">Premium</p>
-                        <p className="mt-1 text-2xl font-bold">Rs {TIER_PRICE_INR.signature}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Liquid continuous scroll, bloom atmosphere, full brand deck.
-                        </p>
-                    </article>
+                    {LOOKS.map((item) => (
+                        <article
+                            key={item.label}
+                            className="rounded-2xl border border-border p-4"
+                        >
+                            <p className="text-sm font-medium text-muted-foreground">
+                                {item.label} · {item.look}
+                            </p>
+                            <p className="mt-1 text-2xl font-bold">
+                                {item.price === 0 ? "Free" : `Rs ${item.price}`}
+                            </p>
+                            <p className="mt-2 text-sm text-muted-foreground">{item.blurb}</p>
+                        </article>
+                    ))}
                 </div>
-                <Link
-                    href="/compare"
-                    className={buttonVariants({
-                        variant: "outline-brand",
-                        className: "rounded-lg font-semibold",
-                    })}
+                <button
+                    type="button"
+                    onClick={openCompareBelow}
+                    className={cn(
+                        buttonVariants({
+                            variant: "outline-brand",
+                            className: "rounded-lg font-semibold",
+                        }),
+                    )}
                 >
-                    See Starter vs Pro vs Premium
+                    Starter vs Pro vs Premium
                     <ArrowRight aria-hidden />
-                </Link>
+                </button>
             </section>
 
-            <section className="space-y-4">
-                <h2 className="text-xl font-semibold tracking-tight">2. AI generation pricing</h2>
-                <p className="text-sm leading-6 text-muted-foreground">
-                    Each AI generation invents three looks (Starter, Pro, Premium). The Free and
-                    Advanced packages only change how many generations you get per site — not which
-                    look you may buy.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <article className="rounded-2xl border border-border p-4">
-                        <p className="text-sm font-medium text-muted-foreground">{free.name}</p>
-                        <p className="mt-1 text-2xl font-bold">Rs {free.priceInr}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">{free.blurb}</p>
-                        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                            {free.features.map((f) => (
-                                <li key={f}>{f}</li>
-                            ))}
-                        </ul>
-                    </article>
-                    <article className="rounded-2xl border border-border p-4">
-                        <p className="text-sm font-medium text-muted-foreground">{advanced.name}</p>
-                        <p className="mt-1 text-2xl font-bold">Rs {advanced.priceInr}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">{advanced.blurb}</p>
-                        <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                            {advanced.features.map((f) => (
-                                <li key={f}>{f}</li>
-                            ))}
-                        </ul>
-                    </article>
-                </div>
+            {signedIn ? (
                 <p className="text-sm text-muted-foreground">
-                    After Advanced is exhausted:{" "}
-                    <span className="font-medium text-foreground">
-                        {GENERATION_PASS.name} · Rs {GENERATION_PASS.priceInr}
-                    </span>{" "}
-                    — one more round with three looks.
+                    Need more AI rebuilds on a site?{" "}
+                    <Link
+                        href="/packages"
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                        Manage AI usage
+                    </Link>
+                    .
                 </p>
-                <Link
-                    href="/packages"
-                    className={buttonVariants({
-                        variant: "brand",
-                        className: "rounded-lg font-semibold",
-                    })}
-                >
-                    Open AI Packages
-                    <ArrowRight aria-hidden />
-                </Link>
-            </section>
+            ) : null}
         </div>
     );
 }

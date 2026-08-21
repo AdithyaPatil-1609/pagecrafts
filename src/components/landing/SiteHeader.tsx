@@ -103,7 +103,7 @@ export function SiteHeader({
                             {user ? (
                                 <li>
                                     <Link href="/packages" className={`${LINK} block px-3 py-2`}>
-                                        AI Packages
+                                        More AI rebuilds
                                     </Link>
                                 </li>
                             ) : null}
@@ -113,7 +113,7 @@ export function SiteHeader({
                     {user ? (
                         <>
                             <Link href="/packages" className={LINK}>
-                                AI Packages
+                                More AI rebuilds
                             </Link>
                             <ProfileMenu user={user} />
                         </>

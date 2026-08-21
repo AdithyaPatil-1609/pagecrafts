@@ -12,13 +12,12 @@ import { Button } from "@/components/ui/button";
 import { CardIndex } from "@/components/ui/card-index";
 import { GeneratingOverlay } from "@/components/editor/GeneratingOverlay";
 import { cn } from "@/lib/utils";
-import { useUnlockPaidDesign } from "@/hooks/useUnlockPaidDesign";
 import { useUpiPrompt } from "@/hooks/useUpiPrompt";
-import { BuyPaidItemCta } from "@/components/discovery/BuyPaidItemCta";
+import { LockedPlanNotice } from "@/components/discovery/LockedPlanNotice";
 import { AskAiFixDialog } from "@/components/editor/AskAiFixDialog";
 import { NeedUpiDialog } from "@/components/editor/NeedUpiDialog";
 import { explainCreationIssue } from "@/lib/editor/ai-fix";
-import { PREMIUM_PRICE_INR, PRO_PRICE_INR, styleBadge } from "@/lib/payments/pricing";
+import { styleBadge } from "@/lib/payments/pricing";
 import type { BillingSummary } from "@/lib/contracts";
 
 interface VariantCard {
@@ -66,7 +65,7 @@ interface GenerateJobResponse {
 }
 
 const TIER_LABEL: Record<StyleTier, string> = {
-    free: "Starter",
+    free: "Free",
     pro: "Pro",
     premium: "Premium",
 };
@@ -101,7 +100,6 @@ export function StyleChooser({
     const [picking, setPicking] = useState<{ jobId: string; variantId: StyleId } | null>(null);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { unlockStyle, status: payStatus, error: payError } = useUnlockPaidDesign();
     const [unlockedStyles, setUnlockedStyles] = useState<string[]>([]);
     const [askOpen, setAskOpen] = useState(false);
     const upi = useUpiPrompt({
@@ -186,23 +184,12 @@ export function StyleChooser({
     async function choose(fromJobId: string, variantId: StyleId, tier: StyleTier) {
         if (picking) return;
         if (styleBadge(tier) && !lookUnlocked(tier, variantId)) {
-            await buyLook(fromJobId, variantId);
+            setError(
+                `This is a ${styleBadge(tier)} look. Open User Plans to upgrade, then come back and pick it.`,
+            );
             return;
         }
         await finishChoose(fromJobId, variantId);
-    }
-
-    async function buyLook(jobId: string, variantId: StyleId) {
-        try {
-            const unlocked = await unlockStyle(variantId);
-            if (!unlocked) return;
-            setUnlockedStyles((current) =>
-                current.includes(variantId) ? current : [...current, variantId],
-            );
-            await finishChoose(jobId, variantId);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Payment failed.");
-        }
     }
 
     async function finishChoose(fromJobId: string, variantId: StyleId) {
@@ -210,16 +197,15 @@ export function StyleChooser({
         setError(null);
 
         try {
-            let result = await persistLook(fromJobId, variantId);
+            const result = await persistLook(fromJobId, variantId);
 
             if (result.code === "payment_required") {
-                const unlocked = await unlockStyle(variantId);
-                if (!unlocked) {
-                    setError(result.error ?? "This look is paid. Pay with Razorpay to unlock it.");
-                    setPicking(null);
-                    return;
-                }
-                result = await persistLook(fromJobId, variantId);
+                setError(
+                    result.error
+                    ?? "This look needs Pro or Premium. Open User Plans to upgrade.",
+                );
+                setPicking(null);
+                return;
             }
 
             if (result.error) {
@@ -230,7 +216,7 @@ export function StyleChooser({
 
             router.push(`/editor/${encodeURIComponent(projectId)}`);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Payment failed.");
+            setError(err instanceof Error ? err.message : "Could not save that look.");
             setPicking(null);
         }
     }
@@ -337,8 +323,9 @@ export function StyleChooser({
                     Pick a <span className="hero-mix">look</span>
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
-                    Same business, three different sites. Starter is free. Pro and Premium
-                    stay locked until you buy that look.
+                    Same business, three different sites. Casual is Free. Photo-rich is Pro
+                    (Rs 499). Animated is Premium (Rs 999) — Razorpay opens when you pick a paid
+                    look.
                 </p>
             </header>
 
@@ -414,25 +401,7 @@ export function StyleChooser({
                                             </p>
                                         </div>
                                         {locked && badge ? (
-                                            <BuyPaidItemCta
-                                                badge={badge}
-                                                priceInr={
-                                                    option.id === "motion"
-                                                        ? PREMIUM_PRICE_INR
-                                                        : PRO_PRICE_INR
-                                                }
-                                                kind="look"
-                                                busy={
-                                                    payStatus === "loading" ||
-                                                    payStatus === "open" ||
-                                                    payStatus === "verifying" ||
-                                                    picking !== null
-                                                }
-                                                error={payError}
-                                                onBuy={() =>
-                                                    void buyLook(attempt.job_id, option.id)
-                                                }
-                                            />
+                                            <LockedPlanNotice badge={badge} kind="look" />
                                         ) : (
                                             <Button
                                                 variant={option.tier === "free" ? "outline-brand" : "brand"}

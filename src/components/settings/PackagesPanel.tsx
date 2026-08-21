@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 
@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 export function PackagesPanel({ initial }: { initial: BillingSummary }) {
     const [billing, setBilling] = useState(initial);
     const [message, setMessage] = useState<string | null>(null);
+    const pendingBuyRef = useRef<"advanced" | "pass" | null>(null);
+    const passBaselineRef = useRef(0);
 
     const refresh = useCallback(async () => {
         const { apiGet } = await import("@/lib/api/client");
@@ -21,47 +23,56 @@ export function PackagesPanel({ initial }: { initial: BillingSummary }) {
         if (data) setBilling(data);
     }, []);
 
-    const { openAdvancedCheckout, openGenerationPassCheckout, status, error } =
+    const { openAdvancedCheckout, openGenerationPassCheckout, status, error, confirmDialog } =
         useRazorpayCheckout({
             onAlreadyGranted: () => {
+                pendingBuyRef.current = null;
                 setMessage("Advanced is already on this account.");
                 void refresh();
             },
             onSuccess: () => {
+                const kind = pendingBuyRef.current;
+                pendingBuyRef.current = null;
                 setMessage("Payment received. Unlocking…");
+                void (async () => {
+                    if (kind === "advanced") {
+                        const ok = await waitForAdvancedGrant();
+                        setMessage(
+                            ok
+                                ? "Advanced is active — you now get 30 AI generations per site."
+                                : "Payment went through. If Advanced is not showing yet, refresh in a moment.",
+                        );
+                    } else if (kind === "pass") {
+                        const ok = await waitForGenerationPass(passBaselineRef.current + 1);
+                        setMessage(
+                            ok
+                                ? "Extra generation pass added — use it on any site that has hit its limit."
+                                : "Payment went through. If the pass is not showing yet, refresh in a moment.",
+                        );
+                    }
+                    await refresh();
+                })();
             },
-            onError: (err) => setMessage(err),
+            onDismiss: () => {
+                pendingBuyRef.current = null;
+            },
+            onError: (err) => {
+                pendingBuyRef.current = null;
+                setMessage(err);
+            },
         });
 
     async function buyAdvanced() {
         setMessage(null);
+        pendingBuyRef.current = "advanced";
         await openAdvancedCheckout();
-        const ok = await waitForAdvancedGrant();
-        if (ok) {
-            setMessage("Advanced is active — you now get 30 AI generations per site.");
-            await refresh();
-        } else {
-            setMessage(
-                "Payment went through. If Advanced is not showing yet, refresh in a moment.",
-            );
-            await refresh();
-        }
     }
 
     async function buyPass() {
         setMessage(null);
-        const before = billing.generationPasses;
+        passBaselineRef.current = billing.generationPasses;
+        pendingBuyRef.current = "pass";
         await openGenerationPassCheckout();
-        const ok = await waitForGenerationPass(before + 1);
-        if (ok) {
-            setMessage("Extra generation pass added — use it on any site that has hit its limit.");
-            await refresh();
-        } else {
-            setMessage(
-                "Payment went through. If the pass is not showing yet, refresh in a moment.",
-            );
-            await refresh();
-        }
     }
 
     const free = AI_PACKAGES.free;
@@ -71,31 +82,25 @@ export function PackagesPanel({ initial }: { initial: BillingSummary }) {
 
     return (
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+            {confirmDialog}
             <header className="space-y-3">
                 <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
                     AI usage
                 </p>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                    Packages
+                    More AI rebuilds
                 </h1>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                    Free and Advanced control how many times you can ask AI to create or regenerate
-                    a site. They are not the same as Starter, Pro, and Premium — those are design
-                    tiers for catalogue templates and AI looks.
+                    When a site has used its free AI rounds, upgrade here so you can keep asking for
+                    new versions. Site looks (Casual, Photo-rich, Animated) come with{" "}
+                    <Link
+                        href="/plans"
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                        User Plans
+                    </Link>
+                    .
                 </p>
-                <aside className="rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm leading-6 text-foreground">
-                    <p className="font-semibold">Two different products</p>
-                    <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-                        <li>
-                            <span className="text-foreground">Free / Advanced</span> — AI generation
-                            allowance per site
-                        </li>
-                        <li>
-                            <span className="text-foreground">Starter / Pro / Premium</span> — which
-                            template or look you use (paid separately when locked)
-                        </li>
-                    </ul>
-                </aside>
             </header>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -146,8 +151,8 @@ export function PackagesPanel({ initial }: { initial: BillingSummary }) {
                         <p className="mt-5 text-sm font-semibold text-foreground">Active on this account</p>
                     ) : (
                         <Button
-                            className="mt-5 w-full rounded-lg font-semibold"
-                            disabled={!billing.paymentsReady || busy}
+                            className="mt-5 w-full cursor-pointer rounded-lg font-semibold"
+                            disabled={busy}
                             onClick={() => void buyAdvanced()}
                         >
                             {busy ? "Opening checkout…" : `Upgrade to Advanced · Rs ${advanced.priceInr}`}
@@ -168,11 +173,11 @@ export function PackagesPanel({ initial }: { initial: BillingSummary }) {
                 </p>
                 <Button
                     variant="outline-brand"
-                    className="mt-4 rounded-lg font-semibold"
-                    disabled={!billing.paymentsReady || busy}
+                    className="mt-4 cursor-pointer rounded-lg font-semibold"
+                    disabled={busy}
                     onClick={() => void buyPass()}
                 >
-                    Buy one pass · Rs {GENERATION_PASS.priceInr}
+                    {busy ? "Opening checkout…" : `Buy one pass · Rs ${GENERATION_PASS.priceInr}`}
                 </Button>
             </section>
 
@@ -184,14 +189,20 @@ export function PackagesPanel({ initial }: { initial: BillingSummary }) {
 
             {!billing.paymentsReady ? (
                 <p className="text-sm text-amber-700 dark:text-amber-400">
-                    Payments are not configured on this server yet.
+                    Payments are not configured on this server yet. Set{" "}
+                    <code className="font-mono text-xs">RAZORPAY_KEY_ID</code> and{" "}
+                    <code className="font-mono text-xs">RAZORPAY_KEY_SECRET</code> in the server
+                    environment (see <code className="font-mono text-xs">.env.example</code>), then
+                    restart the app. Checkout will also need{" "}
+                    <code className="font-mono text-xs">RAZORPAY_WEBHOOK_SECRET</code> so purchases
+                    can be granted after payment.
                 </p>
             ) : null}
 
             <p className="text-sm text-muted-foreground">
-                Looking for catalogue designs?{" "}
-                <Link href="/templates" className="font-medium text-foreground underline-offset-4 hover:underline">
-                    Browse templates
+                Looking for site looks?{" "}
+                <Link href="/?slide=pricing" className="font-medium text-foreground underline-offset-4 hover:underline">
+                    See pricing
                 </Link>
                 .
             </p>

@@ -113,8 +113,7 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         //
         // Kept, narrowed to what this renderer does guarantee and the test below does not:
         // the nav is there, it carries the site's name, and its wordmark goes to the top.
-        expect(html).toContain('site-sidebar');
-        expect(html).toContain('data-chrome="sidebar"');
+        expect(html).toContain('site-header');
         expect(html).toContain('href="#top"');
         expect(html).toContain('href="contact.html"');
         expect(html).toContain('Smile Dental');

@@ -128,13 +128,14 @@ export async function hasAdvanced(supabase: SupabaseClient, userId: string): Pro
 }
 
 export const PAID_DESIGN_MESSAGE =
-    "This design is paid. Pay with Razorpay to unlock it — the price is the one on the tile.";
+    "This design needs Pro or Premium. Upgrade your plan with Razorpay — Pro unlocks all Pro designs; Premium unlocks all Premium designs.";
 
 /**
  * Opening a paid catalogue design.
  *
- * A row for that template, or a legacy Pro/Premium account grant, is enough. The grant is
- * written only when the signed webhook arrives, never because the browser reported success.
+ * A Pro plan unlocks every Pro (`premium` tier) template; Premium unlocks every
+ * Premium (`signature`) template and every Pro template. A legacy per-template
+ * row still counts.
  */
 export async function hasTemplateAccess(
     supabase: SupabaseClient,
@@ -154,7 +155,8 @@ export async function hasTemplateAccess(
 }
 
 /**
- * Opening a paid generated look (`photos` / Pro or `motion` / Premium). Starter (`casual`) is always free.
+ * Opening a paid generated look (`photos` / Pro or `motion` / Premium).
+ * Starter (`casual`) is always free. Pro plan → Photo-rich; Premium → both paid looks.
  */
 export async function hasStyleAccess(
     supabase: SupabaseClient,
