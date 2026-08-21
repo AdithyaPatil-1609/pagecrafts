@@ -157,7 +157,7 @@ describe("the public header", () => {
         expect(header).toContain("sign-in-cta");
         expect(css).toContain(".sign-in-cta");
         expect(css).toContain("var(--gold)");
-        expect(css).toContain("--gold: #d4b56a");
+        expect(css).toContain("--gold: #c4a86a");
         const cta = css.slice(css.indexOf(".sign-in-cta {"), css.indexOf(".sign-in-cta:hover"));
         expect(cta).not.toContain("var(--signal)");
         expect(cta).not.toContain("var(--bloom-amber)");

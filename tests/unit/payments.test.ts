@@ -150,13 +150,16 @@ describe("the routes that open checkout", () => {
             "utf8",
         );
 
-        expect(webhook).toContain("grantPro");
-        expect(webhook).toContain("grantPremium");
-        expect(webhook).toContain('kind === "pro"');
-        expect(webhook).toContain('kind === "premium"');
-        expect(hook).toContain("openPlanCheckout");
-        expect(hook).toContain("/api/v1/account/billing/checkout");
+        expect(webhook).toContain("grantTemplate");
+        expect(webhook).toContain("grantStyle");
+        expect(webhook).toContain('kind === "template"');
+        expect(webhook).toContain('kind === "style"');
+        expect(hook).toContain("openTemplateCheckout");
+        expect(hook).toContain("openStyleCheckout");
+        expect(hook).toContain("/api/v1/templates/");
+        expect(hook).toContain("/api/v1/styles/");
         expect(hook).toContain("checkout.razorpay.com");
+        expect(hook).not.toContain("openPlanCheckout");
         expect(webhook).not.toContain("verified: true");
     });
 
@@ -183,18 +186,19 @@ describe("the routes that open checkout", () => {
             "utf8",
         );
 
-        expect(unlock).toContain("openPlanCheckout");
-        expect(unlock).toContain("waitForPlanGrant");
-        expect(chooser).toContain("unlockIfNeeded");
-        expect(chooser).toContain("requiredPlanForStyle");
+        expect(unlock).toContain("openTemplateCheckout");
+        expect(unlock).toContain("openStyleCheckout");
+        expect(unlock).toContain("waitForTemplateGrant");
+        expect(unlock).toContain("waitForStyleGrant");
+        expect(chooser).toContain("unlockStyle");
+        expect(chooser).toContain("BuyPaidItemCta");
         expect(chooser).not.toContain("for now you can use any of them");
-        expect(capture).toContain("unlockIfNeeded");
+        expect(capture).toContain("unlockTemplate");
         expect(capture).toContain("Pay & put this on the design");
         expect(fork).toContain("requiredPlanForTemplate");
         expect(fork).toContain("PAID_DESIGN_MESSAGE");
-        expect(choose).toContain("hasPro");
-        expect(choose).toContain("hasPremium");
-        expect(choose).toContain("requiredPlanForStyle");
+        expect(choose).toContain("hasStyleAccess");
+        expect(choose).not.toContain("hasPro");
         expect(verify).not.toContain("grantPro");
         expect(verify).not.toContain("grantPublish");
     });

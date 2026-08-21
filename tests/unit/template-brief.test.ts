@@ -17,7 +17,7 @@ describe("choosing a template", () => {
     expect(capture).toContain("startFromDesign");
     expect(capture).toContain("Put this on the design");
     expect(capture).toContain("paidPlan");
-    expect(capture).toContain("unlockIfNeeded");
+    expect(capture).toContain("unlockTemplate");
     expect(page).toContain("paidPlan");
     expect(capture).toContain("/generate");
     expect(capture).toContain("/editor/");

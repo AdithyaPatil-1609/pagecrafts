@@ -4,7 +4,6 @@ import { Bell, Plus, Sparkles } from "lucide-react";
 import type { Viewer } from "@/lib/auth/session";
 import { BrandMark } from "@/components/landing/BrandMark";
 import { FlowSteps } from "@/components/app/FlowSteps";
-import { PlansNavLink } from "@/components/settings/PlansNavLink";
 import { ProfileMenu } from "@/components/settings/ProfileMenu";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -63,10 +62,7 @@ export function AppTopBar({
                 </span>
 
                 {user ? (
-                    <>
-                        <PlansNavLink />
-                        <ProfileMenu user={user} variant="avatar" />
-                    </>
+                    <ProfileMenu user={user} variant="avatar" />
                 ) : (
                     <Link
                         href="/signin"

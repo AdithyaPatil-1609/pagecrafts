@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { Lock, RefreshCw } from "lucide-react";
 
 import { apiGet, apiPost } from "@/lib/api/client";
 import type { JobStatus } from "@/lib/ai/jobs/types";
@@ -12,8 +13,13 @@ import { CardIndex } from "@/components/ui/card-index";
 import { GeneratingOverlay } from "@/components/editor/GeneratingOverlay";
 import { cn } from "@/lib/utils";
 import { useUnlockPaidDesign } from "@/hooks/useUnlockPaidDesign";
-import { PREMIUM_PRICE_INR, PRO_PRICE_INR, requiredPlanForStyle } from "@/lib/payments/pricing";
-import { waitForPlanGrant } from "@/lib/payments/wait-for-pro";
+import { useUpiPrompt } from "@/hooks/useUpiPrompt";
+import { BuyPaidItemCta } from "@/components/discovery/BuyPaidItemCta";
+import { AskAiFixDialog } from "@/components/editor/AskAiFixDialog";
+import { NeedUpiDialog } from "@/components/editor/NeedUpiDialog";
+import { explainCreationIssue } from "@/lib/editor/ai-fix";
+import { PREMIUM_PRICE_INR, PRO_PRICE_INR, styleBadge } from "@/lib/payments/pricing";
+import type { BillingSummary } from "@/lib/contracts";
 
 interface VariantCard {
     id: StyleId;
@@ -35,6 +41,9 @@ interface Quota {
     limit: number;
     remaining: number;
     unlimited: boolean;
+    package?: "free" | "advanced";
+    passes?: number;
+    canGenerate?: boolean;
 }
 
 interface JobProgress {
@@ -57,7 +66,7 @@ interface GenerateJobResponse {
 }
 
 const TIER_LABEL: Record<StyleTier, string> = {
-    free: "Free",
+    free: "Starter",
     pro: "Pro",
     premium: "Premium",
 };
@@ -68,15 +77,10 @@ const TIER_BADGE: Record<StyleTier, string> = {
     premium: "brand-gradient text-primary-foreground",
 };
 
-function priceLabel(tier: StyleTier): string {
-    if (tier === "free") return "Free";
-    if (tier === "premium") return `Rs ${PREMIUM_PRICE_INR}`;
-    return `Rs ${PRO_PRICE_INR}`;
-}
-
 function canGenerateAgain(quota: Quota | null): boolean {
     if (!quota) return true;
-    return quota.unlimited || quota.remaining > 0;
+    if (typeof quota.canGenerate === "boolean") return quota.canGenerate;
+    return quota.unlimited || quota.remaining > 0 || (quota.passes ?? 0) > 0;
 }
 
 export function StyleChooser({
@@ -97,7 +101,26 @@ export function StyleChooser({
     const [picking, setPicking] = useState<{ jobId: string; variantId: StyleId } | null>(null);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { unlockIfNeeded, status: payStatus } = useUnlockPaidDesign();
+    const { unlockStyle, status: payStatus, error: payError } = useUnlockPaidDesign();
+    const [unlockedStyles, setUnlockedStyles] = useState<string[]>([]);
+    const [askOpen, setAskOpen] = useState(false);
+    const upi = useUpiPrompt({
+        projectId,
+        prompt,
+        html: progress?.preview_html ?? progress?.variants?.[0]?.html,
+        enabled: Boolean(progress && (progress.status === "done" || progress.status === "failed")),
+    });
+    const fix = error ? explainCreationIssue(error, "generation") : null;
+
+    useEffect(() => {
+        let cancelled = false;
+        void apiGet<BillingSummary>("/api/v1/account/billing").then(({ data }) => {
+            if (!cancelled && data) setUnlockedStyles(data.unlockedStyleIds);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         if (!activeJobId) {
@@ -148,6 +171,11 @@ export function StyleChooser({
         };
     }, [activeJobId, projectId, router]);
 
+    function lookUnlocked(tier: StyleTier, id: StyleId): boolean {
+        if (!styleBadge(tier)) return true;
+        return unlockedStyles.includes(id);
+    }
+
     async function persistLook(fromJobId: string, variantId: StyleId) {
         return apiPost<{ id: string }>(
             `/api/v1/projects/${encodeURIComponent(projectId)}/generate/choose`,
@@ -157,34 +185,37 @@ export function StyleChooser({
 
     async function choose(fromJobId: string, variantId: StyleId, tier: StyleTier) {
         if (picking) return;
+        if (styleBadge(tier) && !lookUnlocked(tier, variantId)) {
+            await buyLook(fromJobId, variantId);
+            return;
+        }
+        await finishChoose(fromJobId, variantId);
+    }
+
+    async function buyLook(jobId: string, variantId: StyleId) {
+        try {
+            const unlocked = await unlockStyle(variantId);
+            if (!unlocked) return;
+            setUnlockedStyles((current) =>
+                current.includes(variantId) ? current : [...current, variantId],
+            );
+            await finishChoose(jobId, variantId);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Payment failed.");
+        }
+    }
+
+    async function finishChoose(fromJobId: string, variantId: StyleId) {
         setPicking({ jobId: fromJobId, variantId });
         setError(null);
 
         try {
-            const need = requiredPlanForStyle(tier);
-            if (need) {
-                const unlocked = await unlockIfNeeded(need);
-                if (!unlocked) {
-                    setError(
-                        "Pay with Razorpay to use this look. Pro unlocks Photo-rich; Premium unlocks Animated.",
-                    );
-                    setPicking(null);
-                    return;
-                }
-            }
-
             let result = await persistLook(fromJobId, variantId);
 
             if (result.code === "payment_required") {
-                const plan = need ?? "pro";
-                const unlocked =
-                    (await waitForPlanGrant(plan, { attempts: 5, delayMs: 600 })) ||
-                    (await unlockIfNeeded(plan));
+                const unlocked = await unlockStyle(variantId);
                 if (!unlocked) {
-                    setError(
-                        result.error ??
-                            "Pay with Razorpay to use this look. Pro unlocks Photo-rich; Premium unlocks Animated.",
-                    );
+                    setError(result.error ?? "This look is paid. Pay with Razorpay to unlock it.");
                     setPicking(null);
                     return;
                 }
@@ -204,21 +235,26 @@ export function StyleChooser({
         }
     }
 
-    async function generateAgain() {
-        if (!prompt || regenerating || !canGenerateAgain(quota)) return;
+    async function generateAgain(nextPrompt?: string) {
+        const text = (nextPrompt ?? prompt).trim();
+        if (!text || regenerating || !canGenerateAgain(quota)) return;
         setRegenerating(true);
         setError(null);
+        if (nextPrompt) setPrompt(text);
 
         const started = await apiPost<GenerateJobResponse>(
             `/api/v1/projects/${encodeURIComponent(projectId)}/generate`,
-            { prompt },
+            { prompt: text },
         );
 
         if (started.error || !started.data) {
-            const upgrade = /upgrade/i.test(started.error ?? "");
+            const upgrade = /Advanced|generation pass|free generations|AI generations/i.test(
+                started.error ?? "",
+            );
             setError(
                 upgrade
-                    ? "You have used your free generations. Pick one of the looks above, or upgrade to generate more."
+                    ? started.error ??
+                          "You have used your AI generations. Open Packages to unlock more."
                     : (started.error ?? "The site could not be generated."),
             );
             setRegenerating(false);
@@ -278,6 +314,9 @@ export function StyleChooser({
                         }))}
                         prompt={progress.prompt ?? prompt}
                         error={error ?? progress.error}
+                        onAskAiFix={(instruction) => {
+                            void generateAgain(instruction);
+                        }}
                     />
                 </div>
             ) : null}
@@ -298,17 +337,24 @@ export function StyleChooser({
                     Pick a <span className="hero-mix">look</span>
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
-                    Same business, three different sites. Casual is Free. Photo-rich is Pro
-                    (Rs {PRO_PRICE_INR}). Animated is Premium (Rs {PREMIUM_PRICE_INR}) —
-                    Razorpay opens when you pick a paid look.
+                    Same business, three different sites. Starter is free. Pro and Premium
+                    stay locked until you buy that look.
                 </p>
             </header>
 
-            {error && (
-                <p role="alert" className="text-center text-sm text-destructive">
-                    {error}
-                </p>
-            )}
+            {fix ? (
+                <div className="mx-auto max-w-lg rounded-2xl border border-border/70 bg-card/80 p-4 text-center">
+                    <p className="text-sm font-medium text-foreground">{fix.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{fix.what}</p>
+                    <button
+                        type="button"
+                        onClick={() => setAskOpen(true)}
+                        className="mt-3 h-11 cursor-pointer rounded-full border border-gold bg-gold px-4 text-sm font-semibold text-gold-foreground hover:opacity-90"
+                    >
+                        Fix with AI
+                    </button>
+                </div>
+            ) : null}
 
             {lookSets.map((attempt) => (
                 <section key={attempt.job_id || attempt.index} className="flex flex-col gap-3">
@@ -317,10 +363,23 @@ export function StyleChooser({
                             Set {attempt.index}
                         </h2>
                     )}
-                    <ul className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-                        {attempt.variants.map((option, i) => (
-                            <li key={`${attempt.job_id}-${option.id}`}>
-                                <article className="glass-panel card-hover relative flex h-full flex-col overflow-hidden rounded-2xl">
+                    <ul className="look-chunk-grid grid grid-cols-1 gap-5 lg:grid-cols-3">
+                        {attempt.variants.map((option, i) => {
+                            const locked = !lookUnlocked(option.tier, option.id);
+                            const badge = styleBadge(option.tier);
+                            return (
+                            <li
+                                key={`${attempt.job_id}-${option.id}`}
+                                className="look-chunk-card"
+                                style={{ animationDelay: `${i * 90}ms` }}
+                            >
+                                <article
+                                    className={cn(
+                                        "glass-panel card-hover relative flex h-full flex-col overflow-hidden rounded-2xl",
+                                        option.tier === "premium" &&
+                                            "shadow-[0_0_28px_color-mix(in_srgb,var(--gold)_28%,transparent)]",
+                                    )}
+                                >
                                     <CardIndex n={i + 1} />
                                     <div className="relative h-64 overflow-hidden bg-muted">
                                         <iframe
@@ -328,49 +387,76 @@ export function StyleChooser({
                                             srcDoc={option.html}
                                             sandbox="allow-scripts"
                                             tabIndex={-1}
-                                            className="pointer-events-none absolute left-0 top-0 h-[220%] w-[180%] origin-top-left scale-[0.56] border-0 bg-transparent"
+                                            className={cn(
+                                                "pointer-events-none absolute left-0 top-0 h-[220%] w-[180%] origin-top-left scale-[0.56] border-0 bg-transparent",
+                                                locked && "opacity-55",
+                                            )}
                                         />
+                                        <span
+                                            className={cn(
+                                                "absolute right-2 top-2 z-[2] inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold shadow-sm",
+                                                TIER_BADGE[option.tier],
+                                            )}
+                                        >
+                                            {locked ? (
+                                                <Lock className="size-3" strokeWidth={2} aria-hidden />
+                                            ) : null}
+                                            {badge ?? TIER_LABEL[option.tier]}
+                                        </span>
                                     </div>
                                     <div className="relative z-[1] flex flex-1 flex-col gap-3 p-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex flex-col gap-1">
-                                                <h2 className="text-base font-semibold text-foreground">
-                                                    {option.label}
-                                                </h2>
-                                                <p className="text-sm leading-5 text-muted-foreground">
-                                                    {option.blurb}
-                                                </p>
-                                            </div>
-                                            <span
-                                                className={cn(
-                                                    "shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold",
-                                                    TIER_BADGE[option.tier],
-                                                )}
-                                            >
-                                                {TIER_LABEL[option.tier]}
-                                            </span>
+                                        <div className="flex flex-col gap-1">
+                                            <h2 className="text-base font-semibold text-foreground">
+                                                {option.label}
+                                            </h2>
+                                            <p className="text-sm leading-5 text-muted-foreground">
+                                                {option.blurb}
+                                            </p>
                                         </div>
-                                        <Button
-                                            variant={option.tier === "free" ? "outline-brand" : "brand"}
-                                            className="mt-auto w-full cursor-pointer rounded-lg font-semibold"
-                                            disabled={picking !== null}
-                                            onClick={() =>
-                                                void choose(attempt.job_id, option.id, option.tier)
-                                            }
-                                        >
-                                            {picking?.jobId === attempt.job_id &&
-                                            picking.variantId === option.id
-                                                ? payStatus === "open" || payStatus === "loading"
-                                                    ? "Opening Razorpay…"
-                                                    : payStatus === "verifying"
-                                                      ? "Confirming payment…"
-                                                      : "Setting up your site…"
-                                                : `Use ${option.label} · ${priceLabel(option.tier)}`}
-                                        </Button>
+                                        {locked && badge ? (
+                                            <BuyPaidItemCta
+                                                badge={badge}
+                                                priceInr={
+                                                    option.id === "motion"
+                                                        ? PREMIUM_PRICE_INR
+                                                        : PRO_PRICE_INR
+                                                }
+                                                kind="look"
+                                                busy={
+                                                    payStatus === "loading" ||
+                                                    payStatus === "open" ||
+                                                    payStatus === "verifying" ||
+                                                    picking !== null
+                                                }
+                                                error={payError}
+                                                onBuy={() =>
+                                                    void buyLook(attempt.job_id, option.id)
+                                                }
+                                            />
+                                        ) : (
+                                            <Button
+                                                variant={option.tier === "free" ? "outline-brand" : "brand"}
+                                                className="mt-auto min-h-11 w-full cursor-pointer rounded-lg font-semibold"
+                                                disabled={picking !== null}
+                                                onClick={() =>
+                                                    void choose(
+                                                        attempt.job_id,
+                                                        option.id,
+                                                        option.tier,
+                                                    )
+                                                }
+                                            >
+                                                {picking?.jobId === attempt.job_id &&
+                                                picking.variantId === option.id
+                                                    ? "Setting up your site…"
+                                                    : `Use ${option.label}`}
+                                            </Button>
+                                        )}
                                     </div>
                                 </article>
                             </li>
-                        ))}
+                            );
+                        })}
                     </ul>
                 </section>
             ))}
@@ -380,11 +466,11 @@ export function StyleChooser({
                     {retryAllowed ? (
                         <>
                             <p className="max-w-md text-sm text-muted-foreground">
-                                {quota?.unlimited
-                                    ? "Not quite right? Generate another set of looks."
+                                {(quota?.passes ?? 0) > 0 && remaining <= 0
+                                    ? `Not quite right? You have ${quota!.passes} extra generation ${quota!.passes === 1 ? "pass" : "passes"} left.`
                                     : remaining === 1
-                                        ? "Not quite right? You have 1 free generation left."
-                                        : `Not quite right? You have ${remaining} free generations left.`}
+                                      ? "Not quite right? You have 1 AI generation left on this site."
+                                      : `Not quite right? You have ${remaining} AI generations left on this site.`}
                             </p>
                             <Button
                                 variant="outline-brand"
@@ -396,16 +482,50 @@ export function StyleChooser({
                                 {regenerating ? "Starting another look…" : "Generate another look"}
                             </Button>
                         </>
-                    ) : quota && !quota.unlimited && quota.remaining <= 0 ? (
-                        <p className="max-w-lg text-sm text-muted-foreground">
-                            You have used your {quota.limit} free generations. Pick one of the looks
-                            above, or upgrade to generate more.
-                        </p>
+                    ) : quota && !canGenerateAgain(quota) ? (
+                        <div className="flex max-w-lg flex-col items-center gap-3">
+                            <p className="text-sm text-muted-foreground">
+                                You have used your {quota.limit}{" "}
+                                {quota.package === "advanced" ? "Advanced" : "Free"} AI generations
+                                on this site. Pick a look above, or open Packages for more AI
+                                usage.
+                            </p>
+                            <Link
+                                href="/packages"
+                                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                            >
+                                Open Packages
+                            </Link>
+                        </div>
                     ) : null}
                 </footer>
             )}
             </main>
             ) : null}
+
+            {fix ? (
+                <AskAiFixDialog
+                    open={askOpen}
+                    title={fix.title}
+                    what={fix.what}
+                    busy={regenerating}
+                    onDismiss={() => setAskOpen(false)}
+                    onConfirm={() => {
+                        setAskOpen(false);
+                        void generateAgain(fix.instruction);
+                    }}
+                />
+            ) : null}
+
+            <NeedUpiDialog
+                open={upi.open}
+                busy={upi.busy}
+                error={upi.error}
+                onDismiss={upi.dismiss}
+                onConfirm={(id) => {
+                    void upi.save(id);
+                }}
+            />
         </div>
     );
 }

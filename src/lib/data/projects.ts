@@ -26,8 +26,8 @@ import { failureMessage, toFailureReason } from "@/lib/deploy/failure";
 import { requiredPlanForTemplate } from "@/lib/payments/pricing";
 // Shared with the publish gate (R3 D9), so fork and publish agree about what a live
 // entitlement is — including that a lapsed one is not. Opening a paid design uses the
-// same Pro/Premium grant: the webhook writes it, this only reads it.
-import { hasPremium, hasPro, PAID_DESIGN_MESSAGE } from "./entitlements";
+// template unlock (or a legacy plan grant): the webhook writes it, this only reads it.
+import { hasPro, hasTemplateAccess, PAID_DESIGN_MESSAGE } from "./entitlements";
 import { TEMPLATES } from "@/lib/templates";
 import { writeLibraryRows } from "@/lib/templates/row";
 import { templateUuid } from "@/lib/templates/template-id";
@@ -275,10 +275,7 @@ export async function createProject(
       throw new ApiError("not_found", "That design does not exist.");
     }
     const need = requiredPlanForTemplate(tier);
-    if (need === "premium" && !(await hasPremium(supabase, userId))) {
-      throw new ApiError("payment_required", PAID_DESIGN_MESSAGE, `userId=${userId}`);
-    }
-    if (need === "pro" && !pro) {
+    if (need && !(await hasTemplateAccess(supabase, userId, req.sourceTemplateId, tier))) {
       throw new ApiError("payment_required", PAID_DESIGN_MESSAGE, `userId=${userId}`);
     }
   }
@@ -391,8 +388,13 @@ export async function patchProject(
 ): Promise<ProjectDetail> {
   const patch: Record<string, unknown> = {};
   if (req.name !== undefined) patch.name = req.name;
-  if (req.siteMeta !== undefined) patch.site_meta = req.siteMeta;
   if (req.formEndpoint !== undefined) patch.form_endpoint = req.formEndpoint;
+  if (req.siteMeta !== undefined) {
+    const current = await getProject(supabase, projectId);
+    const next = { ...current.siteMeta, ...req.siteMeta };
+    if (!next.upiId) delete next.upiId;
+    patch.site_meta = next;
+  }
 
   if (Object.keys(patch).length === 0) {
     return getProject(supabase, projectId);

@@ -9,7 +9,9 @@ import { CATEGORY_LABELS } from "@/lib/discovery/categories";
 import { madeOfLine, priceLine, type TemplateDetail } from "@/lib/templates/detail";
 import { Badge } from "@/components/ui/badge";
 import { UseDesignButton } from "./UseDesignButton";
+import { BuyPaidItemCta } from "./BuyPaidItemCta";
 import { buttonVariants } from "@/components/ui/button";
+import { templateBadge } from "@/lib/payments/pricing";
 import {
     Dialog,
     DialogContent,
@@ -102,11 +104,19 @@ export function TemplateDetailModal({
     templateName,
     children,
     showPrice = true,
+    locked = false,
+    buyBusy = false,
+    buyError = null,
+    onBuy,
 }: {
     templateId: string;
     templateName: string;
     children: React.ReactNode;
     showPrice?: boolean;
+    locked?: boolean;
+    buyBusy?: boolean;
+    buyError?: string | null;
+    onBuy?: () => void;
 }) {
     const [state, setState] = useState<State>({ status: "idle" });
 
@@ -156,7 +166,8 @@ export function TemplateDetailModal({
     };
 
     const detail = state.status === "ready" ? state.detail : null;
-    const price = showPrice && detail ? priceLine(detail.tier, detail.priceInr) : null;
+    const price = showPrice && detail && !locked ? priceLine(detail.tier, detail.priceInr) : null;
+    const paidBadge = detail ? templateBadge(detail.tier) : null;
 
     return (
         <Dialog onOpenChange={onOpenChange}>
@@ -270,22 +281,34 @@ export function TemplateDetailModal({
                         {/* The price sits beside the button it applies to, before the choice
                             and never after (UI Spec §7.18). Free designs carry no price. */}
                         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
-                            {price ? (
-                                <span className="mr-auto flex flex-col">
-                                    <span className="text-base font-semibold text-foreground">
-                                        {price}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        listed price
-                                    </span>
-                                </span>
-                            ) : null}
-                            <UseDesignButton
-                                forkId={detail.forkId}
-                                name={detail.name}
-                                tier={detail.tier}
-                                showPayNote={showPrice}
-                            />
+                            {locked && paidBadge && onBuy ? (
+                                <BuyPaidItemCta
+                                    badge={paidBadge}
+                                    priceInr={detail.priceInr}
+                                    busy={buyBusy}
+                                    error={buyError}
+                                    onBuy={onBuy}
+                                />
+                            ) : (
+                                <>
+                                    {price ? (
+                                        <span className="mr-auto flex flex-col">
+                                            <span className="text-base font-semibold text-foreground">
+                                                {price}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                listed price
+                                            </span>
+                                        </span>
+                                    ) : null}
+                                    <UseDesignButton
+                                        forkId={detail.forkId}
+                                        name={detail.name}
+                                        tier={detail.tier}
+                                        showPayNote={showPrice}
+                                    />
+                                </>
+                            )}
                         </div>
                     </div>
                 ) : null}

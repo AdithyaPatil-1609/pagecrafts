@@ -185,27 +185,43 @@ describe("asking twice", () => {
 });
 
 describe("opening a paid design", () => {
-    it("lets a Pro account through", async () => {
+    it("lets a Pro account through a Pro template", async () => {
         const db = createFakeDb({ users: [{ id: "u1" }] });
         db.insert("entitlements", { user_id: "u1", kind: "pro", source: "paid", status: "active" });
 
-        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1")).resolves.toBeUndefined();
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-1", "premium")).resolves.toBeUndefined();
     });
 
-    it("lets a Premium account through for a Premium design", async () => {
+    it("lets a Premium account through a Premium design", async () => {
         const db = createFakeDb({ users: [{ id: "u1" }] });
         db.insert("entitlements", { user_id: "u1", kind: "premium", source: "paid", status: "active" });
 
-        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "premium")).resolves.toBeUndefined();
-        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "pro")).resolves.toBeUndefined();
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-1", "signature")).resolves.toBeUndefined();
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-1", "premium")).resolves.toBeUndefined();
     });
 
     it("does not let Pro cover a Premium design", async () => {
         const db = createFakeDb({ users: [{ id: "u1" }] });
         db.insert("entitlements", { user_id: "u1", kind: "pro", source: "paid", status: "active" });
 
-        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "pro")).resolves.toBeUndefined();
-        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "premium")).rejects.toMatchObject({
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-1", "premium")).resolves.toBeUndefined();
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-1", "signature")).rejects.toMatchObject({
+            code: "payment_required",
+        });
+    });
+
+    it("unlocks only the template that was paid for", async () => {
+        const db = createFakeDb({ users: [{ id: "u1" }] });
+        db.insert("entitlements", {
+            user_id: "u1",
+            kind: "template",
+            template_id: "tmpl-gym",
+            source: "paid",
+            status: "active",
+        });
+
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-gym", "premium")).resolves.toBeUndefined();
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-shop", "premium")).rejects.toMatchObject({
             code: "payment_required",
         });
     });
@@ -213,7 +229,7 @@ describe("opening a paid design", () => {
     it("refuses everyone else, and does not invent a grant", async () => {
         const db = createFakeDb({ users: [{ id: "u1" }] });
 
-        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1")).rejects.toMatchObject({
+        await expect(assertCanUsePaidDesign(db.asUser("u1"), "u1", "tmpl-1", "premium")).rejects.toMatchObject({
             code: "payment_required",
             message: expect.stringMatching(/Razorpay/i),
         });

@@ -2,7 +2,8 @@ import type { Composition, FileMap, SectionInstance, SectionKey } from '@/lib/co
 import { compositionShell } from '@/lib/render/page-shell';
 import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
-import { motionMotifMarkup, motionStageMarkup, motionTickerMarkup } from './motion-motif';
+import { chromeForStyleId } from '@/lib/sites/tier-chrome';
+import { chromeHeaderHtml, navLinksHtml, tierChromeCss } from '@/lib/sites/tier-chrome-markup';
 import {
     pageHref,
     planSitePages,
@@ -210,19 +211,21 @@ function renderInner(
 // in a commit called "assert site-header on generated pages", which is a clearer statement
 // of intent than the tests were. Their renderer, their call — this follows it, and all
 // three tests agree on it now.
-function siteNav(pages: readonly SitePage[], current: string, title: string): string {
-    const links = pages
-        .map((page) => {
-            const href = pageHref(page.path, current);
-            const currentAttr = page.path === current ? ' aria-current="page"' : '';
-            return `<a href="${escapeHtml(href)}"${currentAttr}>${escapeHtml(page.label)}</a>`;
-        })
-        .join('');
-
-    return `<header class="site-header">
-  <a class="wordmark" href="${escapeHtml(pageHref('index.html', current))}">${escapeHtml(title)}</a>
-  <nav aria-label="Site">${links}</nav>
-</header>`;
+function siteNav(pages: readonly SitePage[], current: string, title: string, style?: StyleId): string {
+    const chrome = chromeForStyleId(style);
+    const links = navLinksHtml(
+        pages.map((page) => ({
+            href: pageHref(page.path, current),
+            label: page.label,
+            current: page.path === current,
+        })),
+    );
+    return chromeHeaderHtml({
+        kind: chrome,
+        title,
+        homeHref: pageHref('index.html', current),
+        navInner: links,
+    });
 }
 
 const PAGE_CSS = `
@@ -295,13 +298,15 @@ address { font-style: normal; }
 .settings-list dd { margin: 0 0 0.75rem; }
 .form-status { margin: 0; color: var(--muted); }
 
-/* Casual keeps one hero photograph (split beside the copy) and hides the rest —
-   Photo-rich is the look that paints pictures through about/gallery. */
+[data-style="casual"] .site { display: grid; min-height: 100dvh; grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr); }
+[data-style="casual"] main { max-width: none; }
 [data-style="casual"] [data-type="hero"] {
   gap: 2rem;
-  padding: 1.25rem;
-  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--rule));
+  position: relative;
+  isolation: isolate;
+  padding: 3rem 1.5rem;
+  min-height: 18rem;
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel));
   border-radius: var(--radius-lg, 1rem);
 }
 [data-style="casual"] [data-type="hero"] .img-slot {
@@ -312,6 +317,11 @@ address { font-style: normal; }
 [data-style="casual"] [data-type="about"] .img-slot,
 [data-style="casual"] [data-type="services"] .img-slot,
 [data-style="casual"] [data-type="gallery"] .img-slot { display: none; }
+@media (max-width: 48rem) {
+  [data-style="casual"] .site { grid-template-columns: 1fr; }
+}
+
+[data-style="photos"] .site-topbar-blend { max-width: none; padding-inline: 1.5rem; }
 
 [data-variant="image-bg"] {
   display: grid !important;
@@ -349,394 +359,71 @@ address { font-style: normal; }
 }
 `;
 
-/** Premium look only — kinetic canvas CSS must not leak into Casual/Photo-rich HTML. */
-const MOTION_CSS = `
-body:has([data-style="motion"]) {
-  --bg: #06040c;
-  --ink: #f6f3ff;
-  --muted: #b7b0cc;
-  --accent: #ff2d6a;
-  --accent-ink: #ffffff;
+/** Premium liquid deck — PageCrafts landing atmosphere, not kinetic blobs. */
+const LIQUID_CSS = `
+body:has([data-style="motion"]),
+[data-style="motion"] {
+  --bg: #05070a;
+  --ink: #f4f7fb;
+  --muted: #a8b4c4;
+  --accent: #d4b56a;
+  --accent-ink: #05070a;
   --panel: rgba(255, 255, 255, 0.055);
   --rule: rgba(255, 255, 255, 0.12);
-  --display-tracking: -0.06em;
-  background: #06040c;
-  color: #f6f3ff;
+  --display-tracking: -0.03em;
 }
-[data-style="motion"] .site-header {
-  position: sticky;
-  top: 0;
-  z-index: 8;
-  max-width: none;
-  padding-inline: 6vw;
-  background: color-mix(in srgb, #06040c 62%, transparent);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+[data-style="motion"] {
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 14% 8%, color-mix(in srgb, #00a3ff 28%, transparent), transparent 46%),
+    radial-gradient(ellipse at 88% 14%, color-mix(in srgb, #5ec8ff 18%, transparent), transparent 42%),
+    radial-gradient(ellipse at 78% 92%, color-mix(in srgb, #f0a04a 14%, transparent), transparent 44%),
+    linear-gradient(180deg, #0b121e 0%, #05070a 42%, #05070a 100%);
+  min-height: 100dvh;
 }
-[data-style="motion"] .site-header nav a { color: rgba(246, 243, 255, 0.72); }
-[data-style="motion"] .site-header nav a:hover { color: #fff; }
 [data-style="motion"] main {
   max-width: none;
   padding-inline: 0;
   padding-bottom: 0;
-  counter-reset: pc-sec;
+}
+[data-style="motion"] section,
+[data-style="motion"] [data-type] {
+  min-height: min(88dvh, 44rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4.5rem 6vw;
+  border-bottom: 1px solid color-mix(in srgb, #5ec8ff 14%, transparent);
 }
 [data-style="motion"] [data-type="hero"] {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
   display: grid;
   grid-template-columns: 1fr;
   place-items: center;
   text-align: center;
   min-height: 92vh;
-  padding: 7rem 6vw 8.5rem;
 }
 [data-style="motion"] [data-type="hero"] .img-slot { display: none; }
-[data-style="motion"] [data-type="hero"] .hero-copy {
-  position: relative;
-  z-index: 3;
-  max-width: 18ch;
-}
-[data-style="motion"] [data-type="hero"] .lede {
-  margin-inline: auto;
-  font-size: 1.15rem;
-  color: rgba(246, 243, 255, 0.72);
-}
 [data-style="motion"] [data-type="hero"] h1 {
-  font-size: clamp(3.1rem, 11vw, 7.4rem);
-  font-weight: 800;
-  letter-spacing: -0.07em;
-  line-height: 0.88;
-  margin: 0 auto 0.7em;
-  max-width: 12ch;
-  background: linear-gradient(115deg, #fff 8%, #fff 32%, var(--accent) 52%, #fbbf24 74%, #fff 100%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: pc-type 9s ease-in-out infinite;
-}
-[data-style="motion"] .eyebrow {
-  display: inline-flex;
-  margin-bottom: 1.1rem;
-  padding: 0.38rem 0.9rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: #ffd0dc;
-  letter-spacing: 0.22em;
-  font-size: 0.68rem;
-}
-[data-style="motion"] .motion-stage {
-  position: absolute;
-  inset: -12%;
-  z-index: 0;
-  pointer-events: none;
-}
-[data-style="motion"] .motion-aurora {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 52% 42% at 16% 28%, color-mix(in srgb, var(--accent) 58%, transparent), transparent 62%),
-    radial-gradient(ellipse 46% 36% at 86% 12%, rgba(124, 58, 237, 0.55), transparent 64%),
-    radial-gradient(ellipse 42% 38% at 72% 86%, rgba(245, 158, 11, 0.34), transparent 62%);
-  filter: blur(30px);
-  animation: pc-aurora 16s ease-in-out infinite alternate;
-}
-[data-style="motion"] .motion-grid {
-  position: absolute;
-  inset: 18% -10% -30%;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(ellipse at 50% 0%, #000 12%, transparent 72%);
-  transform: perspective(700px) rotateX(62deg);
-  transform-origin: 50% 0;
-  animation: pc-grid 22s linear infinite;
-}
-[data-style="motion"] .motion-grain {
-  position: absolute;
-  inset: -20%;
-  opacity: 0.2;
-  mix-blend-mode: overlay;
-  background-image:
-    repeating-radial-gradient(circle at 18% 22%, rgba(255,255,255,0.22) 0 1px, transparent 1px 3px),
-    repeating-radial-gradient(circle at 82% 78%, rgba(255,255,255,0.16) 0 1px, transparent 1px 4px);
-  animation: pc-grain 0.38s steps(3) infinite;
-}
-[data-style="motion"] .motion-flare {
-  position: absolute;
-  width: 130vmax;
-  height: 130vmax;
-  left: 50%;
-  top: 38%;
-  translate: -50% -50%;
-  background: conic-gradient(from 200deg, transparent 0 58%, color-mix(in srgb, var(--accent) 20%, transparent) 70%, transparent 86%);
-  animation: pc-flare 24s linear infinite;
-  opacity: 0.65;
-}
-[data-style="motion"] .motion-motif {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  color: var(--accent);
-  pointer-events: none;
-}
-[data-style="motion"] .motif-halo {
-  position: absolute;
-  right: 4%;
-  top: 12%;
-  width: min(46vw, 420px);
-  height: min(46vw, 420px);
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  box-shadow: 0 0 80px color-mix(in srgb, var(--accent) 28%, transparent);
-  animation: pc-halo 12s linear infinite;
-}
-[data-style="motion"] .motion-motif svg {
-  position: absolute;
-  right: 2%;
-  top: 8%;
-  width: min(52vw, 540px);
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 0 36px color-mix(in srgb, var(--accent) 45%, transparent));
-}
-[data-style="motion"] .motion-motif svg.motif-ghost {
-  right: -4%;
-  top: 2%;
-  width: min(62vw, 640px);
-  opacity: 0.18;
-  filter: blur(10px);
-  animation: pc-spin 28s linear infinite reverse;
-}
-[data-style="motion"] .motion-motif[data-motif="jalebi"] svg.motif-body {
-  animation: pc-spin 18s linear infinite;
-  color: #f59e0b;
-}
-[data-style="motion"] .motion-motif[data-motif="jalebi"] svg.motif-ghost {
-  color: #f59e0b;
-}
-[data-style="motion"] .jalebi-coil {
-  stroke-dasharray: 280;
-  animation: pc-draw 3.6s ease-in-out infinite alternate;
-}
-[data-style="motion"] .honey-drip {
-  position: absolute;
-  left: 72%;
-  top: 52%;
-  width: 16px;
-  height: 28px;
-  border-radius: 40% 40% 55% 55%;
-  background: linear-gradient(#fbbf24, #b45309);
-  box-shadow: 0 0 18px #f59e0b;
-  animation: pc-drip 1.8s ease-in infinite;
-  animation-delay: var(--d, 0s);
-}
-[data-style="motion"] .honey-drip-b { left: 78%; top: 44%; }
-[data-style="motion"] .honey-drip-c { left: 66%; top: 58%; width: 11px; height: 18px; }
-[data-style="motion"] .motif-spark {
-  position: absolute;
-  width: 11px;
-  height: 11px;
-  right: calc(18% + (var(--s, 0) * 7%));
-  top: calc(22% + (var(--s, 0) * 11%));
-  background: #fff;
-  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-  animation: pc-spark 1.9s ease-in-out infinite;
-  animation-delay: calc(var(--s, 0) * 0.28s);
-}
-[data-style="motion"] .motion-motif[data-motif="tooth"] svg {
-  animation: pc-float 4.6s ease-in-out infinite;
-  color: #e8eef5;
-}
-[data-style="motion"] .motion-motif[data-motif="leaf"] svg,
-[data-style="motion"] .motion-motif[data-motif="flame"] svg,
-[data-style="motion"] .motion-motif[data-motif="flower"] svg,
-[data-style="motion"] .motion-motif[data-motif="drape"] svg {
-  animation: pc-sway 3.4s ease-in-out infinite;
-  transform-origin: 70% 80%;
-}
-[data-style="motion"] .motion-motif[data-motif="heart"] svg,
-[data-style="motion"] .motion-motif[data-motif="bolt"] svg {
-  animation: pc-pulse 1.4s ease-in-out infinite;
-}
-[data-style="motion"] .motion-motif[data-motif="wheel"] svg {
-  animation: pc-spin 8s linear infinite;
-}
-[data-style="motion"] .motion-motif[data-motif="steam"] svg {
-  animation: pc-nudge 3.2s ease-in-out infinite;
-}
-[data-style="motion"] .motion-motif[data-motif="scale"] svg,
-[data-style="motion"] .motion-motif[data-motif="note"] svg,
-[data-style="motion"] .motion-motif[data-motif="paw"] svg,
-[data-style="motion"] .motion-motif[data-motif="needle"] svg,
-[data-style="motion"] .motion-motif[data-motif="building"] svg,
-[data-style="motion"] .motion-motif[data-motif="crate"] svg,
-[data-style="motion"] .motion-motif[data-motif="cap"] svg,
-[data-style="motion"] .motion-motif[data-motif="coin"] svg {
-  animation: pc-float 5s ease-in-out infinite;
-}
-[data-style="motion"] .motion-ticker {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 7%;
-  z-index: 2;
-  overflow: hidden;
-  pointer-events: none;
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  font-size: clamp(2.4rem, 7vw, 5.4rem);
-  font-weight: 800;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  white-space: nowrap;
-  color: #fff;
-  opacity: 0.1;
-}
-[data-style="motion"] .motion-ticker p {
-  display: inline-block;
-  max-width: none;
-  margin: 0;
-  animation: pc-marquee 22s linear infinite;
+  font-family: Outfit, ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  letter-spacing: -0.04em;
+  max-width: 14ch;
 }
 [data-style="motion"] .cta {
-  position: relative;
-  overflow: hidden;
-  margin-top: 1.4rem;
-  padding: 0.95rem 1.7rem;
   border-radius: 999px;
-  animation: pc-pulse 1.4s ease-in-out infinite;
-  box-shadow:
-    0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent),
-    0 16px 40px color-mix(in srgb, var(--accent) 38%, transparent);
-}
-[data-style="motion"] .cta::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.45), transparent 72%);
-  transform: translateX(-130%);
-  animation: pc-shine 2.8s ease-in-out infinite;
-}
-[data-style="motion"] section:not([data-type="hero"]):not([data-type="footer"]) {
-  counter-increment: pc-sec;
-  max-width: 72rem;
-  margin-inline: auto;
-  padding-inline: 6vw;
-}
-[data-style="motion"] section:not([data-type="hero"]):not([data-type="footer"]) h2::before {
-  content: counter(pc-sec, decimal-leading-zero);
-  display: block;
-  margin-bottom: 0.45rem;
-  color: var(--accent);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-}
-[data-style="motion"] [data-type="footer"] {
-  padding-inline: 6vw;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #d4b56a;
+  background: #d4b56a;
+  color: #05070a;
 }
 [data-style="motion"] .card {
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
-  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  background: color-mix(in srgb, #0b121e 70%, transparent);
+  backdrop-filter: blur(12px);
 }
-[data-style="motion"] .card:hover {
-  transform: translateY(-6px);
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  box-shadow: 0 18px 40px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-[data-style="motion"] .form input,
-[data-style="motion"] .form textarea {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #fff;
-}
-@keyframes pc-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes pc-draw {
-  from { stroke-dashoffset: 220; }
-  to { stroke-dashoffset: 0; }
-}
-@keyframes pc-drip {
-  0% { transform: translateY(0); opacity: 0.95; }
-  70% { transform: translateY(22px); opacity: 0.7; }
-  100% { transform: translateY(36px); opacity: 0; }
-}
-@keyframes pc-sway {
-  0%, 100% { transform: rotate(-7deg); }
-  50% { transform: rotate(7deg); }
-}
-@keyframes pc-nudge {
-  0%, 100% { transform: translateY(0) rotate(-4deg); }
-  50% { transform: translateY(-10px) rotate(4deg); }
-}
-@keyframes pc-float {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(-5deg); }
-  50% { transform: translate3d(0, -18px, 0) rotate(4deg); }
-}
-@keyframes pc-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent), 0 16px 40px color-mix(in srgb, var(--accent) 38%, transparent); }
-  50% { transform: scale(1.05); box-shadow: 0 0 0 14px transparent, 0 16px 40px color-mix(in srgb, var(--accent) 38%, transparent); }
-}
-@keyframes pc-aurora {
-  from { transform: translate3d(-4%, -2%, 0) scale(1); }
-  to { transform: translate3d(5%, 3%, 0) scale(1.08); }
-}
-@keyframes pc-grid {
-  from { background-position: 0 0; }
-  to { background-position: 72px 72px; }
-}
-@keyframes pc-grain {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(-1.2%, 0.8%); }
-  66% { transform: translate(1%, -1%); }
-}
-@keyframes pc-flare {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes pc-halo {
-  from { transform: rotate(0deg) scale(1); opacity: 0.7; }
-  50% { transform: rotate(180deg) scale(1.06); opacity: 1; }
-  to { transform: rotate(360deg) scale(1); opacity: 0.7; }
-}
-@keyframes pc-spark {
-  0%, 100% { transform: scale(0.4) rotate(0deg); opacity: 0.35; }
-  50% { transform: scale(1) rotate(18deg); opacity: 1; }
-}
-@keyframes pc-type {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-@keyframes pc-shine {
-  0%, 55% { transform: translateX(-130%); }
-  100% { transform: translateX(130%); }
-}
-@keyframes pc-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+html:has([data-style="motion"]) {
+  scroll-behavior: smooth;
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-style="motion"] .motion-motif svg,
-  [data-style="motion"] .honey-drip,
-  [data-style="motion"] .motif-spark,
-  [data-style="motion"] .motif-halo,
-  [data-style="motion"] .motion-aurora,
-  [data-style="motion"] .motion-grid,
-  [data-style="motion"] .motion-grain,
-  [data-style="motion"] .motion-flare,
-  [data-style="motion"] .motion-ticker p,
-  [data-style="motion"] [data-type="hero"] h1,
-  [data-style="motion"] .cta,
-  [data-style="motion"] .cta::after { animation: none; }
+  html:has([data-style="motion"]) { scroll-behavior: auto; }
 }
 `;
 
@@ -759,34 +446,38 @@ export function compositionToFiles(composition: Composition, style?: StyleId): F
     const visible = composition.sections.filter((s) => s.visible);
     const pages = planSitePages(composition);
     const title = composition.meta.title || 'Home';
+    const chrome = chromeForStyleId(style);
     const styleAttr = style ? ` data-style="${escapeHtml(style)}"` : '';
-    const motif = style === 'motion'
-        ? `${motionStageMarkup()}${motionMotifMarkup(composition.vertical, `${composition.meta.title} ${composition.meta.description}`)}${motionTickerMarkup(composition.meta.title)}`
-        : '';
-    const css = style === 'motion' ? `${PAGE_CSS}${MOTION_CSS}` : PAGE_CSS;
+    const chromeAttr = ` data-chrome="${chrome}"`;
+    const css = `${PAGE_CSS}${tierChromeCss(chrome)}${style === 'motion' ? LIQUID_CSS : ''}`;
     const footers = visible.filter((s) => s.type === 'footer');
     const files: FileMap = {};
 
     for (const page of pages) {
-        const body = [
-            `<style>${css}</style>`,
-            `<div class="site"${styleAttr}>`,
-            siteNav(pages, page.path, title),
+        const nav = siteNav(pages, page.path, title, style);
+        const main = [
             `<main id="top">`,
-            pageInner(page, composition, visible, motif),
+            pageInner(page, composition, visible, ''),
             footers.map((section, index) => renderSection(section, index, visible, '')).join('\n'),
             `</main>`,
-            `</div>`,
         ].join('\n');
+
+        const shell =
+            chrome === 'sidebar'
+                ? `<div class="site site-shell"${styleAttr}${chromeAttr}><style>${css}</style>${nav}<div class="site-main">${main}</div></div>`
+                : chrome === 'liquid'
+                  ? `<div class="site site-liquid"${styleAttr}${chromeAttr}><style>${css}</style>${nav}<div class="liquid-deck">${main}</div></div>`
+                  : `<div class="site"${styleAttr}${chromeAttr}><style>${css}</style>${nav}${main}</div>`;
 
         files[page.path] = compositionShell({
             title: composition.meta.title,
             description: composition.meta.description,
             lang: composition.meta.lang,
             artDirection: composition.artDirection,
-            body,
+            body: shell,
         });
     }
 
     return files;
 }
+

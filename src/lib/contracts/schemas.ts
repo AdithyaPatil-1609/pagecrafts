@@ -30,6 +30,17 @@ export const patchProjectSchema = z.object({
       faviconUrl: z.string().url().optional(),
       ogImageAssetId: z.string().optional(),
       ogImageUrl: z.string().url().optional(),
+      upiId: z
+        .string()
+        .trim()
+        .max(80)
+        .refine(
+          (value) =>
+            value === "" ||
+            /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9]{1,63}$/.test(value),
+          "That does not look like a UPI ID.",
+        )
+        .optional(),
     })
     .optional(),
   formEndpoint: z

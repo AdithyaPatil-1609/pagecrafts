@@ -116,19 +116,24 @@ function withNav(header: string, navInner: string): string {
     if (/<nav\b/i.test(header)) {
         return header.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/i, `<nav class="nav">${navInner}</nav>`);
     }
+    if (/<\/aside>/i.test(header)) {
+        return header.replace(/<\/aside>/i, `      <nav class="nav">${navInner}</nav>\n    </aside>`);
+    }
     return header.replace(/<\/header>/i, `      <nav class="nav">${navInner}</nav>\n    </header>`);
 }
 
 function extractChrome(indexHtml: string, name: string) {
     const head = indexHtml.match(/<head\b[^>]*>[\s\S]*?<\/head>/i)?.[0]
         ?? `<head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <link rel="stylesheet" href="styles.css" />\n  </head>`;
-    const headerMatch = indexHtml.match(/<header\b[^>]*>[\s\S]*?<\/header>/i)?.[0];
+    const headerMatch =
+        indexHtml.match(/<aside\b[^>]*class="[^"]*site-sidebar[^"]*"[^>]*>[\s\S]*?<\/aside>/i)?.[0]
+        ?? indexHtml.match(/<header\b[^>]*>[\s\S]*?<\/header>/i)?.[0];
     const footer = indexHtml.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/i)?.[0]
         ?? `    <footer class="footer">\n      <p data-slot="site.footer">${escapeHtml(name)}</p>\n    </footer>`;
     const htmlOpen = indexHtml.match(/<html\b[^>]*>/i)?.[0] ?? "<html lang=\"en\">";
     const bodyOpen = indexHtml.match(/<body\b[^>]*>/i)?.[0] ?? "<body>";
     const header = headerMatch
-        ?? `    <header class="topbar">\n      <span class="wordmark" data-slot="site.name">${escapeHtml(name)}</span>\n      <nav class="nav"></nav>\n    </header>`;
+        ?? `    <header class="site-topbar site-topbar-blend">\n      <a class="wordmark" href="index.html" data-slot="site.name">${escapeHtml(name)}</a>\n      <nav class="nav"></nav>\n    </header>`;
 
     return { head, header, footer, htmlOpen, bodyOpen };
 }

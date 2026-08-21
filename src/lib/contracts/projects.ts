@@ -16,6 +16,8 @@ export interface SiteMeta {
   faviconUrl?: string;
   ogImageAssetId?: string;
   ogImageUrl?: string;
+  /** Shop owner's UPI VPA — used on generated order-taking sites. */
+  upiId?: string;
 }
 
 /**

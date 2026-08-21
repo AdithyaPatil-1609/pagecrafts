@@ -22,9 +22,13 @@ const ORDERS_URL = "https://api.razorpay.com/v1/orders";
 
 export interface OrderNotes {
     userId: string;
-    kind: "publish" | "pro" | "premium";
-    /** Present for a publish order; omitted for account Pro. */
+    kind: "publish" | "pro" | "premium" | "template" | "style" | "advanced" | "generation_pass";
+    /** Present for a publish order; omitted for item and account unlocks. */
     projectId?: string;
+    /** Catalogue design being bought. */
+    templateId?: string;
+    /** Generated look being bought (`photos` or `motion`). */
+    styleId?: string;
 }
 
 /** True when this process can create an order. Missing keys fail at checkout, not at boot. */

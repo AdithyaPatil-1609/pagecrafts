@@ -28,7 +28,7 @@ export function SettingsSlide({
                         Settings
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Your account, notices, the plan, and what PageCrafts does with your work.
+                        Your account, notices, purchases, and what PageCrafts does with your work.
                         Title, SEO and domains for a site live on that site in the editor.
                     </p>
                 </header>
@@ -78,7 +78,7 @@ export function SettingsSlide({
                         <BillingPlans account={account} initial={billing ?? DEFAULT_BILLING} />
                         <BillingProfile initial={account} />
                         <PrivacyAndData initial={account} />
-                        <DeleteAccount />
+                        <DeleteAccount email={account.email} />
                     </div>
                 )}
             </div>

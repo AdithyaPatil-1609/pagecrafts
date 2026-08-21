@@ -42,8 +42,8 @@ export default async function NewProjectPage({
         </p>
         {design && design.tier !== "free" ? (
           <p className="text-xs text-muted-foreground">
-            This design is paid. Razorpay opens before it is set up — Pro for premium
-            templates, Premium for signature.
+            This design is paid. Razorpay opens before it is set up if you have not
+            bought it yet.
           </p>
         ) : null}
       </header>

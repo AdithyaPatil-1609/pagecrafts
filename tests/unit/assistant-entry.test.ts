@@ -27,17 +27,22 @@ describe("the assistant hand-off", () => {
 
     expect(header).toContain('href: "/#welcome"');
     expect(header).toContain('href: "/#how-it-works"');
+    expect(header).toContain('href: "/#pricing"');
+    expect(header).toContain('href: "/#compare"');
     expect(header).toContain('href: "/#build"');
     expect(header).toContain('href: "/#sites"');
+    expect(header).toContain('href: "/#settings"');
+    expect(header).not.toContain('href: "/compare"');
     expect(header).toContain("<ProfileMenu");
-    expect(menu).toContain('href="/settings"');
+    expect(header).toContain('href="/packages"');
+    expect(menu).toContain('href="/?slide=settings"');
+    expect(menu).toContain("scrollIntoView");
     expect(menu).toContain("LogoutButton");
     const settingsLink = menu
       .split("\n")
-      .find((line) => line.includes('href="/settings"'));
+      .find((line) => line.includes('href="/?slide=settings"'));
     expect(settingsLink).toBeTruthy();
     expect(settingsLink).not.toContain("hidden");
-    expect(settingsLink).not.toContain("/#settings");
   });
 
   it("keeps every signed-in slide reachable instead of clipping it", () => {
@@ -53,13 +58,26 @@ describe("the assistant hand-off", () => {
     expect(css).toContain("isolation: isolate");
     expect(css).toContain("overflow-x: clip");
     expect(home).toContain("<ValueProps />");
+    expect(home).toContain("<PricingSlide");
+    expect(home).toContain("<CompareSlide");
     expect(home).toContain("<BuildSlide");
     expect(home).toContain("<SitesSlide");
     expect(home).toContain("<SettingsSlide");
+    expect(home).toMatch(
+      /welcome[\s\S]*how-it-works[\s\S]*pricing[\s\S]*compare[\s\S]*build[\s\S]*sites[\s\S]*settings/,
+    );
     expect(how).toContain("page-slide-tall");
     expect(how).toContain('id="how-it-works"');
     expect(how).toContain("How it works");
     expect(how).not.toContain("data-reveal");
+    const pricing = read("src", "components", "deck", "PricingSlide.tsx");
+    expect(pricing).toContain('id="pricing"');
+    expect(pricing).toContain("page-slide");
+    expect(pricing).toContain("PricingGuide");
+    const compare = read("src", "components", "deck", "CompareSlide.tsx");
+    expect(compare).toContain('id="compare"');
+    expect(compare).toContain("page-slide");
+    expect(compare).toContain("LookCompareDemo");
     expect(build).toContain("Explore more");
     expect(build).toContain('href="/templates"');
     expect(build).toContain("lg:grid-cols-2");

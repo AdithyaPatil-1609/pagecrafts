@@ -113,7 +113,8 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         //
         // Kept, narrowed to what this renderer does guarantee and the test below does not:
         // the nav is there, it carries the site's name, and its wordmark goes to the top.
-        expect(html).toContain('class="site-header"');
+        expect(html).toContain('site-sidebar');
+        expect(html).toContain('data-chrome="sidebar"');
         expect(html).toContain('href="#top"');
         expect(html).toContain('href="contact.html"');
         expect(html).toContain('Smile Dental');
@@ -168,7 +169,7 @@ describe('compositionToFiles — D15, a composition becomes a site', () => {
         expect(html).toContain('>Settings<');
         expect(html).not.toContain('>Gallery<');
         expect(html).not.toContain('>Testimonials<');
-        const lastNav = html.match(/<nav aria-label="Site">([\s\S]*?)<\/nav>/)?.[1] ?? '';
+        const lastNav = html.match(/<nav[^>]*aria-label="Site"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? '';
         expect(lastNav.lastIndexOf('settings.html')).toBeGreaterThan(lastNav.lastIndexOf('contact.html'));
     });
 
