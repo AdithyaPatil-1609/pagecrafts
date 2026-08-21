@@ -10,10 +10,10 @@ import {
     publishableKeyId,
     type OrderNotes,
 } from "./razorpay";
-import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr, requiredPlanForTemplate, templatePriceInr } from "./pricing";
+import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr, requiredPlanForStyle, requiredPlanForTemplate } from "./pricing";
 import { TEMPLATES } from "@/lib/templates";
 import { templateUuid } from "@/lib/templates/template-id";
-import { STYLE_SPECS, type StyleId } from "@/lib/ai/generate/styles";
+import type { StyleId } from "@/lib/ai/generate/styles";
 import {
     ADVANCED_PACKAGE_PRICE_INR,
     GENERATION_PASS_PRICE_INR,
@@ -338,31 +338,13 @@ export async function startTemplateCheckout(
     templateRef: string,
 ): Promise<CheckoutResponse> {
     const resolved = resolveDesign(templateRef);
-    if (!resolved || !requiredPlanForTemplate(resolved.design.tier)) {
+    const need = resolved ? requiredPlanForTemplate(resolved.design.tier) : null;
+    if (!resolved || !need) {
         throw new ApiError("not_found", "That design does not exist.");
     }
 
-    const { uuid, design } = resolved;
-    if (await hasTemplateAccess(supabase, userId, uuid, design.tier)) {
-        return { granted: true };
-    }
-
-    const priceInr = templatePriceInr(design.tier);
-    const notes: OrderNotes = { userId, kind: "template", templateId: uuid };
-    const order = await createOrder(
-        inrToPaise(priceInr),
-        `tpl_${uuid.slice(0, 8)}_${Date.now()}`,
-        notes,
-    );
-
-    return {
-        granted: false,
-        orderId: order.id,
-        amountInPaise: order.amount,
-        currency: "INR",
-        keyId: publishableKeyId(),
-        priceInr,
-    };
+    // Plans unlock the whole tier — never sell a single template anymore.
+    return startPlanCheckout(supabase, userId, need);
 }
 
 const PAID_STYLES = new Set<StyleId>(["photos", "motion"]);
@@ -376,26 +358,13 @@ export async function startStyleCheckout(
         throw new ApiError("not_found", "That look does not exist.");
     }
 
-    const spec = STYLE_SPECS[styleId as StyleId];
-    if (await hasStyleAccess(supabase, userId, styleId)) {
-        return { granted: true };
-    }
-
-    const notes: OrderNotes = { userId, kind: "style", styleId };
-    const order = await createOrder(
-        inrToPaise(spec.priceInr),
-        `look_${styleId}_${Date.now()}`,
-        notes,
+    const need = requiredPlanForStyle(
+        styleId === "photos" ? "pro" : styleId === "motion" ? "premium" : null,
     );
+    if (!need) throw new ApiError("not_found", "That look does not exist.");
 
-    return {
-        granted: false,
-        orderId: order.id,
-        amountInPaise: order.amount,
-        currency: "INR",
-        keyId: publishableKeyId(),
-        priceInr: spec.priceInr,
-    };
+    // Same as designs: upgrade the account plan, not a one-off look SKU.
+    return startPlanCheckout(supabase, userId, need);
 }
 
 /** Stop paid plans on this account. Does not refund, and does not touch published sites. */

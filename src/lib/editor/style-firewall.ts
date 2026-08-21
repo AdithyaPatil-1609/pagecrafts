@@ -93,7 +93,7 @@ export function currentStyleTier(opts: {
 export function upgradeBlockedMessage(needed: UpgradeTarget, current: StyleTier): string {
     const needLabel = needed === 'premium' ? 'Premium' : 'Pro';
     if (current === 'free') {
-        return `That look is part of ${needLabel}. Your site is on Starter — keep editing copy and layout here, or buy the ${needLabel} look to unlock it.`;
+        return `That look is part of ${needLabel}. Your site is on Starter — keep editing copy and layout here, or upgrade to ${needLabel} to unlock every ${needLabel} look.`;
     }
     if (current === 'pro' && needed === 'premium') {
         return `That liquid / continuous-scroll look is Premium only. Your site is on Pro — keep editing within Pro, or buy the Premium look.`;

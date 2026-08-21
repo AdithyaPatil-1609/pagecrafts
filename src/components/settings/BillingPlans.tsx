@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import type { AccountResponse, BillingHistoryItem, BillingSummary } from "@/lib/contracts";
+import { PLAN_COPY } from "@/lib/payments/plans";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function historyLine(item: BillingHistoryItem): string {
   const when = new Date(item.grantedAt).toLocaleDateString("en-GB", {
@@ -38,14 +42,30 @@ export function BillingPlans({
   const [billing] = useState<BillingSummary>(initial);
   const history = billing.history;
   const paidLines = history.filter((item) => item.source === "paid");
+  const plan = PLAN_COPY[billing.plan];
 
   return (
     <div className="rounded-2xl glass-panel p-5">
-      <p className="text-base font-semibold text-foreground">Purchases</p>
+      <p className="text-base font-semibold text-foreground">User Plans</p>
       <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-        You pay for the design or look you pick, once, through Razorpay. Cards stay with
-        Razorpay — we never store a card or bank number here.
+        You are on <span className="font-medium text-foreground">{plan.name}</span>. Upgrade on
+        User Plans to unlock every Pro or Premium design — not one template at a time. Cards
+        stay with Razorpay.
       </p>
+
+      <div className="mt-4">
+        <Link
+          href="/plans"
+          className={cn(
+            buttonVariants({
+              variant: "brand",
+              className: "min-h-11 cursor-pointer font-semibold",
+            }),
+          )}
+        >
+          Open User Plans
+        </Link>
+      </div>
 
       <dl className="mt-4 space-y-3 text-sm">
         <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">

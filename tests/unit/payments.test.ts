@@ -146,7 +146,7 @@ describe("the routes that open checkout", () => {
             "utf8",
         );
         const hook = readFileSync(
-            join(process.cwd(), "src", "hooks", "useRazorpayCheckout.ts"),
+            join(process.cwd(), "src", "hooks", "useRazorpayCheckout.tsx"),
             "utf8",
         );
 
@@ -156,11 +156,42 @@ describe("the routes that open checkout", () => {
         expect(webhook).toContain('kind === "style"');
         expect(hook).toContain("openTemplateCheckout");
         expect(hook).toContain("openStyleCheckout");
+        expect(hook).toContain("openPlanCheckout");
+        expect(hook).toContain("openAdvancedCheckout");
+        expect(hook).toContain("openGenerationPassCheckout");
         expect(hook).toContain("/api/v1/templates/");
         expect(hook).toContain("/api/v1/styles/");
+        expect(hook).toContain("/api/v1/account/billing/checkout");
+        expect(hook).toContain("/api/v1/account/packages/advanced/checkout");
+        expect(hook).toContain("/api/v1/account/packages/generation/checkout");
         expect(hook).toContain("checkout.razorpay.com");
-        expect(hook).not.toContain("openPlanCheckout");
+        expect(webhook).toContain("grantAdvanced");
+        expect(webhook).toContain("grantGenerationPassPurchase");
+        expect(webhook).toContain('kind === "advanced"');
+        expect(webhook).toContain('kind === "generation_pass"');
+        expect(webhook).toContain("grantPro");
+        expect(webhook).toContain("grantPremium");
         expect(webhook).not.toContain("verified: true");
+    });
+
+    it("wires Packages checkout like publish — confirm dialog, no paymentsReady hard-disable", () => {
+        const panel = readFileSync(
+            join(process.cwd(), "src", "components", "settings", "PackagesPanel.tsx"),
+            "utf8",
+        );
+        const page = readFileSync(
+            join(process.cwd(), "src", "app", "packages", "page.tsx"),
+            "utf8",
+        );
+
+        expect(panel).toContain("confirmDialog");
+        expect(panel).toContain("openAdvancedCheckout");
+        expect(panel).toContain("openGenerationPassCheckout");
+        expect(panel).toContain("RAZORPAY_KEY_ID");
+        expect(panel).toContain("RAZORPAY_KEY_SECRET");
+        expect(panel).not.toContain("disabled={!billing.paymentsReady");
+        expect(page).toContain("paymentsConfigured");
+        expect(page).toContain("paymentsReady: paymentsConfigured()");
     });
 
     it("opens Razorpay when a paid template or look is chosen, and does not grant from the browser", () => {
@@ -186,15 +217,13 @@ describe("the routes that open checkout", () => {
             "utf8",
         );
 
-        expect(unlock).toContain("openTemplateCheckout");
-        expect(unlock).toContain("openStyleCheckout");
-        expect(unlock).toContain("waitForTemplateGrant");
-        expect(unlock).toContain("waitForStyleGrant");
-        expect(chooser).toContain("unlockStyle");
-        expect(chooser).toContain("BuyPaidItemCta");
+        expect(unlock).toContain("openPlanCheckout");
+        expect(unlock).toContain("waitForPlanGrant");
+        expect(chooser).toContain("LockedPlanNotice");
+        expect(chooser).not.toContain("BuyPaidItemCta");
         expect(chooser).not.toContain("for now you can use any of them");
-        expect(capture).toContain("unlockTemplate");
-        expect(capture).toContain("Pay & put this on the design");
+        expect(capture).toContain("LockedPlanNotice");
+        expect(capture).not.toContain("unlockTemplate");
         expect(fork).toContain("requiredPlanForTemplate");
         expect(fork).toContain("PAID_DESIGN_MESSAGE");
         expect(choose).toContain("hasStyleAccess");

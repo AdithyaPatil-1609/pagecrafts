@@ -152,6 +152,9 @@ export function ProfileMenu({
         <Link href="/?slide=settings" onClick={openSettings} className={MENU_LINK}>
           Account settings
         </Link>
+        <Link href="/plans" className={MENU_LINK}>
+          User Plans
+        </Link>
         <LogoutButton className={cn(MENU_LINK, "w-full text-left")} />
       </div>
     </details>

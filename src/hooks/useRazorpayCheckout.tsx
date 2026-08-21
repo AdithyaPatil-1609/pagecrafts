@@ -1,7 +1,11 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { apiPost } from '@/lib/api/client';
+import {
+    RazorpayConfirmDialog,
+    type RazorpayConfirmKind,
+} from '@/components/payments/RazorpayConfirmDialog';
 
 // ── Razorpay window types ────────────────────────────────────────────────────
 // The checkout.js script adds `Razorpay` to the global scope. These are the
@@ -96,7 +100,7 @@ interface UseRazorpayCheckoutOptions {
     onAlreadyGranted?: () => void;
     /** Called after the payment is verified server-side. */
     onSuccess?: () => void;
-    /** Called when the user closes the modal without paying. */
+    /** Called when the user closes the modal without paying (or cancels confirm). */
     onDismiss?: () => void;
     /** Called on any failure (script load, order creation, verification). */
     onError?: (message: string) => void;
@@ -107,10 +111,12 @@ interface UseRazorpayCheckoutOptions {
 interface UseRazorpayCheckoutReturn {
     /** Start the checkout flow for publishing a project. */
     openCheckout: (projectId: string) => Promise<void>;
-    /** Buy one catalogue design. */
+    /** Buy one catalogue design (routes to plan upgrade). */
     openTemplateCheckout: (templateId: string) => Promise<void>;
-    /** Buy one generated look (`photos` or `motion`). */
+    /** Buy one generated look (routes to plan upgrade). */
     openStyleCheckout: (styleId: string) => Promise<void>;
+    /** Upgrade account to Pro or Premium — unlocks the whole design tier. */
+    openPlanCheckout: (plan: 'pro' | 'premium') => Promise<void>;
     /** Buy the Advanced AI usage package. */
     openAdvancedCheckout: () => Promise<void>;
     /** Buy one extra AI generation round. */
@@ -119,7 +125,15 @@ interface UseRazorpayCheckoutReturn {
     status: CheckoutStatus;
     /** Human-readable error, set when status is 'error'. */
     error: string | null;
+    /** Must be rendered by the caller so the Agree/Cancel dialog can mount. */
+    confirmDialog: ReactNode;
 }
+
+type PendingConfirm = {
+    kind: RazorpayConfirmKind;
+    run: () => Promise<void>;
+    resolve: () => void;
+};
 
 export function useRazorpayCheckout(
     opts: UseRazorpayCheckoutOptions = {},
@@ -136,6 +150,7 @@ export function useRazorpayCheckout(
 
     const [status, setStatus] = useState<CheckoutStatus>('idle');
     const [error, setError] = useState<string | null>(null);
+    const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
     // Guard against double-clicks while a checkout is in progress.
     const busyRef = useRef(false);
@@ -232,58 +247,129 @@ export function useRazorpayCheckout(
         [appName, themeColor, onAlreadyGranted, onSuccess, onDismiss, onError, prefill],
     );
 
+    const withConfirm = useCallback(
+        (kind: RazorpayConfirmKind, run: () => Promise<void>) =>
+            new Promise<void>((resolve) => {
+                setPendingConfirm({
+                    kind,
+                    run,
+                    resolve,
+                });
+            }),
+        [],
+    );
+
+    const cancelConfirm = useCallback(() => {
+        setPendingConfirm((current) => {
+            if (current) {
+                current.resolve();
+                onDismiss?.();
+            }
+            return null;
+        });
+    }, [onDismiss]);
+
+    const agreeConfirm = useCallback(() => {
+        setPendingConfirm((current) => {
+            if (!current) return null;
+            const { run, resolve } = current;
+            void (async () => {
+                try {
+                    await run();
+                } finally {
+                    resolve();
+                }
+            })();
+            return null;
+        });
+    }, []);
+
     const openCheckout = useCallback(
         (projectId: string) =>
-            startOrder(
-                `/api/v1/projects/${encodeURIComponent(projectId)}/checkout`,
-                (data) => `Publish · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            withConfirm('publish', () =>
+                startOrder(
+                    `/api/v1/projects/${encodeURIComponent(projectId)}/checkout`,
+                    (data) => `Publish · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                ),
             ),
-        [startOrder],
+        [startOrder, withConfirm],
     );
 
     const openTemplateCheckout = useCallback(
         (templateId: string) =>
-            startOrder(
-                `/api/v1/templates/${encodeURIComponent(templateId)}/checkout`,
-                (data) => `Design · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            withConfirm('plan', () =>
+                startOrder(
+                    `/api/v1/templates/${encodeURIComponent(templateId)}/checkout`,
+                    (data) => `Plan upgrade · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                ),
             ),
-        [startOrder],
+        [startOrder, withConfirm],
     );
 
     const openStyleCheckout = useCallback(
         (styleId: string) =>
-            startOrder(
-                `/api/v1/styles/${encodeURIComponent(styleId)}/checkout`,
-                (data) => `Look · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            withConfirm('plan', () =>
+                startOrder(
+                    `/api/v1/styles/${encodeURIComponent(styleId)}/checkout`,
+                    (data) => `Plan upgrade · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                ),
             ),
-        [startOrder],
+        [startOrder, withConfirm],
+    );
+
+    const openPlanCheckout = useCallback(
+        (plan: 'pro' | 'premium') =>
+            withConfirm('plan', () =>
+                startOrder(
+                    '/api/v1/account/billing/checkout',
+                    (data) =>
+                        `${plan === 'premium' ? 'Premium' : 'Pro'} · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                    { plan },
+                ),
+            ),
+        [startOrder, withConfirm],
     );
 
     const openAdvancedCheckout = useCallback(
         () =>
-            startOrder(
-                "/api/v1/account/packages/advanced/checkout",
-                (data) => `Advanced AI · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            withConfirm('advanced', () =>
+                startOrder(
+                    '/api/v1/account/packages/advanced/checkout',
+                    (data) => `Advanced AI · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                ),
             ),
-        [startOrder],
+        [startOrder, withConfirm],
     );
 
     const openGenerationPassCheckout = useCallback(
         () =>
-            startOrder(
-                "/api/v1/account/packages/generation/checkout",
-                (data) => `Extra generation · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+            withConfirm('generation_pass', () =>
+                startOrder(
+                    '/api/v1/account/packages/generation/checkout',
+                    (data) => `Extra generation · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                ),
             ),
-        [startOrder],
+        [startOrder, withConfirm],
+    );
+
+    const confirmDialog = (
+        <RazorpayConfirmDialog
+            open={Boolean(pendingConfirm)}
+            kind={pendingConfirm?.kind ?? 'design'}
+            onCancel={cancelConfirm}
+            onAgree={agreeConfirm}
+        />
     );
 
     return {
         openCheckout,
         openTemplateCheckout,
         openStyleCheckout,
+        openPlanCheckout,
         openAdvancedCheckout,
         openGenerationPassCheckout,
         status,
         error,
+        confirmDialog,
     };
 }

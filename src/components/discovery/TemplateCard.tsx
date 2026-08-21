@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
 import { CATEGORY_LABELS } from "@/lib/discovery/categories";
 import type { TemplateSummary } from "@/lib/templates/query";
 import { templateBadge } from "@/lib/payments/pricing";
@@ -10,12 +7,7 @@ import { TemplatePreview } from "@/components/discovery/TemplatePreview";
 import { TemplateDetailModal } from "@/components/discovery/TemplateDetailModal";
 import { PriceBadge } from "@/components/discovery/PriceBadge";
 import { CardIndex } from "@/components/ui/card-index";
-import { useUnlockPaidDesign } from "@/hooks/useUnlockPaidDesign";
 import { cn } from "@/lib/utils";
-
-function looksLikeSignIn(message: string): boolean {
-    return /sign in/i.test(message);
-}
 
 function CardFace({
     template,
@@ -91,7 +83,6 @@ export function TemplateCard({
     showPrice = true,
     lockable = false,
     unlocked = true,
-    forkId,
 }: {
     template: TemplateSummary;
     index: number;
@@ -99,29 +90,11 @@ export function TemplateCard({
     showPrice?: boolean;
     lockable?: boolean;
     unlocked?: boolean;
+    /** Kept for callers; unlock is plan-based, not per-template. */
     forkId?: string;
 }) {
-    const router = useRouter();
     const badge = templateBadge(template.tier);
-    const paidLocked = lockable && Boolean(badge) && !unlocked;
-    const [bought, setBought] = useState(false);
-    const { unlockTemplate, status, error } = useUnlockPaidDesign();
-    const locked = paidLocked && !bought;
-
-    async function buy() {
-        if (!forkId) return;
-        try {
-            const ok = await unlockTemplate(forkId);
-            if (!ok) return;
-            setBought(true);
-            router.refresh();
-        } catch (err) {
-            const message = err instanceof Error ? err.message : "Payment failed.";
-            if (looksLikeSignIn(message)) {
-                router.push(`/signin?next=${encodeURIComponent("/templates")}`);
-            }
-        }
-    }
+    const locked = lockable && Boolean(badge) && !unlocked;
 
     return (
         <article className="card-hover group relative overflow-hidden rounded-xl border border-border bg-card focus-within:border-primary/40">
@@ -130,15 +103,12 @@ export function TemplateCard({
                 templateName={template.name}
                 showPrice={showPrice}
                 locked={locked}
-                buyBusy={status === "loading" || status === "open" || status === "verifying"}
-                buyError={error}
-                onBuy={locked ? () => void buy() : undefined}
             >
                 <button
                     type="button"
                     aria-label={
                         locked
-                            ? `${template.name}, ${badge} design, locked. Rs ${template.priceInr}.`
+                            ? `${template.name}, ${badge} design, locked. Needs ${badge} plan.`
                             : undefined
                     }
                     className="block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"

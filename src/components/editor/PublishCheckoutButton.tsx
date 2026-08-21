@@ -33,7 +33,7 @@ export default function PublishCheckoutButton({
     prefill,
     className,
 }: PublishCheckoutButtonProps) {
-    const { openCheckout, status, error } = useRazorpayCheckout({
+    const { openCheckout, status, error, confirmDialog } = useRazorpayCheckout({
         prefill,
         onAlreadyGranted: () => onPublished?.(),
         onSuccess: () => onPublished?.(),
@@ -44,6 +44,7 @@ export default function PublishCheckoutButton({
 
     return (
         <div className="inline-flex flex-col items-end gap-1">
+            {confirmDialog}
             <button
                 id="publish-checkout-button"
                 type="button"

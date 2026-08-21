@@ -20,6 +20,12 @@ const TIER_BADGE: Record<CompareLookId, string> = {
     premium: "brand-gradient text-primary-foreground",
 };
 
+const TIER_BADGE_LABEL: Record<CompareLookId, string> = {
+    starter: "Free",
+    pro: "Pro",
+    premium: "Premium",
+};
+
 export function LookCompareDemo() {
     const [look, setLook] = useState<CompareLookId>("starter");
     const active = COMPARE_LOOKS.find((item) => item.id === look) ?? COMPARE_LOOKS[0];
@@ -46,17 +52,15 @@ export function LookCompareDemo() {
                     Pick a <span className="hero-mix">look</span> — side by side
                 </h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground">
-                    Same restaurant, three design tiers. Starter is free. Pro and Premium show the
-                    chrome and feel you unlock when you buy that look. This is a fixed preview —
-                    not live AI.
+                    Same restaurant, three looks. Casual comes with Starter. Photo-rich unlocks
+                    with Pro (Rs {COMPARE_LOOKS[1].priceInr}) — every Pro design too. Animated
+                    unlocks with Premium (Rs {COMPARE_LOOKS[2].priceInr}). Fixed preview, not
+                    live AI.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                    These are <span className="text-foreground">design tiers</span>, not Free /
-                    Advanced AI packages.{" "}
                     <Link href="/pricing" className="underline-offset-4 hover:underline">
-                        How pricing works
+                        See all pricing
                     </Link>
-                    .
                 </p>
             </header>
 
@@ -98,7 +102,7 @@ export function LookCompareDemo() {
                                         {paid ? (
                                             <Lock className="size-3" strokeWidth={2} aria-hidden />
                                         ) : null}
-                                        {item.label}
+                                        {TIER_BADGE_LABEL[item.id]}
                                     </span>
                                 </div>
                                 <div className="relative z-[1] flex flex-1 flex-col gap-2 p-4">

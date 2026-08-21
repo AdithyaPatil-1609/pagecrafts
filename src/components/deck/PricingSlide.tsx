@@ -8,7 +8,7 @@ export function PricingSlide() {
             aria-labelledby="pricing-heading"
         >
             <div className="mx-auto w-full max-w-4xl px-6 py-4 sm:py-8">
-                <PricingGuide />
+                <PricingGuide signedIn />
             </div>
         </section>
     );

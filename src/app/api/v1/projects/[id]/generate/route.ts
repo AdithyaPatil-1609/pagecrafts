@@ -14,8 +14,10 @@ import { persistGeneratedSite } from '@/lib/ai/generate/persist';
 import { recordGenerationUse } from '@/lib/ai/jobs/counters';
 import {
     assertFreeGenerationAllowed,
-    recordFreeGeneration,
+    assertHeavyBuildAllowed,
+    recordGenerationUseForBuild,
 } from '@/lib/ai/jobs/quota';
+import { estimateSiteBuild, isHeavyBuild } from '@/lib/ai/generate/complexity';
 import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
 import { getProject } from '@/lib/data/projects';
 import { setProfileStore } from '@/lib/ai/profile-cache';
@@ -55,6 +57,10 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
 
         const quota = await assertFreeGenerationAllowed(params.id, userId, supabase);
+        const estimate = estimateSiteBuild(body.prompt);
+        if (isHeavyBuild(estimate)) {
+            await assertHeavyBuildAllowed(quota);
+        }
 
         const admin = supabaseAdminOrNull();
         if (admin) setProfileStore(new SupabaseProfileStore(admin));
@@ -81,7 +87,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 events: [],
                 ledger: [],
             });
-            await recordFreeGeneration(params.id, userId, quota.limit);
+            await recordGenerationUseForBuild(params.id, userId, quota, isHeavyBuild(estimate));
 
             void runJob(job, {
                 templates: TEMPLATES,

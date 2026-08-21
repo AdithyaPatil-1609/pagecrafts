@@ -57,7 +57,7 @@ function compositionFor(vertical: string, heading: string, extra: string): Compo
 }
 
 describe('three looks stay on-brief for any vertical', () => {
-    it.each(CASES)('$vertical keeps motif mapping and a liquid Premium page', async (c) => {
+    it.each(CASES)('$vertical keeps motif mapping and an Animated kinetic page', async (c) => {
         expect(motifFor(c.vertical, c.extra), c.vertical).toBe(c.motif);
 
         const options = await buildStyleOptions(compositionFor(c.vertical, c.heading, c.extra));
@@ -70,27 +70,24 @@ describe('three looks stay on-brief for any vertical', () => {
         expect(html.motion).toContain(c.heading);
 
         expect(html.casual).toContain('data-style="casual"');
-        expect(html.casual).toContain('data-chrome="sidebar"');
         expect(html.casual).toContain('data-motion="none"');
         expect(html.casual).toContain('images.unsplash.com');
         expect(html.casual).toContain('<img src="');
-        expect(html.casual).toContain('site-sidebar');
+        expect(html.casual).toContain('site-header');
         expect(html.casual).not.toContain('motion-stage');
 
         expect(html.photos).toContain('data-style="photos"');
-        expect(html.photos).toContain('data-chrome="topbar"');
         expect(html.photos).toContain('<img src="');
         expect(html.photos).toContain('images.unsplash.com');
-        expect(html.photos).toContain('site-topbar-blend');
         expect(html.photos).not.toContain('motion-stage');
 
         expect(html.motion).toContain('data-style="motion"');
-        expect(html.motion).toContain('data-chrome="liquid"');
-        expect(html.motion).toContain('data-motion="calm"');
-        expect(html.motion).toContain('site-liquid');
-        expect(html.motion).toContain('liquid-deck');
-        expect(html.motion).not.toContain('motion-stage');
+        expect(html.motion).toContain('data-motion="kinetic"');
+        expect(html.motion).toContain('motion-stage');
         expect(html.motion).not.toContain('pc-orb');
+        if (c.motif !== 'none') {
+            expect(html.motion).toContain(`data-motif="${c.motif}"`);
+        }
     });
 
     it('does not stamp a mithai photograph onto a gym', async () => {

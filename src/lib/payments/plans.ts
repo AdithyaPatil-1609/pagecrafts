@@ -2,7 +2,7 @@ import type { AccountPlan } from "@/lib/contracts";
 import { ACCOUNT_PLAN_LABEL } from "@/lib/contracts";
 import { PREMIUM_PRICE_INR, PRO_PRICE_INR } from "@/lib/payments/pricing";
 
-/** Account plans shown on /plans. Prices are rupees, paid once through Razorpay. */
+/** Account plans. Prices are rupees, paid once through Razorpay. */
 export const PLAN_PRICE_INR: Record<Exclude<AccountPlan, "starter">, number> = {
   pro: PRO_PRICE_INR,
   premium: PREMIUM_PRICE_INR,
@@ -16,22 +16,24 @@ export const PLAN_COPY: Record<
     name: ACCOUNT_PLAN_LABEL.starter,
     price: "Free",
     description:
-      "The default plan. Describe a site, pick a design, and edit with AI. Free designs go live at no charge; a paid design is billed when you publish that site. AI generations are capped per site.",
+      "Build with AI, use Starter designs and the Casual look, and publish free sites at no charge. Upgrade when you want Pro or Premium designs.",
     points: [
-      "Build and edit sites with AI",
+      "All Starter catalogue designs",
+      "Casual look on AI-generated sites",
       "Publish free designs at no charge",
-      "Pay per paid design when that site goes live",
+      "AI generations capped per site (see AI packages)",
     ],
   },
   pro: {
     name: ACCOUNT_PLAN_LABEL.pro,
     price: `Rs ${PRO_PRICE_INR}`,
     description:
-      "One payment through Razorpay. Publish any design without a separate publish checkout, keep editing after a site is live, and drop the per-site AI cap. Not a subscription — it stays until you change plan.",
+      "One payment unlocks every Pro design in the catalogue and the Photo-rich look — not a single template. Stays until you change plan.",
     points: [
       "Everything in Starter",
-      "Publish any design without a per-site checkout",
-      "Unlimited AI generations",
+      "All templates marked Pro",
+      "Photo-rich look on AI sites",
+      "Publish without a separate design checkout",
       "Edit live sites after the free window",
     ],
   },
@@ -39,10 +41,11 @@ export const PLAN_COPY: Record<
     name: ACCOUNT_PLAN_LABEL.premium,
     price: `Rs ${PREMIUM_PRICE_INR}`,
     description:
-      "Everything in Pro, as the top account unlock — for people who publish often or keep several sites. One payment, no auto-renew, same Razorpay checkout.",
+      "One payment unlocks every Premium design, every Pro design, and the Animated look. Top account unlock — no auto-renew.",
     points: [
       "Everything in Pro",
-      "The top one-time account unlock",
+      "All templates marked Premium",
+      "Animated look on AI sites",
       "Stays until you change plan",
     ],
   },
