@@ -15,6 +15,45 @@ function rule(selector: string): string {
     return CSS.slice(start, CSS.indexOf('}', start));
 }
 
+describe('the animated hero shows the real photograph', () => {
+    const slot = rule('[data-style="motion"] [data-type="hero"] .img-slot {');
+
+    // The Rs 999 tier hid the photo the pipeline had already fetched and put a glowing SVG
+    // in its place, so the paid look was the one selling a cartoon while the free look
+    // showed a real room. That is most of why it read as cheap.
+    it('does not hide the photo the free tier keeps', () => {
+        expect(slot).not.toMatch(/display:\s*none/);
+        expect(slot).toContain('display: block');
+    });
+
+    it('lays it full bleed behind the words rather than in a box', () => {
+        expect(slot).toContain('position: absolute');
+        expect(slot).toContain('inset: 0');
+        expect(rule('[data-style="motion"] [data-type="hero"] .img-slot img {'))
+            .toContain('object-fit: cover');
+    });
+
+    it('moves slowly, and holds still for anyone who asked it to', () => {
+        expect(slot).toContain('pc-kenburns');
+        expect(CSS).toContain('@keyframes pc-kenburns');
+
+        const reduced = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce)'));
+        expect(reduced).toContain('[data-style="motion"] [data-type="hero"] .img-slot');
+    });
+
+    it('darkens the photo under the type, or the headline is unreadable', () => {
+        expect(rule('[data-style="motion"] [data-type="hero"]::after {')).toContain('linear-gradient');
+    });
+
+    // The motif was min(52vw, 540px) and the loudest thing on the page, louder than the
+    // name of the business the page is for.
+    it('demotes the motif so the business leads, not the icon', () => {
+        const [, vw] = CSS.match(/\.motion-motif svg \{[^}]*width:\s*min\((\d+)vw/) ?? [];
+
+        expect(Number(vw)).toBeLessThanOrEqual(30);
+    });
+});
+
 describe('the animated hero column', () => {
     const copy = rule('[data-style="motion"] [data-type="hero"] .hero-copy {');
 

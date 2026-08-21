@@ -416,7 +416,42 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
   min-height: 92vh;
   padding: 7rem 6vw 8.5rem;
 }
-[data-style="motion"] [data-type="hero"] .img-slot { display: none; }
+[data-style="motion"] [data-type="hero"] .img-slot {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0.72;
+  animation: pc-kenburns 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+[data-style="motion"] [data-type="hero"] .img-slot img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  filter: saturate(1.06) contrast(1.04);
+}
+[data-style="motion"] [data-type="hero"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(115% 75% at 50% 18%, transparent 0%, rgba(8, 5, 16, 0.55) 72%),
+    linear-gradient(
+      to bottom,
+      rgba(8, 5, 16, 0.5) 0%,
+      rgba(8, 5, 16, 0.18) 38%,
+      rgba(8, 5, 16, 0.82) 100%
+    );
+}
 [data-style="motion"] [data-type="hero"] .hero-copy {
   position: relative;
   z-index: 3;
@@ -427,7 +462,8 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
   max-width: 46ch;
   font-size: clamp(1.05rem, 1.5vw, 1.35rem);
   line-height: 1.6;
-  color: rgba(246, 243, 255, 0.72);
+  color: rgba(250, 248, 255, 0.92);
+  text-shadow: 0 1px 14px rgba(8, 5, 16, 0.7);
 }
 [data-style="motion"] [data-type="hero"] h1 {
   font-size: clamp(2.4rem, 8.2vw, 6.6rem);
@@ -448,6 +484,7 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
   background-clip: text;
   color: transparent;
   animation: pc-type 9s ease-in-out infinite;
+  filter: drop-shadow(0 2px 18px rgba(8, 5, 16, 0.75));
 }
 [data-style="motion"] .eyebrow {
   display: inline-flex;
@@ -518,13 +555,15 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
   z-index: 1;
   color: var(--accent);
   pointer-events: none;
+  opacity: 0.55;
+  mix-blend-mode: screen;
 }
 [data-style="motion"] .motif-halo {
   position: absolute;
-  right: 4%;
-  top: 12%;
-  width: min(46vw, 420px);
-  height: min(46vw, 420px);
+  right: 3%;
+  top: 14%;
+  width: min(30vw, 300px);
+  height: min(30vw, 300px);
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
   box-shadow: 0 0 80px color-mix(in srgb, var(--accent) 28%, transparent);
@@ -532,9 +571,9 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
 }
 [data-style="motion"] .motion-motif svg {
   position: absolute;
-  right: 2%;
-  top: 8%;
-  width: min(52vw, 540px);
+  right: 4%;
+  top: 10%;
+  width: min(26vw, 260px);
   height: auto;
   display: block;
   filter: drop-shadow(0 0 36px color-mix(in srgb, var(--accent) 45%, transparent));
@@ -759,6 +798,10 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+@keyframes pc-kenburns {
+  from { transform: scale(1.05) translate3d(0, 0, 0); }
+  to { transform: scale(1.17) translate3d(0, -2%, 0); }
+}
 @media (prefers-reduced-motion: reduce) {
   [data-style="motion"] .motion-motif svg,
   [data-style="motion"] .honey-drip,
@@ -770,6 +813,7 @@ body:has([data-motif="drape"]) { --accent: #e07a5f; --bg: #0b0605; background: #
   [data-style="motion"] .motion-flare,
   [data-style="motion"] .motion-ticker p,
   [data-style="motion"] [data-type="hero"] h1,
+  [data-style="motion"] [data-type="hero"] .img-slot,
   [data-style="motion"] .cta,
   [data-style="motion"] .cta::after { animation: none; }
 }
