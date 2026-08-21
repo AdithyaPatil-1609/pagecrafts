@@ -105,9 +105,7 @@ export async function createOrder(
 
         throw new ApiError(
             "internal",
-            process.env.NODE_ENV === "production"
-                ? "We could not start that payment. Please try again."
-                : `Razorpay refused the order: ${detail}`,
+            "We could not start that payment. Please try again.",
             detail,
         );
     }

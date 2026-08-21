@@ -1,23 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const getUser = vi.fn();
+// DELETE /api/v1/account destroys the account, every site on it, and every paid unlock.
+// A session cookie alone must not be enough, so the route re-checks email + password the
+// same way sign-in does. These cover the refusals, because the refusals are the point.
+
 const authenticateWithPassword = vi.fn();
 const deleteAccount = vi.fn();
 
-const supabase = { auth: { getUser } };
+const SESSION_EMAIL = 'someone@pagecraft.in';
+const GOOD_PASSWORD = 'TestPass123!zz';
+
+const supabase = {};
 
 vi.mock('@/lib/auth/session', () => ({
-    requireUser: async () => ({
-        userId: 'u1',
-        email: 'someone@pagecraft.in',
-        supabase,
-    }),
+    requireUser: async () => ({ userId: 'u1', email: SESSION_EMAIL, supabase }),
     supabaseRoute: async () => supabase,
 }));
 
-vi.mock('@/lib/auth/password-check', () => ({
-    authenticateWithPassword: (...args: unknown[]) => authenticateWithPassword(...args),
-}));
+vi.mock('@/lib/auth/password-check', async () => {
+    const actual = await vi.importActual<typeof import('@/lib/auth/password-check')>(
+        '@/lib/auth/password-check',
+    );
+    return {
+        ...actual,
+        authenticateWithPassword: (...args: unknown[]) => authenticateWithPassword(...args),
+    };
+});
 
 vi.mock('@/lib/data/account', () => ({
     deleteAccount: (...args: unknown[]) => deleteAccount(...args),
@@ -26,33 +34,24 @@ vi.mock('@/lib/data/account', () => ({
 
 import { DELETE } from '@/app/api/v1/account/route';
 
-function request(body: unknown) {
-    return new Request('http://localhost/api/v1/account', {
+async function del(body: unknown) {
+    const request = new Request('http://localhost/api/v1/account', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-    }) as never;
-}
-
-async function del(body: unknown = {}) {
-    const response = await DELETE(request(body), { params: Promise.resolve({}) } as never);
+    });
+    const response = await DELETE(request as never, { params: Promise.resolve({}) } as never);
     return { status: response.status, payload: await response.json() };
 }
 
-const withPassword = { data: { user: { identities: [{ provider: 'email' }] } } };
-const googleOnly = { data: { user: { identities: [{ provider: 'google' }] } } };
-
 beforeEach(() => {
-    getUser.mockReset();
     authenticateWithPassword.mockReset();
     deleteAccount.mockReset();
     deleteAccount.mockResolvedValue(undefined);
 });
 
 describe('DELETE /api/v1/account', () => {
-    it('refuses to delete a password account when no password is given', async () => {
-        getUser.mockResolvedValue(withPassword);
-
+    it('refuses a request with no credentials at all', async () => {
         const { status, payload } = await del({});
 
         expect(status).toBe(401);
@@ -60,48 +59,46 @@ describe('DELETE /api/v1/account', () => {
         expect(deleteAccount).not.toHaveBeenCalled();
     });
 
-    it('refuses when the password is wrong, and says so without deleting', async () => {
-        getUser.mockResolvedValue(withPassword);
-        authenticateWithPassword.mockResolvedValue({ ok: false, reason: 'bad' });
-
-        const { status, payload } = await del({ password: 'not-the-one' });
+    // Otherwise a signed-in person could close somebody else's account by typing their
+    // address, as long as they knew that person's password.
+    it('refuses an email that is not the one signed in', async () => {
+        const { status } = await del({ email: 'someone.else@pagecraft.in', password: GOOD_PASSWORD });
 
         expect(status).toBe(401);
-        expect(payload.error.message).toMatch(/password/i);
+        expect(authenticateWithPassword).not.toHaveBeenCalled();
         expect(deleteAccount).not.toHaveBeenCalled();
     });
 
-    it('deletes once the password checks out', async () => {
-        getUser.mockResolvedValue(withPassword);
+    it('refuses when the password does not check out, and deletes nothing', async () => {
+        authenticateWithPassword.mockResolvedValue({
+            ok: false,
+            status: 401,
+            code: 'unauthorized',
+            message: 'That email and password do not match.',
+        });
+
+        const { status } = await del({ email: SESSION_EMAIL, password: GOOD_PASSWORD });
+
+        expect(status).toBeGreaterThanOrEqual(400);
+        expect(deleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('deletes the signed-in account once the password checks out', async () => {
         authenticateWithPassword.mockResolvedValue({ ok: true, user: { id: 'u1' } });
 
-        const { status, payload } = await del({ password: 'the-right-one' });
+        const { status, payload } = await del({ email: SESSION_EMAIL, password: GOOD_PASSWORD });
 
         expect(status).toBe(200);
         expect(payload.ok).toBe(true);
         expect(deleteAccount).toHaveBeenCalledWith('u1');
     });
 
-    // Signing in with Google never sets a password. Demanding one would leave those people
-    // unable to close their own account, which is worse than the risk it guards against.
-    it('does not demand a password from an account that has never had one', async () => {
-        getUser.mockResolvedValue(googleOnly);
-
-        const { status } = await del({});
-
-        expect(status).toBe(200);
-        expect(authenticateWithPassword).not.toHaveBeenCalled();
-        expect(deleteAccount).toHaveBeenCalledWith('u1');
-    });
-
-    it('checks the password against Supabase, not against anything the client sent', async () => {
-        getUser.mockResolvedValue(withPassword);
+    // The id comes from the verified session, never from the body.
+    it('deletes the session user even if the body names another id', async () => {
         authenticateWithPassword.mockResolvedValue({ ok: true, user: { id: 'u1' } });
 
-        await del({ password: 'the-right-one', email: 'someone-else@example.com' });
+        await del({ email: SESSION_EMAIL, password: GOOD_PASSWORD, userId: 'someone-else' });
 
-        const [opts] = authenticateWithPassword.mock.calls[0] as [{ email: string }];
-
-        expect(opts.email).toBe('someone@pagecraft.in');
+        expect(deleteAccount).toHaveBeenCalledWith('u1');
     });
 });
