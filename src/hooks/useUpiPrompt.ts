@@ -67,7 +67,8 @@ export function useUpiPrompt(opts: {
             return;
         }
         asked.current = true;
-        setOpen(true);
+        // Defer so the prompt opens after the current render, not mid-effect.
+        queueMicrotask(() => setOpen(true));
     }, [
         enabled,
         opts.projectId,
