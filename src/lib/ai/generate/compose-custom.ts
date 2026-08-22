@@ -161,7 +161,7 @@ export async function composeCustomSite(
         ? (raw as { description: string }).description.trim().slice(0, 240)
         : prompt.slice(0, 160);
 
-    let files = ensureIndex(asFiles(raw), title, description);
+    const files = ensureIndex(asFiles(raw), title, description);
     if (Object.keys(files).length === 0) {
         throw new GatewayError('generation_failed', 'compose: model returned no files', false, {
             raw: reply.text,
