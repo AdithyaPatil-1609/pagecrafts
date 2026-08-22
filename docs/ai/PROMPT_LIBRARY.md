@@ -29,13 +29,14 @@ AI_PROMPT_PLAN=plan.v2 AI_PROMPT_FILL=fill-section.v2 npm run grade -- --label=v
 | File | Id | Version | Tier | Digest | Purpose |
 |---|---|---|---|---|---|
 | `classify.v1.md` ← | classify | v1 | fast | `363031886f11` | free text → category, vertical, tone, palette, sections |
+| `compose-site.v1.md` | compose-site | v1 | strong | `fdae85f2e854` | — |
 | `edit.v1.md` ← | edit | v1 | strong | `20f46ad7214a` | one section + instruction → changed fields |
 | `fill-section.v1.md` | fill-section | v1 | strong | `5418e9b0cf10` | one section → typed content fields |
 | `fill-section.v2.md` | fill-section | v2 | strong | `890073b7b30a` | one section → typed content fields |
 | `fill-section.v3.md` ← | fill-section | v3 | strong | `e409bb5aa1b6` | one section → typed content fields |
 | `plan.v1.md` | plan | v1 | strong | `d67841ff84fd` | recipe + description → ordered sections with layout variants |
 | `plan.v2.md` | plan | v2 | strong | `938aa19e682b` | recipe + description → ordered sections with layout variants |
-| `plan.v3.md` ← | plan | v3 | strong | `da088eb562d2` | recipe + description → ordered sections with layout variants |
+| `plan.v3.md` ← | plan | v3 | strong | `6c8ce17a0074` | recipe + description → ordered sections with layout variants |
 | `profile.v1.md` ← | profile | v1 | strong | `4bfa7d530f1c` | vertical → section recipe, art direction, vocabulary |
 
 ## Variables
@@ -48,6 +49,7 @@ prompt. A placeholder that is neither is a typo, and a test fails on it.
 | Prompt | Registry lists | Per-call values |
 |---|---|---|
 | `classify.v1.md` | `categories`, `palettes`, `sectionKeys`, `tones` | `text` |
+| `compose-site.v1.md` | — | `prompt`, `tone`, `vertical` |
 | `edit.v1.md` | — | `content`, `instruction`, `sectionKey`, `variant` |
 | `fill-section.v1.md` | — | `brief`, `customerWord`, `fields`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
 | `fill-section.v2.md` | — | `brief`, `customerWord`, `fields`, `guidance`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
