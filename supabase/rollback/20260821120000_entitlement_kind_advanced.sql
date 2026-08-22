@@ -1,0 +1,3 @@
+-- Postgres cannot drop a value from an enum without recreating the type. Advanced rows
+-- and the unique index are removed by 20260821120001's rollback. The unused 'advanced'
+-- label is left on entitlement_kind so existing pro/premium/publish rows stay intact.

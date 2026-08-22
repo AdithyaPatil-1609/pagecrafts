@@ -41,7 +41,7 @@ describe("POST /api/v1/auth/password/reset", () => {
 
         expect(resetPasswordForEmail).toHaveBeenCalledWith(
             "meera@pagecraft.test",
-            { redirectTo: "http://localhost:3000/api/v1/auth/confirm?next=/reset" },
+            { redirectTo: "http://localhost:3000/api/v1/auth/confirm?next=%2Freset" },
         );
         expect(response.status).toBe(202);
         expect(payload).toEqual({ ok: true, data: { status: "accepted" } });
