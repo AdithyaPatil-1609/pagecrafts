@@ -45,7 +45,10 @@ export default function EditorShell({
     const [generation, setGeneration] = useState<JobProgress | null>(
         jobId ? { status: 'queued', sections_done: 0, sections_total: 0 } : null,
     );
-    const [focusAsk, setFocusAsk] = useState(false);
+    const [focusAsk, setFocusAsk] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return new URLSearchParams(window.location.search).get('ask') === '1';
+    });
     const [sectionsOpen, setSectionsOpen] = useState(false);
     const [loadAskOpen, setLoadAskOpen] = useState(false);
     const advanced = useEditorStore((s) => s.advanced);
@@ -68,10 +71,6 @@ export default function EditorShell({
         vertical: generation?.composition?.vertical ?? composition?.vertical,
         enabled: !jobId || generation?.status === 'done' || generation?.status === 'failed',
     });
-
-    useEffect(() => {
-        if (new URLSearchParams(window.location.search).get('ask') === '1') setFocusAsk(true);
-    }, []);
 
     useEffect(() => {
         if (jobId) return;
