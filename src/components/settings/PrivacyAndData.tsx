@@ -45,8 +45,8 @@ export function PrivacyAndData({ initial }: { initial: AccountResponse }) {
       <div className="mt-5 border-t border-border/60 pt-5">
         <p className="text-sm font-medium text-foreground">Download my data</p>
         <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-          A JSON copy of your account facts and the names of your sites. It does not include
-          file trees or published pages on the internet.
+          A downloadable copy of your account facts and the names of your sites. It does not
+          include file trees or published pages on the internet.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Button

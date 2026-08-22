@@ -17,12 +17,13 @@ describe("choosing a template", () => {
     expect(capture).toContain("startFromDesign");
     expect(capture).toContain("Put this on the design");
     expect(capture).toContain("paidPlan");
-    expect(capture).toContain("unlockTemplate");
+    expect(capture).toContain('router.push("/plans")');
     expect(page).toContain("paidPlan");
     expect(capture).toContain("/generate");
     expect(capture).toContain("/editor/");
     expect(capture).toContain("?job=");
     expect(capture).toContain("visual reference");
+    expect(capture).toContain("LockedPlanNotice");
 
     const fromDesign = capture.slice(
       capture.indexOf("async function startFromDesign"),

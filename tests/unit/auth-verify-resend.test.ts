@@ -38,7 +38,7 @@ describe("POST /api/v1/auth/verify/resend", () => {
         expect(resend).toHaveBeenCalledWith({
             type: "signup",
             email: "meera@pagecraft.test",
-            options: { emailRedirectTo: "http://localhost:3000/api/v1/auth/confirm?next=/new" },
+            options: { emailRedirectTo: "http://localhost:3000/api/v1/auth/confirm" },
         });
         expect(status).toBe(202);
         expect(payload).toEqual({ ok: true, data: { status: "accepted" } });

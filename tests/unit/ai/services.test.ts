@@ -5,6 +5,7 @@ import { plan } from '@/lib/ai/generate/plan';
 import { fillSection } from '@/lib/ai/generate/fill';
 import { proposeEdit } from '@/lib/ai/edit/propose';
 import type { IntentAttributes, SectionInstance, VerticalProfile } from '@/lib/contracts';
+import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
 
 function fake(reply: string | Error): Gateway {
     return {
@@ -118,7 +119,7 @@ describe('classify (M3.2)', () => {
         expect(data.fallback).toBe(true);
     });
 
-    it('truncates input to 500 characters (FR-021)', async () => {
+    it('truncates input to MAX_CLASSIFY_CHARS (FR-021)', async () => {
         let sent = '';
         setGateway({
             async complete(req) {
@@ -133,8 +134,9 @@ describe('classify (M3.2)', () => {
                 };
             },
         });
-        await classify('x'.repeat(900));
-        expect(sent).not.toContain('x'.repeat(501));
+        await classify('x'.repeat(MAX_CLASSIFY_CHARS + 400));
+        // Containment wraps the text, but the payload itself must stay capped.
+        expect(sent).not.toContain('x'.repeat(MAX_CLASSIFY_CHARS + 1));
     });
 });
 
