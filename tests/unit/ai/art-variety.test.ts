@@ -112,7 +112,7 @@ describe('each tier keeps its character while it varies', () => {
         const KNOWN: Record<string, string[]> = {
             hero: ['centred', 'split-image', 'image-bg', 'minimal'],
             about: ['text', 'media-split'],
-            services: ['cards', 'grid', 'timeline'],
+            services: ['cards', 'grid', 'timeline', 'tabs'],
             menu: ['grouped', 'simple'],
             gallery: ['masonry', 'grid', 'carousel'],
             team: ['cards', 'grid'],

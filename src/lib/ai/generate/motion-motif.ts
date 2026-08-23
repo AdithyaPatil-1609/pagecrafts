@@ -81,9 +81,9 @@ function markup(id: MotionMotifId, body: string): string {
     return `<div class="motion-motif" data-motif="${id}" aria-hidden="true"><span class="motif-halo"></span>${body}${sparks()}</div>`;
 }
 
-/** Aurora, perspective grid and grain — the kinetic canvas behind the motif. */
+/** Aurora, perspective grid, floating 3D glass cards and grain — the kinetic canvas behind the motif. */
 export function motionStageMarkup(): string {
-    return `<div class="motion-stage" aria-hidden="true"><span class="motion-aurora"></span><span class="motion-grid"></span><span class="motion-grain"></span><span class="motion-flare"></span></div>`;
+    return `<div class="motion-stage" aria-hidden="true"><span class="motion-aurora"></span><span class="motion-grid"></span><span class="motion-grain"></span><span class="motion-flare"></span><div class="motion-float-cards"><div class="motion-float-card motion-float-card-a"><div class="dot-row"><span class="dot"></span><span class="dot dot-b"></span><span class="dot dot-c"></span></div><p class="card-title">Live 3D Experience</p><p class="card-sub">Interactive stage</p></div><div class="motion-float-card motion-float-card-b"><div class="dot-row"><span class="dot"></span><span class="dot dot-b"></span><span class="dot dot-c"></span></div><p class="card-title">Dynamic Motion</p><p class="card-sub">Fluid depth &amp; glow</p></div></div></div>`;
 }
 
 /** Oversized ghost type that marquee-scrolls through the hero. */

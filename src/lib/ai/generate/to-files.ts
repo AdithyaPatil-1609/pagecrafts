@@ -107,12 +107,8 @@ function renderSection(
 
 /**
  * Services as tabs — the Pro tier's one interactive section.
- *
- * Menu and gallery would tab too, but their items carry no category: a menu item is a name,
- * a description and a price (src/lib/ai/sections/contracts.ts). Grouping them would mean a
- * new field on the section contract and a matching change to the fill prompt, which is the
- * AI track's call, not this renderer's. A service already has its own title, so it is the
- * one list that can be tabbed with the data we have.
+/**
+ * Services as tabs — the Pro tier's interactive section.
  */
 function tabbedItems(key: string, items: readonly Record<string, unknown>[]): string {
     const usable = items.filter((item) => asString(item.title));
@@ -126,6 +122,77 @@ function tabbedItems(key: string, items: readonly Record<string, unknown>[]): st
         const path = `${key}.items.${index}`;
         return `<div role="tabpanel" id="${key}-p${index}" aria-labelledby="${key}-t${index}"${index === 0 ? '' : ' hidden'}>${slot('h3', `${path}.title`, escapeHtml(asString(item.title)))
             }${asString(item.body) ? slot('p', `${path}.body`, escapeHtml(asString(item.body))) : ''}</div>`;
+    }).join('');
+
+    return `<div class="tabs" data-tabs><div class="tablist" role="tablist">${tabs}</div><div class="tabpanels">${panels}</div></div>`;
+}
+
+/**
+ * Menu categories as tabs for Pro tier.
+ */
+function tabbedMenu(key: string, items: readonly Record<string, unknown>[]): string {
+    const usable = items.filter((item) => asString(item.name));
+    if (usable.length < 2) return '';
+
+    const groups: { name: string; items: Record<string, unknown>[] }[] = [];
+    if (usable.length <= 4) {
+        groups.push({ name: 'Popular', items: usable.slice(0, Math.ceil(usable.length / 2)) });
+        groups.push({ name: 'Chef’s Selection', items: usable.slice(Math.ceil(usable.length / 2)) });
+    } else {
+        const third = Math.ceil(usable.length / 3);
+        groups.push({ name: 'Starters & Mains', items: usable.slice(0, third) });
+        groups.push({ name: 'Specialties', items: usable.slice(third, third * 2) });
+        groups.push({ name: 'Desserts & Drinks', items: usable.slice(third * 2) });
+    }
+
+    const tabs = groups.map((g, index) =>
+        `<button type="button" role="tab" id="${key}-menu-t${index}" aria-controls="${key}-menu-p${index}" aria-selected="${index === 0 ? 'true' : 'false'}" tabindex="${index === 0 ? '0' : '-1'}">${escapeHtml(g.name)}</button>`,
+    ).join('');
+
+    const panels = groups.map((g, gIdx) => {
+        const listHtml = `<ul class="cards">${g.items.map((item, itemIdx) => {
+            const overallIdx = items.indexOf(item);
+            const path = `${key}.items.${overallIdx >= 0 ? overallIdx : itemIdx}`;
+            const name = asString(item.name);
+            const desc = asString(item.description);
+            const price = asString(item.price);
+            return `<li class="card">${slot('h3', `${path}.name`, escapeHtml(name))}${desc ? slot('p', `${path}.description`, escapeHtml(desc)) : ''}${price ? slot('span', `${path}.price`, escapeHtml(price), ' class="price"') : ''}</li>`;
+        }).join('')}</ul>`;
+        return `<div role="tabpanel" id="${key}-menu-p${gIdx}" aria-labelledby="${key}-menu-t${gIdx}"${gIdx === 0 ? '' : ' hidden'}>${listHtml}</div>`;
+    }).join('');
+
+    return `<div class="tabs" data-tabs><div class="tablist" role="tablist">${tabs}</div><div class="tabpanels">${panels}</div></div>`;
+}
+
+/**
+ * Gallery filter categories as tabs for Pro tier.
+ */
+function tabbedGallery(key: string, images: readonly Record<string, unknown>[]): string {
+    const usable = images.filter((img) => asString(img.url) || asString(img.query) || asString(img.alt));
+    if (usable.length < 3) return '';
+
+    const groups = [
+        { name: 'All Photos', items: usable },
+        { name: 'Featured', items: usable.slice(0, Math.ceil(usable.length / 2)) },
+        { name: 'Highlights', items: usable.slice(Math.ceil(usable.length / 2)) },
+    ];
+
+    const tabs = groups.map((g, index) =>
+        `<button type="button" role="tab" id="${key}-gal-t${index}" aria-controls="${key}-gal-p${index}" aria-selected="${index === 0 ? 'true' : 'false'}" tabindex="${index === 0 ? '0' : '-1'}">${escapeHtml(g.name)}</button>`,
+    ).join('');
+
+    const panels = groups.map((g, gIdx) => {
+        const figures = g.items.map((img, itemIdx) => {
+            const overallIdx = images.indexOf(img);
+            const path = `${key}.images.${overallIdx >= 0 ? overallIdx : itemIdx}`;
+            const caption = asString(img.alt) || asString(img.query);
+            const query = asString(img.query);
+            const photo = asString(img.url)
+                ? `<img src="${escapeHtml(asString(img.url))}" alt="${escapeHtml(caption || 'Gallery')}" loading="lazy" decoding="async" />`
+                : '';
+            return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''}${caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''}</figure>`;
+        }).join('');
+        return `<div role="tabpanel" id="${key}-gal-p${gIdx}" aria-labelledby="${key}-gal-t${gIdx}"${gIdx === 0 ? '' : ' hidden'}><div class="gallery">${figures}</div></div>`;
     }).join('');
 
     return `<div class="tabs" data-tabs><div class="tablist" role="tablist">${tabs}</div><div class="tabpanels">${panels}</div></div>`;
@@ -167,11 +234,20 @@ function renderInner(
             }
             return `${h('h2', heading)}${listMarkup(key, 'items', asList(p.items), 'title', 'body')}`;
         }
-        case 'menu':
+        case 'menu': {
+            if (variant === 'grouped' || variant === 'tabs') {
+                const tabbed = tabbedMenu(key, asList(p.items));
+                if (tabbed) return `${h('h2', heading)}${tabbed}`;
+            }
             return `${h('h2', heading)}${listMarkup(key, 'items', asList(p.items), 'name', 'description', (item, path) =>
                 asString(item.price) ? slot('span', `${path}.price`, escapeHtml(asString(item.price)), ' class="price"') : '')}`;
+        }
         case 'gallery': {
             const images = asList(p.images);
+            if (variant === 'carousel' || variant === 'tabs') {
+                const tabbed = tabbedGallery(key, images);
+                if (tabbed) return `${h('h2', heading)}${tabbed}`;
+            }
             const figures = images.map((img, index) => {
                 const path = `${key}.images.${index}`;
                 const caption = asString(img.alt) || asString(img.query);
@@ -270,6 +346,7 @@ a { color: inherit; }
 .site-header nav { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
 .site-header nav a {
   color: var(--muted); text-decoration: none; font-size: 0.95rem; cursor: pointer;
+  transition: color 0.18s ease;
 }
 .site-header nav a:hover { color: var(--ink); }
 main { max-width: 72rem; margin: 0 auto; padding-inline: 1.5rem; padding-bottom: 3rem; }
@@ -289,7 +366,9 @@ section { padding-block: var(--section-gap, 3.5rem); }
   background: var(--accent); color: var(--accent-ink);
   border-radius: var(--radius-md); text-decoration: none; font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
+.cta:hover { opacity: 0.92; }
 .img-slot {
   min-height: 12rem; background: var(--panel); border: var(--border-width, 1px) solid var(--rule);
   border-radius: var(--radius-md); overflow: hidden;
@@ -329,23 +408,80 @@ address { font-style: normal; }
 .settings-list dd { margin: 0 0 0.75rem; }
 .form-status { margin: 0; color: var(--muted); }
 
-/* Casual keeps one hero photograph (split beside the copy) and hides the rest —
-   Photo-rich is the look that paints pictures through about/gallery. */
+/* Casual: plain but tidy — clean lines, minimal flat surface, clean typography, one photo */
 [data-style="casual"] [data-type="hero"] {
-  gap: 2rem;
-  padding: 1.25rem;
-  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--rule));
-  border-radius: var(--radius-lg, 1rem);
+  gap: 1.75rem;
+  padding: 1.25rem 0;
 }
 [data-style="casual"] [data-type="hero"] .img-slot {
-  min-height: 14rem;
-  border: 0;
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 12%, transparent);
+  min-height: 13rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md, 0.5rem);
 }
 [data-style="casual"] [data-type="about"] .img-slot,
 [data-style="casual"] [data-type="services"] .img-slot,
 [data-style="casual"] [data-type="gallery"] .img-slot { display: none; }
+[data-style="casual"] .card {
+  box-shadow: none;
+  border: 1px solid var(--rule);
+}
+
+/* Photo-rich (Pro): rich photographic layouts, soft shadows, image hover zoom, interactive tabs & accordion */
+[data-style="photos"] .img-slot {
+  border-radius: var(--radius-lg, 0.85rem);
+  box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--ink) 12%, transparent);
+  transition: box-shadow .3s ease;
+}
+[data-style="photos"] .img-slot img {
+  transition: transform .4s cubic-bezier(.22,.61,.36,1);
+}
+[data-style="photos"] .img-slot:hover img {
+  transform: scale(1.04);
+}
+[data-style="photos"] .card {
+  border-radius: var(--radius-lg, 0.85rem);
+  box-shadow: 0 8px 24px -6px color-mix(in srgb, var(--ink) 8%, transparent);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+[data-style="photos"] .card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--rule));
+  box-shadow: 0 16px 36px -8px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+[data-style="photos"] details, [data-style="motion"] details {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md, 0.6rem);
+  background: var(--panel);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+[data-style="photos"] details[open], [data-style="motion"] details[open] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
+  box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+details summary {
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::after {
+  content: "+";
+  font-size: 1.3rem;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--accent);
+  transition: transform .2s ease;
+}
+details[open] summary::after {
+  content: "−";
+  transform: rotate(180deg);
+}
 
 [data-variant="image-bg"] {
   display: grid !important;

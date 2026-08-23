@@ -21,17 +21,18 @@ export const TABS_CSS = `
   padding: .55rem 1rem; border-radius: var(--radius, .5rem);
   border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   background: transparent; color: inherit; opacity: .68;
-  transition: opacity .18s ease, background-color .18s ease, border-color .18s ease;
+  transition: opacity .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
 }
-[data-tabs] .tablist button:hover { opacity: .9; }
+[data-tabs] .tablist button:hover { opacity: .92; transform: translateY(-1px); }
 [data-tabs] .tablist button[aria-selected="true"] {
   opacity: 1;
-  background: color-mix(in srgb, var(--accent, currentColor) 14%, transparent);
-  border-color: color-mix(in srgb, var(--accent, currentColor) 45%, transparent);
+  background: color-mix(in srgb, var(--accent, currentColor) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent, currentColor) 60%, transparent);
+  box-shadow: 0 4px 16px -2px color-mix(in srgb, var(--accent, currentColor) 22%, transparent);
 }
 [data-tabs] .tablist button:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 2px; }
-[data-tabs] [role="tabpanel"] { animation: pc-tab-in .28s ease both; }
-@keyframes pc-tab-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+[data-tabs] [role="tabpanel"] { animation: pc-tab-in .28s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes pc-tab-in { from { opacity: 0; transform: translateY(8px) scale(0.99); } to { opacity: 1; transform: none; } }
 
 /* Before the script runs, and forever if it never does, every panel is simply on the page. */
 [data-tabs]:not([data-ready]) .tablist { display: none; }
@@ -39,6 +40,7 @@ export const TABS_CSS = `
 
 @media (prefers-reduced-motion: reduce) {
   [data-tabs] [role="tabpanel"] { animation: none; }
+  [data-tabs] .tablist button { transform: none !important; }
 }
 `;
 
@@ -65,7 +67,7 @@ export const TABS_JS = `
           (function (i) {
             tabs[i].addEventListener('click', function () { select(i); });
             tabs[i].addEventListener('keydown', function (e) {
-              var next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : -1;
+              var next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1;
               if (next < 0 || next >= tabs.length) return;
               e.preventDefault();
               tabs[next].focus();
@@ -89,9 +91,10 @@ export const PREMIUM_CSS = `
 [data-style="motion"]::before {
   content: ""; position: fixed; inset: -20vmax; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(42vmax 42vmax at 18% 12%, color-mix(in srgb, var(--accent, #6ea8ff) 26%, transparent), transparent 62%),
-    radial-gradient(38vmax 38vmax at 82% 78%, color-mix(in srgb, var(--accent-2, var(--accent, #b06ab3)) 20%, transparent), transparent 64%);
-  filter: blur(28px) saturate(115%);
+    radial-gradient(46vmax 46vmax at 16% 12%, color-mix(in srgb, var(--accent, #6ea8ff) 28%, transparent), transparent 62%),
+    radial-gradient(42vmax 42vmax at 84% 82%, color-mix(in srgb, var(--accent-2, var(--accent, #b06ab3)) 24%, transparent), transparent 64%),
+    radial-gradient(34vmax 34vmax at 50% 50%, color-mix(in srgb, #38bdf8 14%, transparent), transparent 60%);
+  filter: blur(28px) saturate(125%);
   animation: pc-glow 24s ease-in-out infinite alternate;
 }
 @keyframes pc-glow {
@@ -113,8 +116,51 @@ export const PREMIUM_CSS = `
   transform: translate3d(0, calc(var(--pc-depth, 0) * -18px), 0) rotateX(calc(var(--pc-depth, 0) * 1.6deg));
   transform-style: preserve-3d;
   will-change: transform;
-  transition: box-shadow .4s ease;
-  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .65);
+  transition: box-shadow .4s ease, transform .4s cubic-bezier(.22,.61,.36,1);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .75);
+}
+
+/* Floating 3D mini-scene cards in the background — like the PageCrafts site aesthetic */
+[data-style="motion"] .motion-float-cards {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden;
+}
+[data-style="motion"] .motion-float-card {
+  position: absolute;
+  width: min(200px, 38vw);
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform-style: preserve-3d;
+  animation: pc-float-3d 9s ease-in-out infinite alternate;
+}
+[data-style="motion"] .motion-float-card-a {
+  left: 3%; top: 22%; transform: perspective(800px) rotateY(16deg) rotateX(10deg) rotateZ(-4deg);
+}
+[data-style="motion"] .motion-float-card-b {
+  right: 4%; top: 62%; transform: perspective(800px) rotateY(-14deg) rotateX(-8deg) rotateZ(5deg);
+  animation-delay: -4.5s;
+}
+[data-style="motion"] .motion-float-card .dot-row {
+  display: flex; gap: 4px; margin-bottom: 0.6rem;
+}
+[data-style="motion"] .motion-float-card .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0.8;
+}
+[data-style="motion"] .motion-float-card .dot-b { background: #38bdf8; }
+[data-style="motion"] .motion-float-card .dot-c { background: #f59e0b; }
+[data-style="motion"] .motion-float-card .card-title {
+  font-size: 0.72rem; font-weight: 700; color: #fff; margin: 0; line-height: 1.2;
+}
+[data-style="motion"] .motion-float-card .card-sub {
+  font-size: 0.62rem; color: rgba(255, 255, 255, 0.65); margin: 0.25rem 0 0;
+}
+@keyframes pc-float-3d {
+  0% { transform: perspective(800px) translateY(0) rotateY(14deg) rotateX(8deg); }
+  50% { transform: perspective(800px) translateY(-14px) rotateY(18deg) rotateX(12deg); }
+  100% { transform: perspective(800px) translateY(6px) rotateY(11deg) rotateX(5deg); }
 }
 
 /* Moving images: a slow drift so a still photograph is never quite still. */
@@ -141,6 +187,7 @@ export const PREMIUM_CSS = `
   [data-style="motion"] .img-slot img { animation: none; transform: none !important; }
   [data-style="motion"] .gallery figure,
   [data-style="motion"] section[data-animate].pc-in .img-slot { transform: none !important; }
+  [data-style="motion"] .motion-float-card { animation: none; transform: none !important; }
 }
 `;
 
@@ -192,3 +239,4 @@ export const PREMIUM_JS = `
   } catch (e) {}
 })();
 `;
+
