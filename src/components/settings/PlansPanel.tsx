@@ -122,15 +122,27 @@ export function PlansPanel({
                             ? "Free"
                             : `Rs ${PLAN_PRICE_INR[id]}`;
 
+                    const popular = id === "pro";
+
                     return (
                         <article
                             key={id}
                             className={cn(
-                                "flex flex-col rounded-2xl border border-border p-5",
+                                "flex flex-col rounded-2xl border p-5",
+                                popular
+                                    ? "border-amber-400/50 ring-1 ring-amber-400/30"
+                                    : "border-border",
                                 active && "ring-2 ring-primary/40",
                             )}
                         >
-                            <p className="text-sm font-medium text-muted-foreground">{copy.name}</p>
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-medium text-muted-foreground">{copy.name}</p>
+                                {popular ? (
+                                    <span className="rounded-full border border-amber-400/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-300">
+                                        Popular
+                                    </span>
+                                ) : null}
+                            </div>
                             <p className="mt-1 text-2xl font-bold text-foreground">{price}</p>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
                                 {copy.description}
@@ -146,9 +158,9 @@ export function PlansPanel({
                                     </li>
                                 ))}
                             </ul>
-                            <div className="mt-5">
+                            <div className="mt-auto pt-5">
                                 {covered ? (
-                                    <p className="text-sm font-medium text-muted-foreground">
+                                    <p className="flex min-h-11 items-center text-sm font-medium text-muted-foreground">
                                         {active ? "Your plan" : "Included"}
                                     </p>
                                 ) : id === "pro" || id === "premium" ? (

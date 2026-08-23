@@ -55,11 +55,20 @@ describe("account settings", () => {
   it("puts User Plans on the username menu", () => {
     const menu = read("src", "components", "settings", "ProfileMenu.tsx");
     const header = read("src", "components", "landing", "SiteHeader.tsx");
+    const top = read("src", "components", "app", "AppTopBar.tsx");
     const remove = read("src", "components", "settings", "DeleteAccount.tsx");
 
     expect(header).toContain("<ProfileMenu");
+    expect(header).toContain('href="/plans"');
+    expect(header).toContain("User Plans");
+    expect(top).toContain('href="/plans"');
+    expect(top).toContain("User Plans");
     expect(menu).toContain('href="/plans"');
     expect(menu).toContain("User Plans");
+    expect(menu).toContain("Current plan");
+    expect(menu).toContain("canUpgradePlan");
+    expect(menu).toContain("Upgrade");
+    expect(menu).toContain("/api/v1/account/billing");
     expect(menu).toContain("/api/v1/account");
     expect(menu).toContain("Email notices");
     expect(menu).toContain('href="/?slide=settings"');
@@ -98,5 +107,6 @@ describe("paid designs", () => {
     expect(notice).toContain('href="/plans"');
     expect(plans).toContain("openPlanCheckout");
     expect(plans).toContain("Upgrade to");
+    expect(plans).toContain("Popular");
   });
 });

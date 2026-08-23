@@ -107,6 +107,13 @@ export function SiteHeader({
                                     </Link>
                                 </li>
                             ) : null}
+                            {user ? (
+                                <li>
+                                    <Link href="/plans" className={`${LINK} block px-3 py-2`}>
+                                        User Plans
+                                    </Link>
+                                </li>
+                            ) : null}
                         </ul>
                     </details>
 
@@ -114,6 +121,9 @@ export function SiteHeader({
                         <>
                             <Link href="/packages" className={LINK}>
                                 More AI rebuilds
+                            </Link>
+                            <Link href="/plans" className={`${LINK} hidden sm:inline`}>
+                                User Plans
                             </Link>
                             <ProfileMenu user={user} />
                         </>
