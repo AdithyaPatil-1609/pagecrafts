@@ -263,9 +263,10 @@ describe("the routes that open checkout", () => {
         expect(verify).toContain("verifyPaymentSignature");
         expect(verify).toContain("fulfillPaidNotes");
         expect(verify).not.toContain("grantPublish(");
-        expect(plans).toContain("Choose ${copy.name}");
+        expect(plans).toContain("Choose Pro");
+        expect(plans).toContain("Choose Premium");
         expect(plans).toContain("Payment cancelled. Your current plan has not changed.");
-        expect(plans).toContain("Current Plan");
         expect(plans).toContain("paymentsReady");
+        expect(plans).toContain("production-payments-setup");
     });
 });
