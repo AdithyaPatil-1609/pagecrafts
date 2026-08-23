@@ -23,6 +23,7 @@ import { sanitise } from '@/lib/ai/sanitise';
 import { sectionVariants } from '@/lib/editor/section-registry';
 import { isSiteGenerationRequest } from '@/lib/editor/site-intent';
 import { styleUpgradeFirewall } from '@/lib/editor/style-firewall';
+import { crossVerticalFirewall } from '@/lib/editor/cross-vertical-firewall';
 import {
     parseRenameIntent,
     renameComposition,
@@ -510,8 +511,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             return;
         }
 
+        const { contentSchema, siteMeta, projectName } = get();
         const sectionCount = composition?.sections.length ?? 0;
-        const { contentSchema } = get();
+        const hasContentPage = Boolean(contentSchema?.sections.length);
+        const crossBlocked = crossVerticalFirewall({
+            instruction: text,
+            vertical: composition?.vertical,
+            sectionCount,
+            hasContentPage,
+            contextText: [
+                composition?.meta.title,
+                siteMeta?.title,
+                projectName,
+                entryHtml?.slice(0, 4000),
+            ]
+                .filter(Boolean)
+                .join(' '),
+        });
+        if (crossBlocked) {
+            set({ chatError: crossBlocked });
+            return;
+        }
         const htmlSite = Boolean(contentSchema?.sections.length) && sectionCount === 0;
         if (htmlSite) {
             if (text.length > 300) {
