@@ -6,7 +6,8 @@ import { assemble } from '../generate/assemble';
 import { compositionToFiles } from '../generate/to-files';
 import { buildCustomStyleOptions, buildStyleOptions } from '../generate/options';
 import { composeCustomSite } from '../generate/compose-custom';
-import { estimateSiteBuild } from '../generate/complexity';
+import { customBuildFits, estimateSiteBuild } from '../generate/complexity';
+import { aiConfig } from '../config';
 import { bankPhotoUrl } from '../generate/photos';
 import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
@@ -84,7 +85,21 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             sections: intent.data.sections,
         };
 
-        if (estimate.mode === 'custom') {
+        const budget = aiConfig();
+        const composeAffordable = customBuildFits(estimate, {
+            composeMaxTokens: budget.maxOutputTokens.compose,
+            tpm: budget.quota.tpm,
+        });
+
+        if (estimate.mode === 'custom' && !composeAffordable) {
+            console.warn(
+                `[generate] job ${job.id}: custom compose needs `
+                    + `${budget.maxOutputTokens.compose} output tokens against a `
+                    + `${budget.quota.tpm} TPM limit — building with the section recipe instead.`,
+            );
+        }
+
+        if (estimate.mode === 'custom' && composeAffordable) {
             await emit('plan', {
                 mode: 'custom',
                 band: estimate.band,
