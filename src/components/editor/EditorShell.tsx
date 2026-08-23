@@ -112,16 +112,23 @@ export default function EditorShell({
                 setGenerationNotice(data.fallback_template_id ? FALLBACK_NOTICE : null);
                 await loadProject(projectId);
                 if (cancelled) return;
-                if (data.status === "done") {
+                // Only go to /choose when there are variant looks to pick from.
+                // A fallback job wrote a template directly — no looks exist, so
+                // sending the user to /choose would bounce them straight back here.
+                if (data.status === "done" && !data.fallback_template_id) {
                     router.replace(
                         `/choose/${encodeURIComponent(projectId)}?job=${encodeURIComponent(jobId)}`,
                     );
                     return;
                 }
+                // For fallback or failed jobs, clear the generation overlay and
+                // settle on the editor with whatever the project now holds.
+                setGeneration(null);
+                router.replace(`/editor/${encodeURIComponent(projectId)}`);
                 return;
             }
 
-            timer = setTimeout(poll, 400);
+            timer = setTimeout(poll, 1500);
         };
 
         void poll();
