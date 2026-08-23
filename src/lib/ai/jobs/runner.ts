@@ -219,6 +219,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             composition,
             (q) => lookupPhoto(q, job.id),
             job.prompt,
+            job.id,
         );
         const picked = variants[0];
         const files = picked?.files ?? compositionToFiles(composition);
