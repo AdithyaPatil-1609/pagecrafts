@@ -18,7 +18,8 @@ import { AskAiFixDialog } from "@/components/editor/AskAiFixDialog";
 import { NeedUpiDialog } from "@/components/editor/NeedUpiDialog";
 import { explainCreationIssue } from "@/lib/editor/ai-fix";
 import { styleBadge } from "@/lib/payments/pricing";
-import type { BillingSummary } from "@/lib/contracts";
+import type { AccountPlan, BillingSummary } from "@/lib/contracts";
+import { ACCOUNT_PLAN_LABEL } from "@/lib/contracts";
 
 interface VariantCard {
     id: StyleId;
@@ -40,7 +41,7 @@ interface Quota {
     limit: number;
     remaining: number;
     unlimited: boolean;
-    package?: "free" | "advanced";
+    plan?: AccountPlan;
     passes?: number;
     canGenerate?: boolean;
 }
@@ -457,15 +458,14 @@ export function StyleChooser({
                         <div className="flex max-w-lg flex-col items-center gap-3">
                             <p className="text-sm text-muted-foreground">
                                 You have used your {quota.limit}{" "}
-                                {quota.package === "advanced" ? "Advanced" : "Free"} AI generations
-                                on this site. Pick a look above, or open Packages for more AI
-                                usage.
+                                {ACCOUNT_PLAN_LABEL[quota.plan ?? "starter"]} AI generations
+                                on this site. Pick a look above, or upgrade your plan for more.
                             </p>
                             <Link
-                                href="/packages"
+                                href="/plans"
                                 className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                             >
-                                Open Packages
+                                Upgrade plan
                             </Link>
                         </div>
                     ) : null}

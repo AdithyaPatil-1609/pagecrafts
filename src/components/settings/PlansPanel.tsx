@@ -10,6 +10,7 @@ import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
 import { waitForPlanGrant } from "@/lib/payments/wait-for-pro";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
 import { PLAN_COPY, PLAN_PRICE_INR } from "@/lib/payments/plans";
+import { FREE_GENERATIONS_PER_PROJECT } from "@/lib/limits/config";
 import { cn } from "@/lib/utils";
 
 const ORDER: AccountPlan[] = ["starter", "pro", "premium"];
@@ -195,14 +196,8 @@ export function PlansPanel({
             )}
 
             <p className="text-sm text-muted-foreground">
-                Need more AI rebuilds on a site? That is separate —{" "}
-                <Link
-                    href="/packages"
-                    className="font-medium text-foreground underline-offset-4 hover:underline"
-                >
-                    manage AI usage
-                </Link>
-                .
+                AI rebuild limits follow your plan — Starter gets {FREE_GENERATIONS_PER_PROJECT}{" "}
+                generations per site, Pro gets 10× that, Premium gets 25×.
             </p>
         </div>
     );

@@ -51,8 +51,8 @@ export function SiteHeader({
                         <BrandMark />
                     </Link>
                     <div className="flex items-center gap-3 sm:gap-5">
-                        <Link href="/pricing" className={`${LINK} hidden sm:inline`}>
-                            Pricing
+                        <Link href="/plans" className={`${LINK} hidden sm:inline`}>
+                            User Plans
                         </Link>
                         <GuestActions />
                     </div>
@@ -102,13 +102,6 @@ export function SiteHeader({
                             ))}
                             {user ? (
                                 <li>
-                                    <Link href="/packages" className={`${LINK} block px-3 py-2`}>
-                                        More AI rebuilds
-                                    </Link>
-                                </li>
-                            ) : null}
-                            {user ? (
-                                <li>
                                     <Link href="/plans" className={`${LINK} block px-3 py-2`}>
                                         User Plans
                                     </Link>
@@ -119,10 +112,7 @@ export function SiteHeader({
 
                     {user ? (
                         <>
-                            <Link href="/packages" className={LINK}>
-                                More AI rebuilds
-                            </Link>
-                            <Link href="/plans" className={`${LINK} hidden sm:inline`}>
+                            <Link href="/plans" className={LINK}>
                                 User Plans
                             </Link>
                             <ProfileMenu user={user} />

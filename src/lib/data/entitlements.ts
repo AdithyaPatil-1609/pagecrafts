@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { EntitlementCheck, EntitlementKind, EntitlementSource } from "@/lib/contracts";
+import type { EntitlementCheck, EntitlementKind, EntitlementSource, AccountPlan } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
 import { requiredPlanForTemplate } from "@/lib/payments/pricing";
 
@@ -120,6 +120,16 @@ export async function hasPro(supabase: SupabaseClient, userId: string): Promise<
 /** True when the account holds a live Premium plan. Pro does not cover this. */
 export async function hasPremium(supabase: SupabaseClient, userId: string): Promise<boolean> {
     return (await checkEntitlement(supabase, userId, null, "premium")).granted;
+}
+
+/** Live account plan from entitlements — Starter when no paid plan row is active. */
+export async function accountPlan(
+    supabase: SupabaseClient,
+    userId: string,
+): Promise<AccountPlan> {
+    if (await hasPremium(supabase, userId)) return "premium";
+    if (await hasPro(supabase, userId)) return "pro";
+    return "starter";
 }
 
 /** True when the account holds the Advanced AI usage package. */

@@ -38,7 +38,8 @@ describe("account settings", () => {
     const packages = read("src", "components", "settings", "PackagesPanel.tsx");
     const plansPage = read("src", "app", "plans", "page.tsx");
 
-    expect(sidebar).toContain('href="/templates"');
+    expect(sidebar).toContain('href: "/plans"');
+    expect(sidebar).not.toContain('href="/packages"');
     expect(sidebar).toContain("Browse designs");
     expect(sidebar).not.toContain("UpgradeToProButton");
     expect(sidebar).not.toContain("Billing is not live yet");
@@ -103,7 +104,7 @@ describe("paid designs", () => {
     expect(card).toContain("TemplateDetailModal");
     expect(detail).toContain("LockedPlanNotice");
     expect(detail).not.toContain("BuyPaidItemCta");
-    expect(notice).toContain("See User Plans");
+    expect(notice).toContain("Upgrade to");
     expect(notice).toContain('href="/plans"');
     expect(plans).toContain("openPlanCheckout");
     expect(plans).toContain("Upgrade to");
