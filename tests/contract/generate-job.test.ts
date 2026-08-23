@@ -358,7 +358,9 @@ describe('POST /api/v1/projects/{id}/generate/choose', () => {
         expect(picked.status).toBe(200);
         expect(json.data.variant_id).toBe('photos');
         const job = await jobStore().get(data.job_id);
-        expect(job?.composition?.artDirection.themeId).toBe('warm-editorial');
+        // The theme is drawn per business now rather than fixed per tier, so the assertion
+        // is that the chosen look was recorded at all — not which one it happened to be.
+        expect(job?.composition?.artDirection.themeId).toBeTruthy();
         expect(job?.files?.['index.html']).toContain('data-style="photos"');
     });
 

@@ -10,7 +10,9 @@ const ART: ArtDirection = {
     spacingId: 'airy', imageryId: 'warm-natural',
 };
 
-const motionOf = (html: string) => html.match(/data-motion="([a-z]+)"/)?.[1] ?? '';
+// The body attribute, not the first data-motion in the file — motionCss opens with a
+// `[data-motion="none"]` rule, so a loose match reads the stylesheet instead of the page.
+const motionOf = (html: string) => html.match(/<body[^>]*data-motion="([a-z]+)"/)?.[1] ?? '';
 
 const CASES = [
     { vertical: 'sweet-shop', extra: 'Mithas Sweets in Old Delhi', motif: 'jalebi', heading: 'Mithas Sweets' },
