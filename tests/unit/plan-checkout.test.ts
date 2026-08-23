@@ -15,11 +15,19 @@ describe("plan checkout errors", () => {
         const plans = read("src", "components", "settings", "PlansPanel.tsx");
         const checkout = read("src", "lib", "payments", "checkout.ts");
         const razorpay = read("src", "lib", "payments", "razorpay.ts");
+        const verify = read("src", "app", "api", "v1", "payments", "razorpay", "verify", "route.ts");
+        const recover = read("src", "app", "api", "v1", "account", "billing", "recover", "route.ts");
 
         expect(plans).toContain("paymentsReady");
         expect(plans).toContain("RAZORPAY_KEY_ID");
+        expect(plans).toContain("Unlock my payment");
         expect(checkout).toContain("payments_unavailable");
         expect(checkout).toContain("PAGECRAFTS_DEV_GRANT_PLANS");
+        expect(checkout).toContain("applyVerifiedCheckout");
+        expect(checkout).toContain("recoverPaidOrder");
         expect(razorpay).toContain("payments_unavailable");
+        expect(razorpay).toContain("fetchOrder");
+        expect(verify).toContain('auth: "none"');
+        expect(recover).toContain("recoverPaidOrder");
     });
 });

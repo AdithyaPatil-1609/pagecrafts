@@ -95,6 +95,8 @@ export function PlansPanel({
     const [billing, setBilling] = useState(initial);
     const [message, setMessage] = useState<string | null>(null);
     const [pending, setPending] = useState<"pro" | "premium" | null>(null);
+    const [orderId, setOrderId] = useState("");
+    const [recovering, setRecovering] = useState(false);
 
     const refresh = useCallback(async () => {
         const { apiGet } = await import("@/lib/api/client");
@@ -145,6 +147,35 @@ export function PlansPanel({
         setMessage(null);
         setPending(plan);
         await openPlanCheckout(plan);
+    }
+
+    async function recover() {
+        const id = orderId.trim();
+        if (!id || recovering) return;
+        setRecovering(true);
+        setMessage(null);
+        try {
+            const { apiPost } = await import("@/lib/api/client");
+            const { data, error: fail } = await apiPost<{ kind: string }>(
+                "/api/v1/account/billing/recover",
+                { orderId: id },
+            );
+            if (fail || !data) {
+                setMessage(fail ?? "We could not unlock that payment.");
+                return;
+            }
+            setMessage(
+                data.kind === "premium"
+                    ? "Premium is active — every matching design is unlocked."
+                    : data.kind === "pro"
+                      ? "Pro is active — every matching design is unlocked."
+                      : "That payment is unlocked on this account.",
+            );
+            setOrderId("");
+            await refresh();
+        } finally {
+            setRecovering(false);
+        }
     }
 
     const current = billing.plan;
@@ -285,6 +316,39 @@ export function PlansPanel({
                     <code className="font-mono text-xs">RAZORPAY_WEBHOOK_SECRET</code> so your plan
                     unlocks after payment.
                 </p>
+            ) : null}
+
+            {signedIn && current === "starter" ? (
+                <section className="rounded-2xl border border-dashed border-border/80 p-5">
+                    <h2 className="text-sm font-semibold text-foreground">
+                        Already paid but still on Starter?
+                    </h2>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        Paste the Razorpay order id from your payment receipt (starts with{" "}
+                        <code className="font-mono text-xs">order_</code>). We unlock Pro or Premium
+                        on this account if that payment belongs to you.
+                    </p>
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <input
+                            type="text"
+                            value={orderId}
+                            onChange={(event) => setOrderId(event.target.value)}
+                            placeholder="order_…"
+                            className="min-h-11 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground"
+                            autoComplete="off"
+                            spellCheck={false}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline-brand"
+                            className="min-h-11 cursor-pointer rounded-xl font-semibold"
+                            disabled={recovering || !orderId.trim()}
+                            onClick={() => void recover()}
+                        >
+                            {recovering ? "Unlocking…" : "Unlock my payment"}
+                        </Button>
+                    </div>
+                </section>
             ) : null}
 
             <p className="text-sm text-muted-foreground">

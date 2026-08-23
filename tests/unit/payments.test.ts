@@ -145,15 +145,20 @@ describe("the routes that open checkout", () => {
             join(process.cwd(), "src", "app", "api", "v1", "payments", "razorpay", "webhook", "route.ts"),
             "utf8",
         );
+        const checkout = readFileSync(
+            join(process.cwd(), "src", "lib", "payments", "checkout.ts"),
+            "utf8",
+        );
         const hook = readFileSync(
             join(process.cwd(), "src", "hooks", "useRazorpayCheckout.tsx"),
             "utf8",
         );
 
-        expect(webhook).toContain("grantTemplate");
-        expect(webhook).toContain("grantStyle");
-        expect(webhook).toContain('kind === "template"');
-        expect(webhook).toContain('kind === "style"');
+        expect(webhook).toContain("grantFromOrderNotes");
+        expect(checkout).toContain("grantTemplate");
+        expect(checkout).toContain("grantStyle");
+        expect(checkout).toContain('kind === "template"');
+        expect(checkout).toContain('kind === "style"');
         expect(hook).toContain("openTemplateCheckout");
         expect(hook).toContain("openStyleCheckout");
         expect(hook).toContain("openPlanCheckout");
@@ -165,12 +170,13 @@ describe("the routes that open checkout", () => {
         expect(hook).toContain("/api/v1/account/packages/advanced/checkout");
         expect(hook).toContain("/api/v1/account/packages/generation/checkout");
         expect(hook).toContain("checkout.razorpay.com");
-        expect(webhook).toContain("grantAdvanced");
-        expect(webhook).toContain("grantGenerationPassPurchase");
-        expect(webhook).toContain('kind === "advanced"');
-        expect(webhook).toContain('kind === "generation_pass"');
-        expect(webhook).toContain("grantPro");
-        expect(webhook).toContain("grantPremium");
+        expect(checkout).toContain("grantAdvanced");
+        expect(checkout).toContain("grantGenerationPassPurchase");
+        expect(checkout).toContain('kind === "advanced"');
+        expect(checkout).toContain('kind === "generation_pass"');
+        expect(checkout).toContain("grantPro");
+        expect(checkout).toContain("grantPremium");
+        expect(checkout).toContain("applyVerifiedCheckout");
         expect(webhook).not.toContain("verified: true");
     });
 
@@ -217,7 +223,9 @@ describe("the routes that open checkout", () => {
         expect(fork).toContain("PAID_DESIGN_MESSAGE");
         expect(choose).toContain("hasStyleAccess");
         expect(choose).not.toContain("hasPro");
-        expect(verify).not.toContain("grantPro");
+        expect(verify).toContain("applyVerifiedCheckout");
+        expect(verify).toContain('auth: "none"');
+        expect(verify).toContain("grant");
         expect(verify).not.toContain("grantPublish");
     });
 });

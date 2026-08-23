@@ -20,6 +20,57 @@ const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET?.trim();
 
 const ORDERS_URL = "https://api.razorpay.com/v1/orders";
 
+function razorpayAuthHeader(): string {
+    const { keyId, keySecret } = credentials();
+    return `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
+}
+
+export interface FetchedOrder {
+    id: string;
+    status: string;
+    notes: Partial<OrderNotes>;
+}
+
+/**
+ * Read an order back from Razorpay — used after checkout so we can grant from the
+ * notes we wrote when the order was created, even if the webhook is late or missing.
+ */
+export async function fetchOrder(orderId: string): Promise<FetchedOrder> {
+    const response = await fetch(`${ORDERS_URL}/${encodeURIComponent(orderId)}`, {
+        headers: { Authorization: razorpayAuthHeader() },
+    });
+    const body = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+        const error = body.error as { description?: string } | undefined;
+        throw new ApiError(
+            "payments_unavailable",
+            "We could not look up that payment. Please try again in a moment.",
+            error?.description ?? `razorpay ${response.status}`,
+        );
+    }
+
+    return {
+        id: String(body.id ?? orderId),
+        status: String(body.status ?? ""),
+        notes: (body.notes ?? {}) as Partial<OrderNotes>,
+    };
+}
+
+/** True when Razorpay shows this order as paid (or at least attempted). */
+export async function orderHasCapturedPayment(orderId: string): Promise<boolean> {
+    const response = await fetch(
+        `${ORDERS_URL}/${encodeURIComponent(orderId)}/payments`,
+        { headers: { Authorization: razorpayAuthHeader() } },
+    );
+    const body = (await response.json()) as { items?: Array<{ status?: string }> };
+
+    if (!response.ok) return false;
+    return (body.items ?? []).some(
+        (item) => item.status === "captured" || item.status === "authorized",
+    );
+}
+
 export interface OrderNotes {
     userId: string;
     kind: "publish" | "pro" | "premium" | "template" | "style" | "advanced" | "generation_pass";
@@ -71,12 +122,11 @@ export async function createOrder(
     receipt: string,
     notes: OrderNotes,
 ): Promise<RazorpayOrder> {
-    const { keyId, keySecret } = credentials();
-    const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+    const auth = razorpayAuthHeader();
 
     const response = await fetch(ORDERS_URL, {
         method: "POST",
-        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+        headers: { Authorization: auth, "Content-Type": "application/json" },
         body: JSON.stringify({
             amount: amountInPaise,
             currency: "INR",
