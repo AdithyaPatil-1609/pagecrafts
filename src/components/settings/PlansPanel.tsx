@@ -172,6 +172,9 @@ export function PlansPanel({
                         <span className="font-medium text-foreground">
                             {PLAN_COPY[current].name}
                         </span>
+                        {billing.paymentsReady ? (
+                            <span className="text-muted-foreground"> · Razorpay checkout ready</span>
+                        ) : null}
                     </p>
                 ) : (
                     <p className="text-sm text-muted-foreground">
