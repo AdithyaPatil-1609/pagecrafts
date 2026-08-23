@@ -80,6 +80,8 @@ const NO_SCHEMA: Record<string, string> = {
         "in the handler (same as deleting a site) rather than a withRoute Zod schema — a stolen " +
         "cookie alone must not wipe the account. The UI still shows what they lose and asks them " +
         "to type the words. PATCH /account/consent, which does carry a body, has its schema.",
+    "/v1/payments/razorpay/verify":
+        "Handled directly by verifying razorpay_order_id, razorpay_payment_id and razorpay_signature in handler.",
 };
 
 /** Routes allowed to reach past RLS with the service role, and why. */
