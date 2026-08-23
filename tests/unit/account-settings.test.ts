@@ -107,7 +107,9 @@ describe("paid designs", () => {
     expect(notice).toContain("Upgrade to");
     expect(notice).toContain('href="/plans"');
     expect(plans).toContain("openPlanCheckout");
-    expect(plans).toContain("Upgrade to");
+    expect(plans).toContain("Choose Pro");
+    expect(plans).toContain("Choose Premium");
+    expect(plans).toContain("Current plan");
     expect(plans).toContain("Popular");
   });
 });

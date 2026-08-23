@@ -55,8 +55,8 @@ export const PROJECTS_PER_USER = 25;
 
 // AI regenerations per site, by account plan (Starter / Pro / Premium).
 export const FREE_GENERATIONS_PER_PROJECT = 3;
-export const PRO_GENERATIONS_PER_PROJECT = 30;
-export const PREMIUM_GENERATIONS_PER_PROJECT = 75;
+export const PRO_GENERATIONS_PER_PROJECT = 15;
+export const PREMIUM_GENERATIONS_PER_PROJECT = 45;
 /** @deprecated Pro plan replaces the old Advanced AI package. */
 export const ADVANCED_GENERATIONS_PER_PROJECT = PRO_GENERATIONS_PER_PROJECT;
 export const ADVANCED_PACKAGE_PRICE_INR = 699;

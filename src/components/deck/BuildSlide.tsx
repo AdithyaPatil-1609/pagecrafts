@@ -78,7 +78,7 @@ export function BuildSlide({
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">
                         On Starter, you can create or regenerate a site{" "}
                         <span className="font-medium text-foreground">3 times</span> (each round
-                        gives three looks). Pro gives 10× AI usage; Premium gives 25× — both on
+                        gives three looks). Pro gives 5× AI usage; Premium gives 15× — both on
                         User Plans.
                     </p>
                     <Link

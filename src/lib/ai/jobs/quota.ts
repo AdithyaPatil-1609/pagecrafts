@@ -184,9 +184,9 @@ export async function assertFreeGenerationAllowed(
     const label = ACCOUNT_PLAN_LABEL[quota.plan];
     const upgrade =
         quota.plan === 'starter'
-            ? 'Upgrade to Pro (10× AI) or Premium (25× AI) on User Plans.'
+            ? 'Upgrade to Pro (5× AI) or Premium (15× AI) on User Plans.'
             : quota.plan === 'pro'
-              ? 'Upgrade to Premium (25× AI) on User Plans.'
+              ? 'Upgrade to Premium (15× AI) on User Plans.'
               : '';
 
     throw new ApiError(

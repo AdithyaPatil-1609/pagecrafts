@@ -60,7 +60,7 @@ describe('AI generation quota by account plan', () => {
         ).toMatch(/Starter AI generations/i);
     });
 
-    it('raises the limit to 30 for Pro', async () => {
+    it('raises the limit to 15 for Pro', async () => {
         vi.mocked(accountPlan).mockResolvedValue('pro');
         for (let i = 0; i < FREE_GENERATIONS_PER_PROJECT; i++) {
             await recordFreeGeneration('p_1');
@@ -72,7 +72,7 @@ describe('AI generation quota by account plan', () => {
         });
     });
 
-    it('raises the limit to 75 for Premium', async () => {
+    it('raises the limit to 45 for Premium', async () => {
         vi.mocked(accountPlan).mockResolvedValue('premium');
         const quota = await readGenerationQuota('p_1', 'u_1', db);
         expect(quota).toMatchObject({
