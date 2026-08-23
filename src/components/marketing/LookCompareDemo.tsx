@@ -85,13 +85,24 @@ export function LookCompareDemo() {
                                 )}
                             >
                                 <CardIndex n={i + 1} />
-                                <div className="relative h-48 overflow-hidden bg-muted">
+                                {/* The card renders a real page shrunk to fit, so the two
+                                    ratios have to agree with the scale: 200% at scale 0.5
+                                    is exactly 100% in both directions. It was 180% wide and
+                                    220% tall at 0.56 -- 101% across, 123% down -- so a
+                                    quarter of every preview was cut off the bottom, which
+                                    is what clipped the Animated headline mid-word.
+
+                                    h-56 rather than h-48 because the viewport this creates
+                                    is 448px tall, and image-bg heroes are min-height: 28rem.
+                                    A shorter card showed the top edge of a dark photograph
+                                    and nothing else, which is why Photo-rich looked blank. */}
+                                <div className="relative h-56 overflow-hidden bg-muted">
                                     <iframe
                                         title={`${item.label} preview`}
                                         srcDoc={previews[item.id]}
                                         sandbox="allow-scripts"
                                         tabIndex={-1}
-                                        className="pointer-events-none absolute left-0 top-0 h-[220%] w-[180%] origin-top-left scale-[0.56] border-0 bg-transparent"
+                                        className="pointer-events-none absolute left-0 top-0 h-[200%] w-[200%] origin-top-left scale-50 border-0 bg-transparent"
                                     />
                                     <span
                                         className={cn(
