@@ -20,8 +20,8 @@ describe("pricing and compare marketing pages", () => {
         expect(page).not.toContain("Two kinds of price");
         expect(page).not.toContain("do not mix");
         expect(page).not.toContain("Free / Advanced");
-        expect(page).toContain('getElementById("compare")');
-        expect(page).toContain('scrollIntoView({ behavior: "auto"');
+        expect(page).toContain("scrollToDeckSlide");
+        expect(page).toContain('scrollToDeckSlide("compare")');
         expect(page).toContain("Upgrade your plan");
         expect(publicPricing).toContain('redirect("/plans")');
         expect(slide).toContain("signedIn");
