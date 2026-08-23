@@ -1,5 +1,4 @@
 import type { ArtDirection, SectionKey } from '@/lib/contracts';
-import { IMAGERY_IDS, MOTION_IDS, RADIUS_IDS, SPACING_IDS, THEME_IDS } from '@/lib/contracts';
 import type { StyleId, StyleSpec } from './styles';
 
 /**
@@ -31,12 +30,38 @@ const VARIANTS: Partial<Record<SectionKey, readonly string[]>> = {
     footer: ['simple', 'columns'],
 };
 
+/**
+ * Theme, radius, spacing and imagery are not independent choices.
+ *
+ * Drawing them separately gave 3,600 combinations and no floor under any of them: a warm
+ * cream restaurant was one draw, and grey documentary photographs on tight slate was the
+ * next. Both were "varied". Only one was worth showing a customer.
+ *
+ * A mood is a set of four that were chosen to sit together. The draw picks a mood, so every
+ * result is one somebody stands behind, and variety comes from which mood, which motion and
+ * which section layouts -- not from hoping four independent rolls happen to agree.
+ */
+interface Mood {
+    themeId: ArtDirection['themeId'];
+    radiusId: ArtDirection['radiusId'];
+    spacingId: ArtDirection['spacingId'];
+    imageryId: ArtDirection['imageryId'];
+}
+
+const MOODS = {
+    editorial: { themeId: 'warm-editorial', radiusId: 'soft', spacingId: 'airy', imageryId: 'warm-natural' },
+    sunlit: { themeId: 'sunlit-craft', radiusId: 'organic', spacingId: 'airy', imageryId: 'bright-clean' },
+    sage: { themeId: 'calm-sage', radiusId: 'organic', spacingId: 'airy', imageryId: 'warm-natural' },
+    clinic: { themeId: 'clinical-blue', radiusId: 'soft', spacingId: 'default', imageryId: 'bright-clean' },
+    press: { themeId: 'mono-precision', radiusId: 'sharp', spacingId: 'default', imageryId: 'documentary' },
+    luxe: { themeId: 'deep-luxury', radiusId: 'framed', spacingId: 'airy', imageryId: 'muted-duotone' },
+    slate: { themeId: 'tech-slate', radiusId: 'sharp', spacingId: 'tight', imageryId: 'bold-contrast' },
+    voltage: { themeId: 'vivid-energy', radiusId: 'pill', spacingId: 'tight', imageryId: 'bold-contrast' },
+} as const satisfies Record<string, Mood>;
+
 interface Palette {
-    themes: readonly ArtDirection['themeId'][];
+    moods: readonly Mood[];
     motions: readonly ArtDirection['motionId'][];
-    radii: readonly ArtDirection['radiusId'][];
-    spacings: readonly ArtDirection['spacingId'][];
-    imagery: readonly ArtDirection['imageryId'][];
     sections: Partial<Record<SectionKey, readonly string[]>>;
 }
 
@@ -50,11 +75,8 @@ interface Palette {
  */
 const PALETTES: Record<StyleId, Palette> = {
     casual: {
-        themes: ['sunlit-craft', 'warm-editorial', 'calm-sage', 'clinical-blue', 'mono-precision'],
+        moods: [MOODS.sunlit, MOODS.editorial, MOODS.sage, MOODS.clinic, MOODS.press],
         motions: ['none', 'whisper'],
-        radii: ['soft', 'organic', 'framed'],
-        spacings: ['default', 'airy'],
-        imagery: ['bright-clean', 'warm-natural', 'documentary'],
         sections: {
             hero: ['split-image', 'centred', 'minimal'],
             about: ['text', 'media-split'],
@@ -66,11 +88,11 @@ const PALETTES: Record<StyleId, Palette> = {
         },
     },
     photos: {
-        themes: THEME_IDS,
+        moods: [
+            MOODS.editorial, MOODS.sunlit, MOODS.sage, MOODS.clinic,
+            MOODS.press, MOODS.luxe, MOODS.slate, MOODS.voltage,
+        ],
         motions: ['whisper', 'calm', 'editorial', 'showcase'],
-        radii: RADIUS_IDS,
-        spacings: SPACING_IDS,
-        imagery: IMAGERY_IDS,
         sections: {
             hero: ['image-bg', 'split-image', 'centred'],
             about: ['media-split', 'text'],
@@ -85,11 +107,8 @@ const PALETTES: Record<StyleId, Palette> = {
         },
     },
     motion: {
-        themes: ['vivid-energy', 'deep-luxury', 'tech-slate', 'mono-precision', 'clinical-blue'],
+        moods: [MOODS.voltage, MOODS.luxe, MOODS.slate, MOODS.press, MOODS.editorial],
         motions: ['kinetic', 'showcase', 'editorial'],
-        radii: ['pill', 'sharp', 'organic'],
-        spacings: ['tight', 'default'],
-        imagery: ['bold-contrast', 'muted-duotone', 'documentary'],
         sections: {
             hero: ['centred', 'image-bg', 'minimal'],
             about: ['text', 'media-split'],
@@ -114,7 +133,14 @@ function hash(seed: string): number {
         h ^= seed.charCodeAt(i);
         h = Math.imul(h, 0x01000193) >>> 0;
     }
-    return h;
+
+    h ^= h >>> 16;
+    h = Math.imul(h, 0x7feb352d) >>> 0;
+    h ^= h >>> 15;
+    h = Math.imul(h, 0x846ca68b) >>> 0;
+    h ^= h >>> 16;
+
+    return h >>> 0;
 }
 
 /**
@@ -133,13 +159,14 @@ export function artSeed(parts: { title?: string; vertical?: string; jobId?: stri
 
 export function variedArtDirection(styleId: StyleId, seed: string): ArtDirection {
     const palette = PALETTES[styleId];
+    const mood = pick(palette.moods, seed, 'mood');
 
     return {
-        themeId: pick(palette.themes, seed, 'theme'),
+        themeId: mood.themeId,
         motionId: pick(palette.motions, seed, 'motion'),
-        radiusId: pick(palette.radii, seed, 'radius'),
-        spacingId: pick(palette.spacings, seed, 'spacing'),
-        imageryId: pick(palette.imagery, seed, 'imagery'),
+        radiusId: mood.radiusId,
+        spacingId: mood.spacingId,
+        imageryId: mood.imageryId,
     };
 }
 
@@ -177,7 +204,7 @@ export function variedSpec(spec: StyleSpec, seed: string): StyleSpec {
 /** How many distinct sites a tier can produce, for the claim on the pricing page. */
 export function paletteSize(styleId: StyleId): number {
     const p = PALETTES[styleId];
-    const art = p.themes.length * p.motions.length * p.radii.length * p.spacings.length * p.imagery.length;
+    const art = p.moods.length * p.motions.length;
     const layout = Object.entries(p.sections).reduce((total, [section, pool]) => {
         const known = VARIANTS[section as SectionKey];
         const usable = known ? pool.filter((v) => known.includes(v)).length : 0;
