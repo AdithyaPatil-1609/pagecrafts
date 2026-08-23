@@ -129,6 +129,7 @@ interface EditorState {
     historyError: string | null;
     restoringSha: string | null;
     setGenerationNotice: (text: string | null) => void;
+    setProjectName: (name: string) => void;
     loadProject: (projectId: string) => Promise<void>;
     openFile: (path: string) => void;
     writeActive: (content: string) => void;
@@ -230,6 +231,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     restoringSha: null,
 
     setGenerationNotice: (text) => set({ generationNotice: text }),
+
+    setProjectName: (name) => set({ projectName: name }),
 
     loadProject: async (projectId) => {
         autosave.cancel();
