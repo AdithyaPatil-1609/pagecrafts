@@ -45,7 +45,7 @@ const LOOKS = [
     },
 ] as const;
 
-/** One public price story: Starter / Pro / Premium plans. AI rebuilds live under /packages. */
+/** One public price story: Starter / Pro / Premium plans. */
 export function PricingGuide({ signedIn = false }: { signedIn?: boolean }) {
     return (
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-10">
@@ -108,10 +108,10 @@ export function PricingGuide({ signedIn = false }: { signedIn?: boolean }) {
                 <p className="text-sm text-muted-foreground">
                     Need more AI rebuilds on a site?{" "}
                     <Link
-                        href="/packages"
+                        href="/plans"
                         className="font-medium text-foreground underline-offset-4 hover:underline"
                     >
-                        Manage AI usage
+                        Upgrade your plan
                     </Link>
                     .
                 </p>

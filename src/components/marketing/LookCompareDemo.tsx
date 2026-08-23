@@ -58,7 +58,7 @@ export function LookCompareDemo() {
                     live AI.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                    <Link href="/pricing" className="underline-offset-4 hover:underline">
+                    <Link href="/plans" className="underline-offset-4 hover:underline">
                         See all pricing
                     </Link>
                 </p>
