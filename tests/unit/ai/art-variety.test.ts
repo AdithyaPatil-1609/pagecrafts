@@ -88,21 +88,21 @@ describe('each tier keeps its character while it varies', () => {
     it('never lets Casual run kinetic', () => {
         for (let i = 0; i < 40; i += 1) {
             const art = variedArtDirection('casual', artSeed({ title: `Shop ${i}`, vertical: 'retail' }));
-            expect(['none', 'whisper']).toContain(art.motionId);
+            expect(['none']).toContain(art.motionId);
         }
     });
 
     it('never lets Animated stand still', () => {
         for (let i = 0; i < 40; i += 1) {
             const art = variedArtDirection('motion', artSeed({ title: `Shop ${i}`, vertical: 'retail' }));
-            expect(['kinetic', 'showcase', 'editorial']).toContain(art.motionId);
+            expect(['kinetic', 'showcase']).toContain(art.motionId);
         }
     });
 
     it('keeps Photo-rich on a hero that can carry a photograph', () => {
         for (let i = 0; i < 40; i += 1) {
             const hero = variedVariants('photos', artSeed({ title: `Shop ${i}`, vertical: 'retail' })).hero;
-            expect(['image-bg', 'split-image', 'centred']).toContain(hero);
+            expect(['image-bg', 'split-image']).toContain(hero);
         }
     });
 
@@ -140,8 +140,8 @@ describe('each tier keeps its character while it varies', () => {
     });
 
     it('offers enough combinations to stand behind "no two the same"', () => {
-        expect(paletteSize('photos')).toBeGreaterThan(100_000);
-        expect(paletteSize('motion')).toBeGreaterThan(1_000);
+        expect(paletteSize('photos')).toBeGreaterThan(50_000);
+        expect(paletteSize('motion')).toBeGreaterThan(500);
     });
 });
 

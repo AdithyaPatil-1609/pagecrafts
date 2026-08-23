@@ -49,11 +49,14 @@ interface Mood {
 }
 
 const MOODS = {
+    paper: { themeId: 'mono-precision', radiusId: 'soft', spacingId: 'default', imageryId: 'bright-clean' },
+    note: { themeId: 'warm-editorial', radiusId: 'soft', spacingId: 'default', imageryId: 'bright-clean' },
+    ward: { themeId: 'clinical-blue', radiusId: 'soft', spacingId: 'default', imageryId: 'bright-clean' },
     editorial: { themeId: 'warm-editorial', radiusId: 'soft', spacingId: 'airy', imageryId: 'warm-natural' },
     sunlit: { themeId: 'sunlit-craft', radiusId: 'organic', spacingId: 'airy', imageryId: 'bright-clean' },
     sage: { themeId: 'calm-sage', radiusId: 'organic', spacingId: 'airy', imageryId: 'warm-natural' },
-    clinic: { themeId: 'clinical-blue', radiusId: 'soft', spacingId: 'default', imageryId: 'bright-clean' },
-    press: { themeId: 'mono-precision', radiusId: 'sharp', spacingId: 'default', imageryId: 'documentary' },
+    clinic: { themeId: 'clinical-blue', radiusId: 'framed', spacingId: 'airy', imageryId: 'bright-clean' },
+    press: { themeId: 'mono-precision', radiusId: 'sharp', spacingId: 'airy', imageryId: 'documentary' },
     luxe: { themeId: 'deep-luxury', radiusId: 'framed', spacingId: 'airy', imageryId: 'muted-duotone' },
     slate: { themeId: 'tech-slate', radiusId: 'sharp', spacingId: 'tight', imageryId: 'bold-contrast' },
     voltage: { themeId: 'vivid-energy', radiusId: 'pill', spacingId: 'tight', imageryId: 'bold-contrast' },
@@ -75,26 +78,23 @@ interface Palette {
  */
 const PALETTES: Record<StyleId, Palette> = {
     casual: {
-        moods: [MOODS.sunlit, MOODS.editorial, MOODS.sage, MOODS.clinic, MOODS.press],
-        motions: ['none', 'whisper'],
+        moods: [MOODS.paper, MOODS.note, MOODS.ward],
+        motions: ['none'],
         sections: {
-            hero: ['split-image', 'centred', 'minimal'],
-            about: ['text', 'media-split'],
-            services: ['cards', 'grid'],
-            menu: ['simple', 'grouped'],
+            hero: ['split-image', 'centred'],
+            about: ['text'],
+            services: ['grid'],
+            menu: ['simple'],
             testimonials: ['quotes'],
-            contact: ['simple', 'form'],
+            contact: ['simple'],
             footer: ['simple'],
         },
     },
     photos: {
-        moods: [
-            MOODS.editorial, MOODS.sunlit, MOODS.sage, MOODS.clinic,
-            MOODS.press, MOODS.luxe, MOODS.slate, MOODS.voltage,
-        ],
+        moods: [MOODS.editorial, MOODS.sunlit, MOODS.sage, MOODS.clinic, MOODS.press],
         motions: ['whisper', 'calm', 'editorial', 'showcase'],
         sections: {
-            hero: ['image-bg', 'split-image', 'centred'],
+            hero: ['image-bg', 'split-image'],
             about: ['media-split', 'text'],
             services: ['cards', 'grid', 'timeline'],
             menu: ['grouped', 'simple'],
@@ -107,10 +107,10 @@ const PALETTES: Record<StyleId, Palette> = {
         },
     },
     motion: {
-        moods: [MOODS.voltage, MOODS.luxe, MOODS.slate, MOODS.press, MOODS.editorial],
-        motions: ['kinetic', 'showcase', 'editorial'],
+        moods: [MOODS.luxe, MOODS.slate, MOODS.voltage],
+        motions: ['kinetic', 'showcase'],
         sections: {
-            hero: ['centred', 'image-bg', 'minimal'],
+            hero: ['image-bg', 'centred'],
             about: ['text', 'media-split'],
             services: ['timeline', 'cards', 'grid'],
             gallery: ['carousel', 'masonry'],
