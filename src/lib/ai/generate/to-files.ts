@@ -3,6 +3,7 @@ import { compositionShell } from '@/lib/render/page-shell';
 import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
 import { motionMotifMarkup, motionStageMarkup, motionTickerMarkup } from './motion-motif';
+import { interactionKit } from './interaction';
 import {
     pageHref,
     planSitePages,
@@ -798,7 +799,14 @@ function pageInner(
 }
 
 /** A generated site as the file tree persistence already stores. */
-export function compositionToFiles(composition: Composition, style?: StyleId): FileMap {
+export function compositionToFiles(
+    composition: Composition,
+    style?: StyleId,
+    seed = '',
+): FileMap {
+    // Premium only. interactionKit returns nothing for the other two looks, so a Free or Pro
+    // page ships byte-identical to before.
+    const interaction = style ? interactionKit(style, seed, composition.vertical) : [];
     const visible = composition.sections.filter((s) => s.visible);
     const pages = planSitePages(composition);
     const title = composition.meta.title || 'Home';
@@ -828,6 +836,7 @@ export function compositionToFiles(composition: Composition, style?: StyleId): F
             lang: composition.meta.lang,
             artDirection: composition.artDirection,
             body,
+            interaction,
         });
     }
 
