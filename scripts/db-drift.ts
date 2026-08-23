@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Has the shared database actually had the migrations run against it? (R3)
@@ -111,6 +113,65 @@ const PROBES: Probe[] = [
   ),
 ];
 
+const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
+
+function migrationsOnDisk(): string[] {
+  return readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith(".sql"))
+    .map((f) => f.slice(0, 14))
+    .sort();
+}
+
+/**
+ * The whole ledger, compared file-by-file. This is the check the probe list below cannot be:
+ * probes only find what somebody remembered to add, and every one of the four faults this
+ * script exists for was something nobody had added yet.
+ *
+ * Returns true when the database is behind, so main can say so twice — once here, and once
+ * at the end where a person is actually looking.
+ */
+async function reportLedger(db: SupabaseClient): Promise<boolean> {
+  const { data, error } = await db.rpc("applied_migration_versions");
+
+  if (error) {
+    console.log("\n  Migration ledger: could not read it.");
+    console.log(`    ${error.message}`);
+    console.log("    If that says the function does not exist, this database predates the");
+    console.log("    check itself, which means it is behind. Run: npx supabase@latest db push\n");
+    return true;
+  }
+
+  const applied = new Set((data as string[] | null) ?? []);
+  const onDisk = migrationsOnDisk();
+  const pending = onDisk.filter((v) => !applied.has(v));
+  const unknown = [...applied].filter((v) => !onDisk.includes(v)).sort();
+
+  if (pending.length === 0 && unknown.length === 0) {
+    console.log(`\n  Migration ledger: up to date — all ${onDisk.length} applied.`);
+    return false;
+  }
+
+  if (pending.length > 0) {
+    console.log(`\n  Migration ledger: ${pending.length} on disk that this database has never run.`);
+    for (const version of pending) {
+      const file = readdirSync(MIGRATIONS_DIR).find((f) => f.startsWith(version));
+      console.log(`    pending  ${file ?? version}`);
+    }
+    console.log("\n    Fix: npx supabase@latest db push");
+  }
+
+  // A version recorded remotely with no file is the shape that stopped `db push` dead for an
+  // hour: a migration renamed in the repo while the database kept the old name.
+  if (unknown.length > 0) {
+    console.log(`\n  Migration ledger: ${unknown.length} recorded here with no file in the repo.`);
+    for (const version of unknown) console.log(`    orphan   ${version}`);
+    console.log("\n    Someone renamed or deleted a migration that had already been applied.");
+    console.log("    Fix, per orphan: npx supabase@latest migration repair --status reverted <version>");
+  }
+
+  return pending.length > 0;
+}
+
 async function main() {
   if (!SUPABASE_URL || !ANON) {
     console.error("\n  NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set\n");
@@ -138,6 +199,9 @@ async function main() {
   }
 
   const host = new URL(SUPABASE_URL).host;
+
+  const ledgerBehind = await reportLedger(db);
+
   console.log(`\n  Checking ${host} ${as}, against ${PROBES.length} things the code expects.\n`);
 
   const missing: Probe[] = [];
@@ -168,6 +232,13 @@ async function main() {
   }
 
   if (missing.length === 0) {
+    if (ledgerBehind) {
+      console.log("\n  Every probe passed, but the ledger above says migrations are pending.");
+      console.log("  Trust the ledger: the probes only cover what somebody remembered to add.\n");
+      process.exitCode = 1;
+      return;
+    }
+
     console.log("\n  No drift. The shared database matches what the code expects.\n");
     return;
   }
