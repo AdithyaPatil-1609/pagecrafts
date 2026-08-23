@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BRIEF_LIMITS, briefErrors, emptyBrief } from '@/lib/ai/generate/brief';
+import { BRIEF_LIMITS, briefErrors, composeBrief, emptyBrief } from '@/lib/ai/generate/brief';
+import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
 
 // Somebody pasted a 4,500-character brief -- a real one, with sections, sample classes and
 // colour tokens -- into a field that takes 500. The textarea showed no limit, counted
@@ -31,6 +32,36 @@ describe('the brief limits match the schema that enforces them', () => {
             expect(found, `${field} is not capped in createProjectSchema`).toBeTruthy();
             expect(Number(found![1]), `${field} disagrees with the schema`).toBe(limit);
         }
+    });
+});
+
+describe('the composed prompt fits everywhere it is sent', () => {
+    // MAX_CLASSIFY_CHARS went from 500 to 2000 for the custom generation path. The generate
+    // route reads the constant and moved with it; createProjectSchema hardcoded 500 and did
+    // not. So composeBrief built a 537-character prompt, /generate would have taken it, and
+    // project creation refused it at the first step -- with nothing on screen naming the
+    // field, because the reason only ever reached the server log.
+    it('createProjectSchema caps prompt at the shared constant, not a literal', () => {
+        expect(SCHEMAS).toContain('prompt: z.string().max(MAX_CLASSIFY_CHARS)');
+        expect(SCHEMAS).not.toMatch(/prompt:\s*z\.string\(\)\.max\(\d+\)/);
+    });
+
+    // Every field can be at its own limit at once, and composeBrief adds connective words
+    // on top. If that total could exceed what the route takes, the form is a trap.
+    it('a brief with every field full still composes to something the route accepts', () => {
+        const full = {
+            ...emptyBrief(),
+            name: 'x'.repeat(BRIEF_LIMITS.name),
+            offer: 'y'.repeat(BRIEF_LIMITS.offer),
+            place: 'z'.repeat(BRIEF_LIMITS.place),
+            phone: '1'.repeat(BRIEF_LIMITS.phone),
+            hours: 'h'.repeat(BRIEF_LIMITS.hours),
+            extra: 'e'.repeat(BRIEF_LIMITS.extra),
+            tone: 'warm' as const,
+        };
+
+        expect(composeBrief(full).length).toBeLessThanOrEqual(MAX_CLASSIFY_CHARS);
+        expect(briefErrors(full)).toEqual([]);
     });
 });
 
