@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 
 const ORDER: AccountPlan[] = ["starter", "pro", "premium"];
 
+const CANCELLED_MESSAGE = "Payment cancelled. Your current plan has not changed.";
+
 function PlanCta({
     id,
     active,
@@ -113,7 +115,7 @@ export function PlansPanel({
             if (!plan) return;
             setMessage("Payment received. Unlocking…");
             void (async () => {
-                const ok = await waitForPlanGrant(plan);
+                const ok = await waitForPlanGrant(plan, { attempts: 6, delayMs: 400 });
                 setMessage(
                     ok
                         ? `${plan === "premium" ? "Premium" : "Pro"} is active — every matching design is unlocked.`
@@ -122,7 +124,10 @@ export function PlansPanel({
                 await refresh();
             })();
         },
-        onDismiss: () => setPending(null),
+        onDismiss: () => {
+            setPending(null);
+            setMessage(CANCELLED_MESSAGE);
+        },
         onError: (err) => {
             setPending(null);
             setMessage(err);
@@ -256,12 +261,25 @@ export function PlansPanel({
                     role="status"
                     className={cn(
                         "text-sm",
-                        error ? "text-destructive" : "text-muted-foreground",
+                        error || (message && message !== CANCELLED_MESSAGE && /couldn|failed|not set up|try again/i.test(message))
+                            ? "text-destructive"
+                            : "text-muted-foreground",
                     )}
                 >
                     {error ?? message}
                 </p>
             )}
+
+            {!billing.paymentsReady ? (
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                    Payments are not configured on this server yet. In production, set{" "}
+                    <code className="font-mono text-xs">RAZORPAY_KEY_ID</code> and{" "}
+                    <code className="font-mono text-xs">RAZORPAY_KEY_SECRET</code> in the Vercel
+                    Production environment (see{" "}
+                    <code className="font-mono text-xs">docs/production-payments-setup.md</code>
+                    ), then redeploy.
+                </p>
+            ) : null}
 
             <p className="text-sm text-muted-foreground">
                 AI rebuild limits follow your plan — Starter gets {FREE_GENERATIONS_PER_PROJECT}{" "}
