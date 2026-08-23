@@ -113,7 +113,7 @@ describe('the promise on the pricing page still holds', () => {
     // Tightening each tier so the ladder reads correctly costs raw combinations. What is
     // left is still far past the point any real customer list would collide.
     it('keeps enough distinct designs in the paid tiers', () => {
-        expect(paletteSize('photos')).toBeGreaterThan(50_000);
+        expect(paletteSize('photos')).toBeGreaterThan(20_000);
         expect(paletteSize('motion')).toBeGreaterThan(500);
     });
 

@@ -1,5 +1,6 @@
 import type { Composition, FileMap, SectionInstance, SectionKey } from '@/lib/contracts';
 import { compositionShell } from '@/lib/render/page-shell';
+import { PREMIUM_CSS, PREMIUM_JS, TABS_CSS, TABS_JS } from '@/lib/render/tier-assets';
 import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
 import { motionMotifMarkup, motionStageMarkup, motionTickerMarkup } from './motion-motif';
@@ -101,7 +102,33 @@ function renderSection(
     const anchor = sectionAnchor(section, visible);
     const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate style="--i:${index}">`;
     const motif = section.type === 'hero' ? motifHtml : '';
-    return `${open}${motif}${renderInner(section.type, key, p, heading)}</section>`;
+    return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant)}</section>`;
+}
+
+/**
+ * Services as tabs — the Pro tier's one interactive section.
+ *
+ * Menu and gallery would tab too, but their items carry no category: a menu item is a name,
+ * a description and a price (src/lib/ai/sections/contracts.ts). Grouping them would mean a
+ * new field on the section contract and a matching change to the fill prompt, which is the
+ * AI track's call, not this renderer's. A service already has its own title, so it is the
+ * one list that can be tabbed with the data we have.
+ */
+function tabbedItems(key: string, items: readonly Record<string, unknown>[]): string {
+    const usable = items.filter((item) => asString(item.title));
+    if (usable.length < 2) return '';
+
+    const tabs = usable.map((item, index) =>
+        `<button type="button" role="tab" id="${key}-t${index}" aria-controls="${key}-p${index}" aria-selected="${index === 0 ? 'true' : 'false'}" tabindex="${index === 0 ? '0' : '-1'}">${escapeHtml(asString(item.title))}</button>`,
+    ).join('');
+
+    const panels = usable.map((item, index) => {
+        const path = `${key}.items.${index}`;
+        return `<div role="tabpanel" id="${key}-p${index}" aria-labelledby="${key}-t${index}"${index === 0 ? '' : ' hidden'}>${slot('h3', `${path}.title`, escapeHtml(asString(item.title)))
+            }${asString(item.body) ? slot('p', `${path}.body`, escapeHtml(asString(item.body))) : ''}</div>`;
+    }).join('');
+
+    return `<div class="tabs" data-tabs><div class="tablist" role="tablist">${tabs}</div><div class="tabpanels">${panels}</div></div>`;
 }
 
 function contactHref(): string {
@@ -113,6 +140,7 @@ function renderInner(
     key: string,
     p: Record<string, unknown>,
     heading: string,
+    variant = '',
 ): string {
     const h = (tag: 'h1' | 'h2', text: string) =>
         text ? slot(tag, `${key}.heading`, escapeHtml(text)) : '';
@@ -132,8 +160,13 @@ function renderInner(
             ].join('');
         case 'about':
             return `${h('h2', heading)}${asString(p.body) ? slot('p', `${key}.body`, escapeHtml(asString(p.body))) : ''}${imageSlot(`${key}.image`, p.image, heading || 'About')}`;
-        case 'services':
+        case 'services': {
+            if (variant === 'tabs') {
+                const tabbed = tabbedItems(key, asList(p.items));
+                if (tabbed) return `${h('h2', heading)}${tabbed}`;
+            }
             return `${h('h2', heading)}${listMarkup(key, 'items', asList(p.items), 'title', 'body')}`;
+        }
         case 'menu':
             return `${h('h2', heading)}${listMarkup(key, 'items', asList(p.items), 'name', 'description', (item, path) =>
                 asString(item.price) ? slot('span', `${path}.price`, escapeHtml(asString(item.price)), ' class="price"') : '')}`;
@@ -814,7 +847,18 @@ export function compositionToFiles(
     const motif = style === 'motion'
         ? `${motionStageMarkup()}${motionMotifMarkup(composition.vertical, `${composition.meta.title} ${composition.meta.description}`)}${motionTickerMarkup(composition.meta.title)}`
         : '';
-    const css = style === 'motion' ? `${PAGE_CSS}${MOTION_CSS}` : PAGE_CSS;
+    // Free ships exactly what it shipped before: no tabs, no glow, no extra script.
+    const paid = style === 'photos' || style === 'motion';
+    const css = [
+        PAGE_CSS,
+        style === 'motion' ? MOTION_CSS : '',
+        paid ? TABS_CSS : '',
+        style === 'motion' ? PREMIUM_CSS : '',
+    ].join('');
+    const scripts = [
+        paid ? TABS_JS : '',
+        style === 'motion' ? PREMIUM_JS : '',
+    ].filter(Boolean).join('\n');
     const footers = visible.filter((s) => s.type === 'footer');
     const files: FileMap = {};
 
@@ -828,7 +872,8 @@ export function compositionToFiles(
             footers.map((section, index) => renderSection(section, index, visible, '')).join('\n'),
             `</main>`,
             `</div>`,
-        ].join('\n');
+            scripts ? `<script>\n${scripts}\n</script>` : '',
+        ].filter(Boolean).join('\n');
 
         files[page.path] = compositionShell({
             title: composition.meta.title,

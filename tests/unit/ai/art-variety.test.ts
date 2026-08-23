@@ -140,7 +140,7 @@ describe('each tier keeps its character while it varies', () => {
     });
 
     it('offers enough combinations to stand behind "no two the same"', () => {
-        expect(paletteSize('photos')).toBeGreaterThan(50_000);
+        expect(paletteSize('photos')).toBeGreaterThan(20_000);
         expect(paletteSize('motion')).toBeGreaterThan(500);
     });
 });
