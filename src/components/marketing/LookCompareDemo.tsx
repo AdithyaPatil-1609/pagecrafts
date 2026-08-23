@@ -6,12 +6,14 @@ import { Check, Lock } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { CardIndex } from "@/components/ui/card-index";
+import type { AccountPlan } from "@/lib/contracts";
 import {
     COMPARE_LOOKS,
     DEMO_BRAND,
     lookTierPreviewHtml,
     type CompareLookId,
 } from "@/lib/demos/look-tiers";
+import { planCovers } from "@/lib/payments/plans";
 import { cn } from "@/lib/utils";
 
 const TIER_BADGE: Record<CompareLookId, string> = {
@@ -20,13 +22,27 @@ const TIER_BADGE: Record<CompareLookId, string> = {
     premium: "brand-gradient text-primary-foreground",
 };
 
-const TIER_BADGE_LABEL: Record<CompareLookId, string> = {
-    starter: "Free",
-    pro: "Pro",
-    premium: "Premium",
+const REQUIRED_PLAN: Record<CompareLookId, "pro" | "premium" | null> = {
+    starter: null,
+    pro: "pro",
+    premium: "premium",
 };
 
-export function LookCompareDemo() {
+function lookUnlocked(plan: AccountPlan, id: CompareLookId): boolean {
+    const need = REQUIRED_PLAN[id];
+    if (!need) return true;
+    return planCovers(plan, need);
+}
+
+function tileLabel(plan: AccountPlan, id: CompareLookId): string {
+    return lookUnlocked(plan, id) ? "Free" : id === "pro" ? "Pro" : "Premium";
+}
+
+function footerPrice(plan: AccountPlan, id: CompareLookId, priceInr: number): string {
+    return lookUnlocked(plan, id) ? "Free" : priceInr === 0 ? "Free" : `Rs ${priceInr}`;
+}
+
+export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
     const [look, setLook] = useState<CompareLookId>("starter");
     const active = COMPARE_LOOKS.find((item) => item.id === look) ?? COMPARE_LOOKS[0];
     const previews = useMemo(
@@ -52,10 +68,11 @@ export function LookCompareDemo() {
                     Pick a <span className="hero-mix">look</span> — side by side
                 </h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground">
-                    Same restaurant, three looks. Casual comes with Starter. Photo-rich unlocks
-                    with Pro (Rs {COMPARE_LOOKS[1].priceInr}) — every Pro design too. Animated
-                    unlocks with Premium (Rs {COMPARE_LOOKS[2].priceInr}). Fixed preview, not
-                    live AI.
+                    {plan === "premium"
+                        ? "Same restaurant, three looks. Premium is active — every look and Pro design is Free."
+                        : plan === "pro"
+                          ? "Same restaurant, three looks. Pro is active — Casual and Photo-rich are Free, plus every Pro template. Animated unlocks with Premium."
+                          : "Same restaurant, three looks. Casual comes with Starter. Photo-rich unlocks with Pro (Rs 499) — every Pro design too. Animated unlocks with Premium (Rs 999). Fixed preview, not live AI."}
                 </p>
                 <p className="text-sm text-muted-foreground">
                     <Link href="/plans" className="underline-offset-4 hover:underline">
@@ -67,7 +84,9 @@ export function LookCompareDemo() {
             <ul className="look-chunk-grid grid grid-cols-1 gap-5 lg:grid-cols-3">
                 {COMPARE_LOOKS.map((item, i) => {
                     const on = item.id === look;
-                    const paid = item.priceInr > 0;
+                    const unlocked = lookUnlocked(plan, item.id);
+                    const paid = !unlocked;
+                    const label = tileLabel(plan, item.id);
                     return (
                         <li
                             key={item.id}
@@ -107,13 +126,15 @@ export function LookCompareDemo() {
                                     <span
                                         className={cn(
                                             "absolute right-2 top-2 z-[2] inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold shadow-sm",
-                                            TIER_BADGE[item.id],
+                                            unlocked && item.id !== "starter"
+                                                ? TIER_BADGE.starter
+                                                : TIER_BADGE[item.id],
                                         )}
                                     >
                                         {paid ? (
                                             <Lock className="size-3" strokeWidth={2} aria-hidden />
                                         ) : null}
-                                        {TIER_BADGE_LABEL[item.id]}
+                                        {label}
                                     </span>
                                 </div>
                                 <div className="relative z-[1] flex flex-1 flex-col gap-2 p-4">
@@ -129,7 +150,7 @@ export function LookCompareDemo() {
                                             paid ? "text-gold" : "text-foreground",
                                         )}
                                     >
-                                        {item.priceInr === 0 ? "Free" : `Rs ${item.priceInr}`}
+                                        {footerPrice(plan, item.id, item.priceInr)}
                                     </p>
                                 </div>
                             </button>
@@ -217,7 +238,7 @@ export function LookCompareDemo() {
                             <td className="px-4 py-3 text-muted-foreground">Price</td>
                             {COMPARE_LOOKS.map((item) => (
                                 <td key={item.id} className="px-4 py-3">
-                                    {item.priceInr === 0 ? "Rs 0" : `Rs ${item.priceInr}`}
+                                    {footerPrice(plan, item.id, item.priceInr)}
                                 </td>
                             ))}
                         </tr>

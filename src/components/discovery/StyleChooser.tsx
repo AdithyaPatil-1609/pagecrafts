@@ -17,7 +17,7 @@ import { AiCreditsNotice } from "@/components/discovery/AiCreditsNotice";
 import { AskAiFixDialog } from "@/components/editor/AskAiFixDialog";
 import { NeedUpiDialog } from "@/components/editor/NeedUpiDialog";
 import { explainCreationIssue } from "@/lib/editor/ai-fix";
-import { styleBadge } from "@/lib/payments/pricing";
+import { styleBadge, styleTileLabel } from "@/lib/payments/pricing";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
 import { isOutOfAiCredits } from "@/lib/ai/jobs/credits";
 
@@ -65,17 +65,16 @@ interface GenerateJobResponse {
     job_id: string;
 }
 
-const TIER_LABEL: Record<StyleTier, string> = {
-    free: "Free",
-    pro: "Pro",
-    premium: "Premium",
-};
-
 const TIER_BADGE: Record<StyleTier, string> = {
     free: "border border-border bg-background text-foreground",
     pro: "bg-primary text-primary-foreground",
     premium: "brand-gradient text-primary-foreground",
 };
+
+function badgeClass(tier: StyleTier, unlocked: boolean): string {
+    if (unlocked && tier !== "free") return TIER_BADGE.free;
+    return TIER_BADGE[tier];
+}
 
 function canGenerateAgain(quota: Quota | null): boolean {
     if (!quota) return true;
@@ -103,6 +102,7 @@ export function StyleChooser({
     const [error, setError] = useState<string | null>(null);
     const [outOfCredits, setOutOfCredits] = useState(false);
     const [unlockedStyles, setUnlockedStyles] = useState<string[]>([]);
+    const [accountPlan, setAccountPlan] = useState<AccountPlan>("starter");
     const [askOpen, setAskOpen] = useState(false);
     const upi = useUpiPrompt({
         projectId,
@@ -115,7 +115,10 @@ export function StyleChooser({
     useEffect(() => {
         let cancelled = false;
         void apiGet<BillingSummary>("/api/v1/account/billing").then(({ data }) => {
-            if (!cancelled && data) setUnlockedStyles(data.unlockedStyleIds);
+            if (!cancelled && data) {
+                setUnlockedStyles(data.unlockedStyleIds);
+                setAccountPlan(data.plan);
+            }
         });
         return () => {
             cancelled = true;
@@ -336,9 +339,11 @@ export function StyleChooser({
                     Pick a <span className="hero-mix">look</span>
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
-                    Same business, three different sites. Casual is Free. Photo-rich is Pro
-                    (Rs 499). Animated is Premium (Rs 999) — Razorpay opens when you pick a paid
-                    look.
+                    {accountPlan === "premium"
+                        ? "Same business, three different sites. Premium is active — every look is Free."
+                        : accountPlan === "pro"
+                          ? "Same business, three different sites. Pro is active — Casual and Photo-rich are Free. Animated needs Premium."
+                          : "Same business, three different sites. Casual is Free. Photo-rich is Pro (Rs 499). Animated is Premium (Rs 999) — upgrade on User Plans to unlock paid looks."}
                 </p>
             </header>
 
@@ -369,8 +374,10 @@ export function StyleChooser({
                     )}
                     <ul className="look-chunk-grid grid grid-cols-1 gap-5 lg:grid-cols-3">
                         {attempt.variants.map((option, i) => {
-                            const locked = !lookUnlocked(option.tier, option.id);
+                            const unlocked = lookUnlocked(option.tier, option.id);
+                            const locked = !unlocked;
                             const badge = styleBadge(option.tier);
+                            const tileLabel = styleTileLabel(option.tier, { unlocked });
                             return (
                             <li
                                 key={`${attempt.job_id}-${option.id}`}
@@ -399,13 +406,13 @@ export function StyleChooser({
                                         <span
                                             className={cn(
                                                 "absolute right-2 top-2 z-[2] inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold shadow-sm",
-                                                TIER_BADGE[option.tier],
+                                                badgeClass(option.tier, unlocked),
                                             )}
                                         >
                                             {locked ? (
                                                 <Lock className="size-3" strokeWidth={2} aria-hidden />
                                             ) : null}
-                                            {badge ?? TIER_LABEL[option.tier]}
+                                            {tileLabel}
                                         </span>
                                     </div>
                                     <div className="relative z-[1] flex flex-1 flex-col gap-3 p-4">
