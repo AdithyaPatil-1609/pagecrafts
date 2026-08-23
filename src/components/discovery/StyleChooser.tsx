@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Lock, RefreshCw } from "lucide-react";
 
 import { apiGet, apiPost } from "@/lib/api/client";
@@ -14,12 +13,13 @@ import { GeneratingOverlay } from "@/components/editor/GeneratingOverlay";
 import { cn } from "@/lib/utils";
 import { useUpiPrompt } from "@/hooks/useUpiPrompt";
 import { LockedPlanNotice } from "@/components/discovery/LockedPlanNotice";
+import { AiCreditsNotice } from "@/components/discovery/AiCreditsNotice";
 import { AskAiFixDialog } from "@/components/editor/AskAiFixDialog";
 import { NeedUpiDialog } from "@/components/editor/NeedUpiDialog";
 import { explainCreationIssue } from "@/lib/editor/ai-fix";
 import { styleBadge } from "@/lib/payments/pricing";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
-import { ACCOUNT_PLAN_LABEL } from "@/lib/contracts";
+import { isOutOfAiCredits } from "@/lib/ai/jobs/credits";
 
 interface VariantCard {
     id: StyleId;
@@ -101,6 +101,7 @@ export function StyleChooser({
     const [picking, setPicking] = useState<{ jobId: string; variantId: StyleId } | null>(null);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [outOfCredits, setOutOfCredits] = useState(false);
     const [unlockedStyles, setUnlockedStyles] = useState<string[]>([]);
     const [askOpen, setAskOpen] = useState(false);
     const upi = useUpiPrompt({
@@ -226,9 +227,15 @@ export function StyleChooser({
 
     async function generateAgain(nextPrompt?: string) {
         const text = (nextPrompt ?? prompt).trim();
-        if (!text || regenerating || !canGenerateAgain(quota)) return;
+        if (!text || regenerating) return;
+        if (!canGenerateAgain(quota)) {
+            setOutOfCredits(true);
+            setError(null);
+            return;
+        }
         setRegenerating(true);
         setError(null);
+        setOutOfCredits(false);
         if (nextPrompt) setPrompt(text);
 
         const started = await apiPost<GenerateJobResponse>(
@@ -237,15 +244,12 @@ export function StyleChooser({
         );
 
         if (started.error || !started.data) {
-            const upgrade = /Advanced|generation pass|free generations|AI generations/i.test(
-                started.error ?? "",
-            );
-            setError(
-                upgrade
-                    ? started.error ??
-                          "You have used your AI generations. Open Packages to unlock more."
-                    : (started.error ?? "The site could not be generated."),
-            );
+            if (isOutOfAiCredits(started.code, started.error)) {
+                setOutOfCredits(true);
+                setError(null);
+            } else {
+                setError(started.error ?? "The site could not be generated.");
+            }
             setRegenerating(false);
             return;
         }
@@ -277,6 +281,7 @@ export function StyleChooser({
             : [];
     const remaining = quota?.remaining ?? 0;
     const retryAllowed = canGenerateAgain(quota) && Boolean(prompt) && !live && !regenerating;
+    const creditsSpent = outOfCredits || Boolean(quota && !canGenerateAgain(quota));
     const overlay = holdingLive && progress;
 
     return (
@@ -302,10 +307,15 @@ export function StyleChooser({
                             html: look.html,
                         }))}
                         prompt={progress.prompt ?? prompt}
-                        error={error ?? progress.error}
+                        error={
+                            outOfCredits
+                                ? "You have used your AI generations on this site."
+                                : (error ?? progress.error)
+                        }
                         onAskAiFix={(instruction) => {
                             void generateAgain(instruction);
                         }}
+                        showCreditsNotice={creditsSpent}
                     />
                 </div>
             ) : null}
@@ -332,7 +342,7 @@ export function StyleChooser({
                 </p>
             </header>
 
-            {fix ? (
+            {fix && !creditsSpent ? (
                 <div className="mx-auto max-w-lg rounded-2xl border border-border/70 bg-card/80 p-4 text-center">
                     <p className="text-sm font-medium text-foreground">{fix.title}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{fix.what}</p>
@@ -344,6 +354,10 @@ export function StyleChooser({
                         Fix with AI
                     </button>
                 </div>
+            ) : null}
+
+            {creditsSpent ? (
+                <AiCreditsNotice className="mx-auto max-w-lg" />
             ) : null}
 
             {lookSets.map((attempt) => (
@@ -454,20 +468,8 @@ export function StyleChooser({
                                 {regenerating ? "Starting another look…" : "Generate another look"}
                             </Button>
                         </>
-                    ) : quota && !canGenerateAgain(quota) ? (
-                        <div className="flex max-w-lg flex-col items-center gap-3">
-                            <p className="text-sm text-muted-foreground">
-                                You have used your {quota.limit}{" "}
-                                {ACCOUNT_PLAN_LABEL[quota.plan ?? "starter"]} AI generations
-                                on this site. Pick a look above, or upgrade your plan for more.
-                            </p>
-                            <Link
-                                href="/plans"
-                                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                            >
-                                Upgrade plan
-                            </Link>
-                        </div>
+                    ) : creditsSpent ? (
+                        <AiCreditsNotice className="max-w-lg" />
                     ) : null}
                 </footer>
             )}

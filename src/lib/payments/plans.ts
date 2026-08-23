@@ -21,10 +21,10 @@ export const PLAN_COPY: Record<
     name: ACCOUNT_PLAN_LABEL.starter,
     price: "Free",
     description:
-      "Free Starter templates, the Casual look, and a limited number of AI rebuilds per site.",
+      "The default plan. Free Starter templates, the Casual look, and a limited number of AI rebuilds per site.",
     points: [
+      "Build and edit sites with AI",
       "All Starter catalogue designs",
-      "Casual look on AI-generated sites",
       `${FREE_GENERATIONS_PER_PROJECT} AI generations per site`,
       "Publish free designs at no charge",
     ],
@@ -33,12 +33,12 @@ export const PLAN_COPY: Record<
     name: ACCOUNT_PLAN_LABEL.pro,
     price: `Rs ${PRO_PRICE_INR}`,
     description:
-      "Unlock every Pro template and the Photo-rich look, with ten times the Starter AI allowance.",
+      "One payment through Razorpay. Unlocks every Pro template, the Photo-rich look, and five times the Starter AI allowance.",
     points: [
       "Everything in Starter",
       "All templates marked Pro",
       "Photo-rich look on AI sites",
-      `${PRO_GENERATIONS_PER_PROJECT} AI generations per site (10× Starter)`,
+      `${PRO_GENERATIONS_PER_PROJECT} AI generations per site (5× Starter)`,
       "Edit live sites after the free window",
     ],
   },
@@ -46,12 +46,12 @@ export const PLAN_COPY: Record<
     name: ACCOUNT_PLAN_LABEL.premium,
     price: `Rs ${PREMIUM_PRICE_INR}`,
     description:
-      "Unlock every template and the Animated look, with twenty-five times the Starter AI allowance.",
+      "The top account unlock. One payment, no auto-renew — stays until you change plan.",
     points: [
       "Everything in Pro",
       "All templates — Premium and Pro",
       "Animated look on AI sites",
-      `${PREMIUM_GENERATIONS_PER_PROJECT} AI generations per site (25× Starter)`,
+      `${PREMIUM_GENERATIONS_PER_PROJECT} AI generations per site (15× Starter)`,
     ],
   },
 };
