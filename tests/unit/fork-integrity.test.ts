@@ -182,7 +182,7 @@ describe("a design that lists a price", () => {
             }),
         ).rejects.toMatchObject({
             code: "payment_required",
-            message: expect.stringMatching(/paid/i),
+            message: expect.stringMatching(/pro|premium|paid/i),
         });
 
         expect(db.rows("projects")).toHaveLength(0);

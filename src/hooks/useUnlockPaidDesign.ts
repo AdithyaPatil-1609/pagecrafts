@@ -1,9 +1,17 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, type ReactNode } from "react";
 
 import { useRazorpayCheckout, type CheckoutStatus } from "@/hooks/useRazorpayCheckout";
-import { waitForStyleGrant, waitForTemplateGrant } from "@/lib/payments/wait-for-pro";
+import {
+    waitForPlanGrant,
+    waitForStyleGrant,
+    waitForTemplateGrant,
+} from "@/lib/payments/wait-for-pro";
+import type { PaidPlan } from "@/lib/payments/pricing";
+import { requiredPlanForStyle, requiredPlanForTemplate } from "@/lib/payments/pricing";
+import { TEMPLATES } from "@/lib/templates";
+import { templateUuid } from "@/lib/templates/template-id";
 
 type Pending = {
     resolve: (ok: boolean) => void;
@@ -11,18 +19,31 @@ type Pending = {
 };
 
 type Target =
-    | { type: "template"; id: string }
-    | { type: "style"; id: string };
+    | { type: "plan"; plan: PaidPlan; templateId?: string; styleId?: string };
+
+function planForTemplateId(templateId: string): PaidPlan {
+    const match =
+        TEMPLATES.find((t) => t.id === templateId)
+        ?? TEMPLATES.find((t) => templateUuid(t.id) === templateId);
+    return requiredPlanForTemplate(match?.tier) ?? "pro";
+}
+
+function planForStyleId(styleId: string): PaidPlan {
+    if (styleId === "motion") return requiredPlanForStyle("premium") ?? "premium";
+    return requiredPlanForStyle("pro") ?? "pro";
+}
 
 /**
- * Open Razorpay for this design or look, then wait until the signed webhook has
- * actually granted it. The browser reporting success is not a grant.
+ * Upgrade to Pro or Premium (plan unlocks the whole tier). Waits until the
+ * signed webhook has granted the plan — browser success is not enough.
  */
 export function useUnlockPaidDesign(): {
     unlockTemplate: (templateId: string) => Promise<boolean>;
     unlockStyle: (styleId: string) => Promise<boolean>;
+    unlockPlan: (plan: PaidPlan) => Promise<boolean>;
     status: CheckoutStatus;
     error: string | null;
+    confirmDialog: ReactNode;
 } {
     const pendingRef = useRef<Pending | null>(null);
     const pendingTargetRef = useRef<Target | null>(null);
@@ -35,7 +56,7 @@ export function useUnlockPaidDesign(): {
         else pending.resolve(ok);
     };
 
-    const { openTemplateCheckout, openStyleCheckout, status, error } = useRazorpayCheckout({
+    const { openPlanCheckout, status, error, confirmDialog } = useRazorpayCheckout({
         onAlreadyGranted: () => settle(true),
         onSuccess: () => {
             const target = pendingTargetRef.current;
@@ -43,11 +64,21 @@ export function useUnlockPaidDesign(): {
                 settle(true);
                 return;
             }
-            const wait =
-                target.type === "style"
-                    ? waitForStyleGrant(target.id)
-                    : waitForTemplateGrant(target.id);
-            void wait.then((ok) => settle(ok));
+            void waitForPlanGrant(target.plan).then(async (planOk) => {
+                if (!planOk) {
+                    settle(false);
+                    return;
+                }
+                if (target.templateId) {
+                    settle(await waitForTemplateGrant(target.templateId, { attempts: 4, delayMs: 400 }));
+                    return;
+                }
+                if (target.styleId) {
+                    settle(await waitForStyleGrant(target.styleId, { attempts: 4, delayMs: 400 }));
+                    return;
+                }
+                settle(true);
+            });
         },
         onDismiss: () => settle(false),
         onError: (message) => settle(false, new Error(message)),
@@ -65,16 +96,27 @@ export function useUnlockPaidDesign(): {
         [],
     );
 
+    const unlockPlan = useCallback(
+        (plan: PaidPlan) =>
+            run({ type: "plan", plan }, () => openPlanCheckout(plan)),
+        [openPlanCheckout, run],
+    );
+
     const unlockTemplate = useCallback(
-        (templateId: string) =>
-            run({ type: "template", id: templateId }, () => openTemplateCheckout(templateId)),
-        [openTemplateCheckout, run],
+        (templateId: string) => {
+            const plan = planForTemplateId(templateId);
+            return run({ type: "plan", plan, templateId }, () => openPlanCheckout(plan));
+        },
+        [openPlanCheckout, run],
     );
 
     const unlockStyle = useCallback(
-        (styleId: string) => run({ type: "style", id: styleId }, () => openStyleCheckout(styleId)),
-        [openStyleCheckout, run],
+        (styleId: string) => {
+            const plan = planForStyleId(styleId);
+            return run({ type: "plan", plan, styleId }, () => openPlanCheckout(plan));
+        },
+        [openPlanCheckout, run],
     );
 
-    return { unlockTemplate, unlockStyle, status, error };
+    return { unlockTemplate, unlockStyle, unlockPlan, status, error, confirmDialog };
 }

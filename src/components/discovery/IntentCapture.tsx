@@ -8,7 +8,6 @@ import type { Category, CreateProjectResponse } from "@/lib/contracts";
 // Template chosen is a visual reference for generation.
 import { INTENT_CARDS } from "@/lib/discovery/intent-cards";
 import { apiPost } from "@/lib/api/client";
-import { useUnlockPaidDesign } from "@/hooks/useUnlockPaidDesign";
 import type { PaidPlan } from "@/lib/payments/pricing";
 import {
     briefErrors,
@@ -20,6 +19,7 @@ import {
 } from "@/lib/ai/generate/brief";
 import { Button } from "@/components/ui/button";
 import { BriefFields } from "@/components/discovery/BriefFields";
+import { LockedPlanNotice } from "@/components/discovery/LockedPlanNotice";
 import { cn } from "@/lib/utils";
 
 const PENDING_PROMPT_KEY = "pagecrafts:pending-generate";
@@ -61,7 +61,6 @@ export function IntentCapture({
     paidPlan?: PaidPlan | null;
 } = {}) {
     const router = useRouter();
-    const { unlockTemplate, status: payStatus } = useUnlockPaidDesign();
     const [brief, setBrief] = useState<SiteBrief>(() => briefFromQuery(initialDescribe));
     const [busy, setBusy] = useState<"generate" | Category | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -100,40 +99,25 @@ export function IntentCapture({
         setError(null);
 
         try {
-            if (paidPlan && sourceTemplateId) {
-                const unlocked = await unlockTemplate(sourceTemplateId);
-                if (!unlocked) {
-                    setError("This design is paid. Pay with Razorpay to unlock it.");
-                    setBusy(null);
-                    return;
-                }
+            if (paidPlan) {
+                setError(null);
+                setBusy(null);
+                router.push("/plans");
+                return;
             }
 
-            let created = await createFromDesign(next, templateId);
+            const created = await createFromDesign(next, templateId);
 
             if (created.code === "payment_required") {
-                if (!sourceTemplateId) {
-                    const message = created.error ?? "This design is paid.";
-                    if (looksLikeSignIn(message)) {
-                        rememberAndSignIn(next, composeBrief(next), templateId);
-                        return;
-                    }
-                    setError("This design is paid. Pay with Razorpay to unlock it.");
-                    setBusy(null);
+                const message = created.error ?? "This design needs Pro or Premium.";
+                if (looksLikeSignIn(message)) {
+                    rememberAndSignIn(next, composeBrief(next), templateId);
                     return;
                 }
-                const unlocked = await unlockTemplate(sourceTemplateId);
-                if (!unlocked) {
-                    const message = created.error ?? "This design is paid.";
-                    if (looksLikeSignIn(message)) {
-                        rememberAndSignIn(next, composeBrief(next), templateId);
-                        return;
-                    }
-                    setError("This design is paid. Pay with Razorpay to unlock it.");
-                    setBusy(null);
-                    return;
-                }
-                created = await createFromDesign(next, templateId);
+                setError(message);
+                setBusy(null);
+                router.push("/plans");
+                return;
             }
 
             if (created.error || !created.data) {
@@ -253,6 +237,14 @@ export function IntentCapture({
                         if (error) setError(null);
                     }}
                 />
+                {paidPlan ? (
+                    <div className="mt-5 border-t border-border/70 pt-4">
+                        <LockedPlanNotice
+                            badge={paidPlan === "premium" ? "Premium" : "Pro"}
+                            kind="design"
+                        />
+                    </div>
+                ) : null}
                 <div className="mt-5 flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-center">
                     {error ? (
                         <p role="alert" className="text-sm text-destructive sm:flex-1">
@@ -265,22 +257,16 @@ export function IntentCapture({
                     )}
                     <Button
                         onClick={() => void generate()}
-                        disabled={busy !== null}
+                        disabled={busy !== null || Boolean(paidPlan)}
                         variant="brand"
                         className="cursor-pointer rounded-lg font-semibold sm:ml-auto"
                     >
                         {busy === "generate"
-                            ? payStatus === "open" || payStatus === "loading"
-                                ? "Opening Razorpay…"
-                                : payStatus === "verifying"
-                                  ? "Confirming payment…"
-                                  : fromDesign
-                                    ? "Putting it on the design…"
-                                    : "Generating…"
+                            ? fromDesign
+                                ? "Putting it on the design…"
+                                : "Generating…"
                             : fromDesign
-                              ? paidPlan
-                                  ? "Pay & put this on the design"
-                                  : "Put this on the design"
+                              ? "Put this on the design"
                               : "Create my website"}
                         <ArrowRight aria-hidden />
                     </Button>

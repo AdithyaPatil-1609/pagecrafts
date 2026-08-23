@@ -33,7 +33,9 @@ export function UseDesignButton({
             </Link>
             {showPayNote && tier !== "free" ? (
                 <span className="text-xs text-muted-foreground">
-                    This design is paid. Buy it once to unlock it for your account.
+                    {tier === "signature"
+                        ? "Needs Premium on User Plans."
+                        : "Needs Pro on User Plans."}
                 </span>
             ) : null}
         </div>

@@ -24,10 +24,11 @@ export const AI_PACKAGES: Record<AiPackageId, AiPackageInfo> = {
         name: "Free",
         priceInr: 0,
         generationsPerSite: FREE_GENERATIONS_PER_PROJECT,
-        blurb: "Try AI on a site — three rounds of generation, each with three looks.",
+        blurb: "Try AI on a site — three rounds of standard generation, each with three looks.",
         features: [
-            `${FREE_GENERATIONS_PER_PROJECT} AI generations per site`,
-            "Each generation offers Starter, Pro, and Premium looks",
+            `${FREE_GENERATIONS_PER_PROJECT} standard AI generations per site`,
+            "Each generation offers Casual, Photo-rich, and Animated looks",
+            "Custom / interactive builds (carts, apps, dashboards) need Advanced or a pass",
             "Buy individual designs separately when you want them",
         ],
     },
@@ -36,10 +37,11 @@ export const AI_PACKAGES: Record<AiPackageId, AiPackageInfo> = {
         name: "Advanced",
         priceInr: ADVANCED_PACKAGE_PRICE_INR,
         generationsPerSite: ADVANCED_GENERATIONS_PER_PROJECT,
-        blurb: "Ten times the Free AI allowance — keep iterating until the site feels right.",
+        blurb: "Ten times the Free AI allowance — including custom builds that cost more tokens.",
         features: [
             `${ADVANCED_GENERATIONS_PER_PROJECT} AI generations per site`,
-            "Same three looks each round (Starter, Pro, Premium)",
+            "Standard marketing sites and custom interactive sites",
+            "Same three looks each round (Casual, Photo-rich, Animated)",
             "After that, buy a one-round pass if you still want more",
         ],
     },
@@ -48,7 +50,7 @@ export const AI_PACKAGES: Record<AiPackageId, AiPackageInfo> = {
 export const GENERATION_PASS = {
     name: "Extra generation",
     priceInr: GENERATION_PASS_PRICE_INR,
-    blurb: "One more AI round on a site — three looks again (Starter, Pro, Premium).",
+    blurb: "One more AI round — including a custom / heavy build if you need one. Three looks again.",
 } as const;
 
 export function generationsLimitForPackage(pkg: AiPackageId): number {

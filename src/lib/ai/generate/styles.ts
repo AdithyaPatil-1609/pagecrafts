@@ -1,9 +1,9 @@
 import type { ArtDirection, Composition, SectionKey } from '@/lib/contracts';
 
-/** Stable ids for entitlements / choose API. Labels are Starter / Pro / Premium. */
 export const STYLE_IDS = ['casual', 'photos', 'motion'] as const;
 export type StyleId = (typeof STYLE_IDS)[number];
 
+/** Product plans. Casual is free to use; Pro and Premium looks need account Pro. */
 export const STYLE_TIERS = ['free', 'pro', 'premium'] as const;
 export type StyleTier = (typeof STYLE_TIERS)[number];
 
@@ -14,22 +14,26 @@ export interface StyleSpec {
     tier: StyleTier;
     priceInr: number;
     art: ArtDirection;
+    /** Layout variant overrides, applied when that section exists. */
     variants: Partial<Record<SectionKey, string>>;
+    /** Stamp real photographs into image slots. `'hero'` = hero only (Casual). */
     photos: boolean | 'hero';
 }
 
 /**
  * Three looks from one brief.
  *
- * Starter (casual): sidebar + simple image background, free.
- * Pro (photos): blended top bar, separate pages, photo-rich, ₹499.
- * Premium (motion): liquid PageCrafts-like deck, continuous scroll — not broken kinetic blobs, ₹999.
+ * Casual is the free default: warm colour, one hero photograph, still simple —
+ * not a grey wall of type, and not the full cinematic Photo-rich look. Photos is
+ * Pro: full-bleed imagery throughout. Motion is Premium: colour and scroll
+ * animation. Same words, three different sites — so a sweet shop is not one
+ * generic page, it is a choice.
  */
 export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
     casual: {
         id: 'casual',
-        label: 'Starter',
-        blurb: 'Sidebar with every page and a simple image hero — clear and free.',
+        label: 'Casual',
+        blurb: 'Simple, colourful, and a little inviting — one photo up top, no heavy gallery.',
         tier: 'free',
         priceInr: 0,
         art: {
@@ -40,6 +44,8 @@ export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
             imageryId: 'bright-clean',
         },
         variants: {
+            // Split hero shows one picture beside the words. Photo-rich uses image-bg
+            // plus photos through the rest of the page; Casual stops at the hero.
             hero: 'split-image',
             about: 'text',
             services: 'cards',
@@ -51,8 +57,8 @@ export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
     },
     photos: {
         id: 'photos',
-        label: 'Pro',
-        blurb: 'Photo-rich cinematic hero, blended top bar, and separate pages.',
+        label: 'Photo-rich',
+        blurb: 'A cinematic hero and real photographs throughout the page.',
         tier: 'pro',
         priceInr: 499,
         art: {
@@ -75,21 +81,21 @@ export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
     },
     motion: {
         id: 'motion',
-        label: 'Premium',
-        blurb: 'Liquid PageCrafts-like deck — blooms, display type, continuous scroll.',
+        label: 'Animated',
+        blurb: 'A kinetic canvas — oversized type, glow, and motion drawn from this business, not generic blobs.',
         tier: 'premium',
         priceInr: 999,
         art: {
-            themeId: 'deep-luxury',
-            motionId: 'calm',
-            radiusId: 'soft',
-            spacingId: 'airy',
+            themeId: 'vivid-energy',
+            motionId: 'kinetic',
+            radiusId: 'pill',
+            spacingId: 'tight',
             imageryId: 'bold-contrast',
         },
         variants: {
             hero: 'centred',
             about: 'text',
-            services: 'cards',
+            services: 'timeline',
             faq: 'accordion',
             contact: 'form',
             footer: 'columns',
@@ -106,6 +112,7 @@ export function cloneComposition(composition: Composition): Composition {
     return structuredClone(composition);
 }
 
+/** Restyle a composition into one of the three looks. Copy stays the same. */
 export function applyStyle(composition: Composition, spec: StyleSpec): Composition {
     const next = cloneComposition(composition);
     next.artDirection = spec.art;

@@ -14,11 +14,14 @@ import { resetRedisMock } from '../../support/redis-mock';
 import { ApiError } from '@/lib/errors/respond';
 import {
     assertFreeGenerationAllowed,
+    assertHeavyBuildAllowed,
     freeGenerationsUsed,
     generationPassesRemaining,
     grantGenerationPasses,
     recordFreeGeneration,
+    recordGenerationUseForBuild,
     resetFreeGenerationQuota,
+    readGenerationQuota,
 } from '@/lib/ai/jobs/quota';
 import {
     ADVANCED_GENERATIONS_PER_PROJECT,
@@ -85,5 +88,31 @@ describe('AI generation quota packages', () => {
         await expect(assertFreeGenerationAllowed('p_1', 'u_1', db)).rejects.toMatchObject({
             code: 'payment_required',
         });
+    });
+
+    it('blocks heavy builds on Free without a pass', async () => {
+        const quota = await readGenerationQuota('p_1', 'u_1', db);
+        await expect(assertHeavyBuildAllowed(quota)).rejects.toMatchObject({
+            code: 'payment_required',
+        });
+    });
+
+    it('allows heavy builds on Free when a pass is available, and spends the pass', async () => {
+        await grantGenerationPasses('u_1', 1);
+        const quota = await readGenerationQuota('p_1', 'u_1', db);
+        await expect(assertHeavyBuildAllowed(quota)).resolves.toBeUndefined();
+
+        await recordGenerationUseForBuild('p_1', 'u_1', quota, true);
+        expect(await generationPassesRemaining('u_1')).toBe(0);
+        expect(await freeGenerationsUsed('p_1')).toBe(1);
+    });
+
+    it('allows heavy builds on Advanced without spending a pass', async () => {
+        vi.mocked(hasAdvanced).mockResolvedValue(true);
+        const quota = await readGenerationQuota('p_1', 'u_1', db);
+        await expect(assertHeavyBuildAllowed(quota)).resolves.toBeUndefined();
+        await recordGenerationUseForBuild('p_1', 'u_1', quota, true);
+        expect(await generationPassesRemaining('u_1')).toBe(0);
+        expect(await freeGenerationsUsed('p_1')).toBe(1);
     });
 });

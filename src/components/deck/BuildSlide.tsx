@@ -90,7 +90,7 @@ export function BuildSlide({
                             className: "mt-3 rounded-full font-semibold",
                         })}
                     >
-                        View AI packages
+                        View AI rebuilds
                         <ArrowRight aria-hidden />
                     </Link>
                     <div className="mt-5">

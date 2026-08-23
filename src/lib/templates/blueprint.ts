@@ -47,6 +47,22 @@ export interface Blueprint {
 
 const TIER_PRICE_INR: Record<TemplateTier, number> = { free: 0, premium: 499, signature: 999 };
 
+/** White / casual library tiles stay Free; dark tiles are at least Pro (premium). */
+function tierForPalette(palette: Palette, declared: TemplateTier): TemplateTier {
+    const hex = palette.bg.replace("#", "").trim();
+    if (hex.length < 6) return declared;
+    const r = Number.parseInt(hex.slice(0, 2), 16);
+    const g = Number.parseInt(hex.slice(2, 4), 16);
+    const b = Number.parseInt(hex.slice(4, 6), 16);
+    if ([r, g, b].some((n) => Number.isNaN(n))) return declared;
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const light = luminance >= 0.55;
+    if (light) return "free";
+    // Keep an intentional Premium (signature) dark design; everything else dark is Pro.
+    if (declared === "signature") return "signature";
+    return "premium";
+}
+
 const VERTICAL_ALIAS: Record<string, string> = {
     "ngo-nonprofit": "ngo",
     "saas-product": "saas",
@@ -339,23 +355,25 @@ function contentSchema(bp: Blueprint): ContentSchema {
 
 export function buildTemplate(bp: Blueprint): Template {
     const motif = MOTIF_BY_CATEGORY[bp.category] ?? "frame";
+    const tier = tierForPalette(bp.palette, bp.tier);
+    const resolved: Blueprint = { ...bp, tier };
 
     return {
-        id: bp.id,
-        name: bp.name,
-        description: bp.description,
-        category: bp.category,
-        vertical: bp.vertical ?? VERTICAL_ALIAS[bp.id] ?? bp.id,
-        tags: bp.tags,
-        thumbnailUrl: thumbnailPath(bp.id),
-        tier: bp.tier,
-        priceInr: TIER_PRICE_INR[bp.tier],
-        license: bp.license,
-        sourceUrl: bp.sourceUrl,
-        contentSchema: contentSchema(bp),
+        id: resolved.id,
+        name: resolved.name,
+        description: resolved.description,
+        category: resolved.category,
+        vertical: resolved.vertical ?? VERTICAL_ALIAS[resolved.id] ?? resolved.id,
+        tags: resolved.tags,
+        thumbnailUrl: thumbnailPath(resolved.id),
+        tier,
+        priceInr: TIER_PRICE_INR[tier],
+        license: resolved.license,
+        sourceUrl: resolved.sourceUrl,
+        contentSchema: contentSchema(resolved),
         files: {
-            "index.html": indexHtml(bp, motif),
-            "styles.css": stylesCss(bp),
+            "index.html": indexHtml(resolved, motif),
+            "styles.css": stylesCss(resolved),
         },
     };
 }

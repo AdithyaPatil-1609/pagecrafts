@@ -81,7 +81,7 @@ describe('AI chat (D11–D15)', () => {
         const { vfs } = useEditorStore.getState();
         vfs.write(
             'index.html',
-            '<html><body data-style="casual" data-chrome="sidebar"><aside class="site-sidebar"></aside><h1>Old</h1></body></html>',
+            '<html><body data-style="casual"><header class="site-header"></header><h1>Old</h1></body></html>',
         );
         const fetchMock = fakeServer();
         vi.stubGlobal('fetch', fetchMock);
@@ -291,7 +291,7 @@ describe('AI chat — full site from Ask', () => {
         expect(useEditorStore.getState().composition?.meta.title).toBe('Sugar & Co');
         expect(useEditorStore.getState().vfs.read('composition.json')).toContain('Handmade sweets');
         expect(useEditorStore.getState().vfs.read('index.html')).toContain('Handmade sweets');
-        expect(useEditorStore.getState().vfs.read('index.html')).toContain('site-sidebar');
+        expect(useEditorStore.getState().vfs.read('index.html')).toContain('site-header');
         expect(useEditorStore.getState().pendingChange).toBeNull();
     });
 

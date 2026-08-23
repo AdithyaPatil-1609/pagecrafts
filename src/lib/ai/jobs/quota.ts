@@ -98,6 +98,19 @@ async function consumeGenerationPass(userId: string): Promise<boolean> {
     return true;
 }
 
+async function bumpGenerationUsed(projectId: string): Promise<number> {
+    const next = (await freeGenerationsUsed(projectId)) + 1;
+    localUsed.set(projectId, next);
+    if (isRedisConfigured()) {
+        try {
+            await redis().set(usedKey(projectId), next);
+        } catch (err) {
+            console.warn('[quota] could not persist free generation count', err);
+        }
+    }
+    return next;
+}
+
 export async function recordFreeGeneration(
     projectId: string,
     userId?: string,
@@ -115,16 +128,30 @@ export async function recordFreeGeneration(
         }
     }
 
-    const next = used + 1;
-    localUsed.set(projectId, next);
-    if (isRedisConfigured()) {
-        try {
-            await redis().set(usedKey(projectId), next);
-        } catch (err) {
-            console.warn('[quota] could not persist free generation count', err);
+    return bumpGenerationUsed(projectId);
+}
+
+/**
+ * Record a generation. Heavy builds on the Free package always spend a pass
+ * (they are not included in the three free standard rounds).
+ */
+export async function recordGenerationUseForBuild(
+    projectId: string,
+    userId: string,
+    quota: GenerationQuota,
+    heavy: boolean,
+): Promise<number> {
+    if (heavy && quota.package === 'free') {
+        const spent = await consumeGenerationPass(userId);
+        if (!spent) {
+            throw new ApiError(
+                'payment_required',
+                'This description needs a custom AI build. Buy an extra generation pass (Rs 199), or upgrade to Advanced.',
+            );
         }
+        return bumpGenerationUsed(projectId);
     }
-    return next;
+    return recordFreeGeneration(projectId, userId, quota.limit);
 }
 
 async function accountPackage(
@@ -177,5 +204,22 @@ export async function assertFreeGenerationAllowed(
     throw new ApiError(
         'payment_required',
         `You have used your ${quota.limit} Advanced AI generations on this site. Buy an extra generation pass (Rs 199) for one more round with three looks.`,
+    );
+}
+
+/**
+ * Heavy / custom builds (carts, apps, multi-file JS) cost more tokens.
+ * Free package cannot run them unless they have a generation pass.
+ * Advanced (or a pass) is required.
+ */
+export async function assertHeavyBuildAllowed(
+    quota: GenerationQuota,
+): Promise<void> {
+    if (quota.package === 'advanced') return;
+    if (quota.passes > 0) return;
+
+    throw new ApiError(
+        'payment_required',
+        'This description needs a custom AI build (more tokens than a standard site). Upgrade to Advanced, or buy an extra generation pass (Rs 199).',
     );
 }

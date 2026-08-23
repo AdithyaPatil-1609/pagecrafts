@@ -59,6 +59,18 @@ export async function waitForAdvancedGrant(
     }, options);
 }
 
+export async function waitForPlanGrant(
+    plan: "pro" | "premium",
+    options?: { attempts?: number; delayMs?: number },
+): Promise<boolean> {
+    return waitUntil(async () => {
+        const summary = await billing();
+        if (!summary) return false;
+        if (plan === "pro") return summary.plan === "pro" || summary.plan === "premium";
+        return summary.plan === "premium";
+    }, options);
+}
+
 export async function waitForGenerationPass(
     atLeast: number,
     options?: { attempts?: number; delayMs?: number },

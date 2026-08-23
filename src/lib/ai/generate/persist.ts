@@ -4,7 +4,9 @@ import type { ContentSchema, FileMap, SiteMeta, Template } from '@/lib/contracts
 import { putProjectFiles } from '@/lib/data/project-files';
 import { createCommit } from '@/lib/data/commits';
 import { contentFromFiles } from '@/lib/content/from-files';
+import { asksTableOrdering } from '@/lib/ai/composition/requested-pages';
 import { mergeSiteMeta, wireOrderPayments } from '@/lib/sites/pay-page';
+import { wireTableOrderSite } from '@/lib/sites/table-order-ui';
 import type { Job } from '../jobs/types';
 import type { StyleOption } from './options';
 import { contentFromComposition, schemaFromComposition } from './schema';
@@ -42,6 +44,7 @@ export async function persistGeneratedSite(
             content,
             title,
             description: job.composition.meta.description,
+            prompt: job.prompt,
             commitMessage: 'Generated from your description',
         });
         return;
@@ -93,6 +96,8 @@ async function writeSite(
         // not, so it must leave the name alone. Default true, because every caller that
         // produced the site it is writing wants it.
         rename?: boolean;
+        /** Original generation ask — used to honor specific page/feature requests. */
+        prompt?: string;
         commitMessage: string;
     },
 ): Promise<void> {
@@ -101,12 +106,17 @@ async function writeSite(
         ...(input.title ? { title: input.title } : {}),
         ...(input.description ? { description: input.description } : {}),
     });
-    const files = siteMeta.upiId
-        ? wireOrderPayments(input.files, {
-            businessName: siteMeta.title || input.title || 'This shop',
+    const businessName = siteMeta.title || input.title || 'This shop';
+    const ask = input.prompt || input.description || '';
+    let files = input.files;
+    if (asksTableOrdering(ask)) {
+        files = wireTableOrderSite(files, { businessName });
+    } else if (siteMeta.upiId) {
+        files = wireOrderPayments(files, {
+            businessName,
             upiId: siteMeta.upiId,
-        })
-        : input.files;
+        });
+    }
 
     await putProjectFiles(supabase, projectId, files);
 
