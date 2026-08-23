@@ -38,6 +38,16 @@ describe('the migration ledger reader', () => {
         expect(SQL).not.toMatch(/select\s+\*/i);
     });
 
+    // A plain sql function validates its body when it is created, and `supabase db reset`
+    // builds a bare Postgres from these files where that ledger does not exist -- so the
+    // first version of this took the whole migration stack down with it. Dynamic SQL is not
+    // checked at creation, and the handler answers honestly for a database with no ledger.
+    it('survives a database that has no ledger at all', () => {
+        expect(SQL).toMatch(/language\s+plpgsql/i);
+        expect(SQL).toMatch(/return query execute/i);
+        expect(SQL).toMatch(/when undefined_table or invalid_schema_name then/i);
+    });
+
     it('has a rollback beside it, like every other migration', () => {
         const rollbacks = readdirSync(join(process.cwd(), 'supabase/rollback'));
 
