@@ -34,7 +34,7 @@ describe("account settings", () => {
 
   it("sends the sidebar to designs, and plans live on /plans", () => {
     const sidebar = read("src", "components", "app", "AppSidebar.tsx");
-    const publish = read("src", "components", "editor", "PublishCheckoutButton.tsx");
+    const publish = read("src", "components", "editor", "GoLiveButton.tsx");
     const packages = read("src", "components", "settings", "PackagesPanel.tsx");
     const plansPage = read("src", "app", "plans", "page.tsx");
 
@@ -44,9 +44,9 @@ describe("account settings", () => {
     expect(sidebar).not.toContain("UpgradeToProButton");
     expect(sidebar).not.toContain("Billing is not live yet");
     expect(plansPage).toContain("PlansPanel");
-    expect(publish).toContain("openCheckout");
-    expect(publish).toContain("checkout");
-    expect(publish).toContain("confirmDialog");
+    expect(publish).toContain("Go Live");
+    expect(publish).toContain("startProjectPublish");
+    expect(publish).toContain("Your site is live");
     expect(packages).toContain("confirmDialog");
     expect(packages).toContain("openAdvancedCheckout");
     expect(packages).toContain("openGenerationPassCheckout");
