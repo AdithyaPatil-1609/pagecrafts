@@ -49,7 +49,11 @@ async function renderOption(
         tier: spec.tier,
         priceInr: spec.priceInr,
         composition,
-        files: withRequestedExtras(compositionToFiles(composition, spec.id), composition, prompt),
+        files: withRequestedExtras(
+            compositionToFiles(composition, spec.id, seed),
+            composition,
+            prompt,
+        ),
     };
 }
 
