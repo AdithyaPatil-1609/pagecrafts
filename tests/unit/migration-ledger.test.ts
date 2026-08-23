@@ -65,7 +65,19 @@ describe('db:drift reads the ledger, not just its own probe list', () => {
     });
 
     it('fails the run when the ledger is behind, even if every probe passed', () => {
-        expect(SCRIPT).toMatch(/ledgerBehind/);
         expect(SCRIPT).toContain('Trust the ledger');
+    });
+
+    // The first version of this returned "behind" for any error, so a run without
+    // VERIFY_EMAIL reported migrations pending against a database that was up to date.
+    // Claiming a fault that is not there is the same disease this script exists to cure.
+    it('tells "cannot read the ledger" apart from "the ledger is behind"', () => {
+        expect(SCRIPT).toMatch(/type Ledger = "ok" \| "behind" \| "unknown"/);
+        expect(SCRIPT).toMatch(/permission denied/i);
+        expect(SCRIPT).toContain('not readable signed out');
+    });
+
+    it('does not call an unreadable ledger a clean bill of health either', () => {
+        expect(SCRIPT).toContain('not a clean bill of health');
     });
 });

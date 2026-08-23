@@ -127,18 +127,35 @@ function migrationsOnDisk(): string[] {
  * probes only find what somebody remembered to add, and every one of the four faults this
  * script exists for was something nobody had added yet.
  *
- * Returns true when the database is behind, so main can say so twice — once here, and once
- * at the end where a person is actually looking.
+ * Three answers, not two. "behind" and "unknown" are different facts and the first version
+ * of this returned "behind" for both -- so a run without VERIFY_EMAIL said migrations were
+ * pending when the ledger was perfectly up to date. Claiming a fault that is not there is
+ * the same disease as the generic sentences this script was written to cure.
  */
-async function reportLedger(db: SupabaseClient): Promise<boolean> {
+type Ledger = "ok" | "behind" | "unknown";
+
+async function reportLedger(db: SupabaseClient): Promise<Ledger> {
   const { data, error } = await db.rpc("applied_migration_versions");
 
   if (error) {
+    // The reader is granted to `authenticated` only: the deploy history is not for strangers.
+    // Signed out, "permission denied" means exactly that and nothing about drift.
+    if (/permission denied/i.test(error.message)) {
+      console.log("\n  Migration ledger: not readable signed out.");
+      console.log("    Set VERIFY_EMAIL and VERIFY_PASSWORD in .env.local to compare it.");
+      return "unknown";
+    }
+
+    if (isMissing(error.message)) {
+      console.log("\n  Migration ledger: the reader itself is not applied.");
+      console.log("    This database predates the check, so it is behind by at least that.");
+      console.log("    Fix: npx supabase@latest db push");
+      return "behind";
+    }
+
     console.log("\n  Migration ledger: could not read it.");
     console.log(`    ${error.message}`);
-    console.log("    If that says the function does not exist, this database predates the");
-    console.log("    check itself, which means it is behind. Run: npx supabase@latest db push\n");
-    return true;
+    return "unknown";
   }
 
   const applied = new Set((data as string[] | null) ?? []);
@@ -148,7 +165,7 @@ async function reportLedger(db: SupabaseClient): Promise<boolean> {
 
   if (pending.length === 0 && unknown.length === 0) {
     console.log(`\n  Migration ledger: up to date — all ${onDisk.length} applied.`);
-    return false;
+    return "ok";
   }
 
   if (pending.length > 0) {
@@ -169,7 +186,7 @@ async function reportLedger(db: SupabaseClient): Promise<boolean> {
     console.log("    Fix, per orphan: npx supabase@latest migration repair --status reverted <version>");
   }
 
-  return pending.length > 0;
+  return pending.length > 0 ? "behind" : "ok";
 }
 
 async function main() {
@@ -200,7 +217,7 @@ async function main() {
 
   const host = new URL(SUPABASE_URL).host;
 
-  const ledgerBehind = await reportLedger(db);
+  const ledger = await reportLedger(db);
 
   console.log(`\n  Checking ${host} ${as}, against ${PROBES.length} things the code expects.\n`);
 
@@ -232,10 +249,16 @@ async function main() {
   }
 
   if (missing.length === 0) {
-    if (ledgerBehind) {
+    if (ledger === "behind") {
       console.log("\n  Every probe passed, but the ledger above says migrations are pending.");
       console.log("  Trust the ledger: the probes only cover what somebody remembered to add.\n");
       process.exitCode = 1;
+      return;
+    }
+
+    if (ledger === "unknown") {
+      console.log("\n  Probes found no drift, but the ledger could not be read, so this is");
+      console.log("  not a clean bill of health. See the note above it.\n");
       return;
     }
 
