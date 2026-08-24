@@ -344,8 +344,6 @@ export async function recoverPaidOrder(
     return { kind: granted.kind };
 }
 
-export { recoverPaidOrder as recoverPaidOrder };
-
 /** Grant the Advanced AI usage package (not a catalogue design unlock). */
 export async function grantAdvanced(userId: string): Promise<void> {
     const admin = supabaseAdmin();
