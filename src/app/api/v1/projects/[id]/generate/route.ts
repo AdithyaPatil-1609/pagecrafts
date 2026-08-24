@@ -17,7 +17,8 @@ import {
     assertHeavyBuildAllowed,
     recordGenerationUseForBuild,
 } from '@/lib/ai/jobs/quota';
-import { estimateSiteBuild, isHeavyBuild } from '@/lib/ai/generate/complexity';
+import { customBuildFits, estimateSiteBuild, isHeavyBuild } from '@/lib/ai/generate/complexity';
+import { aiConfig } from '@/lib/ai/config';
 import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
 import { getProject } from '@/lib/data/projects';
 import { getProjectFiles } from '@/lib/data/project-files';
@@ -91,8 +92,18 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
 
         const quota = await assertFreeGenerationAllowed(params.id, userId, supabase);
+        // Charge for a custom build only when one can actually run. The runner checks the
+        // same budget before taking the compose path (customBuildFits in runJob) and drops
+        // to the section recipe when one call cannot hold a whole site — so on a provider
+        // tier that cannot afford compose, gating this as heavy would ask somebody to
+        // upgrade for a build they were never going to get.
         const estimate = estimateSiteBuild(body.prompt);
-        if (isHeavyBuild(estimate)) {
+        const cfg = aiConfig();
+        const heavy = isHeavyBuild(estimate) && customBuildFits(estimate, {
+            composeMaxTokens: cfg.maxOutputTokens.compose,
+            tpm: cfg.quota.tpm,
+        });
+        if (heavy) {
             await assertHeavyBuildAllowed(quota);
         }
 
@@ -121,7 +132,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 events: [],
                 ledger: [],
             });
-            await recordGenerationUseForBuild(params.id, userId, quota, isHeavyBuild(estimate));
+            await recordGenerationUseForBuild(params.id, userId, quota, heavy);
 
             void runJob(job, {
                 templates: TEMPLATES,

@@ -25,7 +25,7 @@ describe("plan checkout errors", () => {
         expect(plans).not.toContain("Unlock my payment");
         expect(checkout).toContain("payments_unavailable");
         expect(checkout).toContain("PAGECRAFTS_DEV_GRANT_PLANS");
-        expect(checkout).toContain("applyVerifiedCheckout");
+        expect(checkout).toContain("fulfillPaidNotes");
         expect(checkout).toContain("recoverPaidOrder");
         expect(razorpay).toContain("payments_unavailable");
         expect(razorpay).toContain("fetchOrder");

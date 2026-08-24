@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 
 const ORDER: AccountPlan[] = ["starter", "pro", "premium"];
 
+const CANCELLED_MESSAGE = "Payment cancelled. Your current plan has not changed.";
+
 function PlanCta({
     id,
     active,
@@ -128,6 +130,7 @@ export function PlansPanel({
         onDismiss: () => {
             pendingRef.current = null;
             setPending(null);
+            setMessage(CANCELLED_MESSAGE);
         },
         onError: (err) => {
             pendingRef.current = null;
@@ -274,7 +277,9 @@ export function PlansPanel({
                     role="status"
                     className={cn(
                         "text-sm",
-                        error ? "text-destructive" : "text-muted-foreground",
+                        error || (message && message !== CANCELLED_MESSAGE && /couldn|failed|not set up|try again/i.test(message))
+                            ? "text-destructive"
+                            : "text-muted-foreground",
                     )}
                 >
                     {error ?? message}
@@ -283,13 +288,12 @@ export function PlansPanel({
 
             {!billing.paymentsReady ? (
                 <p className="text-sm text-amber-700 dark:text-amber-400">
-                    Payments are not configured on this server yet. Set{" "}
+                    Payments are not configured on this server yet. In production, set{" "}
                     <code className="font-mono text-xs">RAZORPAY_KEY_ID</code> and{" "}
-                    <code className="font-mono text-xs">RAZORPAY_KEY_SECRET</code> in the server
-                    environment (see <code className="font-mono text-xs">.env.example</code>), then
-                    restart the app. Checkout also needs{" "}
-                    <code className="font-mono text-xs">RAZORPAY_WEBHOOK_SECRET</code> so your plan
-                    unlocks after payment.
+                    <code className="font-mono text-xs">RAZORPAY_KEY_SECRET</code> in the Vercel
+                    Production environment (see{" "}
+                    <code className="font-mono text-xs">docs/production-payments-setup.md</code>
+                    ), then redeploy.
                 </p>
             ) : null}
 

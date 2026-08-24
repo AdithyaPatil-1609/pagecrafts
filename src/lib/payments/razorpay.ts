@@ -25,55 +25,18 @@ function razorpayAuthHeader(): string {
     return `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
 }
 
-export interface FetchedOrder {
-    id: string;
-    status: string;
-    notes: Partial<OrderNotes>;
-}
-
-/**
- * Read an order back from Razorpay — used after checkout so we can grant from the
- * notes we wrote when the order was created, even if the webhook is late or missing.
- */
-export async function fetchOrder(orderId: string): Promise<FetchedOrder> {
-    const response = await fetch(`${ORDERS_URL}/${encodeURIComponent(orderId)}`, {
-        headers: { Authorization: razorpayAuthHeader() },
-    });
-    const body = (await response.json()) as Record<string, unknown>;
-
-    if (!response.ok) {
-        const error = body.error as { description?: string } | undefined;
-        throw new ApiError(
-            "payments_unavailable",
-            "We could not look up that payment. Please try again in a moment.",
-            error?.description ?? `razorpay ${response.status}`,
-        );
-    }
-
-    return {
-        id: String(body.id ?? orderId),
-        status: String(body.status ?? ""),
-        notes: (body.notes ?? {}) as Partial<OrderNotes>,
-    };
-}
-
-/** True when Razorpay shows this order as paid (or at least attempted). */
-export async function orderHasCapturedPayment(orderId: string): Promise<boolean> {
-    const response = await fetch(
-        `${ORDERS_URL}/${encodeURIComponent(orderId)}/payments`,
-        { headers: { Authorization: razorpayAuthHeader() } },
-    );
-    const body = (await response.json()) as { items?: Array<{ status?: string }> };
-
-    if (!response.ok) return false;
-    return (body.items ?? []).some(
-        (item) => item.status === "captured" || item.status === "authorized",
-    );
-}
+export type OrderKind =
+    | "publish"
+    | "pro"
+    | "premium"
+    | "template"
+    | "style"
+    | "advanced"
+    | "generation_pass";
 
 export interface OrderNotes {
     userId: string;
-    kind: "publish" | "pro" | "premium" | "template" | "style" | "advanced" | "generation_pass";
+    kind: OrderKind;
     /** Present for a publish order; omitted for item and account unlocks. */
     projectId?: string;
     /** Catalogue design being bought. */
@@ -95,6 +58,9 @@ export interface RazorpayOrder {
 
 function credentials(): { keyId: string; keySecret: string } {
     if (!KEY_ID || !KEY_SECRET) {
+        console.error(
+            "[payments] missing RAZORPAY_KEY_ID and/or RAZORPAY_KEY_SECRET — cannot create or verify orders",
+        );
         throw new ApiError(
             "payments_unavailable",
             "Payments are not set up on this server.",
@@ -167,6 +133,65 @@ export async function createOrder(
     };
 }
 
+export interface FetchedOrder {
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    notes: Partial<OrderNotes>;
+}
+
+/**
+ * True when Razorpay shows this order as paid (captured or authorized).
+ * Used to recover a purchase if the webhook never landed.
+ */
+export async function orderHasCapturedPayment(orderId: string): Promise<boolean> {
+    const response = await fetch(
+        `${ORDERS_URL}/${encodeURIComponent(orderId)}/payments`,
+        { headers: { Authorization: razorpayAuthHeader() } },
+    );
+    const body = (await response.json()) as { items?: Array<{ status?: string }> };
+
+    if (!response.ok) return false;
+    return (body.items ?? []).some(
+        (item) => item.status === "captured" || item.status === "authorized",
+    );
+}
+
+/**
+ * Read an order back from Razorpay (notes + amount). Used after checkout signature
+ * verification so the server — not the browser — decides what the payment unlocked.
+ */
+export async function fetchOrder(orderId: string): Promise<FetchedOrder> {
+    const response = await fetch(`${ORDERS_URL}/${encodeURIComponent(orderId)}`, {
+        headers: { Authorization: razorpayAuthHeader() },
+    });
+
+    const body = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+        const error = body.error as { description?: string } | undefined;
+        console.error("[payments] could not fetch Razorpay order", {
+            orderId,
+            status: response.status,
+            description: error?.description,
+        });
+        throw new ApiError(
+            "internal",
+            "We couldn't confirm that payment. Please try again in a moment.",
+            error?.description ?? `razorpay order ${response.status}`,
+        );
+    }
+
+    return {
+        id: body.id as string,
+        amount: Number(body.amount),
+        currency: (body.currency as string) ?? "INR",
+        status: (body.status as string) ?? "",
+        notes: (body.notes ?? {}) as Partial<OrderNotes>,
+    };
+}
+
 /**
  * Is this webhook really from Razorpay?
  *
@@ -208,8 +233,9 @@ export function verifyWebhook(rawBody: string, signature: string | null): boolea
  * not WEBHOOK_SECRET, because this proves the payment round-trip was genuine, not
  * that a webhook body was.
  *
- * This check is a courtesy: it lets the UI show "Payment confirmed" immediately.
- * The entitlement is still granted only by the webhook, where the real trust lies.
+ * After this passes, the verify route loads the order notes from Razorpay and grants
+ * the matching entitlement. The webhook remains a second, idempotent path for the
+ * same grant when the browser never reaches verify.
  */
 export function verifyPaymentSignature(
     orderId: string,
