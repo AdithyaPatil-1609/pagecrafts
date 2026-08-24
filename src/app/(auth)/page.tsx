@@ -17,6 +17,7 @@ import { BuildSlide } from "@/components/deck/BuildSlide";
 import { SitesSlide } from "@/components/deck/SitesSlide";
 import { SettingsSlide } from "@/components/deck/SettingsSlide";
 import { SlideTo } from "@/components/deck/SlideTo";
+import { PlanUpgradedBanner } from "@/components/payments/PlanUpgradedBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,9 @@ function Home({
             <SlideNav slides={HOME_SLIDES} />
             <Suspense fallback={null}>
                 <SlideTo />
+            </Suspense>
+            <Suspense fallback={null}>
+                <PlanUpgradedBanner />
             </Suspense>
 
             <div className="page-deck">

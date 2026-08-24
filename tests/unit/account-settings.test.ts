@@ -91,7 +91,7 @@ describe("paid designs", () => {
     expect(PREMIUM_PRICE_INR).toBe(999);
   });
 
-  it("sends locked templates to User Plans instead of buying one design", () => {
+    it("sends paid designs to User Plans instead of buying one design", () => {
     const top = read("src", "components", "app", "AppTopBar.tsx");
     const card = read("src", "components", "discovery", "TemplateCard.tsx");
     const notice = read("src", "components", "discovery", "LockedPlanNotice.tsx");
@@ -111,5 +111,7 @@ describe("paid designs", () => {
     expect(plans).toContain("Choose Premium");
     expect(plans).toContain("Current plan");
     expect(plans).toContain("Popular");
+    expect(plans).toContain("homeAfterUpgrade");
+    expect(plans).toContain("upgraded=");
   });
 });

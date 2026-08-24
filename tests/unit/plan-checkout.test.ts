@@ -20,7 +20,9 @@ describe("plan checkout errors", () => {
 
         expect(plans).toContain("paymentsReady");
         expect(plans).toContain("RAZORPAY_KEY_ID");
-        expect(plans).toContain("Unlock my payment");
+        expect(plans).toContain("homeAfterUpgrade");
+        expect(plans).toContain("upgraded=");
+        expect(plans).not.toContain("Unlock my payment");
         expect(checkout).toContain("payments_unavailable");
         expect(checkout).toContain("PAGECRAFTS_DEV_GRANT_PLANS");
         expect(checkout).toContain("applyVerifiedCheckout");

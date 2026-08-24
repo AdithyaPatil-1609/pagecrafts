@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
-import { waitForPlanGrant } from "@/lib/payments/wait-for-pro";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
 import { PLAN_COPY, PLAN_PRICE_INR } from "@/lib/payments/plans";
 import { FREE_GENERATIONS_PER_PROJECT } from "@/lib/limits/config";
@@ -84,6 +83,10 @@ function PlanCta({
     return null;
 }
 
+function homeAfterUpgrade(plan: "pro" | "premium"): string {
+    return `/?upgraded=${plan}&slide=compare`;
+}
+
 export function PlansPanel({
     initial,
     signedIn,
@@ -92,42 +95,42 @@ export function PlansPanel({
     signedIn: boolean;
 }) {
     const router = useRouter();
-    const [billing, setBilling] = useState(initial);
+    const [billing] = useState(initial);
     const [message, setMessage] = useState<string | null>(null);
     const [pending, setPending] = useState<"pro" | "premium" | null>(null);
-    const [orderId, setOrderId] = useState("");
-    const [recovering, setRecovering] = useState(false);
-
-    const refresh = useCallback(async () => {
-        const { apiGet } = await import("@/lib/api/client");
-        const { data } = await apiGet<BillingSummary>("/api/v1/account/billing");
-        if (data) setBilling(data);
-        router.refresh();
-    }, [router]);
+    const pendingRef = useRef<"pro" | "premium" | null>(null);
 
     const { openPlanCheckout, status, error, confirmDialog } = useRazorpayCheckout({
         onAlreadyGranted: () => {
+            const plan = pendingRef.current ?? "pro";
+            pendingRef.current = null;
             setPending(null);
-            setMessage("That plan is already on this account.");
-            void refresh();
+            setMessage(
+                `${plan === "premium" ? "Premium" : "Pro"} is already on this account — taking you home…`,
+            );
+            window.location.assign(homeAfterUpgrade(plan));
         },
-        onSuccess: () => {
-            const plan = pending;
+        onSuccess: (result) => {
+            const plan =
+                result?.kind === "premium" || result?.kind === "pro"
+                    ? result.kind
+                    : (pendingRef.current ?? "pro");
+            pendingRef.current = null;
             setPending(null);
-            if (!plan) return;
-            setMessage("Payment received. Unlocking…");
-            void (async () => {
-                const ok = await waitForPlanGrant(plan);
-                setMessage(
-                    ok
-                        ? `${plan === "premium" ? "Premium" : "Pro"} is active — every matching design is unlocked.`
-                        : "Payment went through. If the plan is not showing yet, refresh in a moment.",
-                );
-                await refresh();
-            })();
+            setMessage(
+                plan === "premium"
+                    ? "Premium is active — taking you home…"
+                    : "Pro is active — taking you home…",
+            );
+            // Full reload so homepage billing, locks, and Free labels refresh.
+            window.location.assign(homeAfterUpgrade(plan));
         },
-        onDismiss: () => setPending(null),
+        onDismiss: () => {
+            pendingRef.current = null;
+            setPending(null);
+        },
         onError: (err) => {
+            pendingRef.current = null;
             setPending(null);
             setMessage(err);
         },
@@ -145,37 +148,9 @@ export function PlansPanel({
             return;
         }
         setMessage(null);
+        pendingRef.current = plan;
         setPending(plan);
         await openPlanCheckout(plan);
-    }
-
-    async function recover() {
-        const id = orderId.trim();
-        if (!id || recovering) return;
-        setRecovering(true);
-        setMessage(null);
-        try {
-            const { apiPost } = await import("@/lib/api/client");
-            const { data, error: fail } = await apiPost<{ kind: string }>(
-                "/api/v1/account/billing/recover",
-                { orderId: id },
-            );
-            if (fail || !data) {
-                setMessage(fail ?? "We could not unlock that payment.");
-                return;
-            }
-            setMessage(
-                data.kind === "premium"
-                    ? "Premium is active — every matching design is unlocked."
-                    : data.kind === "pro"
-                      ? "Pro is active — every matching design is unlocked."
-                      : "That payment is unlocked on this account.",
-            );
-            setOrderId("");
-            await refresh();
-        } finally {
-            setRecovering(false);
-        }
     }
 
     const current = billing.plan;
@@ -316,39 +291,6 @@ export function PlansPanel({
                     <code className="font-mono text-xs">RAZORPAY_WEBHOOK_SECRET</code> so your plan
                     unlocks after payment.
                 </p>
-            ) : null}
-
-            {signedIn && current === "starter" ? (
-                <section className="rounded-2xl border border-dashed border-border/80 p-5">
-                    <h2 className="text-sm font-semibold text-foreground">
-                        Already paid but still on Starter?
-                    </h2>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        Paste the Razorpay order id from your payment receipt (starts with{" "}
-                        <code className="font-mono text-xs">order_</code>). We unlock Pro or Premium
-                        on this account if that payment belongs to you.
-                    </p>
-                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <input
-                            type="text"
-                            value={orderId}
-                            onChange={(event) => setOrderId(event.target.value)}
-                            placeholder="order_…"
-                            className="min-h-11 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground"
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                        <Button
-                            type="button"
-                            variant="outline-brand"
-                            className="min-h-11 cursor-pointer rounded-xl font-semibold"
-                            disabled={recovering || !orderId.trim()}
-                            onClick={() => void recover()}
-                        >
-                            {recovering ? "Unlocking…" : "Unlock my payment"}
-                        </Button>
-                    </div>
-                </section>
             ) : null}
 
             <p className="text-sm text-muted-foreground">
