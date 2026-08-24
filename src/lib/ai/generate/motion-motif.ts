@@ -83,7 +83,13 @@ function markup(id: MotionMotifId, body: string): string {
 
 /** Aurora, perspective grid, floating 3D glass cards and grain — the kinetic canvas behind the motif. */
 export function motionStageMarkup(): string {
-    return `<div class="motion-stage" aria-hidden="true"><span class="motion-aurora"></span><span class="motion-grid"></span><span class="motion-grain"></span><span class="motion-flare"></span><div class="motion-float-cards"><div class="motion-float-card motion-float-card-a"><div class="dot-row"><span class="dot"></span><span class="dot dot-b"></span><span class="dot dot-c"></span></div><p class="card-title">Live 3D Experience</p><p class="card-sub">Interactive stage</p></div><div class="motion-float-card motion-float-card-b"><div class="dot-row"><span class="dot"></span><span class="dot dot-b"></span><span class="dot dot-c"></span></div><p class="card-title">Dynamic Motion</p><p class="card-sub">Fluid depth &amp; glow</p></div></div></div>`;
+    const card = (variant: string) =>
+        `<div class="motion-float-card motion-float-card-${variant}">`
+        + `<div class="dot-row"><span class="dot"></span><span class="dot dot-b"></span><span class="dot dot-c"></span></div>`
+        + `<span class="bar bar-wide"></span><span class="bar bar-narrow"></span>`
+        + `</div>`;
+
+    return `<div class="motion-stage" aria-hidden="true"><span class="motion-aurora"></span><span class="motion-grid"></span><span class="motion-grain"></span><span class="motion-flare"></span><div class="motion-float-cards">${card('a')}${card('b')}</div></div>`;
 }
 
 /** Oversized ghost type that marquee-scrolls through the hero. */

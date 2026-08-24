@@ -124,12 +124,17 @@ export const PREMIUM_CSS = `
 [data-style="motion"] .motion-float-cards {
   position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden;
 }
+/* Each card sets its own tilt as custom properties, because the keyframes below write the
+   transform outright — a static transform on the element would be overwritten the moment
+   the animation started, leaving both cards leaning the same way. */
 [data-style="motion"] .motion-float-card {
+  --ry: 14deg; --rx: 8deg; --rz: -4deg;
   position: absolute;
   width: min(200px, 38vw);
   padding: 0.9rem 1rem;
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -137,12 +142,22 @@ export const PREMIUM_CSS = `
   animation: pc-float-3d 9s ease-in-out infinite alternate;
 }
 [data-style="motion"] .motion-float-card-a {
-  left: 3%; top: 22%; transform: perspective(800px) rotateY(16deg) rotateX(10deg) rotateZ(-4deg);
+  left: 3%; top: 22%;
+  --ry: 16deg; --rx: 10deg; --rz: -4deg;
 }
 [data-style="motion"] .motion-float-card-b {
-  right: 4%; top: 62%; transform: perspective(800px) rotateY(-14deg) rotateX(-8deg) rotateZ(5deg);
+  right: 4%; top: 62%;
+  --ry: -14deg; --rx: -8deg; --rz: 5deg;
   animation-delay: -4.5s;
 }
+/* Abstract on purpose. Anything with words in it would be words nobody wrote, in English,
+   on someone's Kannada or Hindi site — a template artefact on a page they paid for. */
+[data-style="motion"] .motion-float-card .bar {
+  display: block; height: 6px; border-radius: 3px;
+  background: rgba(255, 255, 255, 0.22);
+}
+[data-style="motion"] .motion-float-card .bar-wide { width: 78%; margin-bottom: 6px; }
+[data-style="motion"] .motion-float-card .bar-narrow { width: 46%; }
 [data-style="motion"] .motion-float-card .dot-row {
   display: flex; gap: 4px; margin-bottom: 0.6rem;
 }
@@ -158,9 +173,9 @@ export const PREMIUM_CSS = `
   font-size: 0.62rem; color: rgba(255, 255, 255, 0.65); margin: 0.25rem 0 0;
 }
 @keyframes pc-float-3d {
-  0% { transform: perspective(800px) translateY(0) rotateY(14deg) rotateX(8deg); }
-  50% { transform: perspective(800px) translateY(-14px) rotateY(18deg) rotateX(12deg); }
-  100% { transform: perspective(800px) translateY(6px) rotateY(11deg) rotateX(5deg); }
+  0%   { transform: perspective(800px) translateY(0)      rotateY(var(--ry)) rotateX(var(--rx)) rotateZ(var(--rz)); }
+  50%  { transform: perspective(800px) translateY(-14px)  rotateY(calc(var(--ry) * 1.28)) rotateX(calc(var(--rx) * 1.45)) rotateZ(var(--rz)); }
+  100% { transform: perspective(800px) translateY(6px)    rotateY(calc(var(--ry) * 0.78)) rotateX(calc(var(--rx) * 0.62)) rotateZ(var(--rz)); }
 }
 
 /* Moving images: a slow drift so a still photograph is never quite still. */
