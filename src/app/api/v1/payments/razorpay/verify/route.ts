@@ -14,21 +14,19 @@ type Body = z.infer<typeof paymentVerifySchema>;
 
 // POST /api/v1/payments/razorpay/verify — confirm checkout and grant the purchase.
 //
-// The Razorpay modal calls `handler` with three tokens when a payment succeeds.
-// The browser sends them here. Trust comes from:
+// Auth is optional on purpose. Razorpay can keep the modal open long enough for the
+// session cookie to go stale; requiring a session then showed "sign in again" after a
+// successful payment and never unlocked Pro.
+//
+// Trust is:
 //   1. HMAC-SHA256(order_id|payment_id, KEY_SECRET) matching the signature
 //   2. Order notes loaded from Razorpay (never from the browser)
-//   3. notes.userId matching the signed-in session
 //
 // The webhook remains a second, idempotent grant path for the same payment.
-//
-// Status codes are addressed to the browser:
-//   200 — signature matches and the entitlement was written (or already present).
-//   400 — signature mismatch or missing fields. Do not show success.
 export const POST = withRoute<Body>({
-    auth: "required",
+    auth: "none",
     schema: paymentVerifySchema,
-    handler: async ({ body, userId }) => {
+    handler: async ({ body }) => {
         const valid = verifyPaymentSignature(
             body.razorpay_order_id,
             body.razorpay_payment_id,
@@ -47,22 +45,21 @@ export const POST = withRoute<Body>({
         }
 
         const order = await fetchOrder(body.razorpay_order_id);
-        const fulfilled = await fulfillPaidNotes(
-            order.notes,
-            {
-                paymentId: body.razorpay_payment_id,
-                orderId: body.razorpay_order_id,
-            },
-            { requireUserId: userId },
-        );
+        const fulfilled = await fulfillPaidNotes(order.notes, {
+            paymentId: body.razorpay_payment_id,
+            orderId: body.razorpay_order_id,
+        });
 
-        console.info("[payments] checkout verified and fulfilled", {
+        console.info("[payments] checkout verified and granted", {
             orderId: body.razorpay_order_id,
             paymentId: body.razorpay_payment_id,
             kind: fulfilled.kind,
-            userId,
         });
 
-        return ok({ verified: true, kind: fulfilled.kind });
+        return ok({
+            verified: true,
+            granted: true,
+            kind: fulfilled.kind,
+        });
     },
 });

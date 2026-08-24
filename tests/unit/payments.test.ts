@@ -194,11 +194,13 @@ describe("the routes that open checkout", () => {
         expect(webhook).toContain("fulfillPaidNotes");
         expect(verify).toContain("fulfillPaidNotes");
         expect(verify).toContain("fetchOrder");
-        expect(verify).toContain("requireUserId");
         expect(verify).toContain("verifyPaymentSignature");
+        expect(verify).toContain('auth: "none"');
         expect(checkout).toContain("fulfillPaidNotes");
         expect(checkout).toContain("grantPro");
         expect(checkout).toContain("grantPremium");
+        expect(checkout).toContain("grantTemplate");
+        expect(checkout).toContain("grantStyle");
         expect(hook).toContain("openTemplateCheckout");
         expect(hook).toContain("openStyleCheckout");
         expect(hook).toContain("openPlanCheckout");
@@ -210,6 +212,8 @@ describe("the routes that open checkout", () => {
         expect(hook).toContain("/api/v1/account/packages/advanced/checkout");
         expect(hook).toContain("/api/v1/account/packages/generation/checkout");
         expect(hook).toContain("checkout.razorpay.com");
+        expect(checkout).toContain("grantAdvanced");
+        expect(checkout).toContain("grantGenerationPassPurchase");
     });
 
     it("redirects the old Packages page to User Plans", () => {
@@ -259,13 +263,14 @@ describe("the routes that open checkout", () => {
         expect(fork).toContain("PAID_DESIGN_MESSAGE");
         expect(choose).toContain("hasStyleAccess");
         expect(choose).not.toContain("hasPro");
-        // Browser success is not enough — verify must HMAC and fulfill from order notes.
-        expect(verify).toContain("verifyPaymentSignature");
         expect(verify).toContain("fulfillPaidNotes");
+        expect(verify).toContain('auth: "none"');
+        expect(verify).toContain("verifyPaymentSignature");
         expect(verify).not.toContain("grantPublish(");
         expect(plans).toContain("Choose Pro");
         expect(plans).toContain("Choose Premium");
-        expect(plans).toContain("Payment cancelled. Your current plan has not changed.");
+        expect(plans).toContain("homeAfterUpgrade");
+        expect(plans).toContain("upgraded=");
         expect(plans).toContain("paymentsReady");
         expect(plans).toContain("production-payments-setup");
     });

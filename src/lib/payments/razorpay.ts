@@ -20,6 +20,11 @@ const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET?.trim();
 
 const ORDERS_URL = "https://api.razorpay.com/v1/orders";
 
+function razorpayAuthHeader(): string {
+    const { keyId, keySecret } = credentials();
+    return `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
+}
+
 export type OrderKind =
     | "publish"
     | "pro"
@@ -57,8 +62,8 @@ function credentials(): { keyId: string; keySecret: string } {
             "[payments] missing RAZORPAY_KEY_ID and/or RAZORPAY_KEY_SECRET — cannot create or verify orders",
         );
         throw new ApiError(
-            "internal",
-            "We couldn't start the payment. Payments are not set up on this server yet.",
+            "payments_unavailable",
+            "Payments are not set up on this server.",
             "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required",
         );
     }
@@ -83,12 +88,11 @@ export async function createOrder(
     receipt: string,
     notes: OrderNotes,
 ): Promise<RazorpayOrder> {
-    const { keyId, keySecret } = credentials();
-    const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+    const auth = razorpayAuthHeader();
 
     const response = await fetch(ORDERS_URL, {
         method: "POST",
-        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+        headers: { Authorization: auth, "Content-Type": "application/json" },
         body: JSON.stringify({
             amount: amountInPaise,
             currency: "INR",
@@ -116,8 +120,8 @@ export async function createOrder(
         );
 
         throw new ApiError(
-            "internal",
-            "We could not start that payment. Please try again.",
+            "payments_unavailable",
+            "We could not open Razorpay checkout. Please try again in a moment.",
             detail,
         );
     }
@@ -138,15 +142,29 @@ export interface FetchedOrder {
 }
 
 /**
+ * True when Razorpay shows this order as paid (captured or authorized).
+ * Used to recover a purchase if the webhook never landed.
+ */
+export async function orderHasCapturedPayment(orderId: string): Promise<boolean> {
+    const response = await fetch(
+        `${ORDERS_URL}/${encodeURIComponent(orderId)}/payments`,
+        { headers: { Authorization: razorpayAuthHeader() } },
+    );
+    const body = (await response.json()) as { items?: Array<{ status?: string }> };
+
+    if (!response.ok) return false;
+    return (body.items ?? []).some(
+        (item) => item.status === "captured" || item.status === "authorized",
+    );
+}
+
+/**
  * Read an order back from Razorpay (notes + amount). Used after checkout signature
  * verification so the server — not the browser — decides what the payment unlocked.
  */
 export async function fetchOrder(orderId: string): Promise<FetchedOrder> {
-    const { keyId, keySecret } = credentials();
-    const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
-
     const response = await fetch(`${ORDERS_URL}/${encodeURIComponent(orderId)}`, {
-        headers: { Authorization: `Basic ${auth}` },
+        headers: { Authorization: razorpayAuthHeader() },
     });
 
     const body = (await response.json()) as Record<string, unknown>;

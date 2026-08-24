@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
-import { waitForPlanGrant } from "@/lib/payments/wait-for-pro";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
 import { PLAN_COPY, PLAN_PRICE_INR } from "@/lib/payments/plans";
 import { FREE_GENERATIONS_PER_PROJECT } from "@/lib/limits/config";
@@ -23,6 +22,7 @@ function PlanCta({
     covered,
     busy,
     pending,
+    paymentsReady,
     onUpgrade,
 }: {
     id: AccountPlan;
@@ -30,6 +30,7 @@ function PlanCta({
     covered: boolean;
     busy: boolean;
     pending: boolean;
+    paymentsReady: boolean;
     onUpgrade: (plan: "pro" | "premium") => void;
 }) {
     if (active) {
@@ -59,7 +60,7 @@ function PlanCta({
                 type="button"
                 variant="brand"
                 className="min-h-11 w-full cursor-pointer rounded-xl font-semibold"
-                disabled={busy}
+                disabled={busy || !paymentsReady}
                 onClick={() => onUpgrade("pro")}
             >
                 {busy && pending ? "Opening Razorpay…" : "Choose Pro"}
@@ -73,7 +74,7 @@ function PlanCta({
                 type="button"
                 variant="destructive"
                 className="min-h-11 w-full cursor-pointer rounded-xl font-semibold"
-                disabled={busy}
+                disabled={busy || !paymentsReady}
                 onClick={() => onUpgrade("premium")}
             >
                 {busy && pending ? "Opening Razorpay…" : "Choose Premium"}
@@ -84,6 +85,10 @@ function PlanCta({
     return null;
 }
 
+function homeAfterUpgrade(plan: "pro" | "premium"): string {
+    return `/?upgraded=${plan}&slide=compare`;
+}
+
 export function PlansPanel({
     initial,
     signedIn,
@@ -92,43 +97,43 @@ export function PlansPanel({
     signedIn: boolean;
 }) {
     const router = useRouter();
-    const [billing, setBilling] = useState(initial);
+    const [billing] = useState(initial);
     const [message, setMessage] = useState<string | null>(null);
     const [pending, setPending] = useState<"pro" | "premium" | null>(null);
-
-    const refresh = useCallback(async () => {
-        const { apiGet } = await import("@/lib/api/client");
-        const { data } = await apiGet<BillingSummary>("/api/v1/account/billing");
-        if (data) setBilling(data);
-        router.refresh();
-    }, [router]);
+    const pendingRef = useRef<"pro" | "premium" | null>(null);
 
     const { openPlanCheckout, status, error, confirmDialog } = useRazorpayCheckout({
         onAlreadyGranted: () => {
+            const plan = pendingRef.current ?? "pro";
+            pendingRef.current = null;
             setPending(null);
-            setMessage("That plan is already on this account.");
-            void refresh();
+            setMessage(
+                `${plan === "premium" ? "Premium" : "Pro"} is already on this account — taking you home…`,
+            );
+            window.location.assign(homeAfterUpgrade(plan));
         },
-        onSuccess: () => {
-            const plan = pending;
+        onSuccess: (result) => {
+            const plan =
+                result?.kind === "premium" || result?.kind === "pro"
+                    ? result.kind
+                    : (pendingRef.current ?? "pro");
+            pendingRef.current = null;
             setPending(null);
-            if (!plan) return;
-            setMessage("Payment received. Unlocking…");
-            void (async () => {
-                const ok = await waitForPlanGrant(plan, { attempts: 6, delayMs: 400 });
-                setMessage(
-                    ok
-                        ? `${plan === "premium" ? "Premium" : "Pro"} is active — every matching design is unlocked.`
-                        : "Payment went through. If the plan is not showing yet, refresh in a moment.",
-                );
-                await refresh();
-            })();
+            setMessage(
+                plan === "premium"
+                    ? "Premium is active — taking you home…"
+                    : "Pro is active — taking you home…",
+            );
+            // Full reload so homepage billing, locks, and Free labels refresh.
+            window.location.assign(homeAfterUpgrade(plan));
         },
         onDismiss: () => {
+            pendingRef.current = null;
             setPending(null);
             setMessage(CANCELLED_MESSAGE);
         },
         onError: (err) => {
+            pendingRef.current = null;
             setPending(null);
             setMessage(err);
         },
@@ -139,7 +144,14 @@ export function PlansPanel({
             router.push(`/signin?next=${encodeURIComponent("/plans")}`);
             return;
         }
+        if (!billing.paymentsReady) {
+            setMessage(
+                "Checkout is not set up on this server yet. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to the server environment, then restart the app.",
+            );
+            return;
+        }
         setMessage(null);
+        pendingRef.current = plan;
         setPending(plan);
         await openPlanCheckout(plan);
     }
@@ -169,6 +181,9 @@ export function PlansPanel({
                         <span className="font-medium text-foreground">
                             {PLAN_COPY[current].name}
                         </span>
+                        {billing.paymentsReady ? (
+                            <span className="text-muted-foreground"> · Razorpay checkout ready</span>
+                        ) : null}
                     </p>
                 ) : (
                     <p className="text-sm text-muted-foreground">
@@ -248,6 +263,7 @@ export function PlansPanel({
                                     covered={covered && !active}
                                     busy={busy}
                                     pending={pending === id}
+                                    paymentsReady={billing.paymentsReady}
                                     onUpgrade={(plan) => void upgrade(plan)}
                                 />
                             </div>

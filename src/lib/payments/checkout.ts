@@ -6,8 +6,11 @@ import { supabaseAdmin } from "@/lib/data/supabase-admin";
 import { checkEntitlement, hasStyleAccess, hasTemplateAccess } from "@/lib/data/entitlements";
 import {
     createOrder,
+    fetchOrder,
+    orderHasCapturedPayment,
     paymentsConfigured,
     publishableKeyId,
+    verifyPaymentSignature,
     type OrderNotes,
 } from "./razorpay";
 import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr, requiredPlanForStyle, requiredPlanForTemplate } from "./pricing";
@@ -228,6 +231,121 @@ export async function grantPremium(userId: string): Promise<void> {
     await grantAccountKind(userId, "premium");
 }
 
+/**
+ * Unlock whatever the order notes say — used by the webhook and by checkout verify.
+ *
+ * Verify used to only check the signature and wait for the webhook. When the session
+ * expired during Razorpay, or the webhook was late/missing, people paid and stayed on
+ * Starter. Granting here (idempotent) closes that gap; the webhook remains the backup.
+ */
+export async function grantFromOrderNotes(notes: Partial<OrderNotes>): Promise<{
+    kind: OrderNotes["kind"];
+    userId: string;
+}> {
+    const userId = typeof notes.userId === "string" ? notes.userId.trim() : "";
+    const kind = typeof notes.kind === "string" ? notes.kind.trim() : "";
+
+    if (!userId) {
+        throw new ApiError("validation_failed", "That payment has no account on it.");
+    }
+
+    if (kind === "pro") {
+        await grantPro(userId);
+        return { kind, userId };
+    }
+    if (kind === "premium") {
+        await grantPremium(userId);
+        return { kind, userId };
+    }
+    if (kind === "advanced") {
+        await grantAdvanced(userId);
+        return { kind, userId };
+    }
+    if (kind === "generation_pass") {
+        await grantGenerationPassPurchase(userId);
+        return { kind, userId };
+    }
+    if (kind === "template") {
+        const templateId = typeof notes.templateId === "string" ? notes.templateId.trim() : "";
+        if (!templateId) {
+            throw new ApiError("validation_failed", "That payment has no design on it.");
+        }
+        await grantTemplate(userId, templateId);
+        return { kind, userId };
+    }
+    if (kind === "style") {
+        const styleId = typeof notes.styleId === "string" ? notes.styleId.trim() : "";
+        if (!styleId) {
+            throw new ApiError("validation_failed", "That payment has no look on it.");
+        }
+        await grantStyle(userId, styleId);
+        return { kind, userId };
+    }
+    if (kind === "publish") {
+        const projectId = typeof notes.projectId === "string" ? notes.projectId.trim() : "";
+        if (!projectId) {
+            throw new ApiError("validation_failed", "That payment has no site on it.");
+        }
+        await grantPublish(projectId, userId, "paid");
+        return { kind, userId };
+    }
+
+    throw new ApiError("validation_failed", "That payment is not for a plan we recognise.");
+}
+
+/**
+ * After Razorpay checkout: prove the payment tokens, read our notes off the order, grant.
+ * Does not need a browser session — the signature is the trust.
+ */
+export async function applyVerifiedCheckout(input: {
+    orderId: string;
+    paymentId: string;
+    signature: string;
+}): Promise<{ kind: OrderNotes["kind"]; userId: string }> {
+    const valid = verifyPaymentSignature(input.orderId, input.paymentId, input.signature);
+    if (!valid) {
+        throw new ApiError(
+            "validation_failed",
+            "Payment verification failed. Please contact support if you were charged.",
+        );
+    }
+
+    const order = await fetchOrder(input.orderId);
+    return grantFromOrderNotes(order.notes);
+}
+
+/**
+ * Recover a paid order for the signed-in account when the webhook never landed.
+ * Order id comes from the Razorpay receipt / dashboard.
+ */
+export async function recoverPaidOrder(
+    userId: string,
+    orderId: string,
+): Promise<{ kind: OrderNotes["kind"] }> {
+    const order = await fetchOrder(orderId.trim());
+    const notesUser = typeof order.notes.userId === "string" ? order.notes.userId.trim() : "";
+
+    if (!notesUser || notesUser !== userId) {
+        throw new ApiError(
+            "forbidden",
+            "That payment belongs to a different account.",
+        );
+    }
+
+    const paid = await orderHasCapturedPayment(order.id);
+    if (!paid && order.status !== "paid") {
+        throw new ApiError(
+            "validation_failed",
+            "Razorpay does not show that order as paid yet.",
+        );
+    }
+
+    const granted = await grantFromOrderNotes(order.notes);
+    return { kind: granted.kind };
+}
+
+export { recoverPaidOrder as recoverPaidOrder };
+
 /** Grant the Advanced AI usage package (not a catalogue design unlock). */
 export async function grantAdvanced(userId: string): Promise<void> {
     const admin = supabaseAdmin();
@@ -437,6 +555,10 @@ function expandUnlocks(
 /**
  * Start paying for Pro or Premium, or discover they already hold it (or a higher plan).
  */
+function devPlanGrantEnabled(): boolean {
+    return process.env.PAGECRAFTS_DEV_GRANT_PLANS === "true";
+}
+
 export async function startPlanCheckout(
     supabase: SupabaseClient,
     userId: string,
@@ -446,22 +568,27 @@ export async function startPlanCheckout(
         throw new ApiError("validation_failed", "That plan cannot be purchased.");
     }
 
-    if (!paymentsConfigured()) {
-        console.error(
-            "[payments] plan checkout blocked — RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET missing",
-        );
-        throw new ApiError(
-            "internal",
-            "We couldn't start the payment. Payments are not set up on this server yet.",
-            "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required",
-        );
-    }
-
     const billing = await getBilling(supabase, userId);
     if (plan === "pro" && (billing.plan === "pro" || billing.plan === "premium")) {
         return { granted: true };
     }
     if (plan === "premium" && billing.plan === "premium") return { granted: true };
+
+    if (!paymentsConfigured()) {
+        if (devPlanGrantEnabled()) {
+            if (plan === "premium") await grantPremium(userId);
+            else await grantPro(userId);
+            return { granted: true };
+        }
+        console.error(
+            "[payments] plan checkout blocked — RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET missing",
+        );
+        throw new ApiError(
+            "payments_unavailable",
+            "Payments are not set up on this server.",
+            "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required",
+        );
+    }
 
     // Price is server-owned. The browser only names the plan.
     const priceInr = plan === "premium" ? PREMIUM_PRICE_INR : PRO_PRICE_INR;
@@ -505,7 +632,7 @@ export async function startAdvancedCheckout(
     if (data && isLivePlanRow(data, Date.now())) return { granted: true };
 
     if (!paymentsConfigured()) {
-        throw new ApiError("internal", "Payments are not set up on this server.");
+        throw new ApiError("payments_unavailable", "Payments are not set up on this server.");
     }
 
     const notes: OrderNotes = { userId, kind: "advanced" };
@@ -530,7 +657,7 @@ export async function startGenerationPassCheckout(
     userId: string,
 ): Promise<CheckoutResponse> {
     if (!paymentsConfigured()) {
-        throw new ApiError("internal", "Payments are not set up on this server.");
+        throw new ApiError("payments_unavailable", "Payments are not set up on this server.");
     }
 
     const notes: OrderNotes = { userId, kind: "generation_pass" };

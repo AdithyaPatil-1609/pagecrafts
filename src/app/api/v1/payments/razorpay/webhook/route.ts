@@ -16,16 +16,8 @@ export const dynamic = "force-dynamic";
 // an HMAC of the exact bytes below, which only someone holding the webhook secret can
 // produce.
 //
-// The body is read as text and checked before it is parsed. Parsing and re-serialising
-// changes the bytes and the signature would never match again.
-//
 // Browser verify also grants after a signature check. Both paths call fulfillPaidNotes,
 // which is idempotent — a webhook retry after verify (or the reverse) is safe.
-//
-// Status codes here are addressed to Razorpay, not to a user:
-//   400 — the signature is wrong. Do not retry; something is misconfigured or hostile.
-//   200 — handled, or not ours to handle. Either way, stop resending.
-//   500 — we failed. Please retry; the grant is idempotent, so a repeat is safe.
 export async function POST(req: NextRequest) {
   const raw = await req.text();
 
@@ -48,23 +40,30 @@ export async function POST(req: NextRequest) {
   if (!payment) return NextResponse.json({ ok: true, ignored: true });
 
   try {
-    await fulfillPaidNotes(payment.notes, {
+    const granted = await fulfillPaidNotes(payment.notes, {
       paymentId: payment.paymentId,
       orderId: payment.orderId,
     });
+    console.info(`[payments] ${granted.kind} unlocked`, {
+      paymentId: payment.paymentId,
+      orderId: payment.orderId,
+    });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof ApiError && error.code === "validation_failed") {
-      // Notes we do not understand — acknowledge so Razorpay stops retrying.
+      console.error("[payments] captured payment carries no usable notes", {
+        paymentId: payment.paymentId,
+        orderId: payment.orderId,
+        reason: error.message,
+      });
       return NextResponse.json({ ok: true, ignored: true });
     }
 
-    console.error("[payments] could not fulfill after webhook", {
+    console.error("[payments] could not grant after payment", {
       paymentId: payment.paymentId,
       orderId: payment.orderId,
       reason: error instanceof Error ? error.message : String(error),
     });
     return NextResponse.json({ ok: false }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }
