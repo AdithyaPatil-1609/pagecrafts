@@ -6,7 +6,7 @@ import { publishProject } from '@/lib/data/publish-project';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-/** Direct Upload + DNS; hold the request until finish() so Vercel cannot freeze mid-push. */
+/** Background Direct Upload via after(); allow the isolate to finish push + DNS. */
 export const maxDuration = 300;
 
 type Params = { id: string };
