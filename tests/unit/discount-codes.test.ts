@@ -85,5 +85,11 @@ describe("scratch-card codes", () => {
         expect(hook).toContain("discountCode");
         expect(plans).toContain("DiscountCodeField");
         expect(plans).toContain("scratch card");
+
+        const hold = readFileSync(join(process.cwd(), "src", "lib", "payments", "discount-codes.ts"), "utf8");
+        const routes = readFileSync(join(process.cwd(), "src", "lib", "kernel", "with-route.ts"), "utf8");
+        expect(hold).not.toMatch(/ApiError\(\s*"internal"/);
+        expect(hold).toContain("reserveDiscountViaTable");
+        expect(routes).toContain("isApiError");
     });
 });
