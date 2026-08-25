@@ -1,5 +1,4 @@
 import "server-only";
-import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DeploymentState, PublishProjectResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
@@ -19,6 +18,11 @@ import { failureMessage, reasonForError } from "@/lib/deploy/failure";
 import { track } from "@/lib/observability/analytics";
 import { captureError } from "@/lib/observability/capture";
 import type { DeployProvider } from "@/lib/deploy/provider";
+
+export type PublishProjectResult = PublishProjectResponse & {
+  /** Provider work to schedule with waitUntil/after from the route (not here). */
+  background?: Promise<void>;
+};
 
 // Publishing a project (R3 D15 · FR-080–FR-091, C-05).
 //
@@ -68,7 +72,7 @@ export async function publishProject(
   // to survive — a claim that outlives a failed attempt, a site that is not answering yet —
   // can only be reproduced by a provider that behaves that way on purpose.
   provider?: DeployProvider,
-): Promise<PublishProjectResponse> {
+): Promise<PublishProjectResult> {
   const activeProvider = provider ?? deployProvider;
 
   // Before anything is recorded or provisioned. A publish nobody paid for should cost us
@@ -117,9 +121,8 @@ export async function publishProject(
   // rather than requests that bounced off a precondition.
   track("EV-06", userId, { republish: siteId !== null });
 
-  // Answer with the deployment id immediately; run provider work via `after()` so Vercel
-  // keeps the isolate alive (bare `void` freezes mid-upload). Awaiting the whole push in
-  // the request made Go Live feel stuck for minutes on image-heavy sites.
+  // Answer with the deployment id immediately; the route schedules `background` with
+  // waitUntil so the upload can finish after the 202.
   const work = publish(
     { projectId, projectName, files, siteId, idempotencyKey },
     attempt.onState,
@@ -168,15 +171,19 @@ export async function publishProject(
         .catch(() => undefined);
     });
 
+  // Hand the background promise back to the route so it can `waitUntil` / `after` from
+  // request context. Calling `after()` only inside this module did not keep the Vercel
+  // isolate alive — uploads froze and left empty Pages projects (522, no DNS).
   if (process.env.VITEST != null) {
     void work;
-  } else {
-    after(async () => {
-      await work;
-    });
+    return { deploymentId: attempt.deploymentId, status: "pending" };
   }
 
-  return { deploymentId: attempt.deploymentId, status: "pending" };
+  return {
+    deploymentId: attempt.deploymentId,
+    status: "pending",
+    background: work,
+  };
 }
 
 /**

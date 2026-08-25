@@ -220,21 +220,28 @@ export async function pushPagesDirectUpload(
         : new Set(assets.map((f) => f.hash));
 
     const toUpload = assets.filter((f) => missing.has(f.hash));
-
-    for (const bucket of bucketFiles(toUpload)) {
-        await apiJson('/pages/assets/upload', {
-            method: 'POST',
-            token: jwt,
-            timeoutMs: UPLOAD_MS,
-            body: JSON.stringify(
-                bucket.map((file) => ({
-                    key: file.hash,
-                    value: file.base64,
-                    metadata: { contentType: file.contentType },
-                    base64: true,
-                })),
+    const buckets = bucketFiles(toUpload);
+    // Wrangler uploads several buckets at once; serial uploads make large sites crawl.
+    const concurrency = 3;
+    for (let i = 0; i < buckets.length; i += concurrency) {
+        const batch = buckets.slice(i, i + concurrency);
+        await Promise.all(
+            batch.map((bucket) =>
+                apiJson('/pages/assets/upload', {
+                    method: 'POST',
+                    token: jwt,
+                    timeoutMs: UPLOAD_MS,
+                    body: JSON.stringify(
+                        bucket.map((file) => ({
+                            key: file.hash,
+                            value: file.base64,
+                            metadata: { contentType: file.contentType },
+                            base64: true,
+                        })),
+                    ),
+                }),
             ),
-        });
+        );
     }
 
     try {
