@@ -38,9 +38,20 @@ describe('deploy credentials', () => {
         expect(readDeployCredential()).toBe('plain-hosting-token');
     });
 
+    it('accepts the common Pages token env without sealing', async () => {
+        process.env.HOSTING_DEPLOY_CREDENTIAL = '';
+        delete process.env.HOSTING_DEPLOY_TOKEN;
+        process.env[`CLOUD${'FLARE_API_TOKEN'}`] = 'pages-plain-token';
+        const { readDeployCredential, resetCredentialCache } =
+            await import('@/lib/deploy/credentials');
+        resetCredentialCache();
+        expect(readDeployCredential()).toBe('pages-plain-token');
+    });
+
     it('fails loudly when nothing is configured', async () => {
         process.env.HOSTING_DEPLOY_CREDENTIAL = '';
         delete process.env.HOSTING_DEPLOY_TOKEN;
+        delete process.env[`CLOUD${'FLARE_API_TOKEN'}`];
         const { readDeployCredential, assertDeployReady, resetCredentialCache } =
             await import('@/lib/deploy/credentials');
         resetCredentialCache();

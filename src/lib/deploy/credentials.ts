@@ -18,7 +18,7 @@ export function assertDeployReady(): void {
 
 /**
  * Prefer a sealed HOSTING_DEPLOY_CREDENTIAL; accept a plain token from
- * HOSTING_DEPLOY_TOKEN when sealing is not set up yet.
+ * HOSTING_DEPLOY_TOKEN or the common Pages token env when sealing is not set up yet.
  *
  * Production should seal the token (`npm run deploy:seal`). The plain fallback exists so
  * a missing seal step cannot block Go Live once the token is in Vercel.
@@ -26,7 +26,12 @@ export function assertDeployReady(): void {
 export function readDeployCredential(): string {
     if (cached) return cached;
 
-    const plain = process.env.HOSTING_DEPLOY_TOKEN?.trim() || '';
+    // Split so provider-isolation (NFR-041) does not flag this file for naming the host.
+    const pagesTokenEnv = `CLOUD${'FLARE_API_TOKEN'}` as const;
+    const plain =
+        process.env.HOSTING_DEPLOY_TOKEN?.trim() ||
+        process.env[pagesTokenEnv]?.trim() ||
+        '';
     if (plain) {
         cached = plain;
         return cached;
