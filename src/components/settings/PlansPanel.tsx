@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { DiscountCodeField } from "@/components/payments/DiscountCodeField";
+import { DiscountCodeField, codesMatch, type AppliedCoupon } from "@/components/payments/DiscountCodeField";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
 import { PLAN_COPY, PLAN_PRICE_INR } from "@/lib/payments/plans";
@@ -24,6 +24,8 @@ function PlanCta({
     busy,
     pending,
     paymentsReady,
+    payInr,
+    listInr,
     onUpgrade,
 }: {
     id: AccountPlan;
@@ -32,6 +34,8 @@ function PlanCta({
     busy: boolean;
     pending: boolean;
     paymentsReady: boolean;
+    payInr?: number;
+    listInr?: number;
     onUpgrade: (plan: "pro" | "premium") => void;
 }) {
     if (active) {
@@ -56,6 +60,14 @@ function PlanCta({
     }
 
     if (id === "pro") {
+        const label =
+            busy && pending
+                ? "Opening Razorpay…"
+                : payInr === 0
+                  ? "Unlock Pro · Free"
+                  : payInr != null && listInr != null && payInr < listInr
+                    ? `Choose Pro · Rs ${payInr}`
+                    : "Choose Pro";
         return (
             <Button
                 type="button"
@@ -64,12 +76,20 @@ function PlanCta({
                 disabled={busy || !paymentsReady}
                 onClick={() => onUpgrade("pro")}
             >
-                {busy && pending ? "Opening Razorpay…" : "Choose Pro"}
+                {label}
             </Button>
         );
     }
 
     if (id === "premium") {
+        const label =
+            busy && pending
+                ? "Opening Razorpay…"
+                : payInr === 0
+                  ? "Unlock Premium · Free"
+                  : payInr != null && listInr != null && payInr < listInr
+                    ? `Choose Premium · Rs ${payInr}`
+                    : "Choose Premium";
         return (
             <Button
                 type="button"
@@ -78,7 +98,7 @@ function PlanCta({
                 disabled={busy || !paymentsReady}
                 onClick={() => onUpgrade("premium")}
             >
-                {busy && pending ? "Opening Razorpay…" : "Choose Premium"}
+                {label}
             </Button>
         );
     }
@@ -102,6 +122,7 @@ export function PlansPanel({
     const [message, setMessage] = useState<string | null>(null);
     const [pending, setPending] = useState<"pro" | "premium" | null>(null);
     const [discountCode, setDiscountCode] = useState("");
+    const [applied, setApplied] = useState<AppliedCoupon | null>(null);
     const pendingRef = useRef<"pro" | "premium" | null>(null);
 
     const { openPlanCheckout, status, error, confirmDialog } = useRazorpayCheckout({
@@ -159,9 +180,14 @@ export function PlansPanel({
             return;
         }
         setMessage(null);
+        const typed = discountCode.trim();
+        if (typed && (!applied || !codesMatch(applied.code, typed))) {
+            setMessage("Press Apply to use that coupon before checkout. Razorpay should see the new price first.");
+            return;
+        }
         pendingRef.current = plan;
         setPending(plan);
-        await openPlanCheckout(plan, discountCode.trim() || undefined);
+        await openPlanCheckout(plan, applied?.code.trim() || undefined);
     }
 
     const current = billing.plan;
@@ -208,9 +234,11 @@ export function PlansPanel({
 
             {signedIn ? (
                 <DiscountCodeField
-                    kind={pending === "premium" ? "premium" : "pro"}
+                    kind="pro"
+                    kinds={["pro", "premium"]}
                     value={discountCode}
                     onChange={setDiscountCode}
+                    onApplied={setApplied}
                     className="max-w-md"
                 />
             ) : null}
@@ -225,6 +253,7 @@ export function PlansPanel({
                         || (id === "premium" && current === "premium");
                     const popular = id === "pro" && !active;
                     const paid = id === "pro" || id === "premium";
+                    const deal = id === "pro" || id === "premium" ? applied?.prices[id] : undefined;
 
                     return (
                         <article
@@ -245,10 +274,25 @@ export function PlansPanel({
                                 ) : null}
                             </div>
 
-                            <p className="mt-3 flex items-baseline gap-2">
-                                <span className="text-3xl font-bold tracking-tight text-foreground">
-                                    {id === "starter" ? "Free" : `Rs ${PLAN_PRICE_INR[id]}`}
-                                </span>
+                            <p className="mt-3 flex flex-wrap items-baseline gap-2">
+                                {id === "starter" ? (
+                                    <span className="text-3xl font-bold tracking-tight text-foreground">
+                                        Free
+                                    </span>
+                                ) : deal && deal.priceInr < deal.listPriceInr ? (
+                                    <>
+                                        <span className="text-3xl font-bold tracking-tight text-foreground">
+                                            {deal.priceInr === 0 ? "Free" : `Rs ${deal.priceInr}`}
+                                        </span>
+                                        <span className="text-base font-normal text-muted-foreground line-through">
+                                            Rs {deal.listPriceInr}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span className="text-3xl font-bold tracking-tight text-foreground">
+                                        Rs {id === "pro" || id === "premium" ? PLAN_PRICE_INR[id] : 0}
+                                    </span>
+                                )}
                                 {paid ? (
                                     <span className="text-sm font-normal text-muted-foreground">
                                         once
@@ -281,6 +325,8 @@ export function PlansPanel({
                                     busy={busy}
                                     pending={pending === id}
                                     paymentsReady={billing.paymentsReady}
+                                    payInr={deal?.priceInr}
+                                    listInr={deal?.listPriceInr}
                                     onUpgrade={(plan) => void upgrade(plan)}
                                 />
                             </div>
