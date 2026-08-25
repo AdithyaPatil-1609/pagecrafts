@@ -12,24 +12,65 @@ describe("account settings", () => {
     const billing = read("src", "components", "settings", "BillingPlans.tsx");
     const notices = read("src", "components", "settings", "NotificationPrefs.tsx");
     const privacy = read("src", "components", "settings", "PrivacyAndData.tsx");
+    const account = read("src", "components", "settings", "AccountPanel.tsx");
+    const details = read("src", "components", "settings", "BillingProfile.tsx");
+    const remove = read("src", "components", "settings", "DeleteAccount.tsx");
     const toggle = read("src", "components", "settings", "PreferenceSwitch.tsx");
 
+    expect(slide).toContain("AccountPanel");
     expect(slide).toContain("NotificationPrefs");
+    expect(slide).toContain("AiCreditsPanel");
     expect(slide).toContain("BillingPlans");
     expect(slide).toContain("PrivacyAndData");
+    expect(slide).toContain("DeleteAccount");
     expect(slide).toContain("in the editor");
+    expect(account).toContain("Change password");
+    expect(account).toContain("Name");
+    expect(account).not.toContain("Joined");
     expect(notices).toContain("Website published successfully");
+    expect(notices).toContain("Security alerts");
+    expect(notices).not.toContain("Product announcements");
     expect(toggle).toContain('role="switch"');
     expect(toggle).toContain("cursor-pointer");
     expect(toggle).toContain("bg-gold");
-    expect(billing).toContain("User Plans");
+    expect(billing).toContain("Billing &amp; Plan");
+    expect(billing).toContain("Manage Plan");
     expect(billing).toContain('href="/plans"');
-    expect(billing).toContain("Cards stay with Razorpay");
+    expect(billing).toContain("Current plan");
+    expect(billing).not.toContain("Cards stay with Razorpay");
+    expect(billing).not.toContain("User Plans");
     expect(billing).not.toContain("Switch to Starter");
     expect(billing).not.toContain("Rs 249");
     expect(billing).not.toContain("Billing is not live yet");
+    expect(details).toContain("Billing Details");
+    expect(details).toContain("State");
+    expect(details).toContain("PIN / ZIP code");
+    expect(details).toContain("Country");
+    expect(details).not.toContain("You, and the bill");
     expect(privacy).toContain("Download my data");
     expect(privacy).toContain("/api/v1/account/export");
+    expect(privacy).not.toContain("DeleteAccount");
+    expect(remove).toContain("Danger Zone");
+    expect(remove).toContain("Yes, continue");
+  });
+
+  it("shows AI credits on Settings with plan allowances", () => {
+    const credits = read("src", "components", "settings", "AiCreditsPanel.tsx");
+    const slide = read("src", "components", "deck", "SettingsSlide.tsx");
+    const notice = read("src", "components", "discovery", "AiCreditsNotice.tsx");
+    const chooser = read("src", "components", "discovery", "StyleChooser.tsx");
+
+    expect(slide).toContain("AiCreditsPanel");
+    expect(credits).toContain("AI credits");
+    expect(credits).toContain("generationsLimitForPlan");
+    expect(credits).toContain("AI builds per site");
+    expect(credits).toContain('href="/plans"');
+    expect(notice).toContain("AI credits");
+    expect(notice).toContain("/?slide=settings");
+    // Fix with AI must keep the original brief — never replace it with the repair sentence.
+    expect(chooser).toContain("generateAgain(_repairNote");
+    expect(chooser).toContain("const text = prompt.trim()");
+    expect(chooser).not.toContain("void generateAgain(fix.instruction)");
   });
 
   it("sends the sidebar to designs, and plans live on /plans", () => {
