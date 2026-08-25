@@ -19,6 +19,7 @@ import ChatPanel from './ChatPanel';
 import EditorSplit from './EditorSplit';
 import { AskAiFixDialog } from './AskAiFixDialog';
 import { NeedUpiDialog } from './NeedUpiDialog';
+import { EditUnlockGate } from './EditUnlockGate';
 
 interface JobProgress {
     status: JobStatus;
@@ -219,7 +220,7 @@ export default function EditorShell({
                         </div>
                     </div>
                 </div>
-            ) : (
+            ) : generating ? (
                 <main className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
                     {generation && (
                         <GeneratingOverlay
@@ -234,6 +235,14 @@ export default function EditorShell({
                             onAskAiFix={(instruction) => void retryGeneration(instruction)}
                         />
                     )}
+                    <EditorSplit
+                        left={<PaneSkeleton />}
+                        right={<PaneSkeleton />}
+                    />
+                </main>
+            ) : (
+                <EditUnlockGate projectId={projectId}>
+                <main className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
                     {sectionsOpen && composition && (
                         <aside className="w-64 shrink-0 overflow-auto border-r border-border/60">
                             {loading ? <TreeSkeleton /> : <SectionsPanel />}
@@ -258,8 +267,8 @@ export default function EditorShell({
                         </>
                     ) : (
                         <EditorSplit
-                            left={loading || generating ? <PaneSkeleton /> : <ChatPanel autoFocus={focusAsk} />}
-                            right={loading || generating ? <PaneSkeleton /> : <PreviewPane />}
+                            left={loading ? <PaneSkeleton /> : <ChatPanel autoFocus={focusAsk} />}
+                            right={loading ? <PaneSkeleton /> : <PreviewPane />}
                         />
                     )}
                     {historyOpen && (
@@ -268,6 +277,7 @@ export default function EditorShell({
                         </aside>
                     )}
                 </main>
+                </EditUnlockGate>
             )}
 
             {loadFix ? (

@@ -100,29 +100,25 @@ async function run(
 
         stage = 'verifying';
         onState('verifying');
-        const live = await step('verifying', siteCtx, () => provider.verifyLive(url));
+        // Prefer the PageCrafts address; fall back to pages.dev so we can mark live
+        // within a minute while custom DNS finishes warming.
+        const pagesUrl = `https://${id}.pages.dev/`;
+        const customLive = await step('verifying', siteCtx, () => provider.verifyLive(url));
+        const live =
+            customLive ||
+            (await step('verifying', siteCtx, () => provider.verifyLive(pagesUrl)));
 
-        // `verifying`, not `pending`. A site that has been provisioned, pushed, hosted and is
-        // only waiting on DNS is nearly finished; `pending` is the state an attempt starts
-        // in, and reusing it here threw away everything the attempt had achieved. The
-        // dashboard could not tell a publish that had done nothing from one a propagation
-        // delay away from being live, and nothing could resume it — resuming means knowing
-        // there is something to resume (R3 D17).
         const state: DeploymentState = live ? 'live' : 'verifying';
         onState(state);
 
         return {
             siteId: id,
             subdomain,
+            // Always hand the owner the PageCrafts address once files are serving.
             liveUrl: live ? url : null,
             pendingUrl: live ? null : url,
             commitSha,
             state,
-            // A reason, not a sentence and no longer a code. This was the literal string
-            // 'verification_timeout', which went straight into a column the dashboard shows
-            // a person (R3 D18). lib/deploy/failure.ts turns it into words at read time —
-            // and the words for this one say the site is published and switching on, which
-            // is what is actually true.
             reason: live ? null : ('not_answering_yet' satisfies FailureReason),
         };
     } catch (error) {

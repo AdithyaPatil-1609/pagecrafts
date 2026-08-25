@@ -12,6 +12,7 @@ import {
 
 export type RazorpayConfirmKind =
     | "publish"
+    | "edit_unlock"
     | "design"
     | "look"
     | "plan"
@@ -22,6 +23,10 @@ const COPY: Record<RazorpayConfirmKind, { title: string; body: string }> = {
     publish: {
         title: "Continue to Razorpay?",
         body: "You'll be taken to Razorpay to pay for publishing this site. Agree only if you want to continue.",
+    },
+    edit_unlock: {
+        title: "Continue to Razorpay?",
+        body: "You'll pay Rs 249 to unlock editing on this live site. After that you can change it and republish to the same address. Agree only if you want to continue.",
     },
     design: {
         title: "Continue to Razorpay?",

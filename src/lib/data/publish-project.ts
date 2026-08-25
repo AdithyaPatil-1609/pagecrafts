@@ -155,7 +155,9 @@ export async function publishProject(
 
       const detail =
         error instanceof PublishError
-          ? (error.detail ?? null)
+          ? error.code === "validation_failed"
+            ? error.message
+            : (error.detail ?? error.message)
           : error instanceof Error
             ? error.message
             : String(error);

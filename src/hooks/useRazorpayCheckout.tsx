@@ -113,6 +113,8 @@ interface UseRazorpayCheckoutOptions {
 interface UseRazorpayCheckoutReturn {
     /** Start the checkout flow for publishing a project. */
     openCheckout: (projectId: string, discountCode?: string) => Promise<void>;
+    /** Buy Rs 249 unlock to edit a live site. */
+    openEditUnlockCheckout: (projectId: string, discountCode?: string) => Promise<void>;
     /** Buy one catalogue design (routes to plan upgrade). */
     openTemplateCheckout: (templateId: string, discountCode?: string) => Promise<void>;
     /** Buy one generated look (routes to plan upgrade). */
@@ -307,6 +309,19 @@ export function useRazorpayCheckout(
         [startOrder, withConfirm],
     );
 
+    const openEditUnlockCheckout = useCallback(
+        (projectId: string, discountCode?: string) =>
+            withConfirm('edit_unlock', () =>
+                startOrder(
+                    `/api/v1/projects/${encodeURIComponent(projectId)}/edit-unlock/checkout`,
+                    (data) =>
+                        `Edit unlock · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                    discountCode ? { discountCode } : {},
+                ),
+            ),
+        [startOrder, withConfirm],
+    );
+
     const openTemplateCheckout = useCallback(
         (templateId: string, discountCode?: string) =>
             withConfirm('plan', () =>
@@ -379,6 +394,7 @@ export function useRazorpayCheckout(
 
     return {
         openCheckout,
+        openEditUnlockCheckout,
         openTemplateCheckout,
         openStyleCheckout,
         openPlanCheckout,

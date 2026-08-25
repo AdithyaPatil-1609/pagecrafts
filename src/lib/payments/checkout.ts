@@ -4,6 +4,7 @@ import type { AccountPlan, BillingSummary, TemplateTier } from "@/lib/contracts"
 import { ApiError } from "@/lib/errors/respond";
 import { supabaseAdmin } from "@/lib/data/supabase-admin";
 import { checkEntitlement, hasStyleAccess, hasTemplateAccess } from "@/lib/data/entitlements";
+import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr, requiredPlanForStyle, requiredPlanForTemplate, EDIT_UNLOCK_PRICE_INR } from "./pricing";
 import {
     createOrder,
     fetchOrder,
@@ -15,7 +16,6 @@ import {
     type OrderNotes,
     type RazorpayOrder,
 } from "./razorpay";
-import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr, requiredPlanForStyle, requiredPlanForTemplate } from "./pricing";
 import { TEMPLATES } from "@/lib/templates";
 import { templateUuid } from "@/lib/templates/template-id";
 import type { StyleId } from "@/lib/ai/generate/styles";
@@ -193,6 +193,30 @@ export async function grantPublish(
 }
 
 /**
+ * Grant edit_unlock so a live site can be changed and republished (same address).
+ */
+export async function grantEditUnlock(
+    projectId: string,
+    userId: string,
+    source: "paid" | "launch_offer" = "paid",
+): Promise<void> {
+    const admin = supabaseAdmin();
+
+    const { error } = await admin.from("entitlements").insert({
+        user_id: userId,
+        project_id: projectId,
+        kind: "edit_unlock",
+        source,
+        status: "active",
+    });
+
+    if (!error) return;
+    if (error.code === "23505") return;
+
+    throw new ApiError("internal", "Could not unlock editing.", error.message);
+}
+
+/**
  * Start paying to publish, or discover there is nothing to pay.
  *
  * A free design is granted on the spot: making somebody open a checkout for Rs 0 is a
@@ -245,6 +269,59 @@ export async function startPublishCheckout(
     if (!order) {
         await grantPublish(projectId, userId, "launch_offer");
         await captureCodeIfUsed(priced, userId, "publish");
+        return { granted: true, ...checkoutFields(priced) };
+    }
+
+    return {
+        granted: false,
+        orderId: order.id,
+        amountInPaise: order.amount,
+        currency: "INR",
+        keyId: publishableKeyId(),
+        ...checkoutFields(priced),
+    };
+}
+
+/**
+ * Pay Rs 249 to reopen editing on a published site (and republish to the same address).
+ */
+export async function startEditUnlockCheckout(
+    supabase: SupabaseClient,
+    userId: string,
+    projectId: string,
+    discountCode?: string,
+): Promise<CheckoutResponse> {
+    // Owner check — same pattern as publish checkout.
+    await priceOf(supabase, projectId);
+
+    const permission = await checkEntitlement(supabase, userId, projectId, "edit_unlock");
+    if (permission.granted) return { granted: true };
+
+    const pro = await checkEntitlement(supabase, userId, null, "pro");
+    if (pro.granted) {
+        await grantEditUnlock(projectId, userId, "paid");
+        return { granted: true };
+    }
+
+    if (!paymentsConfigured()) {
+        throw new ApiError(
+            "service_unavailable",
+            "Payments are not available right now. Try again in a little while.",
+        );
+    }
+
+    const { priced, order } = await startDiscountedOrder({
+        userId,
+        kind: "edit_unlock",
+        listPriceInr: EDIT_UNLOCK_PRICE_INR,
+        receipt: `edit_${projectId.slice(0, 8)}_${Date.now()}`,
+        notes: { projectId, userId, kind: "edit_unlock" },
+        discountCode,
+    });
+
+    if (!order) {
+        await grantEditUnlock(projectId, userId, "launch_offer");
+        await captureCodeIfUsed(priced, userId, "edit_unlock");
         return { granted: true, ...checkoutFields(priced) };
     }
 
@@ -374,6 +451,14 @@ export async function grantFromOrderNotes(notes: Partial<OrderNotes>): Promise<{
             throw new ApiError("validation_failed", "That payment has no site on it.");
         }
         await grantPublish(projectId, userId, "paid");
+        return { kind, userId };
+    }
+    if (kind === "edit_unlock") {
+        const projectId = typeof notes.projectId === "string" ? notes.projectId.trim() : "";
+        if (!projectId) {
+            throw new ApiError("validation_failed", "That payment has no site on it.");
+        }
+        await grantEditUnlock(projectId, userId, "paid");
         return { kind, userId };
     }
 

@@ -27,6 +27,7 @@ function razorpayAuthHeader(): string {
 
 export type OrderKind =
     | "publish"
+    | "edit_unlock"
     | "pro"
     | "premium"
     | "template"

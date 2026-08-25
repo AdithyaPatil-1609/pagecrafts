@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { startPublishCheckout } from "@/lib/payments/checkout";
+import { startPublishCheckout, startEditUnlockCheckout } from "@/lib/payments/checkout";
 import { getProject, listProjects } from "@/lib/data/projects";
 import { getProjectFiles, getProjectFile } from "@/lib/data/project-files";
 import { listCommits } from "@/lib/data/commits";
@@ -61,6 +61,8 @@ const CROSS_USER: Record<string, "covered" | { skipped: string }> = {
     "/content": "covered",
     "/copy-edits": "covered",
     "/deployments": "covered",
+    "/edit-access": "covered",
+    "/edit-unlock/checkout": "covered",
     "/edits": "covered",
     "/edits/apply": "covered",
     "/files": "covered",
@@ -234,6 +236,21 @@ describe("a signed-in stranger, asking for somebody else's project", () => {
         await expectHidden("POST /checkout", () =>
             startPublishCheckout(db.asUser(STRANGER), STRANGER, theirs),
         );
+    });
+
+    it("cannot start an edit-unlock checkout for it", async () => {
+        const { db, theirs } = twoPeople();
+        await expectHidden("POST /edit-unlock/checkout", () =>
+            startEditUnlockCheckout(db.asUser(STRANGER), STRANGER, theirs),
+        );
+    });
+
+    it("cannot learn edit-access for it beyond a draft answer", async () => {
+        // Same shape as checkEditPermission: no live history visible → never_published.
+        const { db, theirs } = twoPeople();
+        const permission = await checkEditPermission(db.asUser(STRANGER), STRANGER, theirs);
+        expect(permission.reason).toBe("never_published");
+        expect(permission.allowed).toBe(true);
     });
 
     it("cannot start a checkout for it while holding a pro subscription", async () => {

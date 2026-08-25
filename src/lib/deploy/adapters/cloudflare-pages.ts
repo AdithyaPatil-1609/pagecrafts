@@ -2,7 +2,7 @@ import 'server-only';
 import type { PublishFile } from '@/lib/contracts/deploy';
 import type { DeployProvider, ProvisionInput, ProvisionResult } from '../provider';
 import { deployConfig } from '../config';
-import { uniqueSlug } from '../slug';
+import { toSlug, isReserved } from '../slug';
 import { pollUntilLive } from '../verify';
 import { cf, accountPath } from './cloudflare-client';
 import { HostingError } from './hosting-error';
@@ -46,7 +46,21 @@ async function zoneId(): Promise<string> {
 
 export const cloudflarePagesAdapter: DeployProvider = {
     async provisionSite({ projectName }: ProvisionInput): Promise<ProvisionResult> {
-        const subdomain = await uniqueSlug(projectName, projectExists);
+        const subdomain = toSlug(projectName);
+
+        if (isReserved(subdomain)) {
+            throw new HostingError(
+                'That site name is reserved. Choose another name.',
+                409,
+            );
+        }
+
+        if (await projectExists(subdomain)) {
+            throw new HostingError(
+                'That site address is already taken. Choose another name.',
+                409,
+            );
+        }
 
         await cf('POST', accountPath('/pages/projects'), {
             name: subdomain,
@@ -116,9 +130,8 @@ export const cloudflarePagesAdapter: DeployProvider = {
     },
 
     async verifyLive(url: string): Promise<boolean> {
-        // Keep the publish request short; GET /deployments resumes verification on poll.
-        // pushBuild already confirmed `*.pages.dev` is serving files.
-        return pollUntilLive(url, { timeoutMs: 25_000 });
+        // Short check — DNS/edge warm-up continues via resumeVerification on poll.
+        return pollUntilLive(url, { timeoutMs: 8_000, intervalMs: 1_000 });
     },
 
     async removeSite(siteId: string): Promise<void> {

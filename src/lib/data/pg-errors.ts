@@ -20,7 +20,7 @@ interface DbError {
 // Postgres SQLSTATEs that mean "the request asked for something the schema forbids".
 const CLIENT_FAULTS: Record<string, string> = {
     "23503": "Something this refers to no longer exists.", // foreign_key_violation
-    "23505": "That already exists.", // unique_violation
+    "23505": "That name is already taken. Choose another.", // unique_violation
     "23514": "Some values were not allowed.", // check_violation
     "22001": "Some text was too long.", // string_data_right_truncation
     // invalid_text_representation — a value that is not the type the column is, which in
