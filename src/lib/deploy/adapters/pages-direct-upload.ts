@@ -21,6 +21,7 @@ import { accountPath } from './cloudflare-client';
 
 const MAX_BUCKET_BYTES = 50 * 1024 * 1024;
 const MAX_BUCKET_FILES = 100;
+const FETCH_MS = 45_000;
 
 interface PreparedFile {
     path: string;
@@ -101,15 +102,22 @@ async function apiJson<T>(
     path: string,
     init: RequestInit & { token: string },
 ): Promise<T> {
-    const { token, ...rest } = init;
+    const { token, body, method = 'GET', headers: extra } = init;
+    const headers: Record<string, string> = {
+        authorization: `Bearer ${token}`,
+        ...(extra as Record<string, string> | undefined),
+    };
+    // Do not send content-type on GET — some Cloudflare edge paths stall on it.
+    if (body !== undefined) {
+        headers['content-type'] = 'application/json';
+    }
+
     const res = await fetch(`${deployConfig().apiBase}${path}`, {
-        ...rest,
-        headers: {
-            authorization: `Bearer ${token}`,
-            'content-type': 'application/json',
-            ...(rest.headers ?? {}),
-        },
+        method,
+        headers,
+        body: body === undefined ? undefined : body,
         cache: 'no-store',
+        signal: AbortSignal.timeout(FETCH_MS),
     });
     return parseCf<T>(res);
 }
@@ -122,6 +130,9 @@ async function uploadToken(projectName: string): Promise<string> {
             token: readDeployCredential(),
         },
     );
+    if (!result?.jwt) {
+        throw new HostingError('Host did not return an upload token.', 502);
+    }
     return result.jwt;
 }
 
@@ -174,11 +185,14 @@ export async function pushPagesDirectUpload(
 
     const jwt = await uploadToken(projectName);
 
-    const missing = await apiJson<string[]>('/pages/assets/check-missing', {
+    const missingRaw = await apiJson<unknown>('/pages/assets/check-missing', {
         method: 'POST',
         token: jwt,
         body: JSON.stringify({ hashes: prepared.map((f) => f.hash) }),
     });
+    const missing = Array.isArray(missingRaw)
+        ? missingRaw.filter((h): h is string => typeof h === 'string')
+        : prepared.map((f) => f.hash);
 
     const toUpload = prepared.filter((f) => missing.includes(f.hash));
 
@@ -208,7 +222,10 @@ export async function pushPagesDirectUpload(
     }
 
     const form = new FormData();
-    form.append('manifest', JSON.stringify(manifest));
+    form.append(
+        'manifest',
+        new Blob([JSON.stringify(manifest)], { type: 'application/json' }),
+    );
     form.append('branch', 'main');
 
     const res = await fetch(
@@ -220,6 +237,7 @@ export async function pushPagesDirectUpload(
             },
             body: form,
             cache: 'no-store',
+            signal: AbortSignal.timeout(FETCH_MS),
         },
     );
 

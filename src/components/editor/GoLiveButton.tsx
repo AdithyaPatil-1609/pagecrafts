@@ -91,7 +91,7 @@ export default function GoLiveButton({
             return;
         }
 
-        for (let attempt = 0; attempt < 60; attempt++) {
+        for (let attempt = 0; attempt < 90; attempt++) {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             const { deployment, error: pollError } = await pollDeployment(deploymentId);
             if (pollError) {

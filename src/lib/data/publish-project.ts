@@ -1,5 +1,4 @@
 import "server-only";
-import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DeploymentState, PublishProjectResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
@@ -117,10 +116,10 @@ export async function publishProject(
   // rather than requests that bounced off a precondition.
   track("EV-06", userId, { republish: siteId !== null });
 
-  // Keep the upload/DNS work alive after the 202 response. On Vercel a bare `void publish()`
-  // is frozen when the isolate goes idle, which left empty Pages projects (522) and no
-  // custom-domain DNS — exactly the Mithais Sweets failure. `after()` uses waitUntil.
-  // Under Vitest there is no request context; run detached the old way so unit tests settle.
+  // Run the provider work before answering. Detached `void` / `after()` still left empty
+  // Pages projects on Vercel (client timed out on "taking longer than expected" while the
+  // row never reached live or failed). Awaiting with maxDuration on the route guarantees
+  // finish() runs. Vitest keeps the old detached shape so tests can return immediately.
   const work = publish(
     { projectId, projectName, files, siteId, idempotencyKey },
     attempt.onState,
@@ -177,14 +176,6 @@ export async function publishProject(
 
       const reason = reasonForError(error);
 
-      // The publish runs after the response has gone, so nothing upstream is watching:
-      // withRoute's Sentry boundary only wraps errors thrown *during* a request, and this
-      // promise is detached by design. Until R3 D20 a failed publish left one console line
-      // in a serverless log and nothing else — no Sentry issue, no analytics event — so the
-      // first anybody knew of a bad deploy was a customer saying so.
-      //
-      // Tagged with the reason so failures group by cause rather than by whichever provider
-      // string came back, and with the project so support can find the attempt.
       captureError(error, {
         tags: { boundary: "publish", reason },
         extra: { projectId, deploymentId: attempt.deploymentId },
@@ -193,9 +184,6 @@ export async function publishProject(
 
       console.error("[publish]", projectId, error);
 
-      // finish() can itself fail — a dropped connection, a policy change. There is nothing
-      // useful left to do at that point except not crash the process the response already
-      // left behind.
       await attempt
         .finish({ state: "failed", error: detail, failureReason: reason })
         .catch(() => undefined);
@@ -204,9 +192,7 @@ export async function publishProject(
   if (process.env.VITEST != null) {
     void work;
   } else {
-    after(async () => {
-      await work;
-    });
+    await work;
   }
 
   return { deploymentId: attempt.deploymentId, status: "pending" };

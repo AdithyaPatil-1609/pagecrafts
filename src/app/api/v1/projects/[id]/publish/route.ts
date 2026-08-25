@@ -6,8 +6,8 @@ import { publishProject } from '@/lib/data/publish-project';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-/** Direct Upload + DNS can exceed the default serverless window; keep the after() work alive. */
-export const maxDuration = 120;
+/** Direct Upload + DNS; hold the request until finish() so Vercel cannot freeze mid-push. */
+export const maxDuration = 300;
 
 type Params = { id: string };
 
