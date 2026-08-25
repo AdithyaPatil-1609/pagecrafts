@@ -1,5 +1,6 @@
 import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
 import { projectNameFromPrompt } from './name';
+import { briefClarityErrors } from './clarity';
 
 export const BRIEF_TONES = ['simple', 'warm', 'bold'] as const;
 export type BriefTone = (typeof BRIEF_TONES)[number];
@@ -82,6 +83,10 @@ export function briefErrors(brief: SiteBrief): string[] {
             `${LABELS[field as keyof typeof BRIEF_LIMITS]} is ${written.toLocaleString()} characters. ` +
                 `The most it takes is ${limit.toLocaleString()} — shorten it by ${(written - limit).toLocaleString()}.`,
         );
+    }
+
+    if (errors.length === 0) {
+        errors.push(...briefClarityErrors(brief));
     }
 
     return errors;

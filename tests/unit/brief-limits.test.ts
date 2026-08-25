@@ -49,14 +49,19 @@ describe('the composed prompt fits everywhere it is sent', () => {
     // Every field can be at its own limit at once, and composeBrief adds connective words
     // on top. If that total could exceed what the route takes, the form is a trap.
     it('a brief with every field full still composes to something the route accepts', () => {
+        const pad = (word: string, limit: number) => {
+            let text = word;
+            while (text.length < limit) text = `${text} ${word}`.trim();
+            return text.slice(0, limit).trim();
+        };
         const full = {
             ...emptyBrief(),
-            name: 'x'.repeat(BRIEF_LIMITS.name),
-            offer: 'y'.repeat(BRIEF_LIMITS.offer),
-            place: 'z'.repeat(BRIEF_LIMITS.place),
+            name: pad('Smile Dental', BRIEF_LIMITS.name),
+            offer: pad('family dental clinic check-ups and braces', BRIEF_LIMITS.offer),
+            place: pad('Koramangala Bangalore', BRIEF_LIMITS.place),
             phone: '1'.repeat(BRIEF_LIMITS.phone),
-            hours: 'h'.repeat(BRIEF_LIMITS.hours),
-            extra: 'e'.repeat(BRIEF_LIMITS.extra),
+            hours: pad('open weekdays nine to six', BRIEF_LIMITS.hours),
+            extra: pad('people can book an appointment online', BRIEF_LIMITS.extra),
             tone: 'warm' as const,
         };
 
@@ -88,8 +93,18 @@ describe('briefErrors catches an over-long field before the request goes out', (
     });
 
     it('counts what is sent, not what was typed, so trailing space is not an error', () => {
-        const brief = { ...emptyBrief(), name: 'A', place: 'C', offer: `${'x'.repeat(500)}     ` };
+        const seed = 'family dental clinic check-ups root canals and braces ';
+        let padded = seed;
+        while (padded.length < 500) padded += seed;
+        padded = padded.slice(0, 500);
+        const brief = {
+            ...emptyBrief(),
+            name: 'Smile',
+            place: 'Pune',
+            offer: `${padded}     `,
+        };
 
+        expect(padded.length).toBe(500);
         expect(briefErrors(brief)).toEqual([]);
     });
 });

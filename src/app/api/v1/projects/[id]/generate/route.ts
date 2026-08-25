@@ -28,6 +28,7 @@ import { parseComposition } from '@/lib/editor/parse-composition';
 import { resolveSiteVertical } from '@/lib/editor/resolve-site-vertical';
 import { setProfileStore } from '@/lib/ai/profile-cache';
 import { SupabaseProfileStore } from '@/lib/ai/profile/persist';
+import { assessPromptClarity } from '@/lib/ai/assess-clarity';
 import { track } from '@/lib/observability/analytics';
 
 export const runtime = 'nodejs';
@@ -86,6 +87,11 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         });
         if (crossBlocked) {
             throw new ApiError('validation_failed', crossBlocked);
+        }
+
+        const clarity = await assessPromptClarity(body.prompt);
+        if (!clarity.usable) {
+            throw new ApiError('brief_unclear', clarity.message);
         }
 
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);

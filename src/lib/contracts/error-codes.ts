@@ -9,6 +9,7 @@ export type ErrorCode =
   | "rate_limited"
   | "spend_capped"
   | "validation_failed"
+  | "brief_unclear"
   | "payload_too_large"
   | "generation_failed"
   | "payment_required"
