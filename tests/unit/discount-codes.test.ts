@@ -7,7 +7,9 @@ import {
     codeAppliesTo,
     generateScratchCode,
     normalizeScratchCode,
+    unwrapDiscountRpcRow,
 } from "@/lib/payments/discount-math";
+import { isApiError, ApiError } from "@/lib/errors/respond";
 import { friendlyMessage } from "@/lib/api/messages";
 
 describe("scratch-card codes", () => {
@@ -46,6 +48,29 @@ describe("scratch-card codes", () => {
         expect(friendlyMessage("invalid_discount", "fallback")).toContain("scratch-card");
     });
 
+    it("reads a held card whether PostgREST returned a row or a SETOF array", () => {
+        const row = {
+            code: "PC-ABCD-EFGH",
+            percent_off: 20,
+            applies_to: "all" as const,
+        };
+        expect(unwrapDiscountRpcRow<typeof row>(row)?.code).toBe("PC-ABCD-EFGH");
+        expect(unwrapDiscountRpcRow<typeof row>([row])?.percent_off).toBe(20);
+        expect(unwrapDiscountRpcRow([])).toBeNull();
+        expect(unwrapDiscountRpcRow(null)).toBeNull();
+    });
+
+    it("still recognises an ApiError after the class object is not the same", () => {
+        const error = new ApiError("payments_unavailable", "Payments are not set up on this server.");
+        const twin = Object.assign(new Error(error.message), {
+            name: "ApiError",
+            code: error.code,
+        });
+        expect(isApiError(error)).toBe(true);
+        expect(isApiError(twin)).toBe(true);
+        expect(isApiError(new Error("nope"))).toBe(false);
+    });
+
     it("charges Razorpay the discounted rupee amount, not a dashboard offer", () => {
         const checkout = readFileSync(join(process.cwd(), "src", "lib", "payments", "checkout.ts"), "utf8");
         const hook = readFileSync(join(process.cwd(), "src", "hooks", "useRazorpayCheckout.tsx"), "utf8");
@@ -60,5 +85,11 @@ describe("scratch-card codes", () => {
         expect(hook).toContain("discountCode");
         expect(plans).toContain("DiscountCodeField");
         expect(plans).toContain("scratch card");
+
+        const hold = readFileSync(join(process.cwd(), "src", "lib", "payments", "discount-codes.ts"), "utf8");
+        const routes = readFileSync(join(process.cwd(), "src", "lib", "kernel", "with-route.ts"), "utf8");
+        expect(hold).not.toMatch(/ApiError\(\s*"internal"/);
+        expect(hold).toContain("reserveDiscountViaTable");
+        expect(routes).toContain("isApiError");
     });
 });

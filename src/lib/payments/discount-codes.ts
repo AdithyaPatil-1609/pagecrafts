@@ -7,6 +7,7 @@ import {
     applyPercentOff,
     codeAppliesTo,
     normalizeScratchCode,
+    unwrapDiscountRpcRow,
     type DiscountAppliesTo,
 } from "./discount-math";
 
@@ -23,6 +24,9 @@ interface DiscountCodeRow {
     expires_at: string | null;
     disabled_at: string | null;
 }
+
+const DISCOUNT_COLUMNS =
+    "id, code, percent_off, applies_to, max_redemptions, redeemed_count, reserved_by, reserved_order_id, reserved_at, expires_at, disabled_at";
 
 export interface PricedWithCode {
     priceInr: number;
@@ -47,6 +51,21 @@ function pricedFrom(row: DiscountCodeRow, listPriceInr: number): PricedWithCode 
     };
 }
 
+function rowIsHoldable(row: DiscountCodeRow, userId: string, now = Date.now()): boolean {
+    if (row.disabled_at) return false;
+    if (row.expires_at && Date.parse(row.expires_at) <= now) return false;
+    if (row.redeemed_count >= row.max_redemptions) return false;
+    if (
+        row.reserved_by &&
+        row.reserved_at &&
+        now - Date.parse(row.reserved_at) < 30 * 60 * 1000 &&
+        row.reserved_by !== userId
+    ) {
+        return false;
+    }
+    return true;
+}
+
 export async function previewDiscount(
     userId: string,
     kind: OrderKind,
@@ -58,31 +77,72 @@ export async function previewDiscount(
 
     const { data, error } = await supabaseAdmin()
         .from("discount_codes")
-        .select(
-            "id, code, percent_off, applies_to, max_redemptions, redeemed_count, reserved_by, reserved_at, expires_at, disabled_at",
-        )
+        .select(DISCOUNT_COLUMNS)
         .eq("code", code)
         .maybeSingle();
 
-    if (error) throw new ApiError("internal", "Could not read that code.", error.message);
+    if (error) {
+        console.error("[payments] could not read scratch-card", error.message);
+        invalidCode();
+    }
     if (!data) invalidCode();
 
     const row = data as DiscountCodeRow;
-    const now = Date.now();
-    if (row.disabled_at) invalidCode();
-    if (row.expires_at && Date.parse(row.expires_at) <= now) invalidCode();
-    if (row.redeemed_count >= row.max_redemptions) invalidCode();
-    if (
-        row.reserved_by &&
-        row.reserved_at &&
-        now - Date.parse(row.reserved_at) < 30 * 60 * 1000 &&
-        row.reserved_by !== userId
-    ) {
-        invalidCode();
-    }
+    if (!rowIsHoldable(row, userId)) invalidCode();
     if (!codeAppliesTo(row.applies_to, kind)) invalidCode();
 
     return pricedFrom(row, listPriceInr);
+}
+
+/**
+ * Hold the card in a single UPDATE so a second checkout cannot take it.
+ * Used when PostgREST has not yet exposed `reserve_discount_code` (schema cache).
+ */
+async function reserveDiscountViaTable(
+    userId: string,
+    code: string,
+): Promise<DiscountCodeRow | null> {
+    const admin = supabaseAdmin();
+    const { data, error } = await admin
+        .from("discount_codes")
+        .select(DISCOUNT_COLUMNS)
+        .eq("code", code)
+        .maybeSingle();
+
+    if (error) {
+        console.error("[payments] could not read scratch-card for hold", error.message);
+        return null;
+    }
+    if (!data) return null;
+
+    const row = data as DiscountCodeRow;
+    if (!rowIsHoldable(row, userId)) return null;
+
+    const takeFrom = row.reserved_by && row.reserved_by !== userId ? row.reserved_by : null;
+    const ownerFilter = takeFrom
+        ? `reserved_by.is.null,reserved_by.eq.${userId},reserved_by.eq.${takeFrom}`
+        : `reserved_by.is.null,reserved_by.eq.${userId}`;
+
+    const { data: held, error: holdError } = await admin
+        .from("discount_codes")
+        .update({
+            reserved_by: userId,
+            reserved_at: new Date().toISOString(),
+            reserved_order_id: null,
+        })
+        .eq("id", row.id)
+        .eq("redeemed_count", row.redeemed_count)
+        .is("disabled_at", null)
+        .or(ownerFilter)
+        .select(DISCOUNT_COLUMNS)
+        .maybeSingle();
+
+    if (holdError) {
+        console.error("[payments] could not hold scratch-card", holdError.message);
+        return null;
+    }
+
+    return (held as DiscountCodeRow | null) ?? null;
 }
 
 /**
@@ -103,10 +163,13 @@ export async function reserveDiscount(
         p_user_id: userId,
     });
 
-    if (error) throw new ApiError("internal", "Could not hold that code.", error.message);
-    if (!data) invalidCode();
+    let row = error ? null : unwrapDiscountRpcRow<DiscountCodeRow>(data);
+    if (!row) {
+        if (error) console.error("[payments] reserve_discount_code", error.message);
+        row = await reserveDiscountViaTable(userId, code);
+    }
 
-    const row = data as DiscountCodeRow;
+    if (!row) invalidCode();
     if (!codeAppliesTo(row.applies_to, kind)) {
         await releaseDiscountReservation(code, userId);
         invalidCode();
@@ -121,7 +184,13 @@ export async function attachReservedOrder(code: string, orderId: string): Promis
         .update({ reserved_order_id: orderId })
         .eq("code", code);
 
-    if (error) throw new ApiError("internal", "Could not attach that payment to the code.", error.message);
+    if (error) {
+        console.error("[payments] could not attach that payment to the code", {
+            code,
+            orderId,
+            reason: error.message,
+        });
+    }
 }
 
 export async function releaseDiscountReservation(code: string, userId: string): Promise<void> {
@@ -141,6 +210,61 @@ export async function releaseDiscountReservation(code: string, userId: string): 
             reason: error.message,
         });
     }
+}
+
+async function captureDiscountViaTable(opts: {
+    code: string;
+    userId: string;
+    kind: OrderKind;
+    orderId?: string;
+    listPriceInr: number;
+    paidInr: number;
+}): Promise<boolean> {
+    const admin = supabaseAdmin();
+    const { data, error } = await admin
+        .from("discount_codes")
+        .select(DISCOUNT_COLUMNS)
+        .eq("code", opts.code)
+        .maybeSingle();
+
+    if (error) {
+        console.error("[payments] could not read scratch-card for capture", error.message);
+        return false;
+    }
+    if (!data) return false;
+
+    const row = data as DiscountCodeRow;
+    if (row.redeemed_count >= row.max_redemptions) return false;
+
+    const { data: updated, error: updateError } = await admin
+        .from("discount_codes")
+        .update({
+            redeemed_count: row.redeemed_count + 1,
+            reserved_by: null,
+            reserved_at: null,
+            reserved_order_id: null,
+        })
+        .eq("id", row.id)
+        .eq("redeemed_count", row.redeemed_count)
+        .select("id")
+        .maybeSingle();
+
+    if (updateError || !updated) return false;
+
+    const { error: insertError } = await admin.from("discount_redemptions").insert({
+        code_id: row.id,
+        user_id: opts.userId,
+        order_id: opts.orderId ?? null,
+        checkout_kind: opts.kind,
+        list_price_inr: opts.listPriceInr,
+        paid_inr: opts.paidInr,
+    });
+
+    if (insertError) {
+        console.error("[payments] could not record scratch-card redemption", insertError.message);
+    }
+
+    return true;
 }
 
 export async function captureDiscount(opts: {
@@ -164,11 +288,14 @@ export async function captureDiscount(opts: {
     });
 
     if (error) {
-        console.error("[payments] could not capture scratch-card", {
-            code,
-            orderId: opts.orderId,
-            reason: error.message,
-        });
+        console.error("[payments] capture_discount_code", error.message);
+        const captured = await captureDiscountViaTable({ ...opts, code });
+        if (!captured) {
+            console.info("[payments] scratch-card already captured", {
+                code,
+                orderId: opts.orderId,
+            });
+        }
         return;
     }
 

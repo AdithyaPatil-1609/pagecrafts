@@ -4,7 +4,7 @@
 -- the discounted amount; a 100% code grants without opening Razorpay. Clients never read
 -- unused codes — minting is a service-role script.
 
-create table public.discount_codes (
+create table if not exists public.discount_codes (
   id uuid primary key default gen_random_uuid(),
   code text not null,
   batch_label text not null,
@@ -29,9 +29,9 @@ create table public.discount_codes (
   )
 );
 
-create unique index discount_codes_code_idx on public.discount_codes (code);
+create unique index if not exists discount_codes_code_idx on public.discount_codes (code);
 
-create table public.discount_redemptions (
+create table if not exists public.discount_redemptions (
   id uuid primary key default gen_random_uuid(),
   code_id uuid not null references public.discount_codes(id) on delete cascade,
   user_id uuid not null references public.users(id) on delete cascade,
@@ -42,12 +42,12 @@ create table public.discount_redemptions (
   captured_at timestamptz not null default now()
 );
 
-create unique index discount_redemptions_order_id_idx
+create unique index if not exists discount_redemptions_order_id_idx
   on public.discount_redemptions (order_id)
   where order_id is not null;
 
-create index discount_redemptions_code_id_idx on public.discount_redemptions (code_id);
-create index discount_redemptions_user_id_idx on public.discount_redemptions (user_id);
+create index if not exists discount_redemptions_code_id_idx on public.discount_redemptions (code_id);
+create index if not exists discount_redemptions_user_id_idx on public.discount_redemptions (user_id);
 
 alter table public.discount_codes enable row level security;
 alter table public.discount_redemptions enable row level security;
@@ -79,8 +79,10 @@ comment on table public.discount_redemptions is
   'Successful uses of a scratch-card code. Clients may read their own rows only.';
 
 -- Atomic hold: one unpaid checkout at a time. Stale holds (30 minutes) can be taken over.
-create or replace function public.reserve_discount_code(p_code text, p_user_id uuid)
-returns public.discount_codes
+-- SETOF so PostgREST exposes the function in the schema cache (a bare composite often 404s).
+drop function if exists public.reserve_discount_code(text, uuid);
+create function public.reserve_discount_code(p_code text, p_user_id uuid)
+returns setof public.discount_codes
 language plpgsql
 security definer
 set search_path = public
@@ -94,26 +96,26 @@ begin
    for update;
 
   if not found then
-    return null;
+    return;
   end if;
 
   if row.disabled_at is not null then
-    return null;
+    return;
   end if;
 
   if row.expires_at is not null and row.expires_at <= now() then
-    return null;
+    return;
   end if;
 
   if row.redeemed_count >= row.max_redemptions then
-    return null;
+    return;
   end if;
 
   if row.reserved_by is not null
      and row.reserved_at is not null
      and row.reserved_at > now() - interval '30 minutes'
      and row.reserved_by <> p_user_id then
-    return null;
+    return;
   end if;
 
   update public.discount_codes
@@ -123,7 +125,7 @@ begin
    where id = row.id
    returning * into row;
 
-  return row;
+  return next row;
 end;
 $$;
 
@@ -178,3 +180,5 @@ revoke execute on function public.reserve_discount_code(text, uuid) from public,
 revoke execute on function public.capture_discount_code(text, uuid, text, text, integer, integer) from public, anon, authenticated;
 grant execute on function public.reserve_discount_code(text, uuid) to service_role;
 grant execute on function public.capture_discount_code(text, uuid, text, text, integer, integer) to service_role;
+
+notify pgrst, 'reload schema';
