@@ -1,6 +1,7 @@
 import 'server-only';
 import { extname } from 'node:path';
-import { hash as blake3Hash } from 'blake3-wasm';
+import { blake3 } from '@noble/hashes/blake3.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
 import type { PublishFile } from '@/lib/contracts/deploy';
 import { deployConfig } from '../config';
 import { readDeployCredential, redact } from '../credentials';
@@ -15,6 +16,7 @@ import { accountPath } from './cloudflare-client';
  * Hitting the Pages asset + deployment APIs keeps publish inside a normal fetch path.
  *
  * Hash formula matches wrangler: blake3(base64(contents) + extension).hex.slice(0, 32).
+ * Use @noble/hashes (not blake3-wasm) — Turbopack cannot resolve blake3-wasm's ./node.js.
  */
 
 const MAX_BUCKET_BYTES = 50 * 1024 * 1024;
@@ -37,7 +39,7 @@ interface CfEnvelope<T> {
 export function pagesAssetHash(bytes: Buffer, filePath: string): string {
     const extension = extname(filePath).replace(/^\./, '');
     const payload = bytes.toString('base64') + extension;
-    return blake3Hash(payload).toString('hex').slice(0, 32);
+    return bytesToHex(blake3(Buffer.from(payload, 'utf8'))).slice(0, 32);
 }
 
 export function pagesContentType(filePath: string): string {

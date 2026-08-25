@@ -15,7 +15,7 @@ Local `.env.local` does not apply to https://pagecrafts.in.
 | `HOSTING_CREDENTIAL_KEY_ID` | Yes | Label only, e.g. `cf-deploy-key-2026-08` |
 | `PAGECRAFT_ROOT_DOMAIN` | Yes | `pagecrafts.in` |
 | `NEXT_PUBLIC_PAGECRAFT_ROOT_DOMAIN` | Yes | `pagecrafts.in` |
-| `CLOUDFLARE_API_TOKEN` **or** `HOSTING_DEPLOY_CREDENTIAL` | Yes | See token below |
+| `HOSTING_DEPLOY_TOKEN` **or** `HOSTING_DEPLOY_CREDENTIAL` | Yes | Plain token, or sealed value — see below |
 | `SECRET_MASTER_KEY` | If sealing | Base64 32-byte key; required only when using sealed `HOSTING_DEPLOY_CREDENTIAL` |
 
 ### Cloudflare API token
@@ -26,7 +26,7 @@ Create at https://dash.cloudflare.com/profile/api-tokens with:
 - **Zone** → DNS → Edit (zone: `pagecrafts.in`)
 - **Zone** → Zone → Read
 
-Simplest Production setup: set the raw token as `CLOUDFLARE_API_TOKEN` (never commit it).
+Simplest Production setup: set the raw token as `HOSTING_DEPLOY_TOKEN` (never commit it).
 
 Or seal it locally and set `HOSTING_DEPLOY_CREDENTIAL`:
 
