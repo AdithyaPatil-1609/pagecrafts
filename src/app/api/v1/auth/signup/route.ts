@@ -67,6 +67,12 @@ export async function POST(request: NextRequest) {
       if (error.code === "user_already_exists" || error.code === "email_exists") {
         return ok({ user: null, pending: true }, 202);
       }
+      // Supabase can create the account and still fail while sending the confirmation
+      // mail (built-in mailer / missing SMTP). Prefer "check your email" over a hard 500.
+      if (/confirmation email|error sending|smtp/i.test(error.message ?? "")) {
+        console.error("[auth/signup] mailer", error.code ?? error.status, error.message);
+        return ok({ user: null, pending: true }, 202);
+      }
       console.error("[auth/signup]", error.code ?? error.status, error.message);
       return fail("internal", "We could not create your account. Try again.");
     }
