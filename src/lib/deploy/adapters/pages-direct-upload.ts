@@ -1,5 +1,5 @@
 import 'server-only';
-import { extname } from 'node:path';
+import { extname, basename } from 'node:path';
 import { blake3 } from '@noble/hashes/blake3.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import type { PublishFile } from '@/lib/contracts/deploy';
@@ -11,17 +11,15 @@ import { accountPath } from './cloudflare-client';
 /**
  * Cloudflare Pages Direct Upload — same flow wrangler uses, without shelling out.
  *
- * Vercel serverless never ships a complete wrangler tree (NFT traces the bin entry and
- * drops wrangler-dist/cli.js), so `execFile(wrangler…)` fails after auth succeeds.
- * Hitting the Pages asset + deployment APIs keeps publish inside a normal fetch path.
- *
  * Hash formula matches wrangler: blake3(base64(contents) + extension).hex.slice(0, 32).
- * Use @noble/hashes (not blake3-wasm) — Turbopack cannot resolve blake3-wasm's ./node.js.
  */
 
 const MAX_BUCKET_BYTES = 50 * 1024 * 1024;
 const MAX_BUCKET_FILES = 100;
-const FETCH_MS = 45_000;
+const QUICK_MS = 45_000;
+const UPLOAD_MS = 180_000;
+/** Special Pages config files travel on the deployment form, not the asset store. */
+const FORM_ONLY = new Set(['_headers', '_redirects', '_routes.json']);
 
 interface PreparedFile {
     path: string;
@@ -29,6 +27,7 @@ interface PreparedFile {
     base64: string;
     contentType: string;
     sizeInBytes: number;
+    bytes: Buffer;
 }
 
 interface CfEnvelope<T> {
@@ -85,8 +84,19 @@ function prepareFiles(files: PublishFile[]): PreparedFile[] {
             base64: bytes.toString('base64'),
             contentType: pagesContentType(path),
             sizeInBytes: bytes.byteLength,
+            bytes,
         };
     });
+}
+
+function isAbort(error: unknown): boolean {
+    return (
+        (error instanceof Error && error.name === 'TimeoutError') ||
+        (error instanceof Error && error.name === 'AbortError') ||
+        (typeof DOMException !== 'undefined' &&
+            error instanceof DOMException &&
+            (error.name === 'TimeoutError' || error.name === 'AbortError'))
+    );
 }
 
 async function parseCf<T>(res: Response): Promise<T> {
@@ -98,28 +108,40 @@ async function parseCf<T>(res: Response): Promise<T> {
     return payload.result;
 }
 
-async function apiJson<T>(
+async function apiFetch(
     path: string,
-    init: RequestInit & { token: string },
-): Promise<T> {
-    const { token, body, method = 'GET', headers: extra } = init;
+    init: RequestInit & { token: string; timeoutMs?: number },
+): Promise<Response> {
+    const { token, timeoutMs = QUICK_MS, body, method = 'GET', headers: extra } = init;
     const headers: Record<string, string> = {
         authorization: `Bearer ${token}`,
         ...(extra as Record<string, string> | undefined),
     };
-    // Do not send content-type on GET — some Cloudflare edge paths stall on it.
-    if (body !== undefined) {
+    if (body !== undefined && !(body instanceof FormData)) {
         headers['content-type'] = 'application/json';
     }
 
-    const res = await fetch(`${deployConfig().apiBase}${path}`, {
-        method,
-        headers,
-        body: body === undefined ? undefined : body,
-        cache: 'no-store',
-        signal: AbortSignal.timeout(FETCH_MS),
-    });
-    return parseCf<T>(res);
+    try {
+        return await fetch(`${deployConfig().apiBase}${path}`, {
+            method,
+            headers,
+            body: body === undefined ? undefined : body,
+            cache: 'no-store',
+            signal: AbortSignal.timeout(timeoutMs),
+        });
+    } catch (error) {
+        if (isAbort(error)) {
+            throw new HostingError('Host upload timed out. Try publishing again.', 504);
+        }
+        throw error;
+    }
+}
+
+async function apiJson<T>(
+    path: string,
+    init: RequestInit & { token: string; timeoutMs?: number },
+): Promise<T> {
+    return parseCf<T>(await apiFetch(path, init));
 }
 
 async function uploadToken(projectName: string): Promise<string> {
@@ -166,6 +188,42 @@ function bucketFiles(files: PreparedFile[]): PreparedFile[][] {
     return buckets.map((b) => b.files).filter((files) => files.length > 0);
 }
 
+async function waitForDeploymentFiles(
+    projectName: string,
+    deploymentId: string,
+): Promise<void> {
+    const deadline = Date.now() + 60_000;
+    while (Date.now() < deadline) {
+        const deployment = await apiJson<{
+            id: string;
+            latest_stage?: { name?: string; status?: string };
+            // CF returns file counts under different shapes across API versions.
+            files?: unknown[] | null;
+            stages?: { name?: string; status?: string }[];
+        }>(accountPath(`/pages/projects/${projectName}/deployments/${deploymentId}`), {
+            method: 'GET',
+            token: readDeployCredential(),
+        });
+
+        const stage =
+            deployment.latest_stage?.status ??
+            deployment.stages?.find((s) => s.name === 'deploy')?.status;
+        if (stage === 'failure' || stage === 'failed') {
+            throw new HostingError('Host rejected the uploaded files.', 502);
+        }
+        if (stage === 'success' || stage === 'deployment_success') {
+            return;
+        }
+        // Some responses never populate stages quickly; presence of an id after upload is enough
+        // once the create call succeeded — give DNS a chance on the next publish step.
+        if (Array.isArray(deployment.files) && deployment.files.length > 0) {
+            return;
+        }
+
+        await new Promise((r) => setTimeout(r, 2000));
+    }
+}
+
 /**
  * Upload static files and create a Pages production deployment.
  * Returns a short id suitable for `commitSha` (deployment id or preview hash).
@@ -179,27 +237,22 @@ export async function pushPagesDirectUpload(
     }
 
     const prepared = prepareFiles(files);
+    const assets = prepared.filter((f) => !FORM_ONLY.has(basename(f.path)));
+    const formOnly = prepared.filter((f) => FORM_ONLY.has(basename(f.path)));
+
     const manifest = Object.fromEntries(
-        prepared.map((file) => [`/${file.path}`, file.hash]),
+        assets.map((file) => [`/${file.path}`, file.hash]),
     );
 
     const jwt = await uploadToken(projectName);
 
-    const missingRaw = await apiJson<unknown>('/pages/assets/check-missing', {
-        method: 'POST',
-        token: jwt,
-        body: JSON.stringify({ hashes: prepared.map((f) => f.hash) }),
-    });
-    const missing = Array.isArray(missingRaw)
-        ? missingRaw.filter((h): h is string => typeof h === 'string')
-        : prepared.map((f) => f.hash);
-
-    const toUpload = prepared.filter((f) => missing.includes(f.hash));
-
-    for (const bucket of bucketFiles(toUpload)) {
+    // Always upload every asset. Skipping via check-missing is an optimisation; a wrong
+    // cache answer leaves an empty deployment that "succeeds" then 404s (or fails verify).
+    for (const bucket of bucketFiles(assets)) {
         await apiJson('/pages/assets/upload', {
             method: 'POST',
             token: jwt,
+            timeoutMs: UPLOAD_MS,
             body: JSON.stringify(
                 bucket.map((file) => ({
                     key: file.hash,
@@ -215,35 +268,45 @@ export async function pushPagesDirectUpload(
         await apiJson('/pages/assets/upsert-hashes', {
             method: 'POST',
             token: jwt,
-            body: JSON.stringify({ hashes: prepared.map((f) => f.hash) }),
+            body: JSON.stringify({ hashes: assets.map((f) => f.hash) }),
         });
     } catch {
-        // Same soft-fail as wrangler: upload already succeeded; cache update is best-effort.
+        // Soft-fail like wrangler.
     }
 
+    // Wrangler appends a plain JSON string — a Blob/File part can 500 the create call.
     const form = new FormData();
-    form.append(
-        'manifest',
-        new Blob([JSON.stringify(manifest)], { type: 'application/json' }),
-    );
+    form.append('manifest', JSON.stringify(manifest));
     form.append('branch', 'main');
+    for (const file of formOnly) {
+        form.append(
+            basename(file.path),
+            new File([Uint8Array.from(file.bytes)], basename(file.path)),
+        );
+    }
 
-    const res = await fetch(
-        `${deployConfig().apiBase}${accountPath(`/pages/projects/${projectName}/deployments`)}`,
+    const res = await apiFetch(
+        accountPath(`/pages/projects/${projectName}/deployments`),
         {
             method: 'POST',
-            headers: {
-                authorization: `Bearer ${readDeployCredential()}`,
-            },
+            token: readDeployCredential(),
+            timeoutMs: UPLOAD_MS,
             body: form,
-            cache: 'no-store',
-            signal: AbortSignal.timeout(FETCH_MS),
         },
     );
 
     const deployment = await parseCf<{ id: string; url?: string }>(res);
+    if (!deployment.id) {
+        throw new HostingError('Host created a deployment without an id.', 502);
+    }
+
+    await waitForDeploymentFiles(projectName, deployment.id).catch(() => {
+        // Create already succeeded; DNS verify is the next stage. Do not fail the push
+        // solely because stage polling was slow.
+    });
+
     const short =
-        deployment.id?.slice(0, 8) ??
+        deployment.id.slice(0, 8) ??
         /https:\/\/([0-9a-f]{8})\./.exec(deployment.url ?? '')?.[1] ??
         'deployed';
 
