@@ -102,7 +102,10 @@ function isAbort(error: unknown): boolean {
 async function parseCf<T>(res: Response): Promise<T> {
     const payload = (await res.json().catch(() => null)) as CfEnvelope<T> | null;
     if (!res.ok || !payload?.success) {
-        const message = payload?.errors?.[0]?.message ?? res.statusText;
+        const err = payload?.errors?.[0];
+        const message = err
+            ? `${err.message}${err.code ? ` (${err.code})` : ''}`
+            : res.statusText;
         throw new HostingError(redact(String(message)), res.status);
     }
     return payload.result;
@@ -210,18 +213,9 @@ export async function pushPagesDirectUpload(
 
     const jwt = await uploadToken(projectName);
 
-    const missingRaw = await apiJson<unknown>('/pages/assets/check-missing', {
-        method: 'POST',
-        token: jwt,
-        body: JSON.stringify({ hashes: assets.map((f) => f.hash) }),
-    });
-    const missing = Array.isArray(missingRaw)
-        ? new Set(missingRaw.filter((h): h is string => typeof h === 'string'))
-        : new Set(assets.map((f) => f.hash));
-
-    const toUpload = assets.filter((f) => missing.has(f.hash));
-    const buckets = bucketFiles(toUpload);
-    // Wrangler uploads several buckets at once; serial uploads make large sites crawl.
+    // Always upload every asset. Skipping via check-missing can "succeed" with a
+    // deployment that references hashes that never landed (empty origin → 522).
+    const buckets = bucketFiles(assets);
     const concurrency = 3;
     for (let i = 0; i < buckets.length; i += concurrency) {
         const batch = buckets.slice(i, i + concurrency);
@@ -275,10 +269,16 @@ export async function pushPagesDirectUpload(
         },
     );
 
-    const deployment = await parseCf<{ id: string; url?: string }>(res);
+    const deployment = await parseCf<{
+        id: string;
+        url?: string;
+        latest_stage?: { name?: string; status?: string };
+    }>(res);
     if (!deployment.id) {
         throw new HostingError('Host created a deployment without an id.', 502);
     }
+
+    await waitForDeployment(projectName, deployment.id);
 
     return {
         commitSha:
@@ -286,4 +286,46 @@ export async function pushPagesDirectUpload(
             /https:\/\/([0-9a-f]{8})\./.exec(deployment.url ?? '')?.[1] ||
             'deployed',
     };
+}
+
+async function waitForDeployment(projectName: string, deploymentId: string): Promise<void> {
+    const token = readDeployCredential();
+    let latest: { name?: string; status?: string } | undefined;
+
+    for (let attempt = 0; attempt < 12; attempt++) {
+        await new Promise((r) => setTimeout(r, Math.min(1000 * 2 ** attempt, 8_000)));
+        try {
+            const deployment = await apiJson<{
+                latest_stage?: { name?: string; status?: string };
+            }>(accountPath(`/pages/projects/${projectName}/deployments/${deploymentId}`), {
+                method: 'GET',
+                token,
+            });
+            latest = deployment.latest_stage;
+            if (
+                latest?.name === 'deploy' &&
+                (latest.status === 'success' || latest.status === 'failure')
+            ) {
+                break;
+            }
+        } catch {
+            // Transient read failures — keep polling like wrangler.
+        }
+    }
+
+    if (latest?.name === 'deploy' && latest.status === 'success') return;
+
+    if (latest?.name === 'deploy' && latest.status === 'failure') {
+        throw new HostingError(
+            'Host rejected the deployment after upload. Try publishing again.',
+            502,
+        );
+    }
+
+    // Do not claim success when we never saw a successful deploy stage — that left
+    // empty Pages projects answering 522 while we told the UI to verify DNS.
+    throw new HostingError(
+        'Host did not confirm the deployment finished. Try publishing again.',
+        504,
+    );
 }

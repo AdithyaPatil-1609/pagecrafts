@@ -57,7 +57,6 @@ async function run(
     onState('pending');
 
     let siteId = input.siteId ?? null;
-    const isNew = siteId === null;
 
     try {
         if (!siteId) {
@@ -91,11 +90,13 @@ async function run(
             ),
         );
 
-        if (isNew) {
-            stage = 'enabling_hosting';
-            onState('enabling_hosting');
-            await step('enabling_hosting', siteCtx, () => provider.enableHosting(id));
-        }
+        // Always (re)attach hosting. First publish used to gate this on "new site only", but
+        // we remember `siteId` even when push fails after provision — so every retry skipped
+        // DNS forever: empty `*.pages.dev` (522) and no `*.pagecrafts.in` CNAME.
+        // enableHosting is idempotent (409 domain / 400 duplicate DNS).
+        stage = 'enabling_hosting';
+        onState('enabling_hosting');
+        await step('enabling_hosting', siteCtx, () => provider.enableHosting(id));
 
         stage = 'verifying';
         onState('verifying');
