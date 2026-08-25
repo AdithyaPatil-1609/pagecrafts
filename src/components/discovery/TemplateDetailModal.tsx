@@ -37,38 +37,52 @@ import { cn } from "@/lib/utils";
 // used by almost nobody. Fetching on open costs one request and is also how this will keep
 // working when the library is a table rather than a module (D6).
 
-// The miniature is drawn at one width and scaled, so the same design reads at desktop,
-// tablet and phone widths without its type collapsing into specks at the small end.
+// The miniature is drawn at one landscape size and scaled into each device frame.
+// Phone must read as a vertical handset (portrait), not a tiny landscape tile.
 const BASE_WIDTH = 560;
-const ASPECT = 0.625; // 16:10, as the miniature is drawn
+const LANDSCAPE_ASPECT = 10 / 16; // height / width — matches TemplatePreview's 16:10
+const PORTRAIT_ASPECT = 19.5 / 9; // tall phone viewport (~iPhone proportions)
 
 const DEVICES = [
-    { label: "Desktop", width: 380 },
-    { label: "Tablet", width: 180 },
-    { label: "Phone", width: 110 },
+    { label: "Desktop", width: 380, orientation: "landscape" },
+    { label: "Tablet", width: 180, orientation: "landscape" },
+    { label: "Phone", width: 112, orientation: "portrait" },
 ] as const;
 
 function DeviceFrame({
     label,
     width,
+    orientation,
     preview,
 }: {
     label: string;
     width: number;
+    orientation: "landscape" | "portrait";
     preview: PreviewSpec;
 }) {
-    const scale = width / BASE_WIDTH;
+    const baseHeight = BASE_WIDTH * LANDSCAPE_ASPECT;
+    const frameAspect = orientation === "portrait" ? PORTRAIT_ASPECT : LANDSCAPE_ASPECT;
+    const height = width * frameAspect;
+    // Landscape frames fit the miniature; portrait covers the tall handset and crops sides.
+    const scale =
+        orientation === "portrait"
+            ? Math.max(width / BASE_WIDTH, height / baseHeight)
+            : width / BASE_WIDTH;
+    const offsetX = orientation === "portrait" ? (width - BASE_WIDTH * scale) / 2 : 0;
 
     return (
         <figure className="shrink-0" style={{ width }}>
             <div
-                className="overflow-hidden rounded-lg border border-border bg-card"
-                style={{ height: BASE_WIDTH * ASPECT * scale }}
+                className={cn(
+                    "overflow-hidden border border-border bg-card",
+                    orientation === "portrait" ? "rounded-[1.35rem]" : "rounded-lg",
+                )}
+                style={{ width, height }}
             >
                 <div
                     style={{
                         width: BASE_WIDTH,
-                        transform: `scale(${scale})`,
+                        transform: `translateX(${offsetX}px) scale(${scale})`,
                         transformOrigin: "top left",
                     }}
                 >
@@ -207,6 +221,7 @@ export function TemplateDetailModal({
                                     key={device.label}
                                     label={device.label}
                                     width={device.width}
+                                    orientation={device.orientation}
                                     preview={detail.preview}
                                 />
                             ))}
