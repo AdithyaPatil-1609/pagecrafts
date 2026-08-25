@@ -320,8 +320,10 @@ export function StyleChooser({
                                 ? "You have used your AI generations on this site."
                                 : (error ?? progress.error)
                         }
-                        onAskAiFix={(instruction) => {
-                            void generateAgain(instruction);
+                        onAskAiFix={() => {
+                            // Retry from the original brief. Passing the fix instruction as
+                            // the prompt erased the business facts and rebuilt a generic site.
+                            void generateAgain();
                         }}
                         showCreditsNotice={creditsSpent}
                     />
@@ -509,6 +511,8 @@ export function StyleChooser({
                     onDismiss={() => setAskOpen(false)}
                     onConfirm={() => {
                         setAskOpen(false);
+                        // Keep the stored brief — Fix with AI confirms a retry, it must not
+                        // replace the business description with the repair sentence.
                         void generateAgain();
                     }}
                 />

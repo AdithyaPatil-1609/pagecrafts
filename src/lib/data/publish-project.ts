@@ -13,6 +13,7 @@ import { projectPublishInputs } from "@/lib/deploy/publishable";
 import { publish } from "@/lib/deploy/publish";
 import { PublishError } from "@/lib/deploy/errors";
 import { deployProvider } from "@/lib/deploy/adapters";
+import { assertDeployReady } from "@/lib/deploy/credentials";
 import { failureMessage, reasonForError } from "@/lib/deploy/failure";
 import { track } from "@/lib/observability/analytics";
 import { captureError } from "@/lib/observability/capture";
@@ -65,12 +66,31 @@ export async function publishProject(
   // Injectable for the same reason publish() takes one: the edge cases this function exists
   // to survive — a claim that outlives a failed attempt, a site that is not answering yet —
   // can only be reproduced by a provider that behaves that way on purpose.
-  provider: DeployProvider = deployProvider,
+  provider?: DeployProvider,
 ): Promise<PublishProjectResponse> {
+  const activeProvider = provider ?? deployProvider;
+
   // Before anything is recorded or provisioned. A publish nobody paid for should cost us
   // nothing and leave no trace, and the caller should hear payment_required rather than
   // watch a deployment fail for reasons it cannot act on.
   await assertCanPublish(supabase, userId, projectId);
+
+  // Hosting misconfiguration is ours, not the owner's. Refuse before a deployment row is
+  // opened so Go Live does not look like their site broke. Skipped when a test injects a
+  // fake provider, and under Vitest (unit tests mock publish() and omit the provider arg).
+  if (provider === undefined && process.env.VITEST == null) {
+    try {
+      assertDeployReady();
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      console.error("[publish] hosting is not configured", detail);
+      throw new ApiError(
+        "service_unavailable",
+        "Publishing is not available right now. Try again in a little while.",
+        detail,
+      );
+    }
+  }
 
   const siteId = await siteIdFor(supabase, projectId);
   const { projectName, files } = await projectPublishInputs(supabase, projectId);
@@ -104,7 +124,7 @@ export async function publishProject(
   void publish(
     { projectId, projectName, files, siteId, idempotencyKey },
     attempt.onState,
-    provider,
+    activeProvider,
   )
     .then(async (result) => {
       if (!siteId) await rememberSite(supabase, projectId, result.siteId);
