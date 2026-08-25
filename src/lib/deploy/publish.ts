@@ -6,7 +6,6 @@ import { runOnce } from './idempotency';
 import { step } from './log';
 import { toPublishError } from './errors';
 import type { FailureReason } from './failure';
-import { pollUntilLive } from './verify';
 
 export interface PublishInput {
     projectId: string;
@@ -91,41 +90,23 @@ async function run(
             ),
         );
 
-        // Always (re)attach hosting. First publish used to gate this on "new site only", but
-        // we remember `siteId` even when push fails after provision — so every retry skipped
-        // DNS forever: empty `*.pages.dev` (522) and no `*.pagecrafts.in` CNAME.
-        // enableHosting is idempotent (409 domain / 400 duplicate DNS).
+        // Always (re)attach hosting. enableHosting is idempotent (409 / 400).
         stage = 'enabling_hosting';
         onState('enabling_hosting');
         await step('enabling_hosting', siteCtx, () => provider.enableHosting(id));
 
-        stage = 'verifying';
-        onState('verifying');
-        // Check pages.dev first (already warmed by Direct Upload confirm). If it
-        // answers, mark live immediately — custom DNS can finish via poll resume.
-        const pagesUrl = `https://${id}.pages.dev/`;
-        const pagesLive = await step('verifying', siteCtx, () =>
-            provider.verifyLive(pagesUrl),
-        );
-        const customLive = pagesLive
-            ? await step('verifying', siteCtx, () =>
-                  pollUntilLive(url, { timeoutMs: 3_000, intervalMs: 1_000 }),
-              )
-            : await step('verifying', siteCtx, () => provider.verifyLive(url));
-        const live = customLive || pagesLive;
-
-        const state: DeploymentState = live ? 'live' : 'verifying';
-        onState(state);
+        // No second origin poll. pushBuild already confirmed the Pages deployment;
+        // enableHosting attached DNS. Re-verifying here was burning 5–8s after success.
+        onState('live');
 
         return {
             siteId: id,
             subdomain,
-            // Always hand the owner the PageCrafts address once files are serving.
-            liveUrl: live ? url : null,
-            pendingUrl: live ? null : url,
+            liveUrl: url,
+            pendingUrl: null,
             commitSha,
-            state,
-            reason: live ? null : ('not_answering_yet' satisfies FailureReason),
+            state: 'live',
+            reason: null,
         };
     } catch (error) {
         onState('failed');

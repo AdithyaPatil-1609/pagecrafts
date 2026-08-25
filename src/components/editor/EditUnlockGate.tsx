@@ -42,6 +42,9 @@ export function EditUnlockGate({
     }, [projectId]);
 
     useEffect(() => {
+        // Load access on mount / project change. setState lands after the fetch, not
+        // during render — same pattern as other paywall gates.
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch
         void refresh();
     }, [refresh]);
 

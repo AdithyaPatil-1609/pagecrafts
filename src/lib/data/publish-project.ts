@@ -20,24 +20,14 @@ import { captureError } from "@/lib/observability/capture";
 import type { DeployProvider } from "@/lib/deploy/provider";
 
 export type PublishProjectResult = PublishProjectResponse & {
-  /** Provider work to schedule with waitUntil/after from the route (not here). */
+  /** @deprecated Host work now finishes in-request; kept for the route await seam. */
   background?: Promise<void>;
 };
 
 // Publishing a project (R3 D15 · FR-080–FR-091, C-05).
 //
-// Everything this needs already existed and nothing called it: entitlements decide whether
-// a site may go live, publishable.ts turns a working tree into a build, deployments.ts
-// records the attempt, and publish() runs the provider steps. This is the seam between
-// them, and the shape of it is dictated by one fact — a publish can legitimately take
-// ninety seconds, and no request should be held open that long.
-//
-// So the request does the parts that can fail fast and answer honestly (is this project
-// yours, is it paid for, does it have files), writes the deployment row, and hands back its
-// id. The provider work runs on after the response, reporting into that row, and the client
-// polls GET /deployments/{id} — which is what NFR-117 asks for and what the contract's
-// `status: "pending"` has always implied.
-
+// Fast path: the request awaits Direct Upload + DNS, then answers with the final
+// deployment status so the client does not burn another round of polling.
 /** Where the site lives on the host, kept so a republish updates rather than duplicating. */
 async function siteIdFor(supabase: SupabaseClient, projectId: string): Promise<string | null> {
   const { data, error } = await supabase
@@ -125,71 +115,76 @@ export async function publishProject(
   // rather than requests that bounced off a precondition.
   track("EV-06", userId, { republish: siteId !== null });
 
-  // Answer with the deployment id immediately; the route schedules `background` with
-  // waitUntil so the upload can finish after the 202.
-  const work = publish(
-    { projectId, projectName, files, siteId, idempotencyKey },
-    attempt.onState,
-    activeProvider,
-  )
-    .then(async (result) => {
-      if (!siteId) await rememberSite(supabase, projectId, result.siteId);
+  // Await the host work in this request. Returning 202 with a detached upload used to
+  // freeze mid-push on Vercel; answering only after finish also lets the client skip polling.
+  try {
+    const result = await publish(
+      { projectId, projectName, files, siteId, idempotencyKey },
+      attempt.onState,
+      activeProvider,
+    );
 
-      await attempt.finish({
-        state: result.state,
-        liveUrl: result.liveUrl,
-        commitSha: result.commitSha,
-        failureReason: result.reason,
-      });
+    if (!siteId) await rememberSite(supabase, projectId, result.siteId);
 
-      track("EV-07", userId, {
-        state: result.state,
-        republish: siteId !== null,
-        reason: result.reason,
-      });
-    })
-    .catch(async (error: unknown) => {
-      if (!siteId && error instanceof PublishError && error.siteId) {
-        await rememberSite(supabase, projectId, error.siteId).catch(() => undefined);
-      }
-
-      const detail =
-        error instanceof PublishError
-          ? error.code === "validation_failed"
-            ? error.message
-            : (error.detail ?? error.message)
-          : error instanceof Error
-            ? error.message
-            : String(error);
-
-      const reason = reasonForError(error);
-
-      captureError(error, {
-        tags: { boundary: "publish", reason },
-        extra: { projectId, deploymentId: attempt.deploymentId },
-      });
-      track("EV-08", userId, { reason, republish: siteId !== null });
-
-      console.error("[publish]", projectId, error);
-
-      await attempt
-        .finish({ state: "failed", error: detail, failureReason: reason })
-        .catch(() => undefined);
+    await attempt.finish({
+      state: result.state,
+      liveUrl: result.liveUrl,
+      commitSha: result.commitSha,
+      failureReason: result.reason,
     });
 
-  // Hand the background promise back to the route so it can `waitUntil` / `after` from
-  // request context. Calling `after()` only inside this module did not keep the Vercel
-  // isolate alive — uploads froze and left empty Pages projects (522, no DNS).
-  if (process.env.VITEST != null) {
-    void work;
-    return { deploymentId: attempt.deploymentId, status: "pending" };
-  }
+    track("EV-07", userId, {
+      state: result.state,
+      republish: siteId !== null,
+      reason: result.reason,
+    });
 
-  return {
-    deploymentId: attempt.deploymentId,
-    status: "pending",
-    background: work,
-  };
+    const status: PublishProjectResponse["status"] =
+      result.state === "live" ? "live" : result.state === "failed" ? "failed" : "pending";
+
+    return {
+      deploymentId: attempt.deploymentId,
+      status,
+      liveUrl: result.liveUrl,
+    };
+  } catch (error: unknown) {
+    if (!siteId && error instanceof PublishError && error.siteId) {
+      await rememberSite(supabase, projectId, error.siteId).catch(() => undefined);
+    }
+
+    const detail =
+      error instanceof PublishError
+        ? error.code === "validation_failed"
+          ? error.message
+          : (error.detail ?? error.message)
+        : error instanceof Error
+          ? error.message
+          : String(error);
+
+    const reason = reasonForError(error);
+
+    captureError(error, {
+      tags: { boundary: "publish", reason },
+      extra: { projectId, deploymentId: attempt.deploymentId },
+    });
+    track("EV-08", userId, { reason, republish: siteId !== null });
+
+    console.error("[publish]", projectId, error);
+
+    await attempt
+      .finish({ state: "failed", error: detail, failureReason: reason })
+      .catch(() => undefined);
+
+    return {
+      deploymentId: attempt.deploymentId,
+      status: "failed",
+      liveUrl: null,
+      error:
+        error instanceof PublishError && error.code === "validation_failed"
+          ? error.message
+          : failureMessage(reason).what + " " + failureMessage(reason).next,
+    };
+  }
 }
 
 /**

@@ -312,14 +312,26 @@ export async function loadGenerationJob(
 export async function startProjectPublish(
     projectId: string,
     idempotencyKey: string,
-): Promise<{ deploymentId: string | null; error: string | null }> {
+): Promise<{
+    deploymentId: string | null;
+    status: PublishProjectResponse['status'] | null;
+    liveUrl: string | null;
+    error: string | null;
+}> {
     const { data, error } = await apiPostHeaders<PublishProjectResponse>(
         `${projectUrl(projectId)}/publish`,
         { 'Idempotency-Key': idempotencyKey },
     );
 
-    if (error || !data) return { deploymentId: null, error: error ?? EMPTY_REPLY };
-    return { deploymentId: data.deploymentId, error: null };
+    if (error || !data) {
+        return { deploymentId: null, status: null, liveUrl: null, error: error ?? EMPTY_REPLY };
+    }
+    return {
+        deploymentId: data.deploymentId,
+        status: data.status,
+        liveUrl: data.liveUrl ?? null,
+        error: data.error ?? null,
+    };
 }
 
 export async function pollDeployment(

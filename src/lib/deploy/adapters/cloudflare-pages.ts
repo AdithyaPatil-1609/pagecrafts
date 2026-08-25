@@ -91,47 +91,30 @@ export const cloudflarePagesAdapter: DeployProvider = {
 
     async enableHosting(siteId: string): Promise<void> {
         const domain = `${siteId}.${deployConfig().rootDomain}`;
+        const zone = await zoneId();
 
-        // Step one: tell Pages to serve this hostname.
-        try {
-            await cf('POST', accountPath(`/pages/projects/${siteId}/domains`), {
+        // Attach domain + write DNS in parallel — both are independent once zone is known.
+        await Promise.all([
+            cf('POST', accountPath(`/pages/projects/${siteId}/domains`), {
                 name: domain,
-            });
-        } catch (error) {
-            if (!(error instanceof HostingError && error.status === 409)) throw error;
-        }
-
-        // Step two, and it was missing: make the hostname resolve.
-        //
-        // Attaching a custom domain to a Pages project does not create a DNS record. The
-        // dashboard offers to -- that is the "Complete DNS setup" button -- but the API
-        // does not, and nothing in the response says so. The project shows the domain
-        // attached and sits in "Verifying" forever.
-        //
-        // The effect was that every publish reported success and no site was ever reachable:
-        // provision, upload and hosting all returned ok, verification quietly ran out its
-        // ninety seconds, and the address answered NXDOMAIN. Found on D20 by opening one.
-        //
-        // Proxied, because a Pages custom domain requires the record to go through
-        // Cloudflare rather than resolve straight to the origin.
-        try {
-            await cf('POST', `/zones/${await zoneId()}/dns_records`, {
+            }).catch((error: unknown) => {
+                if (!(error instanceof HostingError && error.status === 409)) throw error;
+            }),
+            cf('POST', `/zones/${zone}/dns_records`, {
                 type: 'CNAME',
                 name: siteId,
                 content: `${siteId}.pages.dev`,
                 proxied: true,
                 comment: 'PageCraft published site',
-            });
-        } catch (error) {
-            // 400 is what a duplicate record answers with. A republish must not fall over
-            // because the address it is already serving on is already pointed at it.
-            if (!(error instanceof HostingError && error.status === 400)) throw error;
-        }
+            }).catch((error: unknown) => {
+                if (!(error instanceof HostingError && error.status === 400)) throw error;
+            }),
+        ]);
     },
 
     async verifyLive(url: string): Promise<boolean> {
-        // Keep verification brief — push already waited on pages.dev when possible.
-        return pollUntilLive(url, { timeoutMs: 5_000, intervalMs: 1_000 });
+        // Single short probe — publish marks live after push+DNS without long polling.
+        return pollUntilLive(url, { timeoutMs: 2_000, intervalMs: 500 });
     },
 
     async removeSite(siteId: string): Promise<void> {
