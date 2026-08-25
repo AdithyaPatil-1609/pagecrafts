@@ -50,6 +50,7 @@ describe('FR-110 — every call site goes through containment', () => {
             'src/lib/ai/edit/propose.ts',
             'src/lib/ai/edit/rewrite-copy.ts',
             'src/lib/ai/generate/compose-custom.ts',
+            'src/lib/ai/generate/expand-brief.ts',
             'src/lib/ai/generate/fill.ts',
             'src/lib/ai/generate/plan.ts',
             'src/lib/ai/profile.ts',

@@ -32,6 +32,7 @@ AI_PROMPT_PLAN=plan.v2 AI_PROMPT_FILL=fill-section.v2 npm run grade -- --label=v
 | `classify.v1.md` ← | classify | v1 | fast | `363031886f11` | free text → category, vertical, tone, palette, sections |
 | `compose-site.v1.md` | compose-site | v1 | strong | `fdae85f2e854` | — |
 | `edit.v1.md` ← | edit | v1 | strong | `20f46ad7214a` | one section + instruction → changed fields |
+| `expand-brief.v1.md` | expand-brief | v1 | strong | `d5816d9f0a08` | — |
 | `fill-section.v1.md` | fill-section | v1 | strong | `5418e9b0cf10` | one section → typed content fields |
 | `fill-section.v2.md` | fill-section | v2 | strong | `890073b7b30a` | one section → typed content fields |
 | `fill-section.v3.md` ← | fill-section | v3 | strong | `e409bb5aa1b6` | one section → typed content fields |
@@ -53,6 +54,7 @@ prompt. A placeholder that is neither is a typo, and a test fails on it.
 | `classify.v1.md` | `categories`, `palettes`, `sectionKeys`, `tones` | `text` |
 | `compose-site.v1.md` | — | `prompt`, `tone`, `vertical` |
 | `edit.v1.md` | — | `content`, `instruction`, `sectionKey`, `variant` |
+| `expand-brief.v1.md` | — | `text` |
 | `fill-section.v1.md` | — | `brief`, `customerWord`, `fields`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
 | `fill-section.v2.md` | — | `brief`, `customerWord`, `fields`, `guidance`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
 | `fill-section.v3.md` | — | `brief`, `customerWord`, `fields`, `guidance`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
