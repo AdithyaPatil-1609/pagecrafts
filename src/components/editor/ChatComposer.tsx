@@ -2,6 +2,7 @@
 
 import { FormEvent, useRef, useState, useSyncExternalStore } from 'react';
 import { Globe, Loader2, Plus, Square, X } from 'lucide-react';
+import { MAX_INSTRUCTION_CHARS } from '@/lib/contracts';
 
 import { DictationButton } from '@/components/ui/DictationButton';
 import { cn } from '@/lib/utils';
@@ -149,8 +150,9 @@ export default function ChatComposer({
                     id="editor-follow-up"
                     value={draft}
                     onChange={(e) => onDraftChange(e.target.value)}
-                    maxLength={500}
+                    maxLength={MAX_INSTRUCTION_CHARS}
                     rows={2}
+                    aria-describedby="editor-follow-up-count"
                     autoFocus={autoFocus}
                     disabled={inputLocked}
                     placeholder="Queue follow-up…"
@@ -163,6 +165,25 @@ export default function ChatComposer({
                         }
                     }}
                 />
+                {/* Silence was the bug: a long paste was accepted here and refused by the
+                    route, with nothing on screen to say why. */}
+                <p
+                    id="editor-follow-up-count"
+                    aria-live="polite"
+                    className={`mt-1 text-right text-[11px] ${
+                        draft.length >= MAX_INSTRUCTION_CHARS
+                            ? 'text-destructive'
+                            : draft.length > MAX_INSTRUCTION_CHARS * 0.8
+                                ? 'text-foreground/70'
+                                : 'text-muted-foreground/60'
+                    }`}
+                >
+                    {draft.length >= MAX_INSTRUCTION_CHARS
+                        ? `${MAX_INSTRUCTION_CHARS} character limit reached — send this, then ask for the next change`
+                        : draft.length > MAX_INSTRUCTION_CHARS * 0.8
+                            ? `${draft.length} of ${MAX_INSTRUCTION_CHARS} characters`
+                            : ''}
+                </p>
                 <div className="mt-1 flex items-center gap-1">
                     <button
                         type="button"

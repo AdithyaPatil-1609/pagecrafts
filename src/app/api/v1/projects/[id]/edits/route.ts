@@ -14,6 +14,7 @@ import { SECTION_KEYS, type SectionInstance } from '@/lib/contracts';
 import { getProjectFiles } from '@/lib/data/project-files';
 import { getProject } from '@/lib/data/projects';
 import { asContentSchema } from '@/lib/content/schema';
+import { MAX_INSTRUCTION_CHARS } from '@/lib/contracts';
 import { styleUpgradeFirewall } from '@/lib/editor/style-firewall';
 import { crossVerticalFirewall } from '@/lib/editor/cross-vertical-firewall';
 import { resolveSiteVertical } from '@/lib/editor/resolve-site-vertical';
@@ -34,7 +35,7 @@ export const dynamic = 'force-dynamic';
 type Params = { id: string };
 
 const schema = z.object({
-    instruction: z.string().min(1).max(300),
+    instruction: z.string().min(1).max(MAX_INSTRUCTION_CHARS),
     section: z.object({
         id: z.string().min(1),
         type: z.enum(SECTION_KEYS),
