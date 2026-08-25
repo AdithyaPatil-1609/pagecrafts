@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import { AlertCircle, Check, ExternalLink, Loader2, Rocket } from 'lucide-react';
 
 import {
@@ -41,6 +41,7 @@ export default function GoLiveButton({
     const [siteName, setSiteName] = useState('');
     const [liveUrl, setLiveUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const cancelledRef = useRef(false);
 
     function openNaming() {
         setSiteName(projectName?.trim() || 'My site');
@@ -49,6 +50,7 @@ export default function GoLiveButton({
     }
 
     function closeAll() {
+        cancelledRef.current = true;
         setPhase('idle');
         setError(null);
         setLiveUrl(null);
@@ -62,13 +64,16 @@ export default function GoLiveButton({
             return;
         }
 
+        cancelledRef.current = false;
         setPhase('publishing');
         setError(null);
 
         flushPendingSave();
         await saveProject();
+        if (cancelledRef.current) return;
 
         const { detail, error: nameError } = await saveProjectSettings(projectId, { name });
+        if (cancelledRef.current) return;
         if (nameError) {
             setPhase('error');
             setError(nameError);
@@ -85,6 +90,7 @@ export default function GoLiveButton({
             projectId,
             idempotencyKey,
         );
+        if (cancelledRef.current) return;
         if (publishError || !deploymentId) {
             setPhase('error');
             setError(publishError ?? 'Publishing could not start.');
@@ -92,8 +98,11 @@ export default function GoLiveButton({
         }
 
         for (let attempt = 0; attempt < 90; attempt++) {
+            if (cancelledRef.current) return;
             await new Promise((resolve) => setTimeout(resolve, 2000));
+            if (cancelledRef.current) return;
             const { deployment, error: pollError } = await pollDeployment(deploymentId);
+            if (cancelledRef.current) return;
             if (pollError) {
                 setPhase('error');
                 setError(pollError);
@@ -117,6 +126,7 @@ export default function GoLiveButton({
             }
         }
 
+        if (cancelledRef.current) return;
         setPhase('error');
         setError('Publishing is taking longer than expected. Check Your sites in a minute.');
     }
@@ -208,8 +218,10 @@ export default function GoLiveButton({
 
             <Dialog
                 open={phase === 'publishing'}
-                onOpenChange={() => {
-                    /* keep open while publishing */
+                onOpenChange={(open) => {
+                    // Allow the X / Escape / overlay dismiss — publish continues on the
+                    // server; we only stop updating this dialog.
+                    if (!open) closeAll();
                 }}
             >
                 <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
@@ -217,13 +229,24 @@ export default function GoLiveButton({
                         <DialogTitle>Publishing your site</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
                             Setting up hosting and pushing your latest changes. This usually
-                            takes under a minute.
+                            takes under a minute. You can close this and check Your sites
+                            later.
                         </DialogDescription>
                     </DialogHeader>
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Loader2 aria-hidden className="size-4 animate-spin" />
                         Working on {previewSiteUrl(siteName)}…
                     </p>
+                    <DialogFooter className="pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="min-h-11 cursor-pointer"
+                            onClick={closeAll}
+                        >
+                            Close
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
