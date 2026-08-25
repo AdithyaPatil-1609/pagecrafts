@@ -111,6 +111,10 @@ export async function publishProject(
   // runOnce() in the deploy layer only dedupes an identical idempotency key; two different
   // keys for one project would otherwise race each other onto the same subdomain. Moved
   // here from the route at D18, with the rest of what a publish has to decide.
+  //
+  // Important: this only returns the id — it does not resume host work. A frozen Vercel
+  // isolate left rows in pushing/pending with nobody running; rejoining them made Go Live
+  // spin for minutes. openDeployment ignores rows older than its TTL so a retry can start.
   const running = await openDeployment(supabase, projectId);
   if (running) return { deploymentId: running.id, status: "pending" };
 

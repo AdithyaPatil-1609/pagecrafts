@@ -68,11 +68,9 @@ const IN_FLIGHT: DeploymentState[] = [
 // How long an in-flight row is believed before it is treated as abandoned.
 //
 // A publish killed mid-flight leaves its row in whatever state it reached and nothing ever
-// moves it, which is honest history but would otherwise block the project from being
-// published again for good. After this long the row is ignored and a fresh attempt may
-// start. Comfortably longer than a slow publish, short enough that nobody is stuck for the
-// rest of the day.
-const IN_FLIGHT_TTL_MS = 15 * 60 * 1000;
+// moves it. Retries used to rejoin that dead row for fifteen minutes with no work
+// scheduled — Go Live spun forever. Keep this just above a slow in-request publish.
+const IN_FLIGHT_TTL_MS = 2 * 60 * 1000;
 
 /**
  * The publish attempt already running for this project, if there is one.

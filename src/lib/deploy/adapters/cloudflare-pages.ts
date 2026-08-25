@@ -117,7 +117,8 @@ export const cloudflarePagesAdapter: DeployProvider = {
 
     async verifyLive(url: string): Promise<boolean> {
         // Keep the publish request short; GET /deployments resumes verification on poll.
-        return pollUntilLive(url, { timeoutMs: 20_000 });
+        // pushBuild already confirmed `*.pages.dev` is serving files.
+        return pollUntilLive(url, { timeoutMs: 25_000 });
     },
 
     async removeSite(siteId: string): Promise<void> {

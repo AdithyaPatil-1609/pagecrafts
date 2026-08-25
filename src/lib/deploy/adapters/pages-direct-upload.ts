@@ -17,7 +17,7 @@ import { accountPath } from './cloudflare-client';
 const MAX_BUCKET_BYTES = 50 * 1024 * 1024;
 const MAX_BUCKET_FILES = 100;
 const QUICK_MS = 45_000;
-const UPLOAD_MS = 180_000;
+const UPLOAD_MS = 120_000;
 /** Special Pages config files travel on the deployment form, not the asset store. */
 const FORM_ONLY = new Set(['_headers', '_redirects', '_routes.json']);
 
@@ -34,6 +34,11 @@ interface CfEnvelope<T> {
     success: boolean;
     result: T;
     errors?: { code: number; message: string }[];
+}
+
+interface Stage {
+    name?: string;
+    status?: string;
 }
 
 export function pagesAssetHash(bytes: Buffer, filePath: string): string {
@@ -191,6 +196,30 @@ function bucketFiles(files: PreparedFile[]): PreparedFile[][] {
     return buckets.map((b) => b.files).filter((files) => files.length > 0);
 }
 
+function stageDone(stage: Stage | undefined): 'success' | 'failure' | null {
+    if (!stage?.status) return null;
+    if (stage.status === 'success') return 'success';
+    if (stage.status === 'failure' || stage.status === 'canceled') return 'failure';
+    return null;
+}
+
+async function originAnswers(url: string): Promise<boolean> {
+    try {
+        const res = await fetch(url, {
+            method: 'GET',
+            redirect: 'follow',
+            cache: 'no-store',
+            signal: AbortSignal.timeout(15_000),
+        });
+        // 522/530 = empty Pages project. Anything 2xx/3xx/4xx (except CF origin death)
+        // means files are being served.
+        if (res.status === 522 || res.status === 530) return false;
+        return res.status > 0 && res.status < 500;
+    } catch {
+        return false;
+    }
+}
+
 /**
  * Upload static files and create a Pages production deployment.
  * Returns a short id suitable for `commitSha` (deployment id or preview hash).
@@ -207,21 +236,45 @@ export async function pushPagesDirectUpload(
     const assets = prepared.filter((f) => !FORM_ONLY.has(basename(f.path)));
     const formOnly = prepared.filter((f) => FORM_ONLY.has(basename(f.path)));
 
+    if (assets.length === 0) {
+        throw new HostingError('No site files to publish.', 400);
+    }
+
+    // Wrangler keys paths with a leading slash.
     const manifest = Object.fromEntries(
         assets.map((file) => [`/${file.path}`, file.hash]),
     );
 
-    const jwt = await uploadToken(projectName);
+    let jwt = await uploadToken(projectName);
 
-    // Always upload every asset. Skipping via check-missing can "succeed" with a
-    // deployment that references hashes that never landed (empty origin → 522).
-    const buckets = bucketFiles(assets);
-    const concurrency = 3;
-    for (let i = 0; i < buckets.length; i += concurrency) {
-        const batch = buckets.slice(i, i + concurrency);
-        await Promise.all(
-            batch.map((bucket) =>
-                apiJson('/pages/assets/upload', {
+    // Prefer uploading only missing hashes (fast republish), but if the check fails
+    // or returns nothing useful, upload everything — empty "already cached" answers
+    // are how we got silent 522s before.
+    let toUpload = assets;
+    try {
+        const missingRaw = await apiJson<unknown>('/pages/assets/check-missing', {
+            method: 'POST',
+            token: jwt,
+            body: JSON.stringify({ hashes: assets.map((f) => f.hash) }),
+        });
+        if (Array.isArray(missingRaw)) {
+            const missing = new Set(
+                missingRaw.filter((h): h is string => typeof h === 'string'),
+            );
+            // If CF claims nothing is missing on a project that never served files,
+            // still re-upload — cheap for bakery-sized sites, avoids empty origins.
+            toUpload = missing.size === 0 ? assets : assets.filter((f) => missing.has(f.hash));
+        }
+    } catch {
+        toUpload = assets;
+    }
+
+    const buckets = bucketFiles(toUpload);
+    for (const bucket of buckets) {
+        let attempts = 0;
+        for (;;) {
+            try {
+                await apiJson('/pages/assets/upload', {
                     method: 'POST',
                     token: jwt,
                     timeoutMs: UPLOAD_MS,
@@ -233,9 +286,25 @@ export async function pushPagesDirectUpload(
                             base64: true,
                         })),
                     ),
-                }),
-            ),
-        );
+                });
+                break;
+            } catch (error) {
+                attempts += 1;
+                if (
+                    error instanceof HostingError &&
+                    (error.status === 401 || error.status === 403) &&
+                    attempts < 3
+                ) {
+                    jwt = await uploadToken(projectName);
+                    continue;
+                }
+                if (attempts < 3 && !(error instanceof HostingError && error.status < 500)) {
+                    await new Promise((r) => setTimeout(r, 1000 * attempts));
+                    continue;
+                }
+                throw error;
+            }
+        }
     }
 
     try {
@@ -272,13 +341,13 @@ export async function pushPagesDirectUpload(
     const deployment = await parseCf<{
         id: string;
         url?: string;
-        latest_stage?: { name?: string; status?: string };
+        latest_stage?: Stage;
     }>(res);
     if (!deployment.id) {
         throw new HostingError('Host created a deployment without an id.', 502);
     }
 
-    await waitForDeployment(projectName, deployment.id);
+    await confirmDeployment(projectName, deployment);
 
     return {
         commitSha:
@@ -288,44 +357,65 @@ export async function pushPagesDirectUpload(
     };
 }
 
-async function waitForDeployment(projectName: string, deploymentId: string): Promise<void> {
+async function confirmDeployment(
+    projectName: string,
+    created: { id: string; url?: string; latest_stage?: Stage },
+): Promise<void> {
+    const pagesUrl = `https://${projectName}.pages.dev/`;
+    const deploymentUrl = created.url ?? pagesUrl;
     const token = readDeployCredential();
-    let latest: { name?: string; status?: string } | undefined;
 
-    for (let attempt = 0; attempt < 12; attempt++) {
-        await new Promise((r) => setTimeout(r, Math.min(1000 * 2 ** attempt, 8_000)));
-        try {
-            const deployment = await apiJson<{
-                latest_stage?: { name?: string; status?: string };
-            }>(accountPath(`/pages/projects/${projectName}/deployments/${deploymentId}`), {
-                method: 'GET',
-                token,
-            });
-            latest = deployment.latest_stage;
-            if (
-                latest?.name === 'deploy' &&
-                (latest.status === 'success' || latest.status === 'failure')
-            ) {
-                break;
-            }
-        } catch {
-            // Transient read failures — keep polling like wrangler.
-        }
+    if (stageDone(created.latest_stage) === 'success') {
+        if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) return;
     }
-
-    if (latest?.name === 'deploy' && latest.status === 'success') return;
-
-    if (latest?.name === 'deploy' && latest.status === 'failure') {
+    if (stageDone(created.latest_stage) === 'failure') {
         throw new HostingError(
             'Host rejected the deployment after upload. Try publishing again.',
             502,
         );
     }
 
-    // Do not claim success when we never saw a successful deploy stage — that left
-    // empty Pages projects answering 522 while we told the UI to verify DNS.
+    let latest = created.latest_stage;
+    for (let attempt = 0; attempt < 20; attempt++) {
+        await new Promise((r) => setTimeout(r, 2_000));
+
+        if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) {
+            return;
+        }
+
+        try {
+            const deployment = await apiJson<{
+                url?: string;
+                latest_stage?: Stage;
+            }>(accountPath(`/pages/projects/${projectName}/deployments/${created.id}`), {
+                method: 'GET',
+                token,
+            });
+            latest = deployment.latest_stage;
+            const done = stageDone(latest);
+            if (done === 'success') {
+                if (await originAnswers(pagesUrl) || await originAnswers(deployment.url ?? deploymentUrl)) {
+                    return;
+                }
+                // Stage says success but origin still 522 — keep waiting briefly.
+                continue;
+            }
+            if (done === 'failure') {
+                throw new HostingError(
+                    'Host rejected the deployment after upload. Try publishing again.',
+                    502,
+                );
+            }
+        } catch (error) {
+            if (error instanceof HostingError && error.status === 502) throw error;
+            // Transient read failures — keep polling.
+        }
+    }
+
+    if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) return;
+
     throw new HostingError(
-        'Host did not confirm the deployment finished. Try publishing again.',
+        'Host uploaded the site but the preview address is not answering yet. Try publishing again.',
         504,
     );
 }

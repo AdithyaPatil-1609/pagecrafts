@@ -1,21 +1,23 @@
 import 'server-only';
 
-import { after } from 'next/server';
-import { waitUntil } from '@vercel/functions';
 import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
 import { publishProject } from '@/lib/data/publish-project';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-/** Direct Upload + DNS after the 202; keep the isolate alive for the full push. */
+/**
+ * Hold the request open for the full Direct Upload + DNS path.
+ * Detached waitUntil/after froze mid-upload on Vercel and left empty Pages
+ * projects (522) while the UI polled a dead deployment row for minutes.
+ */
 export const maxDuration = 300;
 
 type Params = { id: string };
 
 const MAX_KEY_LENGTH = 255;
 
-// POST /api/v1/projects/{id}/publish — 202 with a deployment id; the work runs after.
+// POST /api/v1/projects/{id}/publish — runs the host work in-request, then 202.
 export const POST = withRoute<undefined, Params>({
     auth: 'required',
     handler: async ({ params, userId, req, supabase }) => {
@@ -42,13 +44,10 @@ export const POST = withRoute<undefined, Params>({
             idempotencyKey,
         );
 
-        // Schedule from the route (request context). Nested `after()` inside publishProject
-        // was not enough on Vercel — the isolate froze and left empty Pages projects.
+        // Finish before answering. The client polls the deployment row; that only
+        // works if this isolate actually completed push + DNS (or wrote failed).
         if (background) {
-            waitUntil(background);
-            after(async () => {
-                await background;
-            });
+            await background;
         }
 
         return ok(body, 202);
