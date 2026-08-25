@@ -340,9 +340,9 @@ export function StyleChooser({
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
                     {accountPlan === "premium"
-                        ? "Same business, three different sites. Premium is active — every look is Free."
+                        ? "Same business, three different sites. Premium is active — every look is unlocked."
                         : accountPlan === "pro"
-                          ? "Same business, three different sites. Pro is active — Casual and Photo-rich are Free. Animated needs Premium."
+                          ? "Same business, three different sites. Pro is active — Casual is Free, Photo-rich is Pro unlocked. Animated needs Premium."
                           : "Same business, three different sites. Casual is Free. Photo-rich is Pro (Rs 499). Animated is Premium (Rs 999) — upgrade on User Plans to unlock paid looks."}
                 </p>
             </header>

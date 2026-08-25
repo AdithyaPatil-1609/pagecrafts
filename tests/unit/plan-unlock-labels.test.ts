@@ -14,11 +14,12 @@ describe("plan unlock tile labels", () => {
         expect(templateTileLabel("signature", { unlocked: true })).toBe("Free");
     });
 
-    it("shows Free for covered looks after Pro or Premium", () => {
+    it("shows Pro unlocked / Premium unlocked for covered looks", () => {
         expect(styleTileLabel("free")).toBe("Free");
         expect(styleTileLabel("pro", { unlocked: false })).toBe("Pro");
-        expect(styleTileLabel("pro", { unlocked: true })).toBe("Free");
-        expect(styleTileLabel("premium", { unlocked: true })).toBe("Free");
+        expect(styleTileLabel("pro", { unlocked: true })).toBe("Pro unlocked");
+        expect(styleTileLabel("premium", { unlocked: true })).toBe("Premium unlocked");
+        expect(styleTileLabel("premium", { unlocked: false })).toBe("Premium");
     });
 
     it("treats Pro as covering Pro templates and Photo-rich, Premium as covering all", () => {

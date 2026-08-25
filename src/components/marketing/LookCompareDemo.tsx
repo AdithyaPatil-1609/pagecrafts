@@ -35,7 +35,10 @@ function lookUnlocked(plan: AccountPlan, id: CompareLookId): boolean {
 }
 
 function tileLabel(plan: AccountPlan, id: CompareLookId): string {
-    return lookUnlocked(plan, id) ? "Free" : id === "pro" ? "Pro" : "Premium";
+    if (!lookUnlocked(plan, id)) return id === "pro" ? "Pro" : "Premium";
+    if (id === "starter") return "Free";
+    if (id === "pro") return "Pro unlocked";
+    return "Premium unlocked";
 }
 
 function footerPrice(plan: AccountPlan, id: CompareLookId, priceInr: number): string {
@@ -69,9 +72,9 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                 </h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground">
                     {plan === "premium"
-                        ? "Same restaurant, three looks. Premium is active — every look and Pro design is Free."
+                        ? "Same restaurant, three looks. Premium is active — every look and Pro design is unlocked."
                         : plan === "pro"
-                          ? "Same restaurant, three looks. Pro is active — Casual and Photo-rich are Free, plus every Pro template. Animated unlocks with Premium."
+                          ? "Same restaurant, three looks. Pro is active — Casual is Free, Photo-rich is Pro unlocked, plus every Pro template. Animated unlocks with Premium."
                           : "Same restaurant, three looks. Casual comes with Starter. Photo-rich unlocks with Pro (Rs 499) — every Pro design too. Animated unlocks with Premium (Rs 999). Fixed preview, not live AI."}
                 </p>
                 <p className="text-sm text-muted-foreground">
