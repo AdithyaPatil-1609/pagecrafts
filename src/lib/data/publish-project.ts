@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DeploymentState, PublishProjectResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
@@ -116,12 +117,11 @@ export async function publishProject(
   // rather than requests that bounced off a precondition.
   track("EV-06", userId, { republish: siteId !== null });
 
-  // Deliberately not awaited. The response carries the deployment id and the client polls;
-  // holding the request open for the ninety seconds this can take would time out the
-  // function and tell the user nothing. Every outcome is written to the row, including the
-  // failures — an attempt that dies silently leaves `pending`, which is the honest answer
-  // when nobody knows how it ended.
-  void publish(
+  // Keep the upload/DNS work alive after the 202 response. On Vercel a bare `void publish()`
+  // is frozen when the isolate goes idle, which left empty Pages projects (522) and no
+  // custom-domain DNS — exactly the Mithais Sweets failure. `after()` uses waitUntil.
+  // Under Vitest there is no request context; run detached the old way so unit tests settle.
+  const work = publish(
     { projectId, projectName, files, siteId, idempotencyKey },
     attempt.onState,
     activeProvider,
@@ -200,6 +200,14 @@ export async function publishProject(
         .finish({ state: "failed", error: detail, failureReason: reason })
         .catch(() => undefined);
     });
+
+  if (process.env.VITEST != null) {
+    void work;
+  } else {
+    after(async () => {
+      await work;
+    });
+  }
 
   return { deploymentId: attempt.deploymentId, status: "pending" };
 }
