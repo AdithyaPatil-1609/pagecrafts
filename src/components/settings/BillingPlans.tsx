@@ -74,7 +74,8 @@ export function BillingPlans({
     <div className="rounded-2xl glass-panel p-5">
       <p className="text-base font-semibold text-foreground">Billing &amp; Plan</p>
       <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-        Your current plan and how it was paid.
+        Your current plan and how it was paid. AI builds per site are listed under AI credits
+        above.
       </p>
 
       <dl className="mt-4 space-y-3 text-sm">
