@@ -4,7 +4,7 @@
 -- the discounted amount; a 100% code grants without opening Razorpay. Clients never read
 -- unused codes — minting is a service-role script.
 
-create table public.discount_codes (
+create table if not exists public.discount_codes (
   id uuid primary key default gen_random_uuid(),
   code text not null,
   batch_label text not null,
@@ -29,9 +29,9 @@ create table public.discount_codes (
   )
 );
 
-create unique index discount_codes_code_idx on public.discount_codes (code);
+create unique index if not exists discount_codes_code_idx on public.discount_codes (code);
 
-create table public.discount_redemptions (
+create table if not exists public.discount_redemptions (
   id uuid primary key default gen_random_uuid(),
   code_id uuid not null references public.discount_codes(id) on delete cascade,
   user_id uuid not null references public.users(id) on delete cascade,
@@ -42,12 +42,12 @@ create table public.discount_redemptions (
   captured_at timestamptz not null default now()
 );
 
-create unique index discount_redemptions_order_id_idx
+create unique index if not exists discount_redemptions_order_id_idx
   on public.discount_redemptions (order_id)
   where order_id is not null;
 
-create index discount_redemptions_code_id_idx on public.discount_redemptions (code_id);
-create index discount_redemptions_user_id_idx on public.discount_redemptions (user_id);
+create index if not exists discount_redemptions_code_id_idx on public.discount_redemptions (code_id);
+create index if not exists discount_redemptions_user_id_idx on public.discount_redemptions (user_id);
 
 alter table public.discount_codes enable row level security;
 alter table public.discount_redemptions enable row level security;
