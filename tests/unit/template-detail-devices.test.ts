@@ -11,10 +11,12 @@ describe("template detail modal device frames", () => {
     expect(modal).toContain('label: "Phone"');
     expect(modal).toContain('orientation: "portrait"');
     expect(modal).toContain("PORTRAIT_ASPECT");
-    expect(modal).toContain("LANDSCAPE_ASPECT");
-    expect(modal).toMatch(/label:\s*"Desktop"[\s\S]*orientation:\s*"landscape"/);
-    expect(modal).toMatch(/label:\s*"Tablet"[\s\S]*orientation:\s*"landscape"/);
-    // Phone must be taller than it is wide (portrait aspect > 1).
+    expect(modal).toContain("PORTRAIT_BASE_WIDTH");
+    expect(modal).toContain("orientation={orientation}");
     expect(modal).toMatch(/PORTRAIT_ASPECT\s*=\s*19\.5\s*\/\s*9/);
+
+    const preview = read("src", "components", "discovery", "TemplatePreview.tsx");
+    expect(preview).toContain('orientation = "landscape"');
+    expect(preview).toContain("aspect-9/19.5");
   });
 });

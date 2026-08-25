@@ -37,10 +37,11 @@ import { cn } from "@/lib/utils";
 // used by almost nobody. Fetching on open costs one request and is also how this will keep
 // working when the library is a table rather than a module (D6).
 
-// The miniature is drawn at one landscape size and scaled into each device frame.
-// Phone must read as a vertical handset (portrait), not a tiny landscape tile.
-const BASE_WIDTH = 560;
-const LANDSCAPE_ASPECT = 10 / 16; // height / width — matches TemplatePreview's 16:10
+// Device frames scale a shared miniature. Landscape matches TemplatePreview's 16:10;
+// phone uses a portrait miniature so the handset reads vertical on every template.
+const LANDSCAPE_BASE_WIDTH = 560;
+const LANDSCAPE_ASPECT = 10 / 16; // height / width
+const PORTRAIT_BASE_WIDTH = 280;
 const PORTRAIT_ASPECT = 19.5 / 9; // tall phone viewport (~iPhone proportions)
 
 const DEVICES = [
@@ -60,33 +61,29 @@ function DeviceFrame({
     orientation: "landscape" | "portrait";
     preview: PreviewSpec;
 }) {
-    const baseHeight = BASE_WIDTH * LANDSCAPE_ASPECT;
-    const frameAspect = orientation === "portrait" ? PORTRAIT_ASPECT : LANDSCAPE_ASPECT;
-    const height = width * frameAspect;
-    // Landscape frames fit the miniature; portrait covers the tall handset and crops sides.
-    const scale =
-        orientation === "portrait"
-            ? Math.max(width / BASE_WIDTH, height / baseHeight)
-            : width / BASE_WIDTH;
-    const offsetX = orientation === "portrait" ? (width - BASE_WIDTH * scale) / 2 : 0;
+    const portrait = orientation === "portrait";
+    const baseWidth = portrait ? PORTRAIT_BASE_WIDTH : LANDSCAPE_BASE_WIDTH;
+    const aspect = portrait ? PORTRAIT_ASPECT : LANDSCAPE_ASPECT;
+    const height = width * aspect;
+    const scale = width / baseWidth;
 
     return (
         <figure className="shrink-0" style={{ width }}>
             <div
                 className={cn(
                     "overflow-hidden border border-border bg-card",
-                    orientation === "portrait" ? "rounded-[1.35rem]" : "rounded-lg",
+                    portrait ? "rounded-[1.35rem]" : "rounded-lg",
                 )}
                 style={{ width, height }}
             >
                 <div
                     style={{
-                        width: BASE_WIDTH,
-                        transform: `translateX(${offsetX}px) scale(${scale})`,
+                        width: baseWidth,
+                        transform: `scale(${scale})`,
                         transformOrigin: "top left",
                     }}
                 >
-                    <TemplatePreview preview={preview} />
+                    <TemplatePreview preview={preview} orientation={orientation} />
                 </div>
             </div>
             <figcaption className="mt-1.5 text-center text-[11px] text-muted-foreground">
