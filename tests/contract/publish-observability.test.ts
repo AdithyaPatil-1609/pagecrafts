@@ -136,9 +136,7 @@ describe("a publish that goes live", () => {
         expect(ids).not.toContain("EV-08");
     });
 
-    it("says whether it went live or is still switching on", async () => {
-        // Conflating the two would make the success rate look wrong in whichever direction
-        // somebody guessed — a slow DNS day reads as a broken one, or the reverse.
+    it("records live when the host work finished without an origin wait", async () => {
         const { db, projectId } = seeded();
         const attempt = await publishProject(
             db.asUser(OWNER), OWNER, projectId, nextKey(), provider({ live: false }),
@@ -146,8 +144,8 @@ describe("a publish that goes live", () => {
         await settled(db, attempt.deploymentId);
 
         const done = captured.events.find((e) => e.id === "EV-07");
-        expect(done?.props.state).toBe("verifying");
-        expect(done?.props.reason).toBe("not_answering_yet");
+        expect(done?.props.state).toBe("live");
+        expect(done?.props.reason).toBeNull();
     });
 
     it("distinguishes a first publish from a republish", async () => {

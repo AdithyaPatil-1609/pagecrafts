@@ -16,8 +16,9 @@ import { accountPath } from './cloudflare-client';
 
 const MAX_BUCKET_BYTES = 50 * 1024 * 1024;
 const MAX_BUCKET_FILES = 100;
-const QUICK_MS = 45_000;
-const UPLOAD_MS = 60_000;
+const QUICK_MS = 20_000;
+const UPLOAD_MS = 45_000;
+const ORIGIN_MS = 2_500;
 /** Special Pages config files travel on the deployment form, not the asset store. */
 const FORM_ONLY = new Set(['_headers', '_redirects', '_routes.json']);
 
@@ -209,15 +210,36 @@ async function originAnswers(url: string): Promise<boolean> {
             method: 'GET',
             redirect: 'follow',
             cache: 'no-store',
-            signal: AbortSignal.timeout(15_000),
+            signal: AbortSignal.timeout(ORIGIN_MS),
         });
-        // 522/530 = empty Pages project. Anything 2xx/3xx/4xx (except CF origin death)
-        // means files are being served.
         if (res.status === 522 || res.status === 530) return false;
         return res.status > 0 && res.status < 500;
     } catch {
         return false;
     }
+}
+
+async function anyOrigin(...urls: string[]): Promise<boolean> {
+    const unique = [...new Set(urls.filter(Boolean))];
+    if (unique.length === 0) return false;
+    const results = await Promise.all(unique.map((u) => originAnswers(u)));
+    return results.some(Boolean);
+}
+
+async function uploadBucket(jwt: string, bucket: PreparedFile[]): Promise<void> {
+    await apiJson('/pages/assets/upload', {
+        method: 'POST',
+        token: jwt,
+        timeoutMs: UPLOAD_MS,
+        body: JSON.stringify(
+            bucket.map((file) => ({
+                key: file.hash,
+                value: file.base64,
+                metadata: { contentType: file.contentType },
+                base64: true,
+            })),
+        ),
+    });
 }
 
 /**
@@ -240,16 +262,14 @@ export async function pushPagesDirectUpload(
         throw new HostingError('No site files to publish.', 400);
     }
 
-    // Wrangler keys paths with a leading slash.
     const manifest = Object.fromEntries(
         assets.map((file) => [`/${file.path}`, file.hash]),
     );
 
     let jwt = await uploadToken(projectName);
 
-    // Prefer uploading only missing hashes (fast republish), but if the check fails
-    // or returns nothing useful, upload everything — empty "already cached" answers
-    // are how we got silent 522s before.
+    // Trust check-missing for speed on republish. confirmDeployment still refuses
+    // empty origins if the create somehow references missing hashes.
     let toUpload = assets;
     try {
         const missingRaw = await apiJson<unknown>('/pages/assets/check-missing', {
@@ -261,63 +281,54 @@ export async function pushPagesDirectUpload(
             const missing = new Set(
                 missingRaw.filter((h): h is string => typeof h === 'string'),
             );
-            // If CF claims nothing is missing on a project that never served files,
-            // still re-upload — cheap for bakery-sized sites, avoids empty origins.
-            toUpload = missing.size === 0 ? assets : assets.filter((f) => missing.has(f.hash));
+            toUpload = assets.filter((f) => missing.has(f.hash));
         }
     } catch {
         toUpload = assets;
     }
 
     const buckets = bucketFiles(toUpload);
-    for (const bucket of buckets) {
-        let attempts = 0;
-        for (;;) {
-            try {
-                await apiJson('/pages/assets/upload', {
-                    method: 'POST',
-                    token: jwt,
-                    timeoutMs: UPLOAD_MS,
-                    body: JSON.stringify(
-                        bucket.map((file) => ({
-                            key: file.hash,
-                            value: file.base64,
-                            metadata: { contentType: file.contentType },
-                            base64: true,
-                        })),
-                    ),
-                });
-                break;
-            } catch (error) {
-                attempts += 1;
-                if (
-                    error instanceof HostingError &&
-                    (error.status === 401 || error.status === 403) &&
-                    attempts < 3
-                ) {
-                    jwt = await uploadToken(projectName);
-                    continue;
+    const concurrency = 3;
+    for (let i = 0; i < buckets.length; i += concurrency) {
+        const batch = buckets.slice(i, i + concurrency);
+        await Promise.all(
+            batch.map(async (bucket) => {
+                let attempts = 0;
+                for (;;) {
+                    try {
+                        await uploadBucket(jwt, bucket);
+                        return;
+                    } catch (error) {
+                        attempts += 1;
+                        if (
+                            error instanceof HostingError &&
+                            (error.status === 401 || error.status === 403) &&
+                            attempts < 3
+                        ) {
+                            jwt = await uploadToken(projectName);
+                            continue;
+                        }
+                        if (
+                            attempts < 3 &&
+                            !(error instanceof HostingError && error.status < 500)
+                        ) {
+                            await new Promise((r) => setTimeout(r, 400 * attempts));
+                            continue;
+                        }
+                        throw error;
+                    }
                 }
-                if (attempts < 3 && !(error instanceof HostingError && error.status < 500)) {
-                    await new Promise((r) => setTimeout(r, 1000 * attempts));
-                    continue;
-                }
-                throw error;
-            }
-        }
+            }),
+        );
     }
 
-    try {
-        await apiJson('/pages/assets/upsert-hashes', {
-            method: 'POST',
-            token: jwt,
-            body: JSON.stringify({ hashes: assets.map((f) => f.hash) }),
-        });
-    } catch {
-        // Soft-fail like wrangler.
-    }
+    // Cache hint only — do not block the deployment create on it.
+    void apiJson('/pages/assets/upsert-hashes', {
+        method: 'POST',
+        token: jwt,
+        body: JSON.stringify({ hashes: assets.map((f) => f.hash) }),
+    }).catch(() => undefined);
 
-    // Wrangler appends a plain JSON string — a Blob/File part can 500 the create call.
     const form = new FormData();
     form.append('manifest', JSON.stringify(manifest));
     form.append('branch', 'main');
@@ -372,17 +383,16 @@ async function confirmDeployment(
         );
     }
 
-    // Stage success is enough to proceed — origin probes can race Cloudflare's edge.
+    // Create often returns deploy-stage success already — do not burn seconds probing.
     if (stageDone(created.latest_stage) === 'success') {
-        if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) return;
+        if (await anyOrigin(pagesUrl, deploymentUrl)) return;
+        // Stage says success; edge may still be warming. Proceed — enableHosting next.
+        return;
     }
 
     let latest = created.latest_stage;
-    // Hard cap ~8s of probing so Go Live stays inside one minute.
-    for (let attempt = 0; attempt < 8; attempt++) {
-        if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) {
-            return;
-        }
+    for (let attempt = 0; attempt < 3; attempt++) {
+        if (await anyOrigin(pagesUrl, deploymentUrl)) return;
 
         try {
             const deployment = await apiJson<{
@@ -394,16 +404,7 @@ async function confirmDeployment(
             });
             latest = deployment.latest_stage;
             const done = stageDone(latest);
-            if (done === 'success') {
-                if (
-                    await originAnswers(pagesUrl) ||
-                    await originAnswers(deployment.url ?? deploymentUrl)
-                ) {
-                    return;
-                }
-                // Deploy stage succeeded; accept after one warm-up probe.
-                if (attempt >= 1) return;
-            }
+            if (done === 'success') return;
             if (done === 'failure') {
                 throw new HostingError(
                     'Host rejected the deployment after upload. Try publishing again.',
@@ -414,10 +415,10 @@ async function confirmDeployment(
             if (error instanceof HostingError && error.status === 502) throw error;
         }
 
-        await new Promise((r) => setTimeout(r, 1_000));
+        await new Promise((r) => setTimeout(r, 500));
     }
 
-    if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) return;
+    if (await anyOrigin(pagesUrl, deploymentUrl)) return;
     if (stageDone(latest) === 'success') return;
 
     throw new HostingError(

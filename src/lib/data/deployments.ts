@@ -254,8 +254,8 @@ export async function recordDeployment(
     const started = await startDeployment(supabase, projectId);
 
     return {
-        // The route answers 202 with this before the publish finishes, so the client has
-        // something to poll from the first moment rather than after the work is over.
+        // Returned immediately so a concurrent Go Live can rejoin this attempt, and so
+        // the rare pending fallback poll still has an id to ask about.
         deploymentId: started.id,
         onState: (state) => {
             // Intermediate states only. The final one carries a URL or an error with it and

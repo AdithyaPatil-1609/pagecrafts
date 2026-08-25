@@ -118,26 +118,42 @@ export default function GoLiveButton({
                 ? crypto.randomUUID()
                 : `${Date.now()}-${Math.random()}`;
 
-        const { deploymentId, error: publishError } = await startProjectPublish(
-            projectId,
-            idempotencyKey,
-        );
+        const { deploymentId, status, liveUrl, error: publishError } =
+            await startProjectPublish(projectId, idempotencyKey);
         if (cancelledRef.current) return;
-        if (publishError || !deploymentId) {
+        if (publishError && !deploymentId) {
             setPhase('error');
             setError(
-                publishError && /taken|reserved/i.test(publishError)
+                /taken|reserved/i.test(publishError)
                     ? publishError
-                    : (publishError ?? 'Publishing could not start.'),
+                    : publishError,
             );
             return;
         }
 
-        // Server already awaited the host work; a few quick polls settle the row.
-        for (let attempt = 0; attempt < 45; attempt++) {
+        if (status === 'live' && liveUrl) {
+            setLiveUrl(liveUrl);
+            setPhase('success');
+            return;
+        }
+
+        if (status === 'failed') {
+            setPhase('error');
+            setError(publishError ?? 'Publishing did not finish. Try again in a moment.');
+            return;
+        }
+
+        if (!deploymentId) {
+            setPhase('error');
+            setError(publishError ?? 'Publishing could not start.');
+            return;
+        }
+
+        // Fallback poll only if the server still answered pending (rare).
+        for (let attempt = 0; attempt < 30; attempt++) {
             if (cancelledRef.current) return;
             if (attempt > 0) {
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+                await new Promise((resolve) => setTimeout(resolve, 400));
             }
             if (cancelledRef.current) return;
             const { deployment, error: pollError } = await pollDeployment(deploymentId);
