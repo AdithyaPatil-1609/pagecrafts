@@ -13,6 +13,7 @@ export type ErrorCode =
   | "generation_failed"
   | "payment_required"
   | "payments_unavailable"
+  | "invalid_discount"
   | "hosting_error"
   | "service_unavailable"
   | "internal";

@@ -43,6 +43,12 @@ export interface OrderNotes {
     templateId?: string;
     /** Generated look being bought (`photos` or `motion`). */
     styleId?: string;
+    /** Scratch-card code applied when the order was created. */
+    discountCode?: string;
+    /** List price in rupees, as a string because Razorpay notes are strings. */
+    listPriceInr?: string;
+    /** Amount charged in rupees after the card, as a string. */
+    paidInr?: string;
 }
 
 /** True when this process can create an order. Missing keys fail at checkout, not at boot. */
@@ -90,18 +96,39 @@ export async function createOrder(
 ): Promise<RazorpayOrder> {
     const auth = razorpayAuthHeader();
 
-    const response = await fetch(ORDERS_URL, {
-        method: "POST",
-        headers: { Authorization: auth, "Content-Type": "application/json" },
-        body: JSON.stringify({
-            amount: amountInPaise,
-            currency: "INR",
-            receipt: receipt.slice(0, 40),
-            notes,
-        }),
-    });
+    let response: Response;
+    try {
+        response = await fetch(ORDERS_URL, {
+            method: "POST",
+            headers: { Authorization: auth, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                amount: amountInPaise,
+                currency: "INR",
+                receipt: receipt.slice(0, 40),
+                notes,
+            }),
+        });
+    } catch (error) {
+        const detail = error instanceof Error ? error.message : "fetch failed";
+        console.error("[razorpay] order request failed", detail);
+        throw new ApiError(
+            "payments_unavailable",
+            "We could not open Razorpay checkout. Please try again in a moment.",
+            detail,
+        );
+    }
 
-    const body = (await response.json()) as Record<string, unknown>;
+    let body: Record<string, unknown>;
+    try {
+        body = (await response.json()) as Record<string, unknown>;
+    } catch {
+        console.error("[razorpay] order response was not readable", response.status);
+        throw new ApiError(
+            "payments_unavailable",
+            "We could not open Razorpay checkout. Please try again in a moment.",
+            `razorpay ${response.status}`,
+        );
+    }
 
     if (!response.ok) {
         const error = body.error as

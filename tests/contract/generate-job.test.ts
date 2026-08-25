@@ -32,7 +32,8 @@ vi.mock('@/lib/data/entitlements', async (importOriginal) => {
 
 vi.mock('@/lib/limits/redis', async () => {
     const support = await import('../support/redis-mock');
-    return { redis: () => support.redisStub, isRedisConfigured: () => true };
+    // Jobs use Redis in production; this stub has no lists, so the store stays in memory.
+    return { redis: () => support.redisStub, isRedisConfigured: () => false };
 });
 
 const quota = vi.hoisted(() => ({

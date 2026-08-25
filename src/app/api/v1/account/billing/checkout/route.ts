@@ -21,5 +21,5 @@ export const POST = withRoute<Body>({
   auth: "required",
   schema: planCheckoutSchema,
   handler: async ({ supabase, userId, body }) =>
-    ok(await startPlanCheckout(supabase, userId, body.plan)),
+    ok(await startPlanCheckout(supabase, userId, body.plan, body.discountCode)),
 });

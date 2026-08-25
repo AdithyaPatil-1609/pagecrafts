@@ -12,6 +12,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
     generation_failed: 502,
     payment_required: 402,
     payments_unavailable: 503,
+    invalid_discount: 422,
     hosting_error: 502,
     service_unavailable: 503,
     internal: 500,

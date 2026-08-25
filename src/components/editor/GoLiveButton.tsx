@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { AlertCircle, Check, ExternalLink, Loader2, Rocket } from 'lucide-react';
 
 import {
@@ -42,13 +42,9 @@ export default function GoLiveButton({
     const [liveUrl, setLiveUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (phase !== 'naming') return;
+    function openNaming() {
         setSiteName(projectName?.trim() || 'My site');
         setError(null);
-    }, [phase, projectName]);
-
-    function openNaming() {
         setPhase('naming');
     }
 
