@@ -139,8 +139,29 @@ export const paymentVerifySchema = z.object({
   razorpay_signature: z.string().min(1),
 });
 
+const discountCodeField = z
+  .string()
+  .trim()
+  .max(32)
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
 /** POST /account/billing/checkout — which account unlock to start paying for. */
 export const planCheckoutSchema = z.object({
   plan: z.enum(["pro", "premium"]),
+  discountCode: discountCodeField,
+});
+
+/** Optional scratch-card code on checkouts that otherwise have no body. */
+export const optionalDiscountCheckoutSchema = z.preprocess(
+  (value) => (value && typeof value === "object" ? value : {}),
+  z.object({
+    discountCode: discountCodeField,
+  }),
+);
+
+export const discountPreviewSchema = z.object({
+  code: z.string().trim().min(1).max(32),
+  kind: z.enum(["pro", "premium", "publish", "advanced", "generation_pass"]),
 });
 

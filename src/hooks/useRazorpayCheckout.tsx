@@ -85,6 +85,8 @@ interface CheckoutData {
     currency?: 'INR';
     keyId?: string;
     priceInr?: number;
+    listPriceInr?: number;
+    discountPercent?: number;
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
@@ -97,7 +99,7 @@ interface UseRazorpayCheckoutOptions {
     /** Primary brand colour for the Razorpay modal. */
     themeColor?: string;
     /** Called when the design is already paid for (no modal needed). */
-    onAlreadyGranted?: () => void;
+    onAlreadyGranted?: (data: CheckoutData) => void;
     /** Called after the payment is verified and granted server-side. */
     onSuccess?: (result?: { kind?: string; granted?: boolean }) => void;
     /** Called when the user closes the modal without paying (or cancels confirm). */
@@ -110,17 +112,17 @@ interface UseRazorpayCheckoutOptions {
 
 interface UseRazorpayCheckoutReturn {
     /** Start the checkout flow for publishing a project. */
-    openCheckout: (projectId: string) => Promise<void>;
+    openCheckout: (projectId: string, discountCode?: string) => Promise<void>;
     /** Buy one catalogue design (routes to plan upgrade). */
-    openTemplateCheckout: (templateId: string) => Promise<void>;
+    openTemplateCheckout: (templateId: string, discountCode?: string) => Promise<void>;
     /** Buy one generated look (routes to plan upgrade). */
-    openStyleCheckout: (styleId: string) => Promise<void>;
+    openStyleCheckout: (styleId: string, discountCode?: string) => Promise<void>;
     /** Upgrade account to Pro or Premium — unlocks the whole design tier. */
-    openPlanCheckout: (plan: 'pro' | 'premium') => Promise<void>;
+    openPlanCheckout: (plan: 'pro' | 'premium', discountCode?: string) => Promise<void>;
     /** Buy the Advanced AI usage package. */
-    openAdvancedCheckout: () => Promise<void>;
+    openAdvancedCheckout: (discountCode?: string) => Promise<void>;
     /** Buy one extra AI generation round. */
-    openGenerationPassCheckout: () => Promise<void>;
+    openGenerationPassCheckout: (discountCode?: string) => Promise<void>;
     /** Current status of the checkout flow. */
     status: CheckoutStatus;
     /** Human-readable error, set when status is 'error'. */
@@ -177,7 +179,7 @@ export function useRazorpayCheckout(
 
                 if (data.granted) {
                     setStatus('success');
-                    onAlreadyGranted?.();
+                    onAlreadyGranted?.(data);
                     return;
                 }
 
@@ -294,68 +296,73 @@ export function useRazorpayCheckout(
     }, []);
 
     const openCheckout = useCallback(
-        (projectId: string) =>
+        (projectId: string, discountCode?: string) =>
             withConfirm('publish', () =>
                 startOrder(
                     `/api/v1/projects/${encodeURIComponent(projectId)}/checkout`,
                     (data) => `Publish · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                    discountCode ? { discountCode } : {},
                 ),
             ),
         [startOrder, withConfirm],
     );
 
     const openTemplateCheckout = useCallback(
-        (templateId: string) =>
+        (templateId: string, discountCode?: string) =>
             withConfirm('plan', () =>
                 startOrder(
                     `/api/v1/templates/${encodeURIComponent(templateId)}/checkout`,
                     (data) => `Plan upgrade · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                    discountCode ? { discountCode } : {},
                 ),
             ),
         [startOrder, withConfirm],
     );
 
     const openStyleCheckout = useCallback(
-        (styleId: string) =>
+        (styleId: string, discountCode?: string) =>
             withConfirm('plan', () =>
                 startOrder(
                     `/api/v1/styles/${encodeURIComponent(styleId)}/checkout`,
                     (data) => `Plan upgrade · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                    discountCode ? { discountCode } : {},
                 ),
             ),
         [startOrder, withConfirm],
     );
 
     const openPlanCheckout = useCallback(
-        (plan: 'pro' | 'premium') =>
+        (plan: 'pro' | 'premium', discountCode?: string) =>
             withConfirm('plan', () =>
                 startOrder(
                     '/api/v1/account/billing/checkout',
                     (data) =>
                         `${plan === 'premium' ? 'Premium' : 'Pro'} · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
-                    { plan },
+                    discountCode ? { plan, discountCode } : { plan },
                 ),
             ),
         [startOrder, withConfirm],
     );
 
     const openAdvancedCheckout = useCallback(
-        () =>
+        (discountCode?: string) =>
             withConfirm('advanced', () =>
                 startOrder(
                     '/api/v1/account/packages/advanced/checkout',
                     (data) => `Advanced AI · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                    discountCode ? { discountCode } : {},
                 ),
             ),
         [startOrder, withConfirm],
     );
 
     const openGenerationPassCheckout = useCallback(
-        () =>
+        (discountCode?: string) =>
             withConfirm('generation_pass', () =>
                 startOrder(
                     '/api/v1/account/packages/generation/checkout',
                     (data) => `Extra generation · Rs ${data.priceInr ?? data.amountInPaise! / 100}`,
+                    discountCode ? { discountCode } : {},
                 ),
             ),
         [startOrder, withConfirm],

@@ -43,6 +43,12 @@ export interface OrderNotes {
     templateId?: string;
     /** Generated look being bought (`photos` or `motion`). */
     styleId?: string;
+    /** Scratch-card code applied when the order was created. */
+    discountCode?: string;
+    /** List price in rupees, as a string because Razorpay notes are strings. */
+    listPriceInr?: string;
+    /** Amount charged in rupees after the card, as a string. */
+    paidInr?: string;
 }
 
 /** True when this process can create an order. Missing keys fail at checkout, not at boot. */

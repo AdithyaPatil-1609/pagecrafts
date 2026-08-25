@@ -91,6 +91,8 @@ const PROBES: Probe[] = [
   table("generations", "20260804120000_initial_schema"),
   table("assets", "20260804120000_initial_schema"),
   table("entitlements", "20260805160000_entitlements"),
+  table("discount_codes", "20260825120000_discount_codes"),
+  table("discount_redemptions", "20260825120000_discount_codes"),
   table("vertical_profiles", "20260812090000_vertical_profiles"),
   table("vertical_profile_aliases", "20260812090000_vertical_profiles"),
 
