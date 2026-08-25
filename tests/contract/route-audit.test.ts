@@ -67,11 +67,6 @@ const NO_SCHEMA: Record<string, string> = {
     "/v1/projects/[id]/assets":
         "multipart/form-data. The body is parsed and checked in the handler — size, mime " +
         "type — because a Zod schema cannot describe a file upload.",
-    "/v1/projects/[id]/checkout": "No body at all; the project is the whole request.",
-    "/v1/templates/[id]/checkout": "No body at all; the design id is the whole request.",
-    "/v1/styles/[id]/checkout": "No body at all; the look id is the whole request.",
-    "/v1/account/packages/advanced/checkout": "No body; Advanced AI package checkout.",
-    "/v1/account/packages/generation/checkout": "No body; extra generation pass checkout.",
     "/v1/account/billing/downgrade":
         "No body. Switching to Starter is a session-scoped revoke, not a payload.",
     "/v1/projects/[id]/publish": "No body. The idempotency key is a header, checked in the route.",

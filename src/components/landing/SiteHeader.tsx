@@ -62,7 +62,7 @@ export function SiteHeader({
     }
 
     return (
-        <header className="fixed top-0 z-20 w-full border-b border-border/40 bg-background/40 backdrop-blur-xl">
+        <header className="fixed top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
             <nav
                 aria-label="Main"
                 className="mx-auto grid h-16 w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-6"
@@ -92,7 +92,7 @@ export function SiteHeader({
                             <Menu className="size-5" strokeWidth={1.75} aria-hidden />
                             <span className="sr-only">Menu</span>
                         </summary>
-                        <ul className="glass-panel absolute right-0 z-30 mt-3 flex w-56 flex-col gap-1 rounded-2xl p-3">
+                        <ul className="absolute right-0 z-50 mt-3 flex w-56 flex-col gap-1 overflow-hidden rounded-2xl border border-border bg-card p-3 shadow-[0_16px_48px_rgba(0,0,0,0.55)]">
                             {DECK_NAV.map((item) => (
                                 <li key={item.label}>
                                     <a href={item.href} className={`${LINK} block px-3 py-2`}>

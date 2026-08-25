@@ -7,7 +7,7 @@ apply to the live site.
 ## Symptom on production
 
 - `/plans` shows **Choose Pro** / **Choose Premium**
-- Clicking either shows: *"We could not finish that just now…"*
+- Clicking either shows: *"Checkout is not set up on this server yet…"*
 - Server-rendered page data includes `"paymentsReady": false`
 
 That means `RAZORPAY_KEY_ID` and/or `RAZORPAY_KEY_SECRET` are **missing** in Vercel
@@ -84,19 +84,40 @@ Expected after fix: `"paymentsReady":true`
 
 Then sign in on https://pagecrafts.in/plans → Choose Pro → Razorpay Test Checkout opens.
 
-## Failure chain (current production)
+## Failure chain (missing Razorpay keys)
 
 ```text
 Choose Pro
   → Agree (Razorpay confirm dialog)
-  → POST https://pagecrafts.in/api/v1/account/billing/checkout  {"plan":"pro"}
-  → 500 internal
+  → POST /api/v1/account/billing/checkout  {"plan":"pro"}
+  → 503 payments_unavailable
   → createOrder() → credentials() — RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET missing
-  → UI: "We could not finish that just now…" (internal error catalogue)
+  → UI: "Checkout is not set up on this server yet…"
 ```
+
+A scratch-card code that cannot be held answers `invalid_discount` (422), not a generic 500.
+If PostgREST has not reloaded after the discount migration, checkout still holds the card
+with a table update so paying is not blocked on the RPC schema cache.
 
 ## Security
 
 - `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` are **server-only**.
 - Do not prefix secrets with `NEXT_PUBLIC_`.
 - Prices are decided server-side (Pro ₹499, Premium ₹999); the browser only sends `plan`.
+
+## Scratch-card discount codes
+
+Do **not** create Razorpay Offers/coupons for these cards. PageCrafts stores unique
+codes and creates the Razorpay order at the discounted amount (a 100% card skips
+Razorpay and grants immediately).
+
+1. Keep the existing live keys (`RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`) in Vercel.
+2. Apply the `discount_codes` migration to production (`npx supabase db push` or your usual migrate).
+3. Mint a batch (service role, against production env):
+
+```bash
+npm run pay:mint-codes -- --count 50 --percent 20 --applies all --batch "fair-2026"
+```
+
+Print the `code` column on the physical cards. Buyers type it on `/plans` (or AI packages)
+before they pay. Each code is one-time by default.

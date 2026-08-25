@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ZodType } from "zod";
 
 import { requireUser, supabaseRoute } from "@/lib/auth/session";
-import { ApiError, fail, UNEXPECTED_FAILURE } from "@/lib/errors/respond"
+import { fail, isApiError, UNEXPECTED_FAILURE } from "@/lib/errors/respond";
 import { guardAiRequest, type UsageReport } from "@/lib/limits/ai-guard";
 import { readJson } from "./body";
 import { captureError } from "@/lib/observability/capture";
@@ -24,6 +24,8 @@ export interface RouteOptions<Body, Params> {
   auth?: "required" | "none";
   schema?: ZodType<Body>;
   limit?: "ai";
+  /** Bytes this route may accept. Defaults to MAX_BODY_BYTES; a whole site needs more. */
+  maxBodyBytes?: number;
   handler: (ctx: RouteContext<Body, Params>) => Promise<Response>;
 }
 
@@ -53,7 +55,7 @@ export function withRoute<
 
       let body = undefined as Body;
       if (opts.schema) {
-        const json = await readJson(req);
+        const json = await readJson(req, opts.maxBodyBytes);
 
         const parsed = opts.schema.safeParse(json);
         if (!parsed.success) {
@@ -86,7 +88,7 @@ export function withRoute<
         await guard.release();
       }
     } catch (err) {
-      if (err instanceof ApiError) return fail(err.code, err.message, err.detail);
+      if (isApiError(err)) return fail(err.code, err.message, err.detail);
 
       captureError(err, {
         tags: { boundary: "route" },

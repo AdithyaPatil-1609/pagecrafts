@@ -228,8 +228,14 @@ export function StyleChooser({
         }
     }
 
-    async function generateAgain(nextPrompt?: string) {
-        const text = (nextPrompt ?? prompt).trim();
+    /**
+     * Start another generation.
+     * Always keep the person's original site description as the prompt.
+     * "Fix with AI" used to pass a repair sentence as the prompt, which replaced
+     * the brief and made retries fail or build the wrong site.
+     */
+    async function generateAgain(_repairNote?: string) {
+        const text = prompt.trim();
         if (!text || regenerating) return;
         if (!canGenerateAgain(quota)) {
             setOutOfCredits(true);
@@ -239,7 +245,6 @@ export function StyleChooser({
         setRegenerating(true);
         setError(null);
         setOutOfCredits(false);
-        if (nextPrompt) setPrompt(text);
 
         const started = await apiPost<GenerateJobResponse>(
             `/api/v1/projects/${encodeURIComponent(projectId)}/generate`,
@@ -342,9 +347,9 @@ export function StyleChooser({
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
                     {accountPlan === "premium"
-                        ? "Same business, three different sites. Premium is active — every look is Free."
+                        ? "Same business, three different sites. Premium is active — every look is unlocked."
                         : accountPlan === "pro"
-                          ? "Same business, three different sites. Pro is active — Casual and Photo-rich are Free. Animated needs Premium."
+                          ? "Same business, three different sites. Pro is active — Casual is Free, Photo-rich is Pro unlocked. Animated needs Premium."
                           : "Same business, three different sites. Casual is Free. Photo-rich is Pro (Rs 499). Animated is Premium (Rs 999) — upgrade on User Plans to unlock paid looks."}
                 </p>
             </header>
@@ -353,12 +358,24 @@ export function StyleChooser({
                 <div className="mx-auto max-w-lg rounded-2xl border border-border/70 bg-card/80 p-4 text-center">
                     <p className="text-sm font-medium text-foreground">{fix.title}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{fix.what}</p>
+                    {quota ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                            {canGenerateAgain(quota)
+                                ? `AI credits left on this site: ${quota.remaining}${
+                                      (quota.passes ?? 0) > 0
+                                          ? ` (+ ${quota.passes} pass${quota.passes === 1 ? "" : "es"})`
+                                          : ""
+                                  }. See Settings → AI credits.`
+                                : "No AI builds left on this site. See Settings → AI credits or upgrade on User Plans."}
+                        </p>
+                    ) : null}
                     <button
                         type="button"
                         onClick={() => setAskOpen(true)}
                         className="mt-3 h-11 cursor-pointer rounded-full border border-gold bg-gold px-4 text-sm font-semibold text-gold-foreground hover:opacity-90"
+                        disabled={!prompt.trim() || regenerating}
                     >
-                        Fix with AI
+                        {regenerating ? "Starting again…" : "Fix with AI"}
                     </button>
                 </div>
             ) : null}

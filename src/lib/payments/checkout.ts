@@ -11,7 +11,9 @@ import {
     paymentsConfigured,
     publishableKeyId,
     verifyPaymentSignature,
+    type OrderKind,
     type OrderNotes,
+    type RazorpayOrder,
 } from "./razorpay";
 import { inrToPaise, isFree, PREMIUM_PRICE_INR, PRO_PRICE_INR, publishPriceInr, requiredPlanForStyle, requiredPlanForTemplate } from "./pricing";
 import { TEMPLATES } from "@/lib/templates";
@@ -23,6 +25,13 @@ import {
 } from "@/lib/limits/config";
 import { grantGenerationPasses, generationPassesRemaining } from "@/lib/ai/jobs/quota";
 import type { AiPackageId } from "./packages";
+import {
+    attachReservedOrder,
+    captureDiscount,
+    releaseDiscountReservation,
+    reserveDiscount,
+    type PricedWithCode,
+} from "./discount-codes";
 
 // The gate at publish (R3 · Doc 22 P2/P3, Amendment A1).
 //
@@ -41,6 +50,73 @@ export interface CheckoutResponse {
     currency?: "INR";
     keyId?: string;
     priceInr?: number;
+    listPriceInr?: number;
+    discountPercent?: number;
+}
+
+function checkoutFields(priced: PricedWithCode): Pick<CheckoutResponse, "priceInr" | "listPriceInr" | "discountPercent"> {
+    return {
+        priceInr: priced.priceInr,
+        listPriceInr: priced.listPriceInr,
+        ...(priced.discountPercent ? { discountPercent: priced.discountPercent } : {}),
+    };
+}
+
+async function startDiscountedOrder(opts: {
+    userId: string;
+    kind: OrderKind;
+    listPriceInr: number;
+    receipt: string;
+    notes: OrderNotes;
+    discountCode?: string;
+}): Promise<{ priced: PricedWithCode; order?: RazorpayOrder }> {
+    let priced: PricedWithCode = { priceInr: opts.listPriceInr, listPriceInr: opts.listPriceInr };
+    if (opts.discountCode) {
+        priced = await reserveDiscount(opts.userId, opts.kind, opts.listPriceInr, opts.discountCode);
+    }
+
+    if (priced.priceInr === 0) {
+        return { priced };
+    }
+
+    const notes: OrderNotes = priced.discountCode
+        ? {
+              ...opts.notes,
+              discountCode: priced.discountCode,
+              listPriceInr: String(priced.listPriceInr),
+              paidInr: String(priced.priceInr),
+          }
+        : opts.notes;
+
+    try {
+        const order = await createOrder(inrToPaise(priced.priceInr), opts.receipt, notes);
+        if (priced.discountCode) {
+            await attachReservedOrder(priced.discountCode, order.id);
+        }
+        return { priced, order };
+    } catch (error) {
+        if (priced.discountCode) {
+            await releaseDiscountReservation(priced.discountCode, opts.userId);
+        }
+        throw error;
+    }
+}
+
+async function captureCodeIfUsed(
+    priced: PricedWithCode,
+    userId: string,
+    kind: OrderKind,
+    orderId?: string,
+): Promise<void> {
+    if (!priced.discountCode) return;
+    await captureDiscount({
+        code: priced.discountCode,
+        userId,
+        kind,
+        orderId,
+        listPriceInr: priced.listPriceInr,
+        paidInr: priced.priceInr,
+    });
 }
 
 interface ProjectForCheckout {
@@ -127,6 +203,7 @@ export async function startPublishCheckout(
     supabase: SupabaseClient,
     userId: string,
     projectId: string,
+    discountCode?: string,
 ): Promise<CheckoutResponse> {
     // Owner-scoped read first, before the entitlement is consulted (R3 D19 route audit).
     //
@@ -156,10 +233,20 @@ export async function startPublishCheckout(
     }
 
     const priceInr = publishPriceInr(tier);
-    const amountInPaise = inrToPaise(priceInr);
+    const { priced, order } = await startDiscountedOrder({
+        userId,
+        kind: "publish",
+        listPriceInr: priceInr,
+        receipt: `pub_${projectId.slice(0, 8)}_${Date.now()}`,
+        notes: { projectId, userId, kind: "publish" },
+        discountCode,
+    });
 
-    const notes: OrderNotes = { projectId, userId, kind: "publish" };
-    const order = await createOrder(amountInPaise, `pub_${projectId.slice(0, 8)}_${Date.now()}`, notes);
+    if (!order) {
+        await grantPublish(projectId, userId, "launch_offer");
+        await captureCodeIfUsed(priced, userId, "publish");
+        return { granted: true, ...checkoutFields(priced) };
+    }
 
     return {
         granted: false,
@@ -167,7 +254,7 @@ export async function startPublishCheckout(
         amountInPaise: order.amount,
         currency: "INR",
         keyId: publishableKeyId(),
-        priceInr,
+        ...checkoutFields(priced),
     };
 }
 
@@ -452,6 +539,7 @@ export async function startTemplateCheckout(
     supabase: SupabaseClient,
     userId: string,
     templateRef: string,
+    discountCode?: string,
 ): Promise<CheckoutResponse> {
     const resolved = resolveDesign(templateRef);
     const need = resolved ? requiredPlanForTemplate(resolved.design.tier) : null;
@@ -460,7 +548,7 @@ export async function startTemplateCheckout(
     }
 
     // Plans unlock the whole tier — never sell a single template anymore.
-    return startPlanCheckout(supabase, userId, need);
+    return startPlanCheckout(supabase, userId, need, discountCode);
 }
 
 const PAID_STYLES = new Set<StyleId>(["photos", "motion"]);
@@ -469,6 +557,7 @@ export async function startStyleCheckout(
     supabase: SupabaseClient,
     userId: string,
     styleId: string,
+    discountCode?: string,
 ): Promise<CheckoutResponse> {
     if (!PAID_STYLES.has(styleId as StyleId)) {
         throw new ApiError("not_found", "That look does not exist.");
@@ -480,7 +569,7 @@ export async function startStyleCheckout(
     if (!need) throw new ApiError("not_found", "That look does not exist.");
 
     // Same as designs: upgrade the account plan, not a one-off look SKU.
-    return startPlanCheckout(supabase, userId, need);
+    return startPlanCheckout(supabase, userId, need, discountCode);
 }
 
 /** Stop paid plans on this account. Does not refund, and does not touch published sites. */
@@ -561,6 +650,7 @@ export async function startPlanCheckout(
     supabase: SupabaseClient,
     userId: string,
     plan: "pro" | "premium",
+    discountCode?: string,
 ): Promise<CheckoutResponse> {
     if (plan !== "pro" && plan !== "premium") {
         throw new ApiError("validation_failed", "That plan cannot be purchased.");
@@ -572,39 +662,45 @@ export async function startPlanCheckout(
     }
     if (plan === "premium" && billing.plan === "premium") return { granted: true };
 
-    if (!paymentsConfigured()) {
-        if (devPlanGrantEnabled()) {
+    const listPriceInr = plan === "premium" ? PREMIUM_PRICE_INR : PRO_PRICE_INR;
+
+    try {
+        const { priced, order } = await startDiscountedOrder({
+            userId,
+            kind: plan,
+            listPriceInr,
+            receipt: `${plan}_${userId.slice(0, 8)}_${Date.now()}`,
+            notes: { userId, kind: plan },
+            discountCode,
+        });
+
+        if (!order) {
+            if (plan === "premium") await grantPremium(userId);
+            else await grantPro(userId);
+            await captureCodeIfUsed(priced, userId, plan);
+            return { granted: true, ...checkoutFields(priced) };
+        }
+
+        return {
+            granted: false,
+            orderId: order.id,
+            amountInPaise: order.amount,
+            currency: "INR",
+            keyId: publishableKeyId(),
+            ...checkoutFields(priced),
+        };
+    } catch (error) {
+        if (
+            error instanceof ApiError &&
+            error.code === "payments_unavailable" &&
+            devPlanGrantEnabled()
+        ) {
             if (plan === "premium") await grantPremium(userId);
             else await grantPro(userId);
             return { granted: true };
         }
-        console.error(
-            "[payments] plan checkout blocked — RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET missing",
-        );
-        throw new ApiError(
-            "payments_unavailable",
-            "Payments are not set up on this server.",
-            "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required",
-        );
+        throw error;
     }
-
-    // Price is server-owned. The browser only names the plan.
-    const priceInr = plan === "premium" ? PREMIUM_PRICE_INR : PRO_PRICE_INR;
-    const notes: OrderNotes = { userId, kind: plan };
-    const order = await createOrder(
-        inrToPaise(priceInr),
-        `${plan}_${userId.slice(0, 8)}_${Date.now()}`,
-        notes,
-    );
-
-    return {
-        granted: false,
-        orderId: order.id,
-        amountInPaise: order.amount,
-        currency: "INR",
-        keyId: publishableKeyId(),
-        priceInr,
-    };
 }
 
 export async function startProCheckout(
@@ -618,6 +714,7 @@ export async function startProCheckout(
 export async function startAdvancedCheckout(
     supabase: SupabaseClient,
     userId: string,
+    discountCode?: string,
 ): Promise<CheckoutResponse> {
     const { data, error } = await supabase
         .from("entitlements")
@@ -629,16 +726,20 @@ export async function startAdvancedCheckout(
     if (error) throw new ApiError("internal", "Could not read your AI package.", error.message);
     if (data && isLivePlanRow(data, Date.now())) return { granted: true };
 
-    if (!paymentsConfigured()) {
-        throw new ApiError("payments_unavailable", "Payments are not set up on this server.");
-    }
+    const { priced, order } = await startDiscountedOrder({
+        userId,
+        kind: "advanced",
+        listPriceInr: ADVANCED_PACKAGE_PRICE_INR,
+        receipt: `adv_${userId.slice(0, 8)}_${Date.now()}`,
+        notes: { userId, kind: "advanced" },
+        discountCode,
+    });
 
-    const notes: OrderNotes = { userId, kind: "advanced" };
-    const order = await createOrder(
-        inrToPaise(ADVANCED_PACKAGE_PRICE_INR),
-        `adv_${userId.slice(0, 8)}_${Date.now()}`,
-        notes,
-    );
+    if (!order) {
+        await grantAdvanced(userId);
+        await captureCodeIfUsed(priced, userId, "advanced");
+        return { granted: true, ...checkoutFields(priced) };
+    }
 
     return {
         granted: false,
@@ -646,24 +747,29 @@ export async function startAdvancedCheckout(
         amountInPaise: order.amount,
         currency: "INR",
         keyId: publishableKeyId(),
-        priceInr: ADVANCED_PACKAGE_PRICE_INR,
+        ...checkoutFields(priced),
     };
 }
 
 /** Buy one extra AI generation round (Rs 199) after the package allowance is used. */
 export async function startGenerationPassCheckout(
     userId: string,
+    discountCode?: string,
 ): Promise<CheckoutResponse> {
-    if (!paymentsConfigured()) {
-        throw new ApiError("payments_unavailable", "Payments are not set up on this server.");
-    }
+    const { priced, order } = await startDiscountedOrder({
+        userId,
+        kind: "generation_pass",
+        listPriceInr: GENERATION_PASS_PRICE_INR,
+        receipt: `genpass_${userId.slice(0, 8)}_${Date.now()}`,
+        notes: { userId, kind: "generation_pass" },
+        discountCode,
+    });
 
-    const notes: OrderNotes = { userId, kind: "generation_pass" };
-    const order = await createOrder(
-        inrToPaise(GENERATION_PASS_PRICE_INR),
-        `genpass_${userId.slice(0, 8)}_${Date.now()}`,
-        notes,
-    );
+    if (!order) {
+        await grantGenerationPassPurchase(userId);
+        await captureCodeIfUsed(priced, userId, "generation_pass");
+        return { granted: true, ...checkoutFields(priced) };
+    }
 
     return {
         granted: false,
@@ -671,7 +777,7 @@ export async function startGenerationPassCheckout(
         amountInPaise: order.amount,
         currency: "INR",
         keyId: publishableKeyId(),
-        priceInr: GENERATION_PASS_PRICE_INR,
+        ...checkoutFields(priced),
     };
 }
 
@@ -719,6 +825,20 @@ export async function fulfillPaidNotes(
 
     const resolvedKind = kind as OrderNotes["kind"];
 
+    const finish = async () => {
+        if (notes.discountCode) {
+            await captureDiscount({
+                code: notes.discountCode,
+                userId,
+                kind: resolvedKind,
+                orderId: meta.orderId,
+                listPriceInr: Number(notes.listPriceInr) || 0,
+                paidInr: Number(notes.paidInr) || 0,
+            });
+        }
+        return { kind: resolvedKind };
+    };
+
     if (options?.requireUserId && options.requireUserId !== userId) {
         console.error("[payments] verified payment user mismatch", {
             paymentId: meta.paymentId,
@@ -734,13 +854,13 @@ export async function fulfillPaidNotes(
     if (resolvedKind === "advanced") {
         await grantAdvanced(userId);
         console.info("[payments] Advanced unlocked", { userId, paymentId: meta.paymentId });
-        return { kind: resolvedKind };
+        return finish();
     }
 
     if (resolvedKind === "generation_pass") {
         await grantGenerationPassPurchase(userId);
         console.info("[payments] generation pass granted", { userId, paymentId: meta.paymentId });
-        return { kind: resolvedKind };
+        return finish();
     }
 
     if (resolvedKind === "template") {
@@ -757,7 +877,7 @@ export async function fulfillPaidNotes(
             templateId,
             paymentId: meta.paymentId,
         });
-        return { kind: resolvedKind };
+        return finish();
     }
 
     if (resolvedKind === "style") {
@@ -770,7 +890,7 @@ export async function fulfillPaidNotes(
         }
         await grantStyle(userId, styleId);
         console.info("[payments] look unlocked", { userId, styleId, paymentId: meta.paymentId });
-        return { kind: resolvedKind };
+        return finish();
     }
 
     if (resolvedKind === "pro" || resolvedKind === "premium") {
@@ -778,7 +898,7 @@ export async function fulfillPaidNotes(
         else await grantPro(userId);
         const label = resolvedKind === "premium" ? "Premium" : "Pro";
         console.info(`[payments] ${label} unlocked`, { userId, paymentId: meta.paymentId });
-        return { kind: resolvedKind };
+        return finish();
     }
 
     if (!projectId) {
@@ -791,7 +911,7 @@ export async function fulfillPaidNotes(
 
     await grantPublish(projectId, userId, "paid");
     console.info("[payments] publish unlocked", { projectId, paymentId: meta.paymentId });
-    return { kind: resolvedKind };
+    return finish();
 }
 
 /** What Settings and /plans show: the live plan, whether checkout can open, and every grant. */

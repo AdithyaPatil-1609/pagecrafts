@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { DiscountCodeField } from "@/components/payments/DiscountCodeField";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
 import { PLAN_COPY, PLAN_PRICE_INR } from "@/lib/payments/plans";
@@ -100,16 +101,23 @@ export function PlansPanel({
     const [billing] = useState(initial);
     const [message, setMessage] = useState<string | null>(null);
     const [pending, setPending] = useState<"pro" | "premium" | null>(null);
+    const [discountCode, setDiscountCode] = useState("");
     const pendingRef = useRef<"pro" | "premium" | null>(null);
 
     const { openPlanCheckout, status, error, confirmDialog } = useRazorpayCheckout({
-        onAlreadyGranted: () => {
+        onAlreadyGranted: (data) => {
             const plan = pendingRef.current ?? "pro";
             pendingRef.current = null;
             setPending(null);
-            setMessage(
-                `${plan === "premium" ? "Premium" : "Pro"} is already on this account — taking you home…`,
-            );
+            if (data.discountPercent === 100) {
+                setMessage(
+                    `${plan === "premium" ? "Premium" : "Pro"} is unlocked with your scratch card — taking you home…`,
+                );
+            } else {
+                setMessage(
+                    `${plan === "premium" ? "Premium" : "Pro"} is already on this account — taking you home…`,
+                );
+            }
             window.location.assign(homeAfterUpgrade(plan));
         },
         onSuccess: (result) => {
@@ -153,7 +161,7 @@ export function PlansPanel({
         setMessage(null);
         pendingRef.current = plan;
         setPending(plan);
-        await openPlanCheckout(plan);
+        await openPlanCheckout(plan, discountCode.trim() || undefined);
     }
 
     const current = billing.plan;
@@ -197,6 +205,15 @@ export function PlansPanel({
                     </p>
                 )}
             </header>
+
+            {signedIn ? (
+                <DiscountCodeField
+                    kind={pending === "premium" ? "premium" : "pro"}
+                    value={discountCode}
+                    onChange={setDiscountCode}
+                    className="max-w-md"
+                />
+            ) : null}
 
             <div className="grid gap-5 lg:grid-cols-3">
                 {ORDER.map((id) => {
