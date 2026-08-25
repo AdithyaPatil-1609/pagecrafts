@@ -122,7 +122,7 @@ export async function createOrder(
     try {
         body = (await response.json()) as Record<string, unknown>;
     } catch {
-        console.error("[razorpay] order response was not JSON", response.status);
+        console.error("[razorpay] order response was not readable", response.status);
         throw new ApiError(
             "payments_unavailable",
             "We could not open Razorpay checkout. Please try again in a moment.",
