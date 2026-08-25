@@ -218,7 +218,10 @@ describe("what twenty-one migrations left behind", () => {
             // Nobody has signed in with GitHub, and nobody has set a display name.
             "users.avatar_url",
             "users.billing_city",
+            "users.billing_country",
             "users.billing_line",
+            "users.billing_postal",
+            "users.billing_state",
             "users.encrypted_token",
             "users.github_id",
             "users.gstin",
