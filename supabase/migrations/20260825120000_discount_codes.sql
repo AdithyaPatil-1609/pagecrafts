@@ -79,8 +79,10 @@ comment on table public.discount_redemptions is
   'Successful uses of a scratch-card code. Clients may read their own rows only.';
 
 -- Atomic hold: one unpaid checkout at a time. Stale holds (30 minutes) can be taken over.
-create or replace function public.reserve_discount_code(p_code text, p_user_id uuid)
-returns public.discount_codes
+-- SETOF so PostgREST exposes the function in the schema cache (a bare composite often 404s).
+drop function if exists public.reserve_discount_code(text, uuid);
+create function public.reserve_discount_code(p_code text, p_user_id uuid)
+returns setof public.discount_codes
 language plpgsql
 security definer
 set search_path = public
@@ -94,26 +96,26 @@ begin
    for update;
 
   if not found then
-    return null;
+    return;
   end if;
 
   if row.disabled_at is not null then
-    return null;
+    return;
   end if;
 
   if row.expires_at is not null and row.expires_at <= now() then
-    return null;
+    return;
   end if;
 
   if row.redeemed_count >= row.max_redemptions then
-    return null;
+    return;
   end if;
 
   if row.reserved_by is not null
      and row.reserved_at is not null
      and row.reserved_at > now() - interval '30 minutes'
      and row.reserved_by <> p_user_id then
-    return null;
+    return;
   end if;
 
   update public.discount_codes
@@ -123,7 +125,7 @@ begin
    where id = row.id
    returning * into row;
 
-  return row;
+  return next row;
 end;
 $$;
 
@@ -178,3 +180,5 @@ revoke execute on function public.reserve_discount_code(text, uuid) from public,
 revoke execute on function public.capture_discount_code(text, uuid, text, text, integer, integer) from public, anon, authenticated;
 grant execute on function public.reserve_discount_code(text, uuid) to service_role;
 grant execute on function public.capture_discount_code(text, uuid, text, text, integer, integer) to service_role;
+
+notify pgrst, 'reload schema';

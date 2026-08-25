@@ -7,7 +7,7 @@ apply to the live site.
 ## Symptom on production
 
 - `/plans` shows **Choose Pro** / **Choose Premium**
-- Clicking either shows: *"We could not finish that just now…"*
+- Clicking either shows: *"Checkout is not set up on this server yet…"*
 - Server-rendered page data includes `"paymentsReady": false`
 
 That means `RAZORPAY_KEY_ID` and/or `RAZORPAY_KEY_SECRET` are **missing** in Vercel
@@ -84,16 +84,20 @@ Expected after fix: `"paymentsReady":true`
 
 Then sign in on https://pagecrafts.in/plans → Choose Pro → Razorpay Test Checkout opens.
 
-## Failure chain (current production)
+## Failure chain (missing Razorpay keys)
 
 ```text
 Choose Pro
   → Agree (Razorpay confirm dialog)
-  → POST https://pagecrafts.in/api/v1/account/billing/checkout  {"plan":"pro"}
-  → 500 internal
+  → POST /api/v1/account/billing/checkout  {"plan":"pro"}
+  → 503 payments_unavailable
   → createOrder() → credentials() — RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET missing
-  → UI: "We could not finish that just now…" (internal error catalogue)
+  → UI: "Checkout is not set up on this server yet…"
 ```
+
+A scratch-card code that cannot be held answers `invalid_discount` (422), not a generic 500.
+If PostgREST has not reloaded after the discount migration, checkout still holds the card
+with a table update so paying is not blocked on the RPC schema cache.
 
 ## Security
 

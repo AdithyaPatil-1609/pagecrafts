@@ -40,6 +40,15 @@ export function applyPercentOff(listPriceInr: number, percentOff: number): numbe
     return Math.max(0, Math.round((listPriceInr * (100 - percentOff)) / 100));
 }
 
+/** PostgREST returns SETOF as an array and a composite as an object. */
+export function unwrapDiscountRpcRow<T extends object>(data: unknown): T | null {
+    if (data == null) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || typeof row !== "object") return null;
+    if (!("code" in row) || !("percent_off" in row)) return null;
+    return row as T;
+}
+
 export function codeAppliesTo(appliesTo: DiscountAppliesTo, kind: OrderKind): boolean {
     if (appliesTo === "all") return true;
     if (appliesTo === kind) return true;

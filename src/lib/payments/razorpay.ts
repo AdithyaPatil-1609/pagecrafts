@@ -96,18 +96,39 @@ export async function createOrder(
 ): Promise<RazorpayOrder> {
     const auth = razorpayAuthHeader();
 
-    const response = await fetch(ORDERS_URL, {
-        method: "POST",
-        headers: { Authorization: auth, "Content-Type": "application/json" },
-        body: JSON.stringify({
-            amount: amountInPaise,
-            currency: "INR",
-            receipt: receipt.slice(0, 40),
-            notes,
-        }),
-    });
+    let response: Response;
+    try {
+        response = await fetch(ORDERS_URL, {
+            method: "POST",
+            headers: { Authorization: auth, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                amount: amountInPaise,
+                currency: "INR",
+                receipt: receipt.slice(0, 40),
+                notes,
+            }),
+        });
+    } catch (error) {
+        const detail = error instanceof Error ? error.message : "fetch failed";
+        console.error("[razorpay] order request failed", detail);
+        throw new ApiError(
+            "payments_unavailable",
+            "We could not open Razorpay checkout. Please try again in a moment.",
+            detail,
+        );
+    }
 
-    const body = (await response.json()) as Record<string, unknown>;
+    let body: Record<string, unknown>;
+    try {
+        body = (await response.json()) as Record<string, unknown>;
+    } catch {
+        console.error("[razorpay] order response was not JSON", response.status);
+        throw new ApiError(
+            "payments_unavailable",
+            "We could not open Razorpay checkout. Please try again in a moment.",
+            `razorpay ${response.status}`,
+        );
+    }
 
     if (!response.ok) {
         const error = body.error as
