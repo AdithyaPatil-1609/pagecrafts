@@ -31,7 +31,7 @@ export function VerifyWatcher() {
 
                 if (body.ok && body.data?.status === "signed_in") {
                     stopped = true;
-                    router.replace("/new");
+                    router.replace("/");
                     return;
                 }
             } catch {
@@ -57,7 +57,11 @@ export function VerifyWatcher() {
     if (gaveUp) {
         return (
             <p className="mt-4 text-xs text-muted-foreground">
-                Still waiting. If you have already confirmed, <Link href="/" className="underline">sign in here</Link>.
+                Still waiting. If you have already confirmed,{" "}
+                <Link href="/signin" className="underline">
+                    sign in here
+                </Link>
+                .
             </p>
         );
     }

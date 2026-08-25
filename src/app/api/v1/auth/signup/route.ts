@@ -65,7 +65,10 @@ export async function POST(request: NextRequest) {
         return fail("forbidden", "New accounts are not being accepted right now.");
       }
       if (error.code === "user_already_exists" || error.code === "email_exists") {
-        return ok({ user: null, pending: true }, 202);
+        return fail(
+          "conflict",
+          "That email already has an account. Sign in instead.",
+        );
       }
       // Supabase can create the account and still fail while sending the confirmation
       // mail (built-in mailer / missing SMTP). Prefer "check your email" over a hard 500.
@@ -75,6 +78,17 @@ export async function POST(request: NextRequest) {
       }
       console.error("[auth/signup]", error.code ?? error.status, error.message);
       return fail("internal", "We could not create your account. Try again.");
+    }
+
+    // Supabase masks duplicates by returning a user with no identities and no session.
+    // Treat that as "already registered" — do not mint a pending ticket (that would let
+    // the verify page sign someone in without checking the password they typed).
+    const identities = data.user?.identities;
+    if (data.user && Array.isArray(identities) && identities.length === 0) {
+      return fail(
+        "conflict",
+        "That email already has an account. Sign in instead.",
+      );
     }
 
     if (!data.user || !data.session) {
