@@ -16,6 +16,7 @@ const FRIENDLY: Record<ErrorCode, string> = {
     // No mention of files: this code is returned by the describe form, the content
     // panel and the file save alike, and only one of those has files in it.
     validation_failed: 'Something in that was not accepted.',
+    brief_unclear: 'AI cannot create a website with the details you have provided.',
     payload_too_large: 'That was too large to send.',
     generation_failed: 'The site could not be generated.',
     payment_required: 'This needs an upgrade before it can run.',
