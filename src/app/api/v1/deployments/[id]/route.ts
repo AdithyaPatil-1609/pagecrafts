@@ -36,7 +36,10 @@ function toResponse(deployment: DeploymentView): DeploymentResponse {
         // the Go Live dialog (R3 D18).
         error:
             deployment.state === 'failed'
-                ? failureLine(deployment.failureReason)
+                ? deployment.error &&
+                  /taken|reserved|Choose another/i.test(deployment.error)
+                    ? deployment.error
+                    : failureLine(deployment.failureReason)
                 : null,
     };
 }

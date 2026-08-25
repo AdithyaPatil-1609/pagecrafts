@@ -24,6 +24,9 @@ export const TIER_PRICE_INR: Record<TemplateTier, number> = {
 export const PRO_PRICE_INR = TIER_PRICE_INR.premium;
 export const PREMIUM_PRICE_INR = TIER_PRICE_INR.signature;
 
+/** One-time unlock to edit and republish a site after the free first Go Live. */
+export const EDIT_UNLOCK_PRICE_INR = 249;
+
 /**
  * Rupees as Razorpay wants them.
  *

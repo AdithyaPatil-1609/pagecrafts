@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AlertCircle, Check, ExternalLink, Loader2, Rocket } from 'lucide-react';
 
 import {
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/lib/editor-store';
 import { previewSiteUrl } from '@/lib/publish/site-address';
+import { EDIT_UNLOCK_PRICE_INR } from '@/lib/payments/pricing';
 import {
     pollDeployment,
     saveProjectSettings,
@@ -22,7 +24,9 @@ import {
 } from '@/lib/project-source';
 import { cn } from '@/lib/utils';
 
-type Phase = 'idle' | 'naming' | 'publishing' | 'success' | 'error';
+type Phase = 'idle' | 'naming' | 'confirm' | 'publishing' | 'success' | 'error';
+
+const SITES_HREF = '/?slide=sites';
 
 export default function GoLiveButton({
     projectId,
@@ -33,6 +37,7 @@ export default function GoLiveButton({
     projectName: string | null;
     className?: string;
 }) {
+    const router = useRouter();
     const saveProject = useEditorStore((s) => s.saveProject);
     const flushPendingSave = useEditorStore((s) => s.flushPendingSave);
     const setProjectName = useEditorStore((s) => s.setProjectName);
@@ -56,11 +61,34 @@ export default function GoLiveButton({
         setLiveUrl(null);
     }
 
-    async function publishSite(e?: FormEvent) {
+    function goToYourSites() {
+        closeAll();
+        router.push(SITES_HREF);
+    }
+
+    function openLiveAndLeave() {
+        if (liveUrl) {
+            window.open(liveUrl, '_blank', 'noopener,noreferrer');
+        }
+        goToYourSites();
+    }
+
+    function continueToConfirm(e?: FormEvent) {
         e?.preventDefault();
         const name = siteName.trim();
         if (!name) {
             setError('Give your site a name.');
+            return;
+        }
+        setError(null);
+        setPhase('confirm');
+    }
+
+    async function publishSite() {
+        const name = siteName.trim();
+        if (!name) {
+            setError('Give your site a name.');
+            setPhase('naming');
             return;
         }
 
@@ -76,7 +104,11 @@ export default function GoLiveButton({
         if (cancelledRef.current) return;
         if (nameError) {
             setPhase('error');
-            setError(nameError);
+            setError(
+                /taken|already|exists/i.test(nameError)
+                    ? 'That name is already taken. Choose another name.'
+                    : nameError,
+            );
             return;
         }
         if (detail?.name) setProjectName(detail.name);
@@ -93,13 +125,20 @@ export default function GoLiveButton({
         if (cancelledRef.current) return;
         if (publishError || !deploymentId) {
             setPhase('error');
-            setError(publishError ?? 'Publishing could not start.');
+            setError(
+                publishError && /taken|reserved/i.test(publishError)
+                    ? publishError
+                    : (publishError ?? 'Publishing could not start.'),
+            );
             return;
         }
 
-        for (let attempt = 0; attempt < 90; attempt++) {
+        // Server already awaited the host work; a few quick polls settle the row.
+        for (let attempt = 0; attempt < 45; attempt++) {
             if (cancelledRef.current) return;
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            if (attempt > 0) {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
             if (cancelledRef.current) return;
             const { deployment, error: pollError } = await pollDeployment(deploymentId);
             if (cancelledRef.current) return;
@@ -166,11 +205,12 @@ export default function GoLiveButton({
                     <DialogHeader>
                         <DialogTitle>Go live on PageCrafts</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            Choose a name for your site. We publish it to a PageCrafts address
-                            — no payment needed. Custom domains are a separate upgrade later.
+                            Choose a unique name for your site. Your address will look like
+                            the preview below. If that name is taken, you will need to pick
+                            another.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={publishSite} className="grid gap-3">
+                    <form onSubmit={continueToConfirm} className="grid gap-3">
                         <label htmlFor="go-live-site-name" className="text-sm font-medium">
                             Site name
                         </label>
@@ -188,7 +228,6 @@ export default function GoLiveButton({
                         <p className="text-xs text-muted-foreground">
                             Your address will look like{' '}
                             <span className="font-medium text-foreground">{preview}</span>
-                            . If that name is taken, we add a number.
                         </p>
                         {error ? (
                             <p role="alert" className="text-sm text-destructive">
@@ -209,7 +248,7 @@ export default function GoLiveButton({
                                 variant="brand"
                                 className="min-h-11 cursor-pointer"
                             >
-                                Publish
+                                Continue
                             </Button>
                         </DialogFooter>
                     </form>
@@ -217,10 +256,46 @@ export default function GoLiveButton({
             </Dialog>
 
             <Dialog
+                open={phase === 'confirm'}
+                onOpenChange={(open) => {
+                    if (!open) closeAll();
+                }}
+            >
+                <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
+                    <DialogHeader>
+                        <DialogTitle>One free publish</DialogTitle>
+                        <DialogDescription className="text-sm leading-6 text-muted-foreground">
+                            Publishing <span className="font-medium text-foreground">{preview}</span>{' '}
+                            is free this once. After it is live, further edits and updates
+                            cost <span className="font-medium text-foreground">Rs {EDIT_UNLOCK_PRICE_INR}</span>.
+                            Republishing after that unlock keeps the same address — it does
+                            not create a new site.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="min-h-11 cursor-pointer"
+                            onClick={() => setPhase('naming')}
+                        >
+                            Back
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="brand"
+                            className="min-h-11 cursor-pointer"
+                            onClick={() => void publishSite()}
+                        >
+                            Confirm &amp; publish
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
                 open={phase === 'publishing'}
                 onOpenChange={(open) => {
-                    // Allow the X / Escape / overlay dismiss — publish continues on the
-                    // server; we only stop updating this dialog.
                     if (!open) closeAll();
                 }}
             >
@@ -228,9 +303,8 @@ export default function GoLiveButton({
                     <DialogHeader>
                         <DialogTitle>Publishing your site</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            Setting up hosting and pushing your latest changes. This usually
-                            takes under a minute. You can close this and check Your sites
-                            later.
+                            Setting up hosting and pushing your latest changes. This should
+                            finish within about a minute.
                         </DialogDescription>
                     </DialogHeader>
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -253,39 +327,47 @@ export default function GoLiveButton({
             <Dialog
                 open={phase === 'success'}
                 onOpenChange={(open) => {
-                    if (!open) closeAll();
+                    if (!open) goToYourSites();
                 }}
             >
                 <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
                     <DialogHeader>
                         <DialogTitle>Your site is live</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            {siteName.trim()} is published on PageCrafts. Share the link below
-                            — custom domain setup will ask for payment when it is ready.
+                            {siteName.trim()} is on PageCrafts. Opening the link takes you to
+                            your site; closing this returns you to Your sites. Further edits
+                            need Rs {EDIT_UNLOCK_PRICE_INR}.
                         </DialogDescription>
                     </DialogHeader>
                     {liveUrl ? (
-                        <a
-                            href={liveUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <button
+                            type="button"
+                            onClick={openLiveAndLeave}
                             className={cn(
-                                'inline-flex min-h-11 items-center gap-2 rounded-full border border-gold bg-gold px-4',
+                                'inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-gold bg-gold px-4',
                                 'text-sm font-semibold text-gold-foreground hover:opacity-90',
                             )}
                         >
                             Open {liveUrl.replace(/^https:\/\//, '')}
                             <ExternalLink aria-hidden className="size-4" />
-                        </a>
+                        </button>
                     ) : null}
                     <DialogFooter className="pt-2">
                         <Button
                             type="button"
+                            variant="outline"
+                            className="min-h-11 cursor-pointer"
+                            onClick={goToYourSites}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            type="button"
                             variant="brand"
                             className="min-h-11 cursor-pointer"
-                            onClick={closeAll}
+                            onClick={goToYourSites}
                         >
-                            Done
+                            Your sites
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -141,7 +141,9 @@ export function reasonForError(error: unknown): FailureReason {
     const candidate = error as Partial<PublishError> | undefined;
     if (candidate?.name === "PublishError") {
         if (candidate.code === "payment_required") return "not_paid_for";
-        if (candidate.code === "validation_failed") return "nothing_to_publish";
+        if (candidate.code === "validation_failed") {
+            return candidate.reason ?? "nothing_to_publish";
+        }
         return candidate.reason ?? "unknown";
     }
 

@@ -17,7 +17,7 @@ import { accountPath } from './cloudflare-client';
 const MAX_BUCKET_BYTES = 50 * 1024 * 1024;
 const MAX_BUCKET_FILES = 100;
 const QUICK_MS = 45_000;
-const UPLOAD_MS = 120_000;
+const UPLOAD_MS = 60_000;
 /** Special Pages config files travel on the deployment form, not the asset store. */
 const FORM_ONLY = new Set(['_headers', '_redirects', '_routes.json']);
 
@@ -365,9 +365,6 @@ async function confirmDeployment(
     const deploymentUrl = created.url ?? pagesUrl;
     const token = readDeployCredential();
 
-    if (stageDone(created.latest_stage) === 'success') {
-        if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) return;
-    }
     if (stageDone(created.latest_stage) === 'failure') {
         throw new HostingError(
             'Host rejected the deployment after upload. Try publishing again.',
@@ -375,10 +372,14 @@ async function confirmDeployment(
         );
     }
 
-    let latest = created.latest_stage;
-    for (let attempt = 0; attempt < 20; attempt++) {
-        await new Promise((r) => setTimeout(r, 2_000));
+    // Stage success is enough to proceed — origin probes can race Cloudflare's edge.
+    if (stageDone(created.latest_stage) === 'success') {
+        if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) return;
+    }
 
+    let latest = created.latest_stage;
+    // Cap at ~12s so Go Live stays under a minute end-to-end.
+    for (let attempt = 0; attempt < 12; attempt++) {
         if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) {
             return;
         }
@@ -394,11 +395,14 @@ async function confirmDeployment(
             latest = deployment.latest_stage;
             const done = stageDone(latest);
             if (done === 'success') {
-                if (await originAnswers(pagesUrl) || await originAnswers(deployment.url ?? deploymentUrl)) {
+                if (
+                    await originAnswers(pagesUrl) ||
+                    await originAnswers(deployment.url ?? deploymentUrl)
+                ) {
                     return;
                 }
-                // Stage says success but origin still 522 — keep waiting briefly.
-                continue;
+                // Deploy stage succeeded; accept even if the edge is still warming.
+                if (attempt >= 3) return;
             }
             if (done === 'failure') {
                 throw new HostingError(
@@ -408,11 +412,13 @@ async function confirmDeployment(
             }
         } catch (error) {
             if (error instanceof HostingError && error.status === 502) throw error;
-            // Transient read failures — keep polling.
         }
+
+        await new Promise((r) => setTimeout(r, 1_000));
     }
 
     if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) return;
+    if (stageDone(latest) === 'success') return;
 
     throw new HostingError(
         'Host uploaded the site but the preview address is not answering yet. Try publishing again.',
