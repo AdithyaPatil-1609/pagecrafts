@@ -226,6 +226,14 @@ export default function GoLiveButton({
                             another.
                         </DialogDescription>
                     </DialogHeader>
+                    <p
+                        role="note"
+                        className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm leading-6 text-foreground"
+                    >
+                        <span className="font-semibold">One chance:</span> after this site goes
+                        live you cannot edit it for free. Check the preview carefully before
+                        you continue.
+                    </p>
                     <form onSubmit={continueToConfirm} className="grid gap-3">
                         <label htmlFor="go-live-site-name" className="text-sm font-medium">
                             Site name
@@ -279,15 +287,25 @@ export default function GoLiveButton({
             >
                 <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
                     <DialogHeader>
-                        <DialogTitle>One free publish</DialogTitle>
+                        <DialogTitle>Publish once — then edits are locked</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            Publishing <span className="font-medium text-foreground">{preview}</span>{' '}
-                            is free this once. After it is live, further edits and updates
-                            cost <span className="font-medium text-foreground">Rs {EDIT_UNLOCK_PRICE_INR}</span>.
-                            Republishing after that unlock keeps the same address — it does
-                            not create a new site.
+                            You are about to publish{' '}
+                            <span className="font-medium text-foreground">{preview}</span>.
+                            This is your one free Go Live. After the site is live, you cannot
+                            change it unless you unlock editing later for{' '}
+                            <span className="font-medium text-foreground">
+                                Rs {EDIT_UNLOCK_PRICE_INR}
+                            </span>
+                            .
                         </DialogDescription>
                     </DialogHeader>
+                    <p
+                        role="alert"
+                        className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm leading-6 text-foreground"
+                    >
+                        Warning: once this website is live, you cannot make changes to it on
+                        the free plan. Make sure everything looks right before you confirm.
+                    </p>
                     <DialogFooter className="pt-2">
                         <Button
                             type="button"
@@ -303,7 +321,7 @@ export default function GoLiveButton({
                             className="min-h-11 cursor-pointer"
                             onClick={() => void publishSite()}
                         >
-                            Confirm &amp; publish
+                            I understand — publish
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -351,8 +369,9 @@ export default function GoLiveButton({
                         <DialogTitle>Your site is live</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
                             {siteName.trim()} is on PageCrafts. Opening the link takes you to
-                            your site; closing this returns you to Your sites. Further edits
-                            need Rs {EDIT_UNLOCK_PRICE_INR}.
+                            your site; closing this returns you to Your sites. This live site
+                            cannot be edited for free — further changes need Rs{' '}
+                            {EDIT_UNLOCK_PRICE_INR}.
                         </DialogDescription>
                     </DialogHeader>
                     {liveUrl ? (
