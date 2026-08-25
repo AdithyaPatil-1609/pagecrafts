@@ -378,8 +378,8 @@ async function confirmDeployment(
     }
 
     let latest = created.latest_stage;
-    // Cap at ~12s so Go Live stays under a minute end-to-end.
-    for (let attempt = 0; attempt < 12; attempt++) {
+    // Hard cap ~8s of probing so Go Live stays inside one minute.
+    for (let attempt = 0; attempt < 8; attempt++) {
         if (await originAnswers(pagesUrl) || await originAnswers(deploymentUrl)) {
             return;
         }
@@ -401,8 +401,8 @@ async function confirmDeployment(
                 ) {
                     return;
                 }
-                // Deploy stage succeeded; accept even if the edge is still warming.
-                if (attempt >= 3) return;
+                // Deploy stage succeeded; accept after one warm-up probe.
+                if (attempt >= 1) return;
             }
             if (done === 'failure') {
                 throw new HostingError(

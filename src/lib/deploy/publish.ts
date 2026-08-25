@@ -6,6 +6,7 @@ import { runOnce } from './idempotency';
 import { step } from './log';
 import { toPublishError } from './errors';
 import type { FailureReason } from './failure';
+import { pollUntilLive } from './verify';
 
 export interface PublishInput {
     projectId: string;
@@ -100,13 +101,18 @@ async function run(
 
         stage = 'verifying';
         onState('verifying');
-        // Prefer the PageCrafts address; fall back to pages.dev so we can mark live
-        // within a minute while custom DNS finishes warming.
+        // Check pages.dev first (already warmed by Direct Upload confirm). If it
+        // answers, mark live immediately — custom DNS can finish via poll resume.
         const pagesUrl = `https://${id}.pages.dev/`;
-        const customLive = await step('verifying', siteCtx, () => provider.verifyLive(url));
-        const live =
-            customLive ||
-            (await step('verifying', siteCtx, () => provider.verifyLive(pagesUrl)));
+        const pagesLive = await step('verifying', siteCtx, () =>
+            provider.verifyLive(pagesUrl),
+        );
+        const customLive = pagesLive
+            ? await step('verifying', siteCtx, () =>
+                  pollUntilLive(url, { timeoutMs: 3_000, intervalMs: 1_000 }),
+              )
+            : await step('verifying', siteCtx, () => provider.verifyLive(url));
+        const live = customLive || pagesLive;
 
         const state: DeploymentState = live ? 'live' : 'verifying';
         onState(state);

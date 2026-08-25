@@ -130,8 +130,8 @@ export const cloudflarePagesAdapter: DeployProvider = {
     },
 
     async verifyLive(url: string): Promise<boolean> {
-        // Short check — DNS/edge warm-up continues via resumeVerification on poll.
-        return pollUntilLive(url, { timeoutMs: 8_000, intervalMs: 1_000 });
+        // Keep verification brief — push already waited on pages.dev when possible.
+        return pollUntilLive(url, { timeoutMs: 5_000, intervalMs: 1_000 });
     },
 
     async removeSite(siteId: string): Promise<void> {
