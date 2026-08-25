@@ -9,8 +9,6 @@ import type { JobStatus } from '@/lib/ai/jobs/types';
 import { explainCreationIssue } from '@/lib/editor/ai-fix';
 import TopBar from './TopBar';
 import PreviewPane from './PreviewPane';
-import FileTree from './FileTree';
-import CodePane from './CodePane';
 import { TreeSkeleton, PaneSkeleton } from './Skeletons';
 import SectionsPanel from './SectionsPanel';
 import VersionHistory from './VersionHistory';
@@ -59,7 +57,6 @@ export default function EditorShell({
     });
     const [sectionsOpen, setSectionsOpen] = useState(false);
     const [loadAskOpen, setLoadAskOpen] = useState(false);
-    const advanced = useEditorStore((s) => s.advanced);
     const loading = useEditorStore((s) => s.loading);
     const loadError = useEditorStore((s) => s.loadError);
     const loadProject = useEditorStore((s) => s.loadProject);
@@ -248,29 +245,14 @@ export default function EditorShell({
                             {loading ? <TreeSkeleton /> : <SectionsPanel />}
                         </aside>
                     )}
-                    {advanced ? (
-                        <>
-                            <aside className="w-56 shrink-0 overflow-auto border-r border-border/60">
-                                {loading ? <TreeSkeleton /> : <FileTree />}
-                            </aside>
-                            <section className="min-w-0 flex-1 overflow-auto border-r border-border/60">
-                                {loading ? <PaneSkeleton /> : <CodePane />}
-                            </section>
-                            <section className="relative min-h-0 min-w-0 flex-1">
-                                {loading ? <PaneSkeleton /> : <PreviewPane />}
-                            </section>
-                            {pendingChange ? (
-                                <aside className="flex w-[min(100%,24rem)] shrink-0 flex-col overflow-hidden border-l border-border/60">
-                                    {loading ? <PaneSkeleton /> : <ChatPanel autoFocus={focusAsk} />}
-                                </aside>
-                            ) : null}
-                        </>
-                    ) : (
-                        <EditorSplit
-                            left={loading ? <PaneSkeleton /> : <ChatPanel autoFocus={focusAsk} />}
-                            right={loading ? <PaneSkeleton /> : <PreviewPane />}
-                        />
-                    )}
+                    {/*
+                      Chat + preview only. File tree / raw HTML (old "Advanced") is
+                      not offered to customers — that exposed template source.
+                    */}
+                    <EditorSplit
+                        left={loading ? <PaneSkeleton /> : <ChatPanel autoFocus={focusAsk} />}
+                        right={loading ? <PaneSkeleton /> : <PreviewPane />}
+                    />
                     {historyOpen && (
                         <aside className="w-72 shrink-0 overflow-hidden border-l border-border/60">
                             <VersionHistory />

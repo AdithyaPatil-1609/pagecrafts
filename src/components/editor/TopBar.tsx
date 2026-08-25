@@ -30,8 +30,6 @@ export default function TopBar({
     historyOpen,
     onToggleHistory,
 }: TopBarProps) {
-    const advanced = useEditorStore((s) => s.advanced);
-    const toggleAdvanced = useEditorStore((s) => s.toggleAdvanced);
     const dirtyPaths = useEditorStore((s) => s.dirtyPaths);
     const saveProject = useEditorStore((s) => s.saveProject);
     const saving = useEditorStore((s) => s.saving);
@@ -85,13 +83,6 @@ export default function TopBar({
                     className="h-11 cursor-pointer rounded-full border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     Versions
-                </button>
-                <button
-                    type="button"
-                    onClick={toggleAdvanced}
-                    className="h-11 cursor-pointer rounded-full border border-border px-3 text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                    {advanced ? 'Exit Advanced' : 'Advanced'}
                 </button>
                 <Link
                     href="/#build"
