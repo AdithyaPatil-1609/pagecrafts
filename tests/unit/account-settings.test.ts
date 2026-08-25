@@ -15,6 +15,7 @@ describe("account settings", () => {
     const toggle = read("src", "components", "settings", "PreferenceSwitch.tsx");
 
     expect(slide).toContain("NotificationPrefs");
+    expect(slide).toContain("AiCreditsPanel");
     expect(slide).toContain("BillingPlans");
     expect(slide).toContain("PrivacyAndData");
     expect(slide).toContain("in the editor");
@@ -30,6 +31,25 @@ describe("account settings", () => {
     expect(billing).not.toContain("Billing is not live yet");
     expect(privacy).toContain("Download my data");
     expect(privacy).toContain("/api/v1/account/export");
+  });
+
+  it("shows AI credits on Settings with plan allowances", () => {
+    const credits = read("src", "components", "settings", "AiCreditsPanel.tsx");
+    const slide = read("src", "components", "deck", "SettingsSlide.tsx");
+    const notice = read("src", "components", "discovery", "AiCreditsNotice.tsx");
+    const chooser = read("src", "components", "discovery", "StyleChooser.tsx");
+
+    expect(slide).toContain("AiCreditsPanel");
+    expect(credits).toContain("AI credits");
+    expect(credits).toContain("generationsLimitForPlan");
+    expect(credits).toContain("AI builds per site");
+    expect(credits).toContain('href="/plans"');
+    expect(notice).toContain("AI credits");
+    expect(notice).toContain("/?slide=settings");
+    // Fix with AI must keep the original brief — never replace it with the repair sentence.
+    expect(chooser).toContain("generateAgain(_repairNote");
+    expect(chooser).toContain("const text = prompt.trim()");
+    expect(chooser).not.toContain("void generateAgain(fix.instruction)");
   });
 
   it("sends the sidebar to designs, and plans live on /plans", () => {
