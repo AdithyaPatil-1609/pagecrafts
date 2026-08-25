@@ -100,3 +100,20 @@ Choose Pro
 - `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` are **server-only**.
 - Do not prefix secrets with `NEXT_PUBLIC_`.
 - Prices are decided server-side (Pro ₹499, Premium ₹999); the browser only sends `plan`.
+
+## Scratch-card discount codes
+
+Do **not** create Razorpay Offers/coupons for these cards. PageCrafts stores unique
+codes and creates the Razorpay order at the discounted amount (a 100% card skips
+Razorpay and grants immediately).
+
+1. Keep the existing live keys (`RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`) in Vercel.
+2. Apply the `discount_codes` migration to production (`npx supabase db push` or your usual migrate).
+3. Mint a batch (service role, against production env):
+
+```bash
+npm run pay:mint-codes -- --count 50 --percent 20 --applies all --batch "fair-2026"
+```
+
+Print the `code` column on the physical cards. Buyers type it on `/plans` (or AI packages)
+before they pay. Each code is one-time by default.

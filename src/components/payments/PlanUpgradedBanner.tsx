@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 
@@ -13,18 +13,16 @@ import { cn } from "@/lib/utils";
 export function PlanUpgradedBanner() {
     const searchParams = useSearchParams();
     const upgraded = searchParams.get("upgraded");
-    const [plan, setPlan] = useState<"pro" | "premium" | null>(null);
+    const urlPlan = upgraded === "pro" || upgraded === "premium" ? upgraded : null;
+    const [dismissed, setDismissed] = useState(false);
+    const plan = dismissed ? null : urlPlan;
 
-    useEffect(() => {
-        if (upgraded !== "pro" && upgraded !== "premium") return;
-
-        setPlan(upgraded);
-
+    function dismiss() {
+        setDismissed(true);
         const url = new URL(window.location.href);
         url.searchParams.delete("upgraded");
-        const next = `${url.pathname}${url.search}${url.hash}`;
-        window.history.replaceState({}, "", next);
-    }, [upgraded]);
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
 
     if (!plan) return null;
 
@@ -53,7 +51,7 @@ export function PlanUpgradedBanner() {
                 <button
                     type="button"
                     className="shrink-0 cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={() => setPlan(null)}
+                    onClick={dismiss}
                 >
                     Dismiss
                 </button>
