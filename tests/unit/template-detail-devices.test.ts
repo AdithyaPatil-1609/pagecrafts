@@ -14,6 +14,9 @@ describe("template detail modal device frames", () => {
     expect(modal).toContain("PORTRAIT_BASE_WIDTH");
     expect(modal).toContain("orientation={orientation}");
     expect(modal).toMatch(/PORTRAIT_ASPECT\s*=\s*19\.5\s*\/\s*9/);
+    // Phone frame must stay smaller than tablet (and much smaller than desktop).
+    expect(modal).toMatch(/label:\s*"Phone",\s*width:\s*72/);
+    expect(modal).toMatch(/label:\s*"Tablet",\s*width:\s*180/);
 
     const preview = read("src", "components", "discovery", "TemplatePreview.tsx");
     expect(preview).toContain('orientation = "landscape"');

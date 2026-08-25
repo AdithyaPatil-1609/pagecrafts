@@ -47,7 +47,8 @@ const PORTRAIT_ASPECT = 19.5 / 9; // tall phone viewport (~iPhone proportions)
 const DEVICES = [
     { label: "Desktop", width: 380, orientation: "landscape" },
     { label: "Tablet", width: 180, orientation: "landscape" },
-    { label: "Phone", width: 112, orientation: "portrait" },
+    // Keep the handset clearly smaller than Desktop/Tablet — portrait, not towering.
+    { label: "Phone", width: 72, orientation: "portrait" },
 ] as const;
 
 function DeviceFrame({
