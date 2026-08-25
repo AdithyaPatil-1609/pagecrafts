@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ResendVerification } from "@/components/auth/ResendVerification";
 import { VerifyWatcher } from "@/components/auth/VerifyWatcher";
 
@@ -30,12 +29,6 @@ export default async function VerifyPage({
                     >
                         Continue with Google
                     </a>
-                    <Link
-                        href="/?mode=signin#sign-in"
-                        className="font-medium text-muted-foreground underline underline-offset-4"
-                    >
-                        Sign in with email and password
-                    </Link>
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">
                     Nothing arrived? Check spam, wait a minute, then send it again. The
