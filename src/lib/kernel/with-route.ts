@@ -24,6 +24,8 @@ export interface RouteOptions<Body, Params> {
   auth?: "required" | "none";
   schema?: ZodType<Body>;
   limit?: "ai";
+  /** Bytes this route may accept. Defaults to MAX_BODY_BYTES; a whole site needs more. */
+  maxBodyBytes?: number;
   handler: (ctx: RouteContext<Body, Params>) => Promise<Response>;
 }
 
@@ -53,7 +55,7 @@ export function withRoute<
 
       let body = undefined as Body;
       if (opts.schema) {
-        const json = await readJson(req);
+        const json = await readJson(req, opts.maxBodyBytes);
 
         const parsed = opts.schema.safeParse(json);
         if (!parsed.success) {

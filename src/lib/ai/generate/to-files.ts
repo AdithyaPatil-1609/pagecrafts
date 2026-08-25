@@ -915,28 +915,35 @@ export function compositionToFiles(
         ? `${motionStageMarkup()}${motionMotifMarkup(composition.vertical, `${composition.meta.title} ${composition.meta.description}`)}${motionTickerMarkup(composition.meta.title)}`
         : '';
     // Free ships exactly what it shipped before: no tabs, no glow, no extra script.
-    const paid = style === 'photos' || style === 'motion';
-    const css = [
+    // Every page carries its own copy of the stylesheet, because a published page has to
+    // stand alone. That makes each byte here cost once per page: the tab CSS and its script
+    // are 3 KB, and only the page holding the tabbed section can use them. Deciding per page
+    // rather than per site keeps eight of the nine pages from carrying rules for markup they
+    // do not contain.
+    const baseCss = [
         PAGE_CSS,
         style === 'motion' ? MOTION_CSS : '',
-        paid ? TABS_CSS : '',
         style === 'motion' ? PREMIUM_CSS : '',
     ].join('');
-    const scripts = [
-        paid ? TABS_JS : '',
-        style === 'motion' ? PREMIUM_JS : '',
-    ].filter(Boolean).join('\n');
+    const baseJs = style === 'motion' ? PREMIUM_JS : '';
     const footers = visible.filter((s) => s.type === 'footer');
     const files: FileMap = {};
 
     for (const page of pages) {
+        const inner = [
+            pageInner(page, composition, visible, motif),
+            footers.map((section, index) => renderSection(section, index, visible, '')).join('\n'),
+        ].join('\n');
+        const tabbed = inner.includes('data-tabs');
+        const css = tabbed ? `${baseCss}${TABS_CSS}` : baseCss;
+        const scripts = [tabbed ? TABS_JS : '', baseJs].filter(Boolean).join('\n');
+
         const body = [
             `<style>${css}</style>`,
             `<div class="site"${styleAttr}>`,
             siteNav(pages, page.path, title),
             `<main id="top">`,
-            pageInner(page, composition, visible, motif),
-            footers.map((section, index) => renderSection(section, index, visible, '')).join('\n'),
+            inner,
             `</main>`,
             `</div>`,
             scripts ? `<script>\n${scripts}\n</script>` : '',
