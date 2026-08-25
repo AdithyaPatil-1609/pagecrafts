@@ -107,17 +107,26 @@ with a table update so paying is not blocked on the RPC schema cache.
 
 ## Scratch-card discount codes
 
-Do **not** create Razorpay Offers/coupons for these cards. PageCrafts stores unique
+Do **not** create Razorpay Offers/coupons for these cards. PageCrafts stores the
 codes and creates the Razorpay order at the discounted amount (a 100% card skips
 Razorpay and grants immediately).
 
 1. Keep the existing live keys (`RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`) in Vercel.
-2. Apply the `discount_codes` migration to production (`npx supabase db push` or your usual migrate).
-3. Mint a batch (service role, against production env):
+2. Apply the `discount_codes` migrations (`npx supabase db push` or your usual migrate).
+3. Mint.
+
+**Shared sale code (one code, up to 1 lakh people, once per account):**
+
+```bash
+npm run pay:mint-codes -- --count 1 --percent 10 --uses 100000 --applies all --batch "sale-10"
+```
+
+Print or share that one `code`. Everyone types the same value on `/plans` before they pay.
+
+**One-time physical cards:**
 
 ```bash
 npm run pay:mint-codes -- --count 50 --percent 20 --applies all --batch "fair-2026"
 ```
 
-Print the `code` column on the physical cards. Buyers type it on `/plans` (or AI packages)
-before they pay. Each code is one-time by default.
+Print the `code` column on each card. Those default to `--uses 1`.

@@ -44,6 +44,13 @@ describe("scratch-card codes", () => {
         expect(codeAppliesTo("advanced", "generation_pass")).toBe(false);
     });
 
+    it("treats pasted codes with or without dashes as the same coupon", async () => {
+        const { codesMatch } = await import("@/components/payments/DiscountCodeField");
+        expect(codesMatch("pc-sale-ten2", "PC-SALE-TEN2")).toBe(true);
+        expect(codesMatch("PCSALE TEN2", "PC-SALE-TEN2")).toBe(true);
+        expect(codesMatch("PC-SALE-TEN2", "PC-OTHER-CODE")).toBe(false);
+    });
+
     it("tells the reader when a card cannot be used", () => {
         expect(friendlyMessage("invalid_discount", "fallback")).toContain("scratch-card");
     });
@@ -84,12 +91,22 @@ describe("scratch-card codes", () => {
         expect(checkout).toContain("discountCode");
         expect(hook).toContain("discountCode");
         expect(plans).toContain("DiscountCodeField");
-        expect(plans).toContain("scratch card");
+        expect(plans).toContain("onApplied");
+        expect(plans).toContain("Press Apply");
 
         const hold = readFileSync(join(process.cwd(), "src", "lib", "payments", "discount-codes.ts"), "utf8");
         const routes = readFileSync(join(process.cwd(), "src", "lib", "kernel", "with-route.ts"), "utf8");
         expect(hold).not.toMatch(/ApiError\(\s*"internal"/);
         expect(hold).toContain("reserveDiscountViaTable");
+        expect(hold).toContain("max_redemptions === 1");
         expect(routes).toContain("isApiError");
+
+        const field = readFileSync(
+            join(process.cwd(), "src", "components", "payments", "DiscountCodeField.tsx"),
+            "utf8",
+        );
+        expect(field).toContain("Apply");
+        expect(field).toContain("Coupon code");
+        expect(field).toContain("onApplied");
     });
 });

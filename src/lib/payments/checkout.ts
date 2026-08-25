@@ -90,12 +90,12 @@ async function startDiscountedOrder(opts: {
 
     try {
         const order = await createOrder(inrToPaise(priced.priceInr), opts.receipt, notes);
-        if (priced.discountCode) {
+        if (priced.discountCode && priced.exclusiveHold !== false) {
             await attachReservedOrder(priced.discountCode, order.id);
         }
         return { priced, order };
     } catch (error) {
-        if (priced.discountCode) {
+        if (priced.discountCode && priced.exclusiveHold !== false) {
             await releaseDiscountReservation(priced.discountCode, opts.userId);
         }
         throw error;
