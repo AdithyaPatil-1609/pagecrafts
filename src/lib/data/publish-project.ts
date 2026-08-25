@@ -77,8 +77,8 @@ export async function publishProject(
 
   // Hosting misconfiguration is ours, not the owner's. Refuse before a deployment row is
   // opened so Go Live does not look like their site broke. Skipped when a test injects a
-  // fake provider — those runs never touch Cloudflare.
-  if (provider === undefined) {
+  // fake provider, and under Vitest (unit tests mock publish() and omit the provider arg).
+  if (provider === undefined && process.env.VITEST == null) {
     try {
       assertDeployReady();
     } catch (error) {

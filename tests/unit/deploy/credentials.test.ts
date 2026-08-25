@@ -29,18 +29,17 @@ describe('deploy credentials', () => {
         expect(redact('failed with super-secret-token')).toBe('failed with [redacted]');
     });
 
-    it('accepts a plain Cloudflare token without sealing', async () => {
+    it('accepts a plain HOSTING_DEPLOY_TOKEN without sealing', async () => {
         process.env.HOSTING_DEPLOY_CREDENTIAL = '';
-        process.env.CLOUDFLARE_API_TOKEN = 'cf-plain-token';
+        process.env.HOSTING_DEPLOY_TOKEN = 'plain-hosting-token';
         const { readDeployCredential, resetCredentialCache } =
             await import('@/lib/deploy/credentials');
         resetCredentialCache();
-        expect(readDeployCredential()).toBe('cf-plain-token');
+        expect(readDeployCredential()).toBe('plain-hosting-token');
     });
 
     it('fails loudly when nothing is configured', async () => {
         process.env.HOSTING_DEPLOY_CREDENTIAL = '';
-        delete process.env.CLOUDFLARE_API_TOKEN;
         delete process.env.HOSTING_DEPLOY_TOKEN;
         const { readDeployCredential, assertDeployReady, resetCredentialCache } =
             await import('@/lib/deploy/credentials');

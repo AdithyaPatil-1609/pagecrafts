@@ -17,8 +17,8 @@ export function assertDeployReady(): void {
 }
 
 /**
- * Prefer a sealed HOSTING_DEPLOY_CREDENTIAL; accept a plain Cloudflare/GitHub token
- * from CLOUDFLARE_API_TOKEN or HOSTING_DEPLOY_TOKEN when sealing is not set up yet.
+ * Prefer a sealed HOSTING_DEPLOY_CREDENTIAL; accept a plain token from
+ * HOSTING_DEPLOY_TOKEN when sealing is not set up yet.
  *
  * Production should seal the token (`npm run deploy:seal`). The plain fallback exists so
  * a missing seal step cannot block Go Live once the token is in Vercel.
@@ -26,10 +26,7 @@ export function assertDeployReady(): void {
 export function readDeployCredential(): string {
     if (cached) return cached;
 
-    const plain =
-        process.env.CLOUDFLARE_API_TOKEN?.trim() ||
-        process.env.HOSTING_DEPLOY_TOKEN?.trim() ||
-        '';
+    const plain = process.env.HOSTING_DEPLOY_TOKEN?.trim() || '';
     if (plain) {
         cached = plain;
         return cached;
