@@ -3,7 +3,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/** Shown when a site has used its plan AI allowance. Links to User Plans (/plans). */
+/** Shown when a site has used its plan AI allowance. */
 export function AiCreditsNotice({ className }: { className?: string }) {
     return (
         <div
@@ -14,17 +14,29 @@ export function AiCreditsNotice({ className }: { className?: string }) {
             role="status"
         >
             <p className="text-sm leading-6 text-muted-foreground">
-                You&apos;re out of credits. Upgrade to build more.
+                You&apos;re out of AI credits on this site. Check Settings → AI credits, or upgrade
+                on User Plans for more builds per site.
             </p>
-            <Link
-                href="/plans"
-                className={buttonVariants({
-                    variant: "brand",
-                    className: "min-h-11 cursor-pointer rounded-lg px-5 font-semibold",
-                })}
-            >
-                Upgrade
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+                <Link
+                    href="/?slide=settings"
+                    className={buttonVariants({
+                        variant: "outline",
+                        className: "min-h-11 cursor-pointer rounded-lg px-5 font-semibold",
+                    })}
+                >
+                    AI credits
+                </Link>
+                <Link
+                    href="/plans"
+                    className={buttonVariants({
+                        variant: "brand",
+                        className: "min-h-11 cursor-pointer rounded-lg px-5 font-semibold",
+                    })}
+                >
+                    Upgrade
+                </Link>
+            </div>
         </div>
     );
 }
