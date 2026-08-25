@@ -95,12 +95,17 @@ export function templateTileLabel(
     return templateBadge(tier) ?? `Rs ${templatePriceInr(tier)}`;
 }
 
-/** Word on a look tile once account access is known — covered looks read "Free". */
+/** Word on a look tile once account access is known. */
 export function styleTileLabel(
     tier: string | null | undefined,
     options?: { unlocked?: boolean },
 ): string {
-    if (!tier || tier === "free" || options?.unlocked) return "Free";
+    if (!tier || tier === "free") return "Free";
+    if (options?.unlocked) {
+        if (tier === "pro") return "Pro unlocked";
+        if (tier === "premium") return "Premium unlocked";
+        return "Free";
+    }
     return styleBadge(tier) ?? "Free";
 }
 
