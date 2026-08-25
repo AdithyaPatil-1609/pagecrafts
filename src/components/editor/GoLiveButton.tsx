@@ -228,11 +228,11 @@ export default function GoLiveButton({
                     </DialogHeader>
                     <p
                         role="note"
-                        className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm leading-6 text-foreground"
+                        className="rounded-xl border border-border bg-muted px-3 py-2.5 text-sm leading-6 text-muted-foreground"
                     >
-                        <span className="font-semibold">One chance:</span> after this site goes
-                        live you cannot edit it for free. Check the preview carefully before
-                        you continue.
+                        <span className="font-medium text-muted-foreground">One chance:</span>{' '}
+                        after this site goes live you cannot edit it for free. Check the
+                        preview carefully before you continue.
                     </p>
                     <form onSubmit={continueToConfirm} className="grid gap-3">
                         <label htmlFor="go-live-site-name" className="text-sm font-medium">
@@ -301,7 +301,7 @@ export default function GoLiveButton({
                     </DialogHeader>
                     <p
                         role="alert"
-                        className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm leading-6 text-foreground"
+                        className="rounded-xl border border-border bg-muted px-3 py-2.5 text-sm leading-6 text-muted-foreground"
                     >
                         Warning: once this website is live, you cannot make changes to it on
                         the free plan. Make sure everything looks right before you confirm.

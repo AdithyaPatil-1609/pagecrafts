@@ -13,5 +13,10 @@ describe("Go Live warning", () => {
     expect(goLive).toContain("once this website is live, you cannot make changes");
     expect(goLive).toContain("I understand — publish");
     expect(goLive).toContain("EDIT_UNLOCK_PRICE_INR");
+    // Formal single-color warning boxes (no destructive/red tint).
+    expect(goLive).toContain("border border-border bg-muted");
+    expect(goLive).toContain("text-muted-foreground");
+    expect(goLive).not.toContain("border-destructive");
+    expect(goLive).not.toContain("bg-destructive");
   });
 });
