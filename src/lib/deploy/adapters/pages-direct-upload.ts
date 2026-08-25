@@ -188,42 +188,6 @@ function bucketFiles(files: PreparedFile[]): PreparedFile[][] {
     return buckets.map((b) => b.files).filter((files) => files.length > 0);
 }
 
-async function waitForDeploymentFiles(
-    projectName: string,
-    deploymentId: string,
-): Promise<void> {
-    const deadline = Date.now() + 60_000;
-    while (Date.now() < deadline) {
-        const deployment = await apiJson<{
-            id: string;
-            latest_stage?: { name?: string; status?: string };
-            // CF returns file counts under different shapes across API versions.
-            files?: unknown[] | null;
-            stages?: { name?: string; status?: string }[];
-        }>(accountPath(`/pages/projects/${projectName}/deployments/${deploymentId}`), {
-            method: 'GET',
-            token: readDeployCredential(),
-        });
-
-        const stage =
-            deployment.latest_stage?.status ??
-            deployment.stages?.find((s) => s.name === 'deploy')?.status;
-        if (stage === 'failure' || stage === 'failed') {
-            throw new HostingError('Host rejected the uploaded files.', 502);
-        }
-        if (stage === 'success' || stage === 'deployment_success') {
-            return;
-        }
-        // Some responses never populate stages quickly; presence of an id after upload is enough
-        // once the create call succeeded — give DNS a chance on the next publish step.
-        if (Array.isArray(deployment.files) && deployment.files.length > 0) {
-            return;
-        }
-
-        await new Promise((r) => setTimeout(r, 2000));
-    }
-}
-
 /**
  * Upload static files and create a Pages production deployment.
  * Returns a short id suitable for `commitSha` (deployment id or preview hash).
@@ -246,9 +210,18 @@ export async function pushPagesDirectUpload(
 
     const jwt = await uploadToken(projectName);
 
-    // Always upload every asset. Skipping via check-missing is an optimisation; a wrong
-    // cache answer leaves an empty deployment that "succeeds" then 404s (or fails verify).
-    for (const bucket of bucketFiles(assets)) {
+    const missingRaw = await apiJson<unknown>('/pages/assets/check-missing', {
+        method: 'POST',
+        token: jwt,
+        body: JSON.stringify({ hashes: assets.map((f) => f.hash) }),
+    });
+    const missing = Array.isArray(missingRaw)
+        ? new Set(missingRaw.filter((h): h is string => typeof h === 'string'))
+        : new Set(assets.map((f) => f.hash));
+
+    const toUpload = assets.filter((f) => missing.has(f.hash));
+
+    for (const bucket of bucketFiles(toUpload)) {
         await apiJson('/pages/assets/upload', {
             method: 'POST',
             token: jwt,
@@ -300,15 +273,10 @@ export async function pushPagesDirectUpload(
         throw new HostingError('Host created a deployment without an id.', 502);
     }
 
-    await waitForDeploymentFiles(projectName, deployment.id).catch(() => {
-        // Create already succeeded; DNS verify is the next stage. Do not fail the push
-        // solely because stage polling was slow.
-    });
-
-    const short =
-        deployment.id.slice(0, 8) ??
-        /https:\/\/([0-9a-f]{8})\./.exec(deployment.url ?? '')?.[1] ??
-        'deployed';
-
-    return { commitSha: short };
+    return {
+        commitSha:
+            deployment.id.slice(0, 8) ||
+            /https:\/\/([0-9a-f]{8})\./.exec(deployment.url ?? '')?.[1] ||
+            'deployed',
+    };
 }

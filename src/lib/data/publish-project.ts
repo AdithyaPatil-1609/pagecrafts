@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DeploymentState, PublishProjectResponse } from "@/lib/contracts";
 import { ApiError } from "@/lib/errors/respond";
@@ -116,10 +117,9 @@ export async function publishProject(
   // rather than requests that bounced off a precondition.
   track("EV-06", userId, { republish: siteId !== null });
 
-  // Run the provider work before answering. Detached `void` / `after()` still left empty
-  // Pages projects on Vercel (client timed out on "taking longer than expected" while the
-  // row never reached live or failed). Awaiting with maxDuration on the route guarantees
-  // finish() runs. Vitest keeps the old detached shape so tests can return immediately.
+  // Answer with the deployment id immediately; run provider work via `after()` so Vercel
+  // keeps the isolate alive (bare `void` freezes mid-upload). Awaiting the whole push in
+  // the request made Go Live feel stuck for minutes on image-heavy sites.
   const work = publish(
     { projectId, projectName, files, siteId, idempotencyKey },
     attempt.onState,
@@ -135,10 +135,6 @@ export async function publishProject(
         failureReason: result.reason,
       });
 
-      // EV-07. `state` distinguishes live from verifying, which is the difference between
-      // "it worked" and "it is waiting on DNS" — and conflating those would make the
-      // success rate look worse than it is on a slow day, or better than it is on a broken
-      // one, depending on which way somebody guessed.
       track("EV-07", userId, {
         state: result.state,
         republish: siteId !== null,
@@ -146,27 +142,10 @@ export async function publishProject(
       });
     })
     .catch(async (error: unknown) => {
-      // Keep the address even though the attempt failed.
-      //
-      // Provisioning claims a subdomain on the host. If the attempt then dies at pushing,
-      // that claim is real and, until R3 D17, nobody recorded it — so the retry re-derived
-      // the address from the project name, was told by the host that it was taken (by the
-      // site we had just abandoned), and published to `name-2`. A transient upload error
-      // moved somebody's address and orphaned their first site. Remembering it here means
-      // the retry reuses the site instead of racing its own leftovers.
       if (!siteId && error instanceof PublishError && error.siteId) {
         await rememberSite(supabase, projectId, error.siteId).catch(() => undefined);
       }
 
-      // Two separate things, and keeping them separate is the point of D18.
-      //
-      // `failureReason` is what the owner is told, by way of lib/deploy/failure.ts — a value,
-      // so the wording can be improved later and improve rows already written, and so
-      // "the dashboard explains every failure mode" is a claim a test can check.
-      //
-      // `error` is the redacted provider detail, kept for whoever has to work out why this
-      // person's publish failed. It is not shown; it used to be, which is how a stray HTTP
-      // status could end up in front of a customer.
       const detail =
         error instanceof PublishError
           ? (error.detail ?? null)
@@ -192,7 +171,9 @@ export async function publishProject(
   if (process.env.VITEST != null) {
     void work;
   } else {
-    await work;
+    after(async () => {
+      await work;
+    });
   }
 
   return { deploymentId: attempt.deploymentId, status: "pending" };
