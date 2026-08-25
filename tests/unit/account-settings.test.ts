@@ -113,9 +113,18 @@ describe("account settings", () => {
     expect(menu).toContain("/api/v1/account/billing");
     expect(menu).toContain("/api/v1/account");
     expect(menu).toContain("Email notices");
+    expect(menu).toContain("AI credits");
+    expect(menu).toContain("#ai-credits");
+    expect(menu).toContain("bg-card");
+    expect(menu).not.toContain("glass-panel absolute");
     expect(menu).toContain('href="/?slide=settings"');
     expect(menu).toContain("scrollIntoView");
     expect(menu).toContain("LogoutButton");
+    expect(header).toContain("z-40");
+    expect(header).not.toContain("glass-panel absolute");
+    expect(read("src", "components", "settings", "AiCreditsPanel.tsx")).toContain(
+      'id="ai-credits"',
+    );
     expect(menu).toContain("cursor-pointer");
     expect(menu).not.toContain("openProCheckout");
     expect(menu).not.toContain("Rs 249");
