@@ -90,6 +90,13 @@ describe("scratch-card codes", () => {
         const routes = readFileSync(join(process.cwd(), "src", "lib", "kernel", "with-route.ts"), "utf8");
         expect(hold).not.toMatch(/ApiError\(\s*"internal"/);
         expect(hold).toContain("reserveDiscountViaTable");
+        expect(hold).toContain("max_redemptions === 1");
         expect(routes).toContain("isApiError");
+
+        const field = readFileSync(
+            join(process.cwd(), "src", "components", "payments", "DiscountCodeField.tsx"),
+            "utf8",
+        );
+        expect(field).toContain("same for everyone");
     });
 });

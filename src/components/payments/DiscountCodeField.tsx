@@ -76,7 +76,8 @@ export function DiscountCodeField({
                 className="font-mono uppercase"
             />
             <p className="text-xs leading-5 text-muted-foreground">
-                Optional. If you have a physical scratch card, type the code here before you pay.
+                Optional. A sale code can be the same for everyone. A physical scratch card is
+                usually one use.
             </p>
             {hint ? (
                 <p role="status" className="text-sm text-foreground">

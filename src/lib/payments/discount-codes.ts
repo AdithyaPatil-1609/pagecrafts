@@ -33,6 +33,8 @@ export interface PricedWithCode {
     listPriceInr: number;
     discountPercent?: number;
     discountCode?: string;
+    /** False for a shared campaign code — many checkouts can run at once. */
+    exclusiveHold?: boolean;
 }
 
 function invalidCode(): never {
@@ -48,7 +50,12 @@ function pricedFrom(row: DiscountCodeRow, listPriceInr: number): PricedWithCode 
         listPriceInr,
         discountPercent: row.percent_off,
         discountCode: row.code,
+        exclusiveHold: row.max_redemptions === 1,
     };
+}
+
+function isExclusiveCard(row: DiscountCodeRow): boolean {
+    return row.max_redemptions === 1;
 }
 
 function rowIsHoldable(row: DiscountCodeRow, userId: string, now = Date.now()): boolean {
@@ -56,6 +63,7 @@ function rowIsHoldable(row: DiscountCodeRow, userId: string, now = Date.now()): 
     if (row.expires_at && Date.parse(row.expires_at) <= now) return false;
     if (row.redeemed_count >= row.max_redemptions) return false;
     if (
+        isExclusiveCard(row) &&
         row.reserved_by &&
         row.reserved_at &&
         now - Date.parse(row.reserved_at) < 30 * 60 * 1000 &&
@@ -64,6 +72,21 @@ function rowIsHoldable(row: DiscountCodeRow, userId: string, now = Date.now()): 
         return false;
     }
     return true;
+}
+
+async function userAlreadyRedeemed(codeId: string, userId: string): Promise<boolean> {
+    const { data, error } = await supabaseAdmin()
+        .from("discount_redemptions")
+        .select("id")
+        .eq("code_id", codeId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    if (error) {
+        console.error("[payments] could not read scratch-card redemptions", error.message);
+        return true;
+    }
+    return Boolean(data);
 }
 
 export async function previewDiscount(
@@ -89,6 +112,7 @@ export async function previewDiscount(
 
     const row = data as DiscountCodeRow;
     if (!rowIsHoldable(row, userId)) invalidCode();
+    if (await userAlreadyRedeemed(row.id, userId)) invalidCode();
     if (!codeAppliesTo(row.applies_to, kind)) invalidCode();
 
     return pricedFrom(row, listPriceInr);
@@ -117,6 +141,9 @@ async function reserveDiscountViaTable(
 
     const row = data as DiscountCodeRow;
     if (!rowIsHoldable(row, userId)) return null;
+    if (await userAlreadyRedeemed(row.id, userId)) return null;
+
+    if (!isExclusiveCard(row)) return row;
 
     const takeFrom = row.reserved_by && row.reserved_by !== userId ? row.reserved_by : null;
     const ownerFilter = takeFrom
@@ -235,6 +262,7 @@ async function captureDiscountViaTable(opts: {
 
     const row = data as DiscountCodeRow;
     if (row.redeemed_count >= row.max_redemptions) return false;
+    if (await userAlreadyRedeemed(row.id, opts.userId)) return false;
 
     const { data: updated, error: updateError } = await admin
         .from("discount_codes")

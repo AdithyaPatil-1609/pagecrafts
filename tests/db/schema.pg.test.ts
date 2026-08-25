@@ -63,7 +63,7 @@ describe("the migration stack", () => {
         // A count, deliberately. It is the one assertion that notices a migration file
         // being deleted or never committed — the failure mode where the stack still
         // applies cleanly because the broken one is simply gone. Bump it when you add one.
-        expect(migrationFiles().length).toBe(35);
+        expect(migrationFiles().length).toBe(36);
         expect(applied.rows[0]!.n).toBeGreaterThan(0);
     });
 
@@ -447,5 +447,40 @@ describe("scratch-card codes", () => {
             [alice],
         );
         expect(again.rows[0]!.captured).toBe(false);
+    });
+
+    it("lets many people use one shared campaign code", async () => {
+        await db.exec(`
+            insert into public.discount_codes (code, batch_label, percent_off, applies_to, max_redemptions)
+            values ('PC-SALE-TENT', 'sale-10', 10, 'all', 100000)
+        `);
+
+        const aliceHold = await db.query<{ code: string }>(
+            "select code from public.reserve_discount_code('PC-SALE-TENT', $1)",
+            [alice],
+        );
+        const bobHold = await db.query<{ code: string }>(
+            "select code from public.reserve_discount_code('PC-SALE-TENT', $1)",
+            [bob],
+        );
+        expect(aliceHold.rows[0]?.code).toBe("PC-SALE-TENT");
+        expect(bobHold.rows[0]?.code).toBe("PC-SALE-TENT");
+
+        const alicePay = await db.query<{ captured: boolean }>(
+            "select public.capture_discount_code('PC-SALE-TENT', $1, 'order_a', 'pro', 499, 449) as captured",
+            [alice],
+        );
+        const bobPay = await db.query<{ captured: boolean }>(
+            "select public.capture_discount_code('PC-SALE-TENT', $1, 'order_b', 'pro', 499, 449) as captured",
+            [bob],
+        );
+        expect(alicePay.rows[0]!.captured).toBe(true);
+        expect(bobPay.rows[0]!.captured).toBe(true);
+
+        const aliceAgain = await db.query<{ captured: boolean }>(
+            "select public.capture_discount_code('PC-SALE-TENT', $1, 'order_a2', 'pro', 499, 449) as captured",
+            [alice],
+        );
+        expect(aliceAgain.rows[0]!.captured).toBe(false);
     });
 });
