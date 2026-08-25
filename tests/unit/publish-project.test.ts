@@ -39,8 +39,6 @@ const FILES = [{ path: "index.html", content: "<h1>hi</h1>", encoding: "utf-8" a
  * fake that says yes to everything will happily agree that nothing happened.
  */
 function tables(repoFullName: string | null = null): Record<string, TableResponder> {
-    const written = row({ id: DEPLOYMENT_ID });
-
     return {
         projects: row({ id: PROJECT_ID, repo_full_name: repoFullName }),
         deployments: (query) => {

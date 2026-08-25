@@ -34,7 +34,14 @@ export const POST = withRoute<undefined, Params>({
         }
 
         const body = await publishProject(supabase, userId, params.id, idempotencyKey);
-        const { background: _bg, ...response } = body;
-        return ok(response, response.status === 'pending' ? 202 : 200);
+        return ok(
+            {
+                deploymentId: body.deploymentId,
+                status: body.status,
+                liveUrl: body.liveUrl,
+                error: body.error,
+            },
+            body.status === 'pending' ? 202 : 200,
+        );
     },
 });
