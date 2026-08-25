@@ -64,7 +64,9 @@ describe('publish', () => {
         expect(result.reason).toBe('not_answering_yet');
     });
 
-    it('skips hosting setup when republishing', async () => {
+    it('still attaches hosting when republishing', async () => {
+        // siteId is remembered even after a failed first push; skipping enableHosting
+        // left orphan Pages projects with no DNS (522 / NXDOMAIN).
         const provider = fakeProvider(true);
         const enable = vi.spyOn(provider, 'enableHosting');
 
@@ -74,6 +76,6 @@ describe('publish', () => {
             provider,
         );
 
-        expect(enable).not.toHaveBeenCalled();
+        expect(enable).toHaveBeenCalledOnce();
     });
 });
