@@ -20,7 +20,7 @@ export function AiCreditsPanel({ billing }: { billing: BillingSummary }) {
     const canUpgrade = plan !== "premium";
 
     return (
-        <div className="rounded-2xl glass-panel p-5">
+        <div id="ai-credits" className="scroll-mt-24 rounded-2xl glass-panel p-5">
             <p className="text-base font-semibold text-foreground">AI credits</p>
             <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
                 Each site gets a set number of AI builds on your plan. Used up on one site does not

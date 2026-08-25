@@ -68,13 +68,22 @@ export function ProfileMenu({
     setSaving(false);
   }
 
-  function openSettings(event: MouseEvent<HTMLAnchorElement>) {
+  function openSettings(event: MouseEvent<HTMLAnchorElement>, focusId?: string) {
     // Already on the home deck — scroll in place. Going via /settings remounts the
     // whole page and feels like a hang.
     if (pathname !== "/") return;
     event.preventDefault();
     const details = event.currentTarget.closest("details");
     if (details) details.open = false;
+    if (focusId) {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document.getElementById(focusId)?.scrollIntoView({
+        behavior: reduce ? "auto" : "smooth",
+        block: "start",
+      });
+      window.history.replaceState(null, "", `${SETTINGS_HREF}#${focusId}`);
+      return;
+    }
     scrollToSettings();
   }
 
@@ -138,7 +147,9 @@ export function ProfileMenu({
 
       <div
         className={cn(
-          "glass-panel absolute z-30 w-72 rounded-2xl p-3",
+          // Solid surface — glass-panel is too transparent over Welcome scene cards,
+          // so plan / notices text washed out behind a blurry white overlay.
+          "absolute z-50 w-72 overflow-hidden rounded-2xl border border-border bg-card p-3 text-foreground shadow-[0_16px_48px_rgba(0,0,0,0.55)]",
           placement === "top" ? "bottom-full mb-3 left-0" : "right-0 mt-3",
         )}
       >
@@ -165,8 +176,15 @@ export function ProfileMenu({
             onChange={(on) => void setEmail(on)}
           />
         </div>
-        <Link href="/?slide=settings" onClick={openSettings} className={MENU_LINK}>
+        <Link href="/?slide=settings" onClick={(e) => openSettings(e)} className={MENU_LINK}>
           Account settings
+        </Link>
+        <Link
+          href="/?slide=settings#ai-credits"
+          onClick={(e) => openSettings(e, "ai-credits")}
+          className={MENU_LINK}
+        >
+          AI credits
         </Link>
         <Link href="/plans" className={MENU_LINK}>
           User Plans
