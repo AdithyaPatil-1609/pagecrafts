@@ -61,10 +61,16 @@ describe('Ask AI: Gemini expand then Groq build', () => {
         expect(afterExpand.length).toBeGreaterThan(0);
         expect(afterExpand.every((p) => p === 'groq')).toBe(true);
 
-        // Job may trim events in the final snapshot — assert expand via prompt + ledger.
-        expect(done.prompt.length).toBeGreaterThan(brief.length);
-        expect(done.prompt).toMatch(/marketing website|hero|services/i);
-        expect(done.prompt).toContain('Smile Dental');
+        // Job may trim events in the final snapshot — assert expand via the prompts + ledger.
+        //
+        // The expansion lives in buildPrompt. It used to be written over `prompt`, and that
+        // is the field the jobs API and the editor show somebody as their own brief — tags,
+        // "Expand that into a detailed build brief" and all.
+        expect(done.prompt).toBe(brief);
+        expect(done.buildPrompt).toBeDefined();
+        expect(done.buildPrompt!.length).toBeGreaterThan(brief.length);
+        expect(done.buildPrompt).toMatch(/marketing website|hero|services/i);
+        expect(done.buildPrompt).toContain('Smile Dental');
         expect(done.files?.['index.html']).toMatch(/^<!doctype html>/i);
         expect(done.ledger.some((l) => l.stage === 'expand')).toBe(true);
 
