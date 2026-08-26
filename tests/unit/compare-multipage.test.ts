@@ -39,6 +39,8 @@ describe("Compare multipage live preview", () => {
         expect(html).toContain("settings.html");
         // Must not be a lone index that would navigate the parent to pagecrafts.in/about.html
         expect(html).toContain("var PAGES =");
+        expect(html).toContain("nodeType===3");
+        expect(html).toContain("parent !== window");
     });
 
     it("lets the Compare sidebar drive page switches", () => {
