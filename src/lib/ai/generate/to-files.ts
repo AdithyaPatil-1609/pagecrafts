@@ -62,8 +62,10 @@ function imageSlot(path: string, value: unknown, fallbackAlt: string): string {
     const query = rec ? asString(rec.query) : (typeof value === 'string' ? value : '');
     const alt = (rec ? asString(rec.alt) : '') || fallbackAlt;
     const url = rec ? (asString(rec.url) || asString(rec.src)) : '';
+    // Eager: Pick-a-look cards use a short scaled iframe. `loading="lazy"` never
+    // intersects that viewport, so heroes shipped as empty beige boxes with alt text.
     const photo = url
-        ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`
+        ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="eager" decoding="async" fetchpriority="high" />`
         : '';
     return `<div class="img-slot" data-slot="${escapeHtml(path)}" role="img" aria-label="${escapeHtml(alt)}" data-query="${escapeHtml(query)}">${photo}</div>`;
 }
@@ -202,7 +204,7 @@ function renderInner(
                 const caption = asString(img.alt) || asString(img.query);
                 const query = asString(img.query);
                 const photo = asString(img.url) || asString(img.src)
-                    ? `<img src="${escapeHtml(asString(img.url) || asString(img.src))}" alt="${escapeHtml(caption || 'Gallery')}" loading="lazy" decoding="async" />`
+                    ? `<img src="${escapeHtml(asString(img.url) || asString(img.src))}" alt="${escapeHtml(caption || 'Gallery')}" loading="eager" decoding="async" />`
                     : '';
                 return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
                     }${caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
@@ -785,14 +787,16 @@ body:has([data-style="motion"]) {
   color: #f7f4ef;
 }
 [data-style="motion"] .site-header {
-  position: sticky;
+  position: absolute;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 8;
   max-width: none;
   padding-inline: 6vw;
-  background: color-mix(in srgb, #08070a 62%, transparent);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(to bottom, rgba(8, 7, 10, 0.72), transparent);
+  backdrop-filter: none;
+  border-bottom: 0;
 }
 [data-style="motion"] .site-header nav a { color: rgba(247, 244, 239, 0.72); }
 [data-style="motion"] .site-header nav a:hover { color: #fff; }
@@ -808,6 +812,7 @@ body:has([data-style="motion"]) {
   padding-bottom: 0;
   counter-reset: pc-sec;
 }
+/* Full-bleed hero — no card frame, no section padding gaps, photo edge to edge */
 [data-style="motion"] [data-type="hero"] {
   position: relative;
   isolation: isolate;
@@ -816,9 +821,22 @@ body:has([data-style="motion"]) {
   grid-template-columns: 1fr;
   place-items: center;
   text-align: center;
-  min-height: 92svh;
-  min-height: 92dvh;
-  padding: 7rem 6vw 8.5rem;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+  padding-block: 0;
+  border-radius: 0;
+}
+[data-style="motion"] [data-type="hero"][data-variant="image-bg"],
+[data-style="motion"] [data-type="hero"][data-variant="centred"] {
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 0;
+  padding-block: 0;
+  border-radius: 0;
 }
 @media (max-width: 48rem) {
   [data-style="motion"] .site-header {
@@ -826,7 +844,6 @@ body:has([data-style="motion"]) {
   }
   [data-style="motion"] [data-type="hero"] {
     min-height: 100svh;
-    padding: 5.25rem 1.15rem 3.5rem;
   }
 }
 [data-style="motion"] [data-type="hero"] .img-slot {
@@ -837,17 +854,39 @@ body:has([data-style="motion"]) {
   margin: 0;
   border: 0;
   border-radius: 0;
-  min-height: 0;
+  min-height: 100%;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
-  opacity: 0.72;
+  opacity: 0.88;
+  background: transparent;
   animation: pc-kenburns 26s ease-in-out infinite alternate;
   will-change: transform;
 }
+[data-style="motion"] [data-type="hero"][data-variant="image-bg"] .img-slot {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  min-height: 100%;
+  height: 100%;
+}
 [data-style="motion"] [data-type="hero"] .img-slot img {
+  display: block;
   width: 100%;
   height: 100%;
-  min-height: 0;
+  min-height: 100%;
+  max-width: none;
   object-fit: cover;
+  object-position: center;
+  border-radius: 0;
+}
+[data-style="motion"] [data-type="hero"][data-variant="image-bg"] .img-slot img,
+[data-style="motion"] [data-type="hero"] img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  border-radius: 0;
 }
 [data-style="motion"] [data-type="hero"]::after {
   content: "";
@@ -865,6 +904,18 @@ body:has([data-style="motion"]) {
 [data-style="motion"] [data-type="hero"] .hero-copy {
   position: relative;
   z-index: 3;
+  max-width: min(52rem, 88vw);
+  margin: 0;
+  padding: 7rem 6vw 8.5rem;
+  align-self: center;
+  justify-self: center;
+  background: none;
+  color: inherit;
+}
+[data-style="motion"] [data-type="hero"][data-variant="image-bg"] .hero-copy {
+  padding: 7rem 6vw 8.5rem;
+  background: none;
+  align-self: center;
   max-width: min(52rem, 88vw);
 }
 [data-style="motion"] [data-type="hero"] .lede {

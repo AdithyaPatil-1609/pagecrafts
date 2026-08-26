@@ -110,6 +110,28 @@ export const cloudflarePagesAdapter: DeployProvider = {
                 if (!(error instanceof HostingError && error.status === 400)) throw error;
             }),
         ]);
+
+        // Read the record back before calling this done.
+        //
+        // Cloudflare answers 400 both for "that record is already there" and for every
+        // reason a record cannot be written, and cf() keeps only the HTTP status — the
+        // error code that tells them apart is discarded. So the catch above cannot know
+        // which it swallowed, and a publish that wrote nothing reported success. The
+        // address then answered NXDOMAIN, which nobody sees until they open the link.
+        //
+        // Asking the zone is the one answer that is not a guess.
+        const records = await cf<{ id: string }[]>(
+            'GET',
+            `/zones/${zone}/dns_records?type=CNAME&name=${domain}`,
+        ).catch(() => [] as { id: string }[]);
+
+        if (!records?.length) {
+            throw new HostingError(
+                `The site was uploaded but ${domain} has no DNS record, so the address `
+                    + 'will not resolve. Publishing again usually fixes it.',
+                502,
+            );
+        }
     },
 
     async verifyLive(url: string): Promise<boolean> {
