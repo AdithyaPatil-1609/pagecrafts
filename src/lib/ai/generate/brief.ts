@@ -7,6 +7,8 @@ export type BriefTone = (typeof BRIEF_TONES)[number];
 
 export interface SiteBrief {
     name: string;
+    /** Exact trade/profession — primary signal for vertical + photo subjects. */
+    profession: string;
     offer: string;
     place: string;
     phone: string;
@@ -16,7 +18,16 @@ export interface SiteBrief {
 }
 
 export function emptyBrief(): SiteBrief {
-    return { name: '', offer: '', place: '', phone: '', hours: '', extra: '', tone: '' };
+    return {
+        name: '',
+        profession: '',
+        offer: '',
+        place: '',
+        phone: '',
+        hours: '',
+        extra: '',
+        tone: '',
+    };
 }
 
 export function briefFromQuery(q: string): SiteBrief {
@@ -53,6 +64,7 @@ function sentence(value: string): string {
  */
 export const BRIEF_LIMITS = {
     name: 80,
+    profession: 80,
     offer: 500,
     place: 80,
     phone: 20,
@@ -62,6 +74,7 @@ export const BRIEF_LIMITS = {
 
 const LABELS: Record<keyof typeof BRIEF_LIMITS, string> = {
     name: 'The business name',
+    profession: 'The profession or trade',
     offer: 'What they do',
     place: 'The city or area',
     phone: 'The phone number',
@@ -72,6 +85,9 @@ const LABELS: Record<keyof typeof BRIEF_LIMITS, string> = {
 export function briefErrors(brief: SiteBrief): string[] {
     const errors: string[] = [];
     if (!clean(brief.name)) errors.push('What is the business called?');
+    if (!clean(brief.profession)) {
+        errors.push('What profession or trade is this — dentist, bakery, plumber…?');
+    }
     if (!clean(brief.offer)) errors.push('What do they do? A shop, a clinic, the services.');
     if (!clean(brief.place)) errors.push('Where is it — a city or neighbourhood?');
 
@@ -95,25 +111,49 @@ export function briefErrors(brief: SiteBrief): string[] {
 /**
  * One description the rest of the pipeline already understands.
  * Facts the model is not given, it must not invent — so we only write what was asked.
+ *
+ * Profession leads (and is tagged) so classify + photo search know the trade before
+ * services copy. Business name follows as the specialty within that trade.
  */
 export function composeBrief(brief: SiteBrief): string {
     const name = clean(brief.name);
+    const profession = clean(brief.profession);
     const offer = clean(brief.offer);
     const place = clean(brief.place);
     const parts: string[] = [];
 
-    if (name && offer && place) {
+    // Tagged first so photoSearchQuery / truncate-to-160 still see the trade.
+    if (profession) parts.push(`Profession field: ${profession}`);
+
+    if (name && profession && offer && place) {
+        parts.push(
+            `a website for ${name}, a ${profession} business (${offer}), in ${place}`,
+        );
+    } else if (name && profession && place) {
+        parts.push(`a website for ${name}, a ${profession} business, in ${place}`);
+    } else if (name && offer && place) {
         parts.push(`a website for ${name}, ${offer}, in ${place}`);
     } else if (name && offer) {
         parts.push(`a website for ${name}, ${offer}`);
     } else {
-        parts.push(['a website', name, offer, place].filter(Boolean).join(' '));
+        parts.push(
+            ['a website', name, profession, offer, place].filter(Boolean).join(' '),
+        );
     }
 
+    if (profession && name) {
+        parts.push(
+            `photographs must show ${profession} work specific to ${name}, not a generic unrelated trade`,
+        );
+    } else if (profession) {
+        parts.push(
+            `profession and photo subjects must match ${profession} exactly — not a different trade`,
+        );
+    }
     if (clean(brief.phone)) parts.push(`phone ${clean(brief.phone)}`);
-    if (clean(brief.hours)) parts.push(sentence(brief.hours));
+    if (clean(brief.hours)) parts.push(sentence(clean(brief.hours)));
     if (brief.tone) parts.push(TONE_LINE[brief.tone]);
-    if (clean(brief.extra)) parts.push(sentence(brief.extra));
+    if (clean(brief.extra)) parts.push(sentence(clean(brief.extra)));
 
     const joined = parts
         .map((part, i) => (i === 0 ? part : part.charAt(0).toLowerCase() + part.slice(1)))

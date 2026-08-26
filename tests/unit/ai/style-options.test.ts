@@ -4,6 +4,7 @@ import { applyStyle, STYLE_SPECS, STYLE_IDS } from '@/lib/ai/generate/styles';
 import { buildStyleOptions } from '@/lib/ai/generate/options';
 import {
     bankPhotoUrl,
+    buildPhotoSubject,
     CLOTHING_PHOTO_ID,
     DESSERT_PHOTO_ID,
     MITHAI_SEARCH,
@@ -11,6 +12,8 @@ import {
     photoSearchQuery,
     stampPhotoUrls,
 } from '@/lib/ai/generate/photos';
+import { composeBrief, emptyBrief } from '@/lib/ai/generate/brief';
+import { imagePromptFor } from '@/lib/images/gemini-image';
 
 // The body attribute, not the first data-motion in the file — motionCss opens with a
 // `[data-motion="none"]` rule, so a loose match reads the stylesheet instead of the page.
@@ -82,6 +85,47 @@ describe('style presets — three looks from one brief', () => {
     it('picks a mithai photograph for a sweets query', () => {
         expect(bankPhotoUrl('indian sweets mithai')).toContain(DESSERT_PHOTO_ID);
         expect(bankPhotoUrl('indian sweets mithai')).not.toBe(bankPhotoUrl('a gym in koramangala'));
+    });
+
+    it('builds Medical + Brain Surgery subjects with profession first, then the specialty title', () => {
+        const subject = buildPhotoSubject({
+            profession: 'Medical',
+            title: 'Brain Surgery',
+            offer: 'neurosurgery consultations',
+            slot: 'hero',
+        });
+        expect(subject).toBe('medical brain surgery neurosurgery consultations');
+        expect(subject.indexOf('medical')).toBe(0);
+        expect(subject).toContain('brain');
+        expect(subject).toContain('surgery');
+        expect(subject).not.toMatch(/\bhero\b/);
+
+        const description = composeBrief({
+            ...emptyBrief(),
+            name: 'Brain Surgery',
+            profession: 'Medical',
+            offer: 'neurosurgery consultations and operations',
+            place: 'Bangalore',
+        });
+        // Runner stamps only the first 160 chars onto composition.meta.description.
+        const stampedDesc = description.slice(0, 160);
+        const search = photoSearchQuery(
+            'healthcare',
+            'Brain Surgery',
+            'hero',
+            stampedDesc,
+        );
+        expect(search.startsWith('medical brain surgery')).toBe(true);
+        expect(search).toMatch(/\bneurosurgery\b/);
+        // Not profession-alone or title-alone.
+        expect(search).not.toBe('medical');
+        expect(search).not.toBe('brain surgery');
+
+        const prompt = imagePromptFor(search);
+        expect(prompt).toContain(search);
+        expect(prompt).toMatch(/profession named first/i);
+        expect(prompt).toMatch(/brain surgery/i);
+        expect(prompt).toMatch(/specialty|neurosurgery/i);
     });
 
     it('never stamps bakery bread on a travel / nature / vlog brief', async () => {

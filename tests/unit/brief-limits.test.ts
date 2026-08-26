@@ -18,7 +18,14 @@ const FIELDS = readFileSync(
 );
 
 function longBrief(field: keyof typeof BRIEF_LIMITS, by: number) {
-    return { ...emptyBrief(), name: 'A', offer: 'B', place: 'C', [field]: 'x'.repeat(BRIEF_LIMITS[field] + by) };
+    return {
+        ...emptyBrief(),
+        name: 'A',
+        profession: 'Dentist',
+        offer: 'B',
+        place: 'C',
+        [field]: 'x'.repeat(BRIEF_LIMITS[field] + by),
+    };
 }
 
 describe('the brief limits match the schema that enforces them', () => {
@@ -57,6 +64,7 @@ describe('the composed prompt fits everywhere it is sent', () => {
         const full = {
             ...emptyBrief(),
             name: pad('Smile Dental', BRIEF_LIMITS.name),
+            profession: pad('Dentist family dental', BRIEF_LIMITS.profession),
             offer: pad('family dental clinic check-ups and braces', BRIEF_LIMITS.offer),
             place: pad('Koramangala Bangalore', BRIEF_LIMITS.place),
             phone: '1'.repeat(BRIEF_LIMITS.phone),
@@ -87,7 +95,13 @@ describe('briefErrors catches an over-long field before the request goes out', (
     });
 
     it('stays quiet for a brief that fits', () => {
-        const brief = { ...emptyBrief(), name: 'Savor & Stir', offer: 'Cooking classes', place: 'Bangalore' };
+        const brief = {
+            ...emptyBrief(),
+            name: 'Savor & Stir',
+            profession: 'Cooking school',
+            offer: 'Cooking classes',
+            place: 'Bangalore',
+        };
 
         expect(briefErrors(brief)).toEqual([]);
     });
@@ -100,6 +114,7 @@ describe('briefErrors catches an over-long field before the request goes out', (
         const brief = {
             ...emptyBrief(),
             name: 'Smile',
+            profession: 'Dentist',
             place: 'Pune',
             offer: `${padded}     `,
         };

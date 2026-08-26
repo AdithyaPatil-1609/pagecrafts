@@ -85,10 +85,12 @@ function isDailyQuota(err: unknown): boolean {
  * our editor. Same for logos and watermarks.
  */
 export function imagePromptFor(query: string): string {
-    const subject = query.trim().replace(/\s+/g, " ").slice(0, 300);
+    const subject = query.trim().replace(/\s+/g, " ").slice(0, 220);
 
     return [
-        `A professional full-colour photograph for a small business website: ${subject}.`,
+        `A professional full-colour photograph for a small business website depicting: ${subject}.`,
+        "Profession named first is the category; show any following specialty clearly",
+        "(medical + brain surgery → neurosurgery, not a generic waiting room).",
         "Real colour photography — vivid natural colours, never black and white,",
         "never grayscale, never monochrome, never desaturated editorial B&W.",
         "Natural daylight, shallow depth of field, warm and inviting,",
