@@ -71,8 +71,24 @@ describe('cross-vertical firewall', () => {
     it('classifies vertical families from slugs and prompts', () => {
         expect(verticalFamily('restaurant')).toBe('food');
         expect(verticalFamily('yoga-studio')).toBe('fitness');
+        expect(verticalFamily('neurosurgery')).toBe('healthcare');
+        expect(verticalFamily('brain-surgery')).toBe('healthcare');
+        expect(verticalFamily('travel-vlog')).toBe('travel');
         expect(detectRequestedVerticalFamily('Create a gym website')).toBe('fitness');
         expect(detectRequestedVerticalFamily('portfolio for a photographer')).toBe('photography');
+    });
+
+    it('allows regenerating the same hospital brief when the stored slug is neurosurgery', () => {
+        // Generate another look posts the original "I want a website for … hospital" brief
+        // after classify stored a finer slug. That must not read as restaurant → gym style swap.
+        expect(
+            crossVerticalFirewall({
+                instruction:
+                    'I want a website for Preethi Brain Surgery hospital in Bangalore offering advanced neurosurgical procedures',
+                vertical: 'neurosurgery',
+                sectionCount: 5,
+            }),
+        ).toBeNull();
     });
 
     it('detects cross-site creation intent on built pages', () => {

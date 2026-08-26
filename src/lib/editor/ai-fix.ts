@@ -115,10 +115,20 @@ export function explainCreationIssue(
             };
         }
 
+        if (/cannot turn it into|start a new project for that/i.test(message)) {
+            return {
+                kind: 'generation',
+                title: 'That rebuild was blocked',
+                what: message,
+                instruction:
+                    'Generate another look from the same business brief for this site.',
+            };
+        }
+
         return {
             kind: 'generation',
             title: 'This site did not finish building',
-            what: 'The website started, but a page or section did not complete.',
+            what: message || 'The website started, but a page or section did not complete.',
             instruction:
                 'Rebuild this site from the same business brief and finish every page cleanly.',
         };
