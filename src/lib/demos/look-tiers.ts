@@ -24,10 +24,12 @@ const STYLE_BY_LOOK: Record<CompareLookId, StyleId> = {
 
 const HERO =
     "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=70&auto=format&fit=crop";
-const PLATE =
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=70&auto=format&fit=crop";
 const ROOM =
     "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=70&auto=format&fit=crop";
+/** Compare gallery — local fine-dining photos shown on Free, Pro, and Premium. */
+const GALLERY_DINING_HALL = "/compare-gallery/dining-hall.jpg";
+const GALLERY_GRAND_SALON = "/compare-gallery/grand-salon.jpg";
+const GALLERY_CRYSTAL_ROOM = "/compare-gallery/crystal-room.jpg";
 
 export const COMPARE_LOOKS: {
     id: CompareLookId;
@@ -156,9 +158,21 @@ export function demoRestaurantComposition(): Composition {
             section("s_gallery", "gallery", "masonry", {
                 heading: "From the room",
                 images: [
-                    { url: PLATE, query: "plated food", alt: "Plate" },
-                    { url: HERO, query: "dining table", alt: "Table" },
-                    { url: ROOM, query: "dining room", alt: "Room" },
+                    {
+                        url: GALLERY_DINING_HALL,
+                        query: "luxury dining hall",
+                        alt: "Bright dining hall",
+                    },
+                    {
+                        url: GALLERY_GRAND_SALON,
+                        query: "grand restaurant salon",
+                        alt: "Grand salon",
+                    },
+                    {
+                        url: GALLERY_CRYSTAL_ROOM,
+                        query: "crystal chandelier dining room",
+                        alt: "Crystal room",
+                    },
                 ],
             }),
             section("s_faq", "faq", "accordion", {
@@ -202,6 +216,29 @@ const COMPARE_FRAME_CSS = `
   [data-style="casual"] [data-type="hero"] {
     min-height: 22rem !important;
   }
+  /* Free used to hide gallery photos — Compare must show the real pictures. */
+  [data-style="casual"] [data-type="gallery"] .img-slot {
+    display: block !important;
+  }
+  [data-style="casual"] [data-type="gallery"] .img-slot img {
+    display: block !important;
+    width: 100%;
+    min-height: 12rem;
+    object-fit: cover;
+  }
+  [data-type="gallery"] .gallery {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: 1rem;
+  }
+  [data-type="gallery"] figure {
+    margin: 0;
+  }
+  [data-type="gallery"] figcaption {
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--muted, #666);
+  }
 </style>
 `;
 
@@ -224,7 +261,7 @@ function ensureImageUrls(composition: Composition): Composition {
                 const row = frame as Record<string, unknown>;
                 if (typeof row.url !== "string" || !row.url) {
                     const src = typeof row.src === "string" ? row.src : "";
-                    row.url = src || PLATE;
+                    row.url = src || GALLERY_DINING_HALL;
                 }
             }
         }
