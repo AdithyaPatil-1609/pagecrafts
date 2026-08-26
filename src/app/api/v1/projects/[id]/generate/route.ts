@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { z } from 'zod';
+import { waitUntil } from '@vercel/functions';
 import { withRoute } from '@/lib/kernel/with-route';
 import { ok, ApiError } from '@/lib/errors/respond';
 import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
@@ -33,6 +34,10 @@ import { track } from '@/lib/observability/analytics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// A build is classify, expand, plan and one call per section, with rate-limit waits
+// between them on the free tier. The default ceiling cuts that off part-way and the job
+// never reaches done. Publishing already asks for 120 for the same reason.
+export const maxDuration = 300;
 
 type Params = { id: string };
 
@@ -89,11 +94,6 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             throw new ApiError('validation_failed', crossBlocked);
         }
 
-        const clarity = await assessPromptClarity(body.prompt);
-        if (!clarity.usable) {
-            throw new ApiError('brief_unclear', clarity.message);
-        }
-
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
 
@@ -111,6 +111,27 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         });
         if (heavy) {
             await assertHeavyBuildAllowed(quota);
+        }
+
+        // Clarity judges a brief for a site that does not exist yet: does this name a
+        // business, a place, and what they do. On a site that already exists the prompt is
+        // an instruction — "make the hero more graphical" — which names none of those and
+        // was refused every time, with a message about details the person already gave.
+        //
+        // The same signal the firewall above uses decides it: a project with sections or a
+        // content page is being edited, not described.
+        //
+        // It runs after the caps and before anything is spent. Ahead of them it answered
+        // "we cannot read your brief" to somebody whose real problem was a daily cap, and
+        // it costs a model call to say so — one nobody over their limit should pay for.
+        const hasExistingSite =
+            (composition?.sections.length ?? 0) > 0 || contentSchema.sections.length > 0;
+
+        if (!hasExistingSite) {
+            const clarity = await assessPromptClarity(body.prompt);
+            if (!clarity.usable) {
+                throw new ApiError('brief_unclear', clarity.message);
+            }
         }
 
         const admin = supabaseAdminOrNull();
@@ -140,7 +161,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             });
             await recordGenerationUseForBuild(params.id, userId, quota, heavy);
 
-            void runJob(job, {
+            const work = runJob(job, {
                 templates: TEMPLATES,
                 recordUsage: guard.recordUsage,
                 persistLedger: (rows) => persistLedger(supabase, {
@@ -159,6 +180,21 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                     });
                 },
             }).catch((err) => console.error('[generate]', err));
+
+            // The response goes back at 202 and the build carries on behind it. On Vercel a
+            // function instance may be frozen the moment it answers, so a promise nobody
+            // registered is killed part-finished — the job row stays at "reading the brief"
+            // and the browser polls it forever. waitUntil is how the platform is told to
+            // keep the instance alive until this settles.
+            //
+            // Off Vercel there is no request context to register with; the promise is
+            // already running and a long-lived server will finish it either way.
+            try {
+                waitUntil(work);
+            } catch {
+                void work;
+            }
+
             handedToRunner = true;
 
             return ok({ job_id: job.id }, 202);
