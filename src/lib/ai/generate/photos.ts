@@ -10,11 +10,12 @@ const unsplash = (id: string) => `https://images.unsplash.com/${id}${PHOTO}`;
  *
  * Unmatched queries must NOT fall through to a food-heavy list — travel vlogs
  * were landing on bakery bread because the old default bank started with food.
+ * Every id here must return 200 on images.unsplash.com (dead ids blank Pick a look).
  */
 const GENERAL_PHOTOS = [
     'photo-1476514525535-07fb3b4ae5f1', // lake
     'photo-1469474968028-56623f02e42e', // mountain valley
-    'photo-1501785888041-af3bc6ed3cfa', // mountain road
+    'photo-1469854523086-cc02fe5d8800', // road trip overlook
     'photo-1441974231531-c6227db76b6e', // forest path
     'photo-1506905925346-21bda4d32df4', // alpine peaks
     'photo-1452587925148-ce544e77e70d', // camera
@@ -32,9 +33,9 @@ const RESTAURANT_PHOTOS = [
     'photo-1504674900247-0877df9cc836',
     'photo-1559339352-11d035aa65de',
     'photo-1416879595882-3373a0480b5b',
-    'photo-1424847653812-7ad6b33ea746',
+    'photo-1565299624946-b28f40a0ae38',
     'photo-1466978913421-dad2ebd01d17',
-    'photo-1540189549336-e9fb1f3a1e3d',
+    'photo-1546069901-ba9599a7e63c',
     'photo-1476224203421-9ac39bcb3327',
 ] as const;
 
@@ -49,13 +50,28 @@ const BAKERY_PHOTOS = [
     'photo-1509440159596-0249088772ff',
     'photo-1517433670267-08bbd4be890f',
     'photo-1555507036-ab1f4038808a',
-    'photo-1486427944299-d1955d23fd34',
+    'photo-1578985545062-69928b1d9587',
+] as const;
+
+/** Clinic / hospital / surgery — every id must 200 on images.unsplash.com. */
+const CLINIC_PHOTOS = [
+    'photo-1519494026892-80bbd2d6fd0d',
+    'photo-1516549655169-df83a0774514',
+    'photo-1579684385127-1ef15d508118',
+    'photo-1586773860418-d37222d8fce3',
+    'photo-1666214280557-f1b5022eb634',
+] as const;
+
+const GYM_PHOTOS = [
+    'photo-1534438327276-14e5300c3a48',
+    'photo-1517836357463-d25dfeac3438',
+    'photo-1571019614242-c5c5dee9f50b',
 ] as const;
 
 /** Travel / nature / vlog — never food when the brief is about journeys outdoors. */
 const TRAVEL_PHOTOS = [
     'photo-1469474968028-56623f02e42e', // green mountains
-    'photo-1501785888041-af3bc6ed3cfa', // winding mountain road
+    'photo-1469854523086-cc02fe5d8800', // road trip overlook
     'photo-1476514525535-07fb3b4ae5f1', // lake canoe
     'photo-1506905925346-21bda4d32df4', // snow peaks
     'photo-1441974231531-c6227db76b6e', // sunlit forest
@@ -79,11 +95,8 @@ const KEYWORD_PHOTO: Array<[RegExp, readonly string[]]> = [
     [/\b(cafe|coffee|chai)\b/i, CAFE_PHOTOS],
     [/\b(restaurant|dining|kitchen|fine dining)\b/i, RESTAURANT_PHOTOS],
     [/\b(travel|traveller|traveler|tourism|tourist|vlog|vlogger|journey|adventure|wander|wanderlust|nature|outdoor|outdoors|hiking|trek|trekking|camping|landscape|mountain|forest|lake|beach|safari|road.?trip|itinerary|explore)\b/i, TRAVEL_PHOTOS],
-    [/\b(gym|fitness|yoga)\b/i, ['photo-1534438327276-14e5300c3a48', 'photo-1571902943202-507c674acf4a']],
-    [/\b(clinic|dental|hospital|doctor|veterinary|vet)\b/i, [
-        'photo-1519494026892-80bbd2d6fd0d',
-        'photo-1631217868264-e5b90bb7e629',
-    ]],
+    [/\b(gym|fitness|yoga)\b/i, GYM_PHOTOS],
+    [/\b(clinic|dental|hospital|doctor|veterinary|vet|surgery|surgical|surgeon|neurosurg|medical|healthcare)\b/i, CLINIC_PHOTOS],
     [/\b(saree|clothing|fashion|boutique|apparel|garment|dress|textile)\b/i, [CLOTHING_PHOTO_ID]],
 ];
 
