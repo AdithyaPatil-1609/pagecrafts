@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Check, ExternalLink, Loader2, Rocket } from 'lucide-react';
 
@@ -88,7 +88,9 @@ export default function GoLiveButton({
 
     // Keep finishAfterDomainPaid stable for checkout callbacks via ref pattern below.
     const suggestionRef = useRef<DomainSuggestion | null>(null);
-    suggestionRef.current = suggestion;
+    useEffect(() => {
+        suggestionRef.current = suggestion;
+    }, [suggestion]);
 
     async function finishAfterDomainPaid() {
         const chosen = suggestionRef.current;

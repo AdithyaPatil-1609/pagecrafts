@@ -611,9 +611,10 @@ address { font-style: normal; }
   padding-inline: 0;
   padding-bottom: 0;
 }
-/* Cinematic hero: edge-to-edge cover, no inset card / white gaps */
-[data-style="photos"] [data-type="hero"],
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"] {
+/* Cinematic hero: edge-to-edge cover, no inset card / white gaps.
+   Apply to EVERY Pro hero variant — not only image-bg — so a slipped
+   centred/split draw cannot look like Casual. */
+[data-style="photos"] [data-type="hero"] {
   position: relative;
   isolation: isolate;
   display: grid !important;
@@ -629,7 +630,7 @@ address { font-style: normal; }
   overflow: hidden;
   border-radius: 0;
 }
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .img-slot {
+[data-style="photos"] [data-type="hero"] .img-slot {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -642,7 +643,7 @@ address { font-style: normal; }
   box-shadow: none;
   overflow: hidden;
 }
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .img-slot img {
+[data-style="photos"] [data-type="hero"] .img-slot img {
   display: block;
   width: 100%;
   height: 100%;
@@ -651,8 +652,10 @@ address { font-style: normal; }
   object-fit: cover;
   object-position: center;
   border-radius: 0;
+  /* Never let an imagery dial wash Pro photos to grey. */
+  filter: none !important;
 }
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"]::after {
+[data-style="photos"] [data-type="hero"]::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -665,7 +668,7 @@ address { font-style: normal; }
     rgba(12, 10, 9, 0.72) 100%
   );
 }
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .hero-copy {
+[data-style="photos"] [data-type="hero"] .hero-copy {
   position: relative;
   z-index: 2;
   padding: clamp(5rem, 14vh, 8rem) clamp(1.25rem, 5vw, 3rem) clamp(3rem, 8vh, 5rem);
@@ -677,9 +680,9 @@ address { font-style: normal; }
   background: none;
   color: #fff;
 }
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .eyebrow,
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .lede,
-[data-style="photos"] [data-type="hero"][data-variant="image-bg"] h1 {
+[data-style="photos"] [data-type="hero"] .eyebrow,
+[data-style="photos"] [data-type="hero"] .lede,
+[data-style="photos"] [data-type="hero"] h1 {
   color: #fff;
   text-shadow: 0 1px 18px rgba(12, 10, 9, 0.55);
 }
@@ -739,11 +742,11 @@ html.pc-page-leave [data-style="photos"].site {
 [data-style="photos"] .img-slot:hover img {
   transform: scale(1.06);
 }
-[data-style="photos"] [data-variant="image-bg"] .img-slot img {
+[data-style="photos"] [data-type="hero"] .img-slot img {
   transform: translate3d(0, var(--pc-hero-shift, 0px), 0) scale(1.08);
   transition: transform .12s linear;
 }
-[data-style="photos"] [data-variant="image-bg"]:hover .img-slot img {
+[data-style="photos"] [data-type="hero"]:hover .img-slot img {
   transform: translate3d(0, var(--pc-hero-shift, 0px), 0) scale(1.12);
 }
 [data-style="photos"] .card {
@@ -760,7 +763,7 @@ html.pc-page-leave [data-style="photos"].site {
   html.pc-page-ready [data-style="photos"].site,
   html.pc-page-leave [data-style="photos"].site { animation: none; }
   [data-style="photos"] .img-slot img,
-  [data-style="photos"] [data-variant="image-bg"] .img-slot img,
+  [data-style="photos"] [data-type="hero"] .img-slot img,
   [data-style="photos"] .card,
   [data-style="photos"].site::before {
     transition: none !important;

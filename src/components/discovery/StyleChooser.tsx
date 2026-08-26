@@ -95,6 +95,7 @@ export function StyleChooser({
         jobId ? { status: "queued", sections_done: 0, sections_total: 0 } : null,
     );
     const [attempts, setAttempts] = useState<Attempt[]>([]);
+    const [activeSetIndex, setActiveSetIndex] = useState(1);
     const [quota, setQuota] = useState<Quota | null>(null);
     const [prompt, setPrompt] = useState("");
     const [picking, setPicking] = useState<{ jobId: string; variantId: StyleId } | null>(null);
@@ -149,7 +150,10 @@ export function StyleChooser({
             setProgress(data);
             if (data.prompt) setPrompt(data.prompt);
             if (data.quota) setQuota(data.quota);
-            if (data.attempts?.length) setAttempts(data.attempts);
+            if (data.attempts?.length) {
+                setAttempts(data.attempts);
+                setActiveSetIndex(data.attempts[data.attempts.length - 1]!.index);
+            }
 
             if (data.status === "failed") {
                 setError(data.error ?? "The site could not be generated.");
@@ -287,6 +291,10 @@ export function StyleChooser({
         : progress?.status === "done" && progress.variants?.length
             ? [{ job_id: activeJobId ?? "", index: 1, variants: progress.variants }]
             : [];
+    const visibleSets =
+        lookSets.length > 1
+            ? lookSets.filter((attempt) => attempt.index === activeSetIndex)
+            : lookSets;
     const remaining = quota?.remaining ?? 0;
     const retryAllowed = canGenerateAgain(quota) && Boolean(prompt) && !live && !regenerating;
     const creditsSpent = outOfCredits || Boolean(quota && !canGenerateAgain(quota));
@@ -394,13 +402,28 @@ export function StyleChooser({
                 </div>
             ) : null}
 
-            {lookSets.map((attempt) => (
+            {lookSets.length > 1 ? (
+                <div className="mx-auto flex w-full max-w-xs flex-col items-center gap-2">
+                    <label htmlFor="look-set-picker" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Look set
+                    </label>
+                    <select
+                        id="look-set-picker"
+                        value={activeSetIndex}
+                        onChange={(event) => setActiveSetIndex(Number(event.target.value))}
+                        className="h-11 w-full cursor-pointer rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground"
+                    >
+                        {lookSets.map((attempt) => (
+                            <option key={attempt.job_id || attempt.index} value={attempt.index}>
+                                Set {attempt.index}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            ) : null}
+
+            {visibleSets.map((attempt) => (
                 <section key={attempt.job_id || attempt.index} className="flex flex-col gap-3">
-                    {lookSets.length > 1 && (
-                        <h2 className="text-sm font-semibold text-muted-foreground">
-                            Set {attempt.index}
-                        </h2>
-                    )}
                     <ul className="look-chunk-grid grid grid-cols-1 gap-5 lg:grid-cols-3">
                         {attempt.variants.map((option, i) => {
                             const unlocked = lookUnlocked(option.tier, option.id);
