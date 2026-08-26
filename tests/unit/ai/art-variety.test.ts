@@ -59,13 +59,14 @@ describe('no two businesses get the same design', () => {
     });
 
     it('varies the layout too, not only the colours', () => {
-        const heroes = new Set(
+        // Hero is pinned to image-bg (cinematic full-bleed); variety lives in the rest.
+        const galleries = new Set(
             Array.from({ length: 20 }, (_, i) =>
-                variedVariants('photos', artSeed({ title: `Cafe ${i}`, vertical: 'cafe' })).hero,
+                variedVariants('photos', artSeed({ title: `Cafe ${i}`, vertical: 'cafe' })).gallery,
             ),
         );
 
-        expect(heroes.size).toBeGreaterThan(1);
+        expect(galleries.size).toBeGreaterThan(1);
     });
 
     it('gives the same business the same site twice, so a reload is not a redesign', () => {
@@ -99,10 +100,12 @@ describe('each tier keeps its character while it varies', () => {
         }
     });
 
-    it('keeps Photo-rich on a hero that can carry a photograph', () => {
+    it('always gives Photo-rich a cinematic full-bleed hero', () => {
         for (let i = 0; i < 40; i += 1) {
             const hero = variedVariants('photos', artSeed({ title: `Shop ${i}`, vertical: 'retail' })).hero;
-            expect(['image-bg', 'split-image']).toContain(hero);
+            expect(hero).toBe('image-bg');
+            expect(variedSpec(STYLE_SPECS.photos, artSeed({ title: `Shop ${i}`, vertical: 'retail' })).variants.hero)
+                .toBe('image-bg');
         }
     });
 
@@ -140,7 +143,9 @@ describe('each tier keeps its character while it varies', () => {
     });
 
     it('offers enough combinations to stand behind "no two the same"', () => {
-        expect(paletteSize('photos')).toBeGreaterThan(20_000);
+        // Hero is locked to image-bg so every Pro site opens cinematic; the rest of the
+        // catalogue still clears ten thousand distinct designs.
+        expect(paletteSize('photos')).toBeGreaterThan(10_000);
         expect(paletteSize('motion')).toBeGreaterThan(500);
     });
 });
