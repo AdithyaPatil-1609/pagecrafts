@@ -1,12 +1,16 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CustomDomainDnsRecord } from "@/lib/deploy/provider";
-import { deployProvider } from "@/lib/deploy/adapters";
+import type { CustomDomainDnsRecord, DeployProvider } from "@/lib/deploy/provider";
 import { HostingError } from "@/lib/deploy/adapters/hosting-error";
-import type { DeployProvider } from "@/lib/deploy/provider";
 import { ApiError } from "@/lib/errors/respond";
 import { validateHostname } from "@/lib/domains/hostname";
+
+async function defaultDeployProvider(): Promise<DeployProvider> {
+  // Lazy so checkout/billing on the home page does not pull Cloudflare upload + blake3.
+  const { deployProvider } = await import("@/lib/deploy/adapters");
+  return deployProvider;
+}
 
 export type DomainSource = "connected" | "registered";
 
@@ -110,8 +114,9 @@ export async function connectDomain(
   userId: string,
   projectId: string,
   rawName: string,
-  provider: DeployProvider = deployProvider,
+  provider?: DeployProvider,
 ): Promise<DomainRecord> {
+  const host = provider ?? (await defaultDeployProvider());
   const checked = validateHostname(rawName);
   if (!checked.ok) {
     throw new ApiError("validation_failed", checked.reason);
@@ -172,7 +177,7 @@ export async function connectDomain(
   }
 
   try {
-    const attached = await provider.attachCustomDomain(siteId, checked.name);
+    const attached = await host.attachCustomDomain(siteId, checked.name);
 
     const { data: updated, error: updateError } = await supabase
       .from("domains")
@@ -222,8 +227,9 @@ export async function verifyDomain(
   userId: string,
   projectId: string,
   domainId: string,
-  provider: DeployProvider = deployProvider,
+  provider?: DeployProvider,
 ): Promise<DomainRecord> {
+  const host = provider ?? (await defaultDeployProvider());
   const { siteId } = await siteIdFor(supabase, projectId, userId);
 
   const { data, error } = await supabase
@@ -241,7 +247,7 @@ export async function verifyDomain(
   const row = data as DomainRow;
 
   try {
-    const hostStatus = await provider.domainStatus(siteId, row.name);
+    const hostStatus = await host.domainStatus(siteId, row.name);
 
     if (hostStatus === "active") {
       const { data: updated, error: updateError } = await supabase
@@ -337,8 +343,9 @@ export async function purchaseAndAttachDomain(
     email: string;
     phone?: string;
   },
-  provider: DeployProvider = deployProvider,
+  provider?: DeployProvider,
 ): Promise<DomainRecord> {
+  const host = provider ?? (await defaultDeployProvider());
   const { domainRegistrar } = await import("@/lib/domains/registrar");
   const checked = validateHostname(rawName);
   if (!checked.ok) {
@@ -435,12 +442,12 @@ export async function purchaseAndAttachDomain(
     // Live registrar: put DNS on Cloudflare, then flip registry nameservers.
     // Mock registrar skips NS (no registry order) and still tries Pages attach.
     if (!registrarRef.startsWith("mock:")) {
-      const zone = await provider.ensureDnsZone(checked.name);
+      const zone = await host.ensureDnsZone(checked.name);
       await domainRegistrar().setNameservers(registrarRef, zone.nameservers);
     }
 
-    const attached = await provider.attachCustomDomain(siteId, checked.name);
-    const hostStatus = await provider.domainStatus(siteId, checked.name).catch(() => "pending" as const);
+    const attached = await host.attachCustomDomain(siteId, checked.name);
+    const hostStatus = await host.domainStatus(siteId, checked.name).catch(() => "pending" as const);
     const nextStatus: DomainRowStatus = hostStatus === "active" ? "live" : "pending_dns";
 
     const { data: updated, error: updateError } = await supabase

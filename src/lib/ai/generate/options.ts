@@ -109,14 +109,71 @@ export async function buildStyleOptions(
 }
 
 const LOOK_CSS: Record<StyleId, string> = {
-    casual: `/* pagecrafts look: casual */\n:root{color-scheme:light}body{font-family:Georgia,"Times New Roman",serif}`,
-    photos: `/* pagecrafts look: photos */\n:root{color-scheme:light}body{font-family:system-ui,sans-serif}img{max-width:100%;height:auto;border-radius:1rem}`,
-    motion: `/* pagecrafts look: motion */\n@keyframes pc-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}body{font-family:system-ui,sans-serif}main,section,article{animation:pc-fade .7s ease both}`,
+    casual: `/* pagecrafts look: casual */
+:root{color-scheme:light}
+body{font-family:"Avenir Next",Avenir,"Segoe UI",system-ui,sans-serif;margin:0;background:#fff;color:#1a1a1a}
+img{max-width:100%;height:auto;border-radius:0.75rem;filter:saturate(1.12)!important}`,
+    // Custom builds used to get a one-line overlay — Pro looked like Casual with a
+    // rounded thumbnail. This is a real cinematic cover so Pick a look matches recipe Pro.
+    photos: `/* pagecrafts look: photos */
+:root{color-scheme:light}
+body[data-style="photos"],body.look-photos,html:has(body){
+  --display-font:Newsreader,"Iowan Old Style",Palatino,Georgia,serif;
+}
+body{margin:0;font-family:system-ui,sans-serif;color:#111}
+img{filter:saturate(1.18)!important;border-radius:0!important}
+/* First photograph becomes a full-viewport cinematic hero */
+body > img:first-of-type,
+main > img:first-of-type,
+.hero img:first-of-type,
+[class*="hero"] img:first-of-type,
+header img:first-of-type,
+main > section:first-child img:first-of-type,
+main > div:first-child img:first-of-type{
+  display:block!important;
+  width:100vw!important;
+  max-width:none!important;
+  height:100vh!important;
+  height:100svh!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  margin:0!important;
+  border-radius:0!important;
+}
+h1{font-family:var(--display-font,Georgia,serif);font-weight:500;letter-spacing:-0.028em}`,
+    motion: `/* pagecrafts look: motion */
+:root{color-scheme:dark}
+@keyframes pc-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+body{margin:0;font-family:Bodoni Moda,Didot,Georgia,serif;background:#08070a;color:#f7f4ef}
+img{filter:saturate(1.15)!important;border-radius:0!important}
+body > img:first-of-type,
+main > img:first-of-type,
+.hero img:first-of-type,
+[class*="hero"] img:first-of-type,
+header img:first-of-type,
+main > section:first-child img:first-of-type{
+  display:block!important;width:100vw!important;max-width:none!important;
+  height:100vh!important;height:100svh!important;object-fit:cover!important;margin:0!important;border-radius:0!important
+}
+main,section,article{animation:pc-fade .7s ease both}`,
 };
+
+function tagBodyStyle(html: string, styleId: StyleId): string {
+    if (/<body\b[^>]*data-style=/i.test(html)) {
+        return html.replace(/data-style="[^"]*"/i, `data-style="${styleId}"`);
+    }
+    if (/<body\b/i.test(html)) {
+        return html.replace(/<body\b/i, `<body data-style="${styleId}" class="look-${styleId} site"`);
+    }
+    return html;
+}
 
 function withLookCss(files: FileMap, styleId: StyleId): FileMap {
     const next = { ...files };
     const overlay = LOOK_CSS[styleId];
+    if (next['index.html']) {
+        next['index.html'] = tagBodyStyle(next['index.html'], styleId);
+    }
     if (next['styles.css']) {
         next['styles.css'] = `${overlay}\n${next['styles.css']}`;
     } else {
@@ -131,11 +188,25 @@ function withLookCss(files: FileMap, styleId: StyleId): FileMap {
     return next;
 }
 
-/** Three looks over a freeform custom FileMap (no section re-render). */
-export function buildCustomStyleOptions(
+/**
+ * Three looks over a freeform custom FileMap.
+ *
+ * Prefer regenerating real Casual / Photo-rich / Animated sites from the composition
+ * whenever we can stamp photographs — the old LOOK_CSS overlay never made Pro cinematic.
+ * Falls back to restyled custom files when no photo lookup is available.
+ */
+export async function buildCustomStyleOptions(
     composition: Composition,
     files: FileMap,
-): StyleOption[] {
+    lookup?: PhotoLookup,
+    prompt?: string,
+    jobId?: string,
+    excludePhotos: ReadonlySet<string> = new Set(),
+): Promise<StyleOption[]> {
+    if (lookup) {
+        return buildStyleOptions(composition, lookup, prompt, jobId, excludePhotos);
+    }
+
     return STYLE_IDS.map((id) => {
         const spec = STYLE_SPECS[id];
         return {
@@ -144,7 +215,11 @@ export function buildCustomStyleOptions(
             blurb: spec.blurb,
             tier: spec.tier,
             priceInr: spec.priceInr,
-            composition: applyStyle(composition, spec),
+            composition: applyStyle(composition, variedSpec(spec, artSeed({
+                title: composition.meta.title,
+                vertical: composition.vertical,
+                jobId,
+            }))),
             files: withLookCss(files, id),
         };
     });

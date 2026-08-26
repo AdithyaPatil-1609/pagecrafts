@@ -7,6 +7,7 @@ import {
     DOMAIN_CONNECT_SERVICE_ID,
     type DomainConnectSettings,
 } from './types';
+import { ApiError } from '@/lib/errors/respond';
 import { normalizeHostname, splitRegistrableDomain } from '../hostname';
 
 const STATE_TTL_MS = 60 * 60 * 1000;
@@ -102,11 +103,33 @@ export interface BuildApplyUrlInput {
  */
 export function buildDomainConnectApplyUrl(input: BuildApplyUrlInput): string {
     const { domain, host } = zoneAndHost(input.hostname);
+
+    // Our template is apex-only, and a subdomain request through it is destructive.
+    //
+    // The apex record is an APEXCNAME, and APEXCNAME means "the root of this zone" by
+    // definition — it ignores the host parameter. So asking to connect shop.mybakery.in
+    // sends host=shop, and the registrar writes the APEXCNAME onto mybakery.in: the
+    // customer's existing website, replaced by a page they did not ask to put there. The
+    // Domain Connect test tool shows this plainly — host=shop still produced a record on
+    // example.com.
+    //
+    // Refused here rather than papered over, because there is no safe way to send this
+    // request. Subdomains still work through the manual DNS instructions, which write a
+    // plain CNAME on the label the person actually named.
+    if (host) {
+        throw new ApiError(
+            'validation_failed',
+            'One-click connect works on a whole domain, like mybakery.in. '
+                + `To point ${input.hostname} here, add the DNS record yourself — `
+                + 'we will show you exactly what to add.',
+            `domain-connect is apex-only; refused host=${host} on ${domain}`,
+        );
+    }
+
     const base = `${input.settings.urlSyncUX}/v2/domainTemplates/providers/${encodeURIComponent(DOMAIN_CONNECT_PROVIDER_ID)}/services/${encodeURIComponent(DOMAIN_CONNECT_SERVICE_ID)}/apply`;
 
     const params = new URLSearchParams();
     params.set('domain', domain);
-    if (host) params.set('host', host);
     params.set('pagesTarget', input.pagesTarget.replace(/\.$/, ''));
     params.set('redirect_uri', input.redirectUri);
     params.set('state', input.state);

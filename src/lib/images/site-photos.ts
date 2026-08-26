@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { aiConfig } from "@/lib/ai/config";
 import { createAssetFromUpload } from "@/lib/data/project-assets";
+import { bytesLookGrayscale } from "./color-guard";
 import { generateImage, isImageGenerationConfigured } from "./gemini-image";
 
 /**
@@ -149,6 +150,15 @@ export function createSitePhotoLookup(options: SitePhotoOptions): PhotoLookup {
             signal: AbortSignal.timeout(remaining),
         });
         if (!generated) return null;
+
+        // Gemini sometimes returns editorial B&W shop interiors. Those made Photo-rich
+        // look broken next to colour Casual — refuse and take stock instead.
+        if (await bytesLookGrayscale(generated.bytes)) {
+            console.warn(
+                `[images] rejecting grayscale photograph for "${query}" — falling back to colour stock.`,
+            );
+            return null;
+        }
 
         return store(await shrink(generated.bytes, generated.mimeType));
     };

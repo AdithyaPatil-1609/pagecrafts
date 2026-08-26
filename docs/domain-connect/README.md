@@ -20,7 +20,7 @@ Domain Connect does **not** work until GoDaddy (and later others) **onboard our 
    `pagecrafts.in.website.json`).
 3. Email **domainconnect@godaddy.com** with:
    - Link to the merged template
-   - PageCrafts logo (SVG)
+   - Logo: `https://pagecrafts.in/brand/pagecrafts-lockup.png`
    - Production callback origin (`https://pagecrafts.in`)
    - Ask to enable providerId `pagecrafts.in` / serviceId `website`
 4. Optional next: `domain-connect@cloudflare.com` (requires RSA signing — set

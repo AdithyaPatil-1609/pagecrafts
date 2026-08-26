@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Lock } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
 import { CardIndex } from "@/components/ui/card-index";
@@ -16,11 +16,8 @@ import {
 import { planCovers } from "@/lib/payments/plans";
 import { cn } from "@/lib/utils";
 
-const TIER_BADGE: Record<CompareLookId, string> = {
-    starter: "border border-border bg-background text-foreground",
-    pro: "bg-primary text-primary-foreground",
-    premium: "brand-gradient text-primary-foreground",
-};
+/** Same black pill as Free — Pro / Premium never get a red lock badge on Compare. */
+const COMPARE_BADGE = "border border-border bg-background text-foreground";
 
 const REQUIRED_PLAN: Record<CompareLookId, "pro" | "premium" | null> = {
     starter: null,
@@ -34,11 +31,11 @@ function lookUnlocked(plan: AccountPlan, id: CompareLookId): boolean {
     return planCovers(plan, need);
 }
 
-function tileLabel(plan: AccountPlan, id: CompareLookId): string {
-    if (!lookUnlocked(plan, id)) return id === "pro" ? "Pro" : "Premium";
+/** Plain tier names on the card: Free, Pro, or Premium — never "… unlocked". */
+function tileLabel(id: CompareLookId): string {
     if (id === "starter") return "Free";
-    if (id === "pro") return "Pro unlocked";
-    return "Premium unlocked";
+    if (id === "pro") return "Pro";
+    return "Premium";
 }
 
 function footerPrice(plan: AccountPlan, id: CompareLookId, priceInr: number): string {
@@ -89,7 +86,7 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                     const on = item.id === look;
                     const unlocked = lookUnlocked(plan, item.id);
                     const paid = !unlocked;
-                    const label = tileLabel(plan, item.id);
+                    const label = tileLabel(item.id);
                     return (
                         <li
                             key={item.id}
@@ -119,15 +116,10 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                                     />
                                     <span
                                         className={cn(
-                                            "absolute right-2 top-2 z-[2] inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold shadow-sm",
-                                            unlocked && item.id !== "starter"
-                                                ? TIER_BADGE.starter
-                                                : TIER_BADGE[item.id],
+                                            "absolute right-2 top-2 z-[2] inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold shadow-sm",
+                                            COMPARE_BADGE,
                                         )}
                                     >
-                                        {paid ? (
-                                            <Lock className="size-3" strokeWidth={2} aria-hidden />
-                                        ) : null}
                                         {label}
                                     </span>
                                 </div>

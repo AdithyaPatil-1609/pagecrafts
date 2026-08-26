@@ -88,6 +88,30 @@ describe('how many photographs one build may draw', () => {
 });
 
 describe('when it does not work', () => {
+    it('takes stock when the model returns a black-and-white photograph', async () => {
+        const sharp = (await import('sharp')).default;
+        const gray = Uint8Array.from(
+            await sharp({
+                create: {
+                    width: 256,
+                    height: 256,
+                    channels: 3,
+                    background: { r: 90, g: 90, b: 90 },
+                },
+            }).png().toBuffer(),
+        );
+        const generate = vi.fn(async () => ({
+            bytes: gray,
+            mimeType: 'image/png',
+            prompt: 'p',
+        }));
+        const store = vi.fn(async () => 'https://cdn/should-not-store.webp');
+        const lookup = lookupWith({ maxImages: 2, generate, store });
+
+        expect(await lookup('clothing boutique', 'hero')).toBe('stock:clothing boutique');
+        expect(store).not.toHaveBeenCalled();
+    });
+
     it('takes stock when the model returns nothing', async () => {
         const lookup = lookupWith({ maxImages: 2, generate: async () => null });
         expect(await lookup('bakery shelf')).toBe('stock:bakery shelf');
@@ -146,6 +170,15 @@ describe('what the model is asked for', () => {
         expect(prompt).toMatch(/no text/i);
         expect(prompt).toMatch(/no logos/i);
         expect(prompt).toMatch(/no watermarks/i);
+    });
+
+    it('demands full colour and forbids black-and-white', () => {
+        const prompt = imagePromptFor('clothing boutique interior');
+
+        expect(prompt).toMatch(/full-?colour|full-?color|colour photograph|color photograph/i);
+        expect(prompt).toMatch(/never black and white/i);
+        expect(prompt).toMatch(/never grayscale/i);
+        expect(prompt).toMatch(/never monochrome/i);
     });
 
     it('does not let a long query run away with the prompt', () => {

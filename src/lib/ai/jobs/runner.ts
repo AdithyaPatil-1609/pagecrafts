@@ -152,7 +152,20 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             await emit('validate');
 
             const composition = composed.data.composition;
-            const variants = buildCustomStyleOptions(composition, composed.data.files);
+            const siblings = await store.listByProject(job.projectId);
+            const usedHeroes = usedHeroPhotoKeys(siblings, job.id);
+            const stock: PhotoLookup = (q) => lookupPhoto(q, job.id, usedHeroes);
+            const photoLookup = deps.photoLookup?.(stock) ?? stock;
+            // Real Casual / Photo-rich / Animated sites — not the old one-line CSS overlay
+            // that left Pro looking like Casual with a rounded thumbnail.
+            const variants = await buildCustomStyleOptions(
+                composition,
+                composed.data.files,
+                photoLookup,
+                buildPrompt,
+                job.id,
+                usedHeroes,
+            );
             const picked = variants[0];
             const files = picked?.files ?? composed.data.files;
             const endedAt = Date.now();
