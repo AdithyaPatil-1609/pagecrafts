@@ -154,6 +154,8 @@ describe('style presets — three looks from one brief', () => {
         expect(home.photos).toContain('images.unsplash.com');
         expect(home.photos).toContain('--page-photo');
         expect(home.photos).toContain('pc-page-ready');
+        expect(home.photos).toContain('--pc-bg-shift');
+        expect(home.photos).toContain('scale(1.06)');
         expect(['image-bg', 'split-image', 'centred']).toContain(heroVariant(home.photos));
         expect(['media-split', 'text']).toContain(aboutVariant(about.photos));
         expect((allHtml.photos.match(/images\.unsplash\.com/g) ?? []).length)

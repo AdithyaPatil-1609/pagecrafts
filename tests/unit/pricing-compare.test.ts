@@ -42,6 +42,8 @@ describe("pricing and compare marketing pages", () => {
         expect(pro).toContain('data-style="photos"');
         expect(pro).toContain("image-bg");
         expect(pro).toContain("--page-photo");
+        expect(pro).toContain("--pc-bg-shift");
+        expect(pro).toContain("pc-page-ready");
         expect(pro).toContain("<img src=");
         expect(premium).toContain('data-style="motion"');
         expect(premium).toContain("site-liquid");

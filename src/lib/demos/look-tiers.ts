@@ -65,11 +65,12 @@ export const COMPARE_LOOKS: {
         pages: ["Home", "About", "Menu", "Gallery", "Contact", "Settings"],
         features: [
             "Topic photograph as a full-site backdrop",
+            "Subtle photo parallax and soft card zoom",
             "Editorial type and cinematic hero",
             "Smooth fade between pages",
             "Pro · Rs 499",
         ],
-        blurb: "Photographic and editorial — the room fills the page, with soft transitions as you move around.",
+        blurb: "Photographic and editorial — the room fills the page, with soft parallax and page fades as you move.",
     },
     {
         id: "premium",

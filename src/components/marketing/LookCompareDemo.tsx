@@ -263,7 +263,7 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                         <tr>
                             <td className="px-4 py-3 text-muted-foreground">Motion</td>
                             <td className="px-4 py-3">None</td>
-                            <td className="px-4 py-3">Soft page transitions</td>
+                            <td className="px-4 py-3">Parallax + page fades + card zoom</td>
                             <td className="px-4 py-3">Scroll reveals + motif</td>
                         </tr>
                     </tbody>

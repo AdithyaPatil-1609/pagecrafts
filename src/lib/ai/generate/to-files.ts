@@ -491,7 +491,7 @@ address { font-style: normal; }
 [data-style="photos"].site::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -10% 0;
   z-index: -2;
   pointer-events: none;
   background:
@@ -501,8 +501,10 @@ address { font-style: normal; }
       color-mix(in srgb, var(--bg) 88%, transparent) 45%,
       color-mix(in srgb, var(--bg) 92%, transparent) 100%
     ),
-    var(--page-photo, none) center / cover no-repeat fixed;
+    var(--page-photo, none) center / cover no-repeat;
   background-color: var(--bg);
+  transform: translate3d(0, var(--pc-bg-shift, 0px), 0) scale(1.08);
+  will-change: transform;
 }
 [data-style="photos"] .site-header {
   background: color-mix(in srgb, var(--bg) 72%, transparent);
@@ -540,10 +542,6 @@ html.pc-page-leave [data-style="photos"].site {
   from { opacity: 1; transform: none; }
   to { opacity: 0; transform: translateY(-10px); }
 }
-@media (prefers-reduced-motion: reduce) {
-  html.pc-page-ready [data-style="photos"].site,
-  html.pc-page-leave [data-style="photos"].site { animation: none; }
-}
 [data-style="photos"] .wordmark {
   font-family: var(--display-font);
   font-weight: 600;
@@ -553,22 +551,48 @@ html.pc-page-leave [data-style="photos"].site {
   border-radius: var(--radius-lg, 0.85rem);
   box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--ink) 12%, transparent);
   transition: box-shadow .3s ease;
+  overflow: hidden;
 }
 [data-style="photos"] .img-slot img {
-  transition: transform .4s cubic-bezier(.22,.61,.36,1);
+  transition: transform .55s cubic-bezier(.22,.61,.36,1);
+  will-change: transform;
+  transform: scale(1.001);
 }
 [data-style="photos"] .img-slot:hover img {
-  transform: scale(1.04);
+  transform: scale(1.06);
+}
+[data-style="photos"] [data-variant="image-bg"] .img-slot img {
+  transform: translate3d(0, var(--pc-hero-shift, 0px), 0) scale(1.08);
+  transition: transform .12s linear;
+}
+[data-style="photos"] [data-variant="image-bg"]:hover .img-slot img {
+  transform: translate3d(0, var(--pc-hero-shift, 0px), 0) scale(1.12);
 }
 [data-style="photos"] .card {
   border-radius: var(--radius-lg, 0.85rem);
   box-shadow: 0 8px 24px -6px color-mix(in srgb, var(--ink) 8%, transparent);
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  transition: transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .28s ease, border-color .22s ease;
 }
 [data-style="photos"] .card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-5px);
   border-color: color-mix(in srgb, var(--accent) 35%, var(--rule));
-  box-shadow: 0 16px 36px -8px color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: 0 18px 40px -10px color-mix(in srgb, var(--ink) 16%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.pc-page-ready [data-style="photos"].site,
+  html.pc-page-leave [data-style="photos"].site { animation: none; }
+  [data-style="photos"] .img-slot img,
+  [data-style="photos"] [data-variant="image-bg"] .img-slot img,
+  [data-style="photos"] .card,
+  [data-style="photos"].site::before {
+    transition: none !important;
+    transform: none !important;
+    will-change: auto;
+  }
+  [data-style="photos"] .img-slot:hover img,
+  [data-style="photos"] .card:hover {
+    transform: none !important;
+  }
 }
 [data-style="photos"] details, [data-style="motion"] details {
   border: 1px solid var(--rule);
@@ -1143,6 +1167,32 @@ const PAGE_TRANSITION_JS = `(() => {
   });
 })();`;
 
+/**
+ * Pro “alive” detail — subtle scroll parallax on the photo backdrop and hero,
+ * plus CSS hover zoom on cards/images. Quiet enough to stay below Premium.
+ */
+const PRO_PARALLAX_JS = `(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+  const site = document.querySelector('[data-style="photos"].site');
+  if (!(site instanceof HTMLElement)) return;
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const y = window.scrollY || 0;
+    const bg = Math.max(-28, Math.min(28, y * 0.08));
+    const hero = Math.max(-36, Math.min(36, y * 0.12));
+    site.style.setProperty('--pc-bg-shift', bg.toFixed(1) + 'px');
+    site.style.setProperty('--pc-hero-shift', hero.toFixed(1) + 'px');
+  };
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(update);
+  }, { passive: true });
+  update();
+})();`;
+
 /** A generated site as the file tree persistence already stores. */
 export function compositionToFiles(
     composition: Composition,
@@ -1178,6 +1228,7 @@ export function compositionToFiles(
     const baseJs = [
         continuous ? PREMIUM_JS : '',
         style === 'photos' ? PAGE_TRANSITION_JS : '',
+        style === 'photos' ? PRO_PARALLAX_JS : '',
     ].filter(Boolean).join('\n');
     const footers = visible.filter((s) => s.type === 'footer');
     const files: FileMap = {};
