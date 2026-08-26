@@ -112,7 +112,7 @@ const LOOK_CSS: Record<StyleId, string> = {
     casual: `/* pagecrafts look: casual */
 :root{color-scheme:light}
 body{font-family:"Avenir Next",Avenir,"Segoe UI",system-ui,sans-serif;margin:0;background:#fff;color:#1a1a1a}
-img{max-width:100%;height:auto;border-radius:0.75rem;filter:none!important}`,
+img{max-width:100%;height:auto;border-radius:0.75rem;filter:saturate(1.12)!important}`,
     // Custom builds used to get a one-line overlay — Pro looked like Casual with a
     // rounded thumbnail. This is a real cinematic cover so Pick a look matches recipe Pro.
     photos: `/* pagecrafts look: photos */
@@ -121,7 +121,7 @@ body[data-style="photos"],body.look-photos,html:has(body){
   --display-font:Newsreader,"Iowan Old Style",Palatino,Georgia,serif;
 }
 body{margin:0;font-family:system-ui,sans-serif;color:#111}
-img{filter:none!important;border-radius:0!important}
+img{filter:saturate(1.18)!important;border-radius:0!important}
 /* First photograph becomes a full-viewport cinematic hero */
 body > img:first-of-type,
 main > img:first-of-type,
@@ -145,7 +145,7 @@ h1{font-family:var(--display-font,Georgia,serif);font-weight:500;letter-spacing:
 :root{color-scheme:dark}
 @keyframes pc-fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 body{margin:0;font-family:Bodoni Moda,Didot,Georgia,serif;background:#08070a;color:#f7f4ef}
-img{filter:none!important;border-radius:0!important}
+img{filter:saturate(1.15)!important;border-radius:0!important}
 body > img:first-of-type,
 main > img:first-of-type,
 .hero img:first-of-type,
