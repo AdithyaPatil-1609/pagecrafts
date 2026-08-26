@@ -58,7 +58,7 @@ function imageSlot(path: string, value: unknown, fallbackAlt: string): string {
         : null;
     const query = rec ? asString(rec.query) : (typeof value === 'string' ? value : '');
     const alt = (rec ? asString(rec.alt) : '') || fallbackAlt;
-    const url = rec ? asString(rec.url) : '';
+    const url = rec ? (asString(rec.url) || asString(rec.src)) : '';
     const photo = url
         ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`
         : '';
@@ -188,8 +188,8 @@ function renderInner(
                 const path = `${key}.images.${index}`;
                 const caption = asString(img.alt) || asString(img.query);
                 const query = asString(img.query);
-                const photo = asString(img.url)
-                    ? `<img src="${escapeHtml(asString(img.url))}" alt="${escapeHtml(caption || 'Gallery')}" loading="lazy" decoding="async" />`
+                const photo = asString(img.url) || asString(img.src)
+                    ? `<img src="${escapeHtml(asString(img.url) || asString(img.src))}" alt="${escapeHtml(caption || 'Gallery')}" loading="lazy" decoding="async" />`
                     : '';
                 return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
                     }${caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
@@ -1114,7 +1114,8 @@ function heroPhotoUrl(composition: Composition): string {
     const hero = composition.sections.find((s) => s.visible && s.type === 'hero');
     const image = hero?.props?.image;
     if (image && typeof image === 'object' && !Array.isArray(image)) {
-        const url = asString((image as Record<string, unknown>).url);
+        const rec = image as Record<string, unknown>;
+        const url = asString(rec.url) || asString(rec.src);
         if (url.startsWith('http')) return url;
     }
     return '';
