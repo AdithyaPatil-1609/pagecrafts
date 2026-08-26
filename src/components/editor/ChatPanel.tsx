@@ -7,7 +7,7 @@ import {
     generationSteps,
     generationThought,
 } from '@/lib/editor/generation-steps';
-import { explainCreationIssue } from '@/lib/editor/ai-fix';
+import { explainCreationIssue, lastRetryableChatInstruction } from '@/lib/editor/ai-fix';
 import { uploadProjectImage } from '@/lib/project-source';
 import ChangeSummary from './ChangeSummary';
 import ChatComposer, { type ChatAttachment } from './ChatComposer';
@@ -56,6 +56,8 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
     const suggestions = chatSuggestions({ composition, lastUserText, hasPage });
     const showChoices = !busy && !pendingChange;
     const fix = error ? explainCreationIssue(error, 'chat') : null;
+    const retryInstruction =
+        (error ? lastRetryableChatInstruction(messages, error) : null) ?? fix?.instruction ?? null;
 
     useEffect(() => {
         endRef.current?.scrollIntoView({ block: 'end' });
@@ -237,7 +239,8 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
                     onDismiss={() => setAskOpen(false)}
                     onConfirm={() => {
                         setAskOpen(false);
-                        void send(fix.instruction);
+                        if (!retryInstruction) return;
+                        void send(retryInstruction);
                     }}
                 />
             ) : null}

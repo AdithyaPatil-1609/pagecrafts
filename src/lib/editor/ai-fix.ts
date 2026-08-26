@@ -129,7 +129,9 @@ export function explainCreationIssue(
             kind: 'chat',
             title: 'That change did not go through',
             what: 'The last request could not be turned into a suggestion.',
-            instruction: message || 'Try that change again and apply a working version of the page.',
+            // Never put the soft-failure sentence here — Fix with AI must retry the
+            // person's last instruction (ChatPanel), not this string.
+            instruction: 'Try that change again and apply a working version of the page.',
         };
     }
 
@@ -158,6 +160,32 @@ export function explainCreationIssue(
         what: 'The preview hit a problem and could not finish showing the page.',
         instruction: 'Fix the broken page so it loads cleanly in preview, including any missing files or script errors.',
     };
+}
+
+/**
+ * The instruction Fix with AI should retry after a chat failure.
+ *
+ * Skips soft-failure / repair sentences that an earlier broken Fix with AI may
+ * have posted as user turns, so we land on the person's real request.
+ */
+export function lastRetryableChatInstruction(
+    messages: ReadonlyArray<{ role: string; text: string }>,
+    softError: string | null = null,
+): string | null {
+    const soft = softError?.trim() ?? '';
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+        const turn = messages[i];
+        if (turn.role !== 'user') continue;
+        const text = turn.text.trim();
+        if (!text) continue;
+        if (soft && text === soft) continue;
+        if (/Your work is safe in this tab/i.test(text)) continue;
+        if (/could not finish that just now/i.test(text)) continue;
+        if (/Try that change again and apply a working version/i.test(text)) continue;
+        if (/The last request could not be turned into a suggestion/i.test(text)) continue;
+        return text;
+    }
+    return null;
 }
 
 export function explainPreviewIssues(messages: readonly string[]): CreationIssue {

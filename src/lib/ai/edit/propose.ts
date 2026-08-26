@@ -29,6 +29,7 @@ export async function proposeEdit(
     // for a 500.
     const reply = await model.strong.complete({
         job: 'edit',
+        prefer: 'groq',
         system: contained.system,
         user: render(tpl.user, {
             instruction,
