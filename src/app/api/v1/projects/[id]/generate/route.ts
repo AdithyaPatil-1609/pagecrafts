@@ -124,8 +124,15 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         // It runs after the caps and before anything is spent. Ahead of them it answered
         // "we cannot read your brief" to somebody whose real problem was a daily cap, and
         // it costs a model call to say so — one nobody over their limit should pay for.
+        // `entry` matters as much as the other two. A project forked from a template has
+        // pages on disk and often neither a composition.json nor content-schema sections,
+        // so both of those read zero while the person is plainly looking at a website. That
+        // gap answered 422 brief_unclear to three edits in a row on a project open in the
+        // editor — the exact case this guard exists to let through.
         const hasExistingSite =
-            (composition?.sections.length ?? 0) > 0 || contentSchema.sections.length > 0;
+            (composition?.sections.length ?? 0) > 0
+            || contentSchema.sections.length > 0
+            || Boolean(entry);
 
         if (!hasExistingSite) {
             const clarity = await assessPromptClarity(body.prompt);

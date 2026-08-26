@@ -24,10 +24,12 @@ describe('clarity only judges a brief for a site that does not exist yet', () =>
         expect(route).toMatch(/if \(!hasExistingSite\)\s*\{[\s\S]*assessPromptClarity/);
     });
 
-    it('decides that from the same signal the firewall uses', () => {
-        expect(route).toMatch(
-            /hasExistingSite\s*=\s*\n?\s*\(composition\?\.sections\.length \?\? 0\) > 0 \|\| contentSchema\.sections\.length > 0/,
-        );
+    it('counts a composition, a content page, or pages on disk', () => {
+        expect(route).toMatch(/hasExistingSite\s*=[\s\S]{0,200}?composition\?\.sections\.length/);
+        expect(route).toMatch(/hasExistingSite\s*=[\s\S]{0,200}?contentSchema\.sections\.length/);
+        // A template fork has neither of the first two and is still a website. Leaving it
+        // out answered 422 brief_unclear to edits on a project open in the editor.
+        expect(route).toMatch(/hasExistingSite\s*=[\s\S]{0,200}?Boolean\(entry\)/);
     });
 
     it('still runs for a project with nothing in it', () => {
