@@ -124,13 +124,26 @@ export const SPACING: Record<SpacingId, { section: string; gap: string; measure:
     airy: { section: '8rem', gap: '2.5rem', measure: '74ch' },
 };
 
-/** Photographic treatment, applied to every image the page renders. */
+/**
+ * Photographic treatment, applied to every image the page renders.
+ *
+ * Never grayscale / black-and-white. Customers sell colourful shops, food, and
+ * products — a B&W filter made Pro look broken next to Casual and Premium.
+ */
 export const IMAGERY: Record<ImageryId, { filter: string; overlay: string }> = {
     'bright-clean': { filter: 'saturate(1.05) contrast(1.02)', overlay: 'transparent' },
     'warm-natural': { filter: 'saturate(1.1) sepia(0.08)', overlay: 'rgba(180,120,60,0.05)' },
     'bold-contrast': { filter: 'contrast(1.18) saturate(1.15)', overlay: 'transparent' },
-    'muted-duotone': { filter: 'grayscale(0.55) contrast(1.05)', overlay: 'rgba(30,40,60,0.10)' },
-    documentary: { filter: 'grayscale(1) contrast(1.1)', overlay: 'transparent' },
+    // Soft cool grade — was grayscale(0.55); keep colour, mute the punch.
+    'muted-duotone': {
+        filter: 'saturate(0.78) contrast(1.06) brightness(0.98)',
+        overlay: 'rgba(40, 55, 85, 0.08)',
+    },
+    // Editorial press — was grayscale(1); keep colour with a crisp finish.
+    documentary: {
+        filter: 'contrast(1.14) saturate(0.92) brightness(1.02)',
+        overlay: 'transparent',
+    },
 };
 
 /**

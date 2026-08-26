@@ -89,7 +89,7 @@ export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
             motionId: 'kinetic',
             radiusId: 'framed',
             spacingId: 'airy',
-            imageryId: 'muted-duotone',
+            imageryId: 'warm-natural',
         },
         variants: {
             hero: 'centred',

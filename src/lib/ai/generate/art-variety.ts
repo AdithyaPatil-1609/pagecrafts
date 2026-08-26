@@ -56,8 +56,10 @@ const MOODS = {
     sunlit: { themeId: 'sunlit-craft', radiusId: 'organic', spacingId: 'airy', imageryId: 'bright-clean' },
     sage: { themeId: 'calm-sage', radiusId: 'organic', spacingId: 'airy', imageryId: 'warm-natural' },
     clinic: { themeId: 'clinical-blue', radiusId: 'framed', spacingId: 'airy', imageryId: 'bright-clean' },
-    press: { themeId: 'mono-precision', radiusId: 'sharp', spacingId: 'airy', imageryId: 'documentary' },
-    luxe: { themeId: 'deep-luxury', radiusId: 'framed', spacingId: 'airy', imageryId: 'muted-duotone' },
+    // Colour editorial press — never documentary grayscale (customers hate B&W shops).
+    press: { themeId: 'mono-precision', radiusId: 'sharp', spacingId: 'airy', imageryId: 'bright-clean' },
+    // Soft cool colour grade — muted-duotone used to pull half the chroma out.
+    luxe: { themeId: 'deep-luxury', radiusId: 'framed', spacingId: 'airy', imageryId: 'warm-natural' },
     slate: { themeId: 'tech-slate', radiusId: 'sharp', spacingId: 'tight', imageryId: 'bold-contrast' },
     voltage: { themeId: 'vivid-energy', radiusId: 'pill', spacingId: 'tight', imageryId: 'bold-contrast' },
 } as const satisfies Record<string, Mood>;
