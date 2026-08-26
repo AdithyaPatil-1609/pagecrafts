@@ -6,6 +6,9 @@ import type { StyleId } from './styles';
 import { motionMotifMarkup, motionStageMarkup, motionTickerMarkup } from './motion-motif';
 import { interactionKit } from './interaction';
 import {
+    finishedAboutBody,
+    finishedContactFacts,
+    finishedFooterTagline,
     pageHref,
     planSitePages,
     settingsPageHtml,
@@ -14,6 +17,8 @@ import {
     workingForm,
     type SitePage,
 } from './pages';
+import { chromeForStyleId } from '@/lib/sites/tier-chrome';
+import { tierChromeCss } from '@/lib/sites/tier-chrome-markup';
 
 /**
  * D15 — turn a composition into a file tree the rest of the product already
@@ -56,7 +61,7 @@ function imageSlot(path: string, value: unknown, fallbackAlt: string): string {
         : null;
     const query = rec ? asString(rec.query) : (typeof value === 'string' ? value : '');
     const alt = (rec ? asString(rec.alt) : '') || fallbackAlt;
-    const url = rec ? asString(rec.url) : '';
+    const url = rec ? (asString(rec.url) || asString(rec.src)) : '';
     // Eager: Pick-a-look cards use a short scaled iframe. `loading="lazy"` never
     // intersects that viewport, so heroes shipped as empty beige boxes with alt text.
     const photo = url
@@ -97,14 +102,17 @@ function renderSection(
     index: number,
     visible: readonly SectionInstance[],
     motifHtml: string,
+    continuous = false,
+    site?: { title: string; description: string; vertical: string },
 ): string {
     const p = section.props;
     const key = sectionContentKey(section, visible);
     const heading = asString(p.heading);
     const anchor = sectionAnchor(section, visible);
-    const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate style="--i:${index}">`;
+    const slideClass = continuous ? ' class="liquid-slide"' : '';
+    const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate${slideClass} style="--i:${index}">`;
     const motif = section.type === 'hero' ? motifHtml : '';
-    return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant)}</section>`;
+    return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant, continuous, site)}</section>`;
 }
 
 /**
@@ -140,8 +148,8 @@ function tabbedItems(key: string, items: readonly Record<string, unknown>[]): st
     return `<div class="tabs" data-tabs><div class="tablist" role="tablist">${tabs}</div><div class="tabpanels">${panels}</div></div>`;
 }
 
-function contactHref(): string {
-    return 'contact.html';
+function contactHref(continuous = false): string {
+    return continuous ? '#contact' : 'contact.html';
 }
 
 function renderInner(
@@ -150,9 +158,12 @@ function renderInner(
     p: Record<string, unknown>,
     heading: string,
     variant = '',
+    continuous = false,
+    site?: { title: string; description: string; vertical: string },
 ): string {
     const h = (tag: 'h1' | 'h2', text: string) =>
         text ? slot(tag, `${key}.heading`, escapeHtml(text)) : '';
+    const siteTitle = site?.title?.trim() || '';
 
     switch (type) {
         case 'hero':
@@ -162,13 +173,20 @@ function renderInner(
                 h('h1', asString(p.heading)),
                 asString(p.sub) ? slot('p', `${key}.sub`, escapeHtml(asString(p.sub)), ' class="lede"') : '',
                 asString(p.ctaLabel)
-                    ? slot('a', `${key}.ctaLabel`, escapeHtml(asString(p.ctaLabel)), ` class="cta" href="${contactHref()}"`)
+                    ? slot('a', `${key}.ctaLabel`, escapeHtml(asString(p.ctaLabel)), ` class="cta" href="${contactHref(continuous)}"`)
                     : '',
                 '</div>',
                 imageSlot(`${key}.image`, p.image, asString(p.heading) || 'Hero'),
             ].join('');
-        case 'about':
-            return `${h('h2', heading)}${asString(p.body) ? slot('p', `${key}.body`, escapeHtml(asString(p.body))) : ''}${imageSlot(`${key}.image`, p.image, heading || 'About')}`;
+        case 'about': {
+            const body = finishedAboutBody(p, {
+                title: siteTitle,
+                description: site?.description,
+                vertical: site?.vertical,
+            });
+            const title = asString(p.heading) || (siteTitle ? `About ${siteTitle}` : 'About');
+            return `${h('h2', title)}${slot('p', `${key}.body`, escapeHtml(body))}${imageSlot(`${key}.image`, p.image, title)}`;
+        }
         case 'services': {
             if (variant === 'tabs') {
                 const tabbed = tabbedItems(key, asList(p.items));
@@ -185,8 +203,8 @@ function renderInner(
                 const path = `${key}.images.${index}`;
                 const caption = asString(img.alt) || asString(img.query);
                 const query = asString(img.query);
-                const photo = asString(img.url)
-                    ? `<img src="${escapeHtml(asString(img.url))}" alt="${escapeHtml(caption || 'Gallery')}" loading="eager" decoding="async" />`
+                const photo = asString(img.url) || asString(img.src)
+                    ? `<img src="${escapeHtml(asString(img.url) || asString(img.src))}" alt="${escapeHtml(caption || 'Gallery')}" loading="eager" decoding="async" />`
                     : '';
                 return `<figure><div class="img-slot" role="img" aria-label="${escapeHtml(caption || 'Gallery')}" data-query="${escapeHtml(query)}">${photo}</div>${query ? slot('span', `${path}.query`, escapeHtml(query), ' hidden') : ''
                     }${caption ? slot('figcaption', `${path}.alt`, escapeHtml(caption)) : ''
@@ -210,33 +228,41 @@ function renderInner(
                     }</details>`;
             }).join('')}`;
         case 'contact': {
-            const send = asString(p.ctaLabel) || 'Send';
+            const facts = finishedContactFacts(p, siteTitle || 'us');
             return [
-                h('h2', heading),
-                asString(p.blurb) ? slot('p', `${key}.blurb`, escapeHtml(asString(p.blurb))) : '',
+                slot('h2', `${key}.heading`, escapeHtml(facts.heading)),
+                slot('p', `${key}.blurb`, escapeHtml(facts.blurb)),
                 '<div class="contact-grid">',
                 '<address>',
-                asString(p.address) ? slot('p', `${key}.address`, escapeHtml(asString(p.address))) : '',
-                asString(p.phone)
-                    ? `<p><a href="tel:${escapeHtml(asString(p.phone))}">${slot('span', `${key}.phone`, escapeHtml(asString(p.phone)))}</a></p>`
+                facts.address
+                    ? slot('p', `${key}.address`, escapeHtml(facts.address))
+                    : `<p class="contact-note">${escapeHtml(facts.addressNote)}</p>`,
+                facts.phone
+                    ? `<p><a href="tel:${escapeHtml(facts.phone)}">${slot('span', `${key}.phone`, escapeHtml(facts.phone))}</a></p>`
                     : '',
-                asString(p.email)
-                    ? `<p><a href="mailto:${escapeHtml(asString(p.email))}">${slot('span', `${key}.email`, escapeHtml(asString(p.email)))}</a></p>`
+                facts.email
+                    ? `<p><a href="mailto:${escapeHtml(facts.email)}">${slot('span', `${key}.email`, escapeHtml(facts.email))}</a></p>`
                     : '',
-                asString(p.hours) ? slot('p', `${key}.hours`, escapeHtml(asString(p.hours))) : '',
+                facts.hours
+                    ? slot('p', `${key}.hours`, escapeHtml(facts.hours))
+                    : `<p class="contact-note">${escapeHtml(facts.hoursNote)}</p>`,
                 '</address>',
                 workingForm(
-                    asString(p.email) ? `mailto:${asString(p.email)}` : '#',
+                    facts.email ? `mailto:${facts.email}` : '#contact-form',
                     `<input type="text" name="name" placeholder="Your name" aria-label="Name" autocomplete="name" required />
         <input type="email" name="email" placeholder="you@example.com" aria-label="Email" autocomplete="email" required />
         <textarea name="message" rows="4" placeholder="How can we help?" aria-label="Message" required></textarea>`,
-                    send,
+                    facts.ctaLabel,
                 ),
                 '</div>',
             ].join('');
         }
         case 'footer':
-            return slot('p', `${key}.tagline`, escapeHtml(asString(p.tagline)));
+            return slot(
+                'p',
+                `${key}.tagline`,
+                escapeHtml(finishedFooterTagline(p, siteTitle)),
+            );
         default: {
             const exhaustive: never = type;
             return exhaustive;
@@ -256,8 +282,11 @@ function renderInner(
 function siteNav(pages: readonly SitePage[], current: string, title: string): string {
     const links = pages
         .map((page) => {
-            const href = pageHref(page.path, current);
-            const currentAttr = page.path === current ? ' aria-current="page"' : '';
+            const href = pageHref(page.path, current, page.href);
+            const currentAttr =
+                !page.navOnly && page.path === current && !page.href?.startsWith('#')
+                    ? ' aria-current="page"'
+                    : '';
             return `<a href="${escapeHtml(href)}"${currentAttr}>${escapeHtml(page.label)}</a>`;
         })
         .join('');
@@ -326,6 +355,7 @@ details { border-bottom: 1px solid var(--rule); padding: 0.75rem 0; cursor: poin
 .contact-grid { display: grid; gap: var(--stack-gap, 1rem); margin-top: 1.5rem; }
 @media (min-width: 720px) { .contact-grid { grid-template-columns: 1fr 1fr; } }
 address { font-style: normal; }
+.contact-note { color: var(--muted); margin: 0.35rem 0; }
 .form { display: grid; gap: 0.75rem; }
 .form input, .form textarea {
   width: 100%; padding: 0.75rem 1rem; border: var(--border-width, 1px) solid var(--rule);
@@ -341,22 +371,163 @@ address { font-style: normal; }
 .settings-list dd { margin: 0 0 0.75rem; }
 .form-status { margin: 0; color: var(--muted); }
 
-/* Casual: plain but tidy — clean lines, minimal flat surface, clean typography, one photo */
+/* Casual / Starter: fully centre-paged on every viewport — no top-clustered stub */
+[data-style="casual"] {
+  text-align: center;
+  overflow-x: clip;
+}
+[data-style="casual"] .site-header {
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  text-align: center;
+}
+[data-style="casual"] .site-header nav {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+[data-style="casual"] main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100svh - 6rem);
+  min-height: calc(100dvh - 6rem);
+  justify-content: safe center;
+  text-align: center;
+  padding-block: 2rem 4rem;
+  padding-inline: 1.25rem;
+}
+[data-style="casual"] section {
+  width: min(100%, 42rem);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  text-align: center;
+}
 [data-style="casual"] [data-type="hero"] {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1.75rem;
-  padding: 1.25rem 0;
+  min-height: min(88svh, 44rem);
+  min-height: min(88dvh, 44rem);
+  padding: 2.5rem 0;
+  grid-template-columns: none !important;
+  text-align: center;
+}
+[data-style="casual"] [data-type="hero"] .hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-inline: auto;
+  max-width: 36rem;
+  text-align: center;
+}
+[data-style="casual"] [data-type="hero"] .lede,
+[data-style="casual"] .lede {
+  margin-inline: auto;
+  max-width: 34rem;
+  text-align: center;
 }
 [data-style="casual"] [data-type="hero"] .img-slot {
-  min-height: 13rem;
+  width: min(100%, 28rem);
+  min-height: 14rem;
   border: 1px solid var(--rule);
   border-radius: var(--radius-md, 0.5rem);
+  margin-inline: auto;
 }
-[data-style="casual"] [data-type="about"] .img-slot,
-[data-style="casual"] [data-type="services"] .img-slot,
 [data-style="casual"] [data-type="gallery"] .img-slot { display: none; }
 [data-style="casual"] .card {
   box-shadow: none;
   border: 1px solid var(--rule);
+  text-align: left;
+}
+[data-style="casual"] .cards {
+  width: 100%;
+  margin-inline: auto;
+  text-align: left;
+}
+[data-style="casual"] .contact-grid,
+[data-style="casual"] .form {
+  width: min(100%, 28rem);
+  margin-inline: auto;
+  text-align: left;
+}
+[data-style="casual"] .form button { justify-self: center; }
+[data-style="casual"] [data-type="about"],
+[data-style="casual"] [data-type="services"],
+[data-style="casual"] [data-type="menu"],
+[data-style="casual"] [data-type="contact"] {
+  min-height: min(70svh, 36rem);
+  min-height: min(70dvh, 36rem);
+  justify-content: safe center;
+  align-items: center;
+  padding-block: 2.5rem;
+  text-align: center;
+}
+[data-style="casual"] [data-type="footer"] {
+  text-align: center;
+  width: 100%;
+  align-items: center;
+}
+
+/* Phones: same centre composition; svh-only so URL chrome does not clip */
+@media (max-width: 48rem) {
+  [data-style="casual"] .site-header {
+    padding-inline: 1rem;
+    gap: 0.65rem;
+  }
+  [data-style="casual"] main {
+    min-height: calc(100svh - 5rem);
+    padding-block: 1.25rem 2.75rem;
+    padding-inline: 1rem;
+  }
+  [data-style="casual"] section {
+    width: 100%;
+  }
+  [data-style="casual"] [data-type="hero"] {
+    min-height: min(80svh, 36rem);
+    padding: 1.75rem 0 2rem;
+    gap: 1.25rem;
+  }
+  [data-style="casual"] [data-type="hero"] .img-slot {
+    width: min(100%, 22rem);
+    min-height: 11rem;
+  }
+  [data-style="casual"] h1 {
+    font-size: clamp(1.65rem, 8vw, 2.35rem);
+  }
+  [data-style="casual"] [data-type="about"],
+  [data-style="casual"] [data-type="services"],
+  [data-style="casual"] [data-type="menu"],
+  [data-style="casual"] [data-type="contact"] {
+    min-height: min(70svh, 32rem);
+    padding-block: 2rem;
+  }
+}
+
+/* Tablets + small laptops: keep every band centre-paged in the viewport */
+@media (min-width: 48.01rem) and (max-width: 64rem) {
+  [data-style="casual"] main {
+    min-height: calc(100svh - 5.5rem);
+    min-height: calc(100dvh - 5.5rem);
+    padding-inline: 1.5rem;
+  }
+  [data-style="casual"] [data-type="hero"] {
+    min-height: min(84svh, 40rem);
+    min-height: min(84dvh, 40rem);
+  }
+  [data-style="casual"] [data-type="about"],
+  [data-style="casual"] [data-type="services"],
+  [data-style="casual"] [data-type="menu"],
+  [data-style="casual"] [data-type="contact"] {
+    min-height: min(72svh, 34rem);
+    min-height: min(72dvh, 34rem);
+  }
 }
 
 /* Casual: plain system sans — Pro gets editorial Newsreader; keep Free simpler */
@@ -405,10 +576,75 @@ address { font-style: normal; }
   color: color-mix(in srgb, var(--ink) 78%, var(--muted));
 }
 [data-style="photos"] [data-variant="image-bg"] {
-  min-height: min(34rem, 92vh);
+  min-height: min(100dvh, 52rem);
+  border-radius: 0;
 }
 [data-style="photos"] [data-variant="image-bg"] .hero-copy {
   padding: 5rem 2rem 3rem;
+  text-align: center;
+  justify-self: center;
+  max-width: 40rem;
+  width: 100%;
+}
+/* Pro: topic photograph as a full-site backdrop behind every page */
+[data-style="photos"].site {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+}
+[data-style="photos"].site::before {
+  content: "";
+  position: fixed;
+  inset: -10% 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg) 78%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 88%, transparent) 45%,
+      color-mix(in srgb, var(--bg) 92%, transparent) 100%
+    ),
+    var(--page-photo, none) center / cover no-repeat;
+  background-color: var(--bg);
+  transform: translate3d(0, var(--pc-bg-shift, 0px), 0) scale(1.08);
+  will-change: transform;
+}
+[data-style="photos"] .site-header {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+}
+[data-style="photos"] main {
+  position: relative;
+  z-index: 1;
+}
+[data-style="photos"] section:not([data-variant="image-bg"]) {
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
+  border-radius: var(--radius-lg, 0.85rem);
+  padding: 2rem 1.5rem;
+  margin-block: 1rem;
+  backdrop-filter: blur(8px);
+}
+[data-style="photos"] [data-type="footer"] {
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+}
+/* Smooth Pro page transitions between HTML files */
+html.pc-page-ready [data-style="photos"].site {
+  animation: pc-page-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html.pc-page-leave [data-style="photos"].site {
+  animation: pc-page-out 0.28s ease both;
+}
+@keyframes pc-page-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pc-page-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-10px); }
 }
 [data-style="photos"] .wordmark {
   font-family: var(--display-font);
@@ -419,22 +655,48 @@ address { font-style: normal; }
   border-radius: var(--radius-lg, 0.85rem);
   box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--ink) 12%, transparent);
   transition: box-shadow .3s ease;
+  overflow: hidden;
 }
 [data-style="photos"] .img-slot img {
-  transition: transform .4s cubic-bezier(.22,.61,.36,1);
+  transition: transform .55s cubic-bezier(.22,.61,.36,1);
+  will-change: transform;
+  transform: scale(1.001);
 }
 [data-style="photos"] .img-slot:hover img {
-  transform: scale(1.04);
+  transform: scale(1.06);
+}
+[data-style="photos"] [data-variant="image-bg"] .img-slot img {
+  transform: translate3d(0, var(--pc-hero-shift, 0px), 0) scale(1.08);
+  transition: transform .12s linear;
+}
+[data-style="photos"] [data-variant="image-bg"]:hover .img-slot img {
+  transform: translate3d(0, var(--pc-hero-shift, 0px), 0) scale(1.12);
 }
 [data-style="photos"] .card {
   border-radius: var(--radius-lg, 0.85rem);
   box-shadow: 0 8px 24px -6px color-mix(in srgb, var(--ink) 8%, transparent);
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  transition: transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .28s ease, border-color .22s ease;
 }
 [data-style="photos"] .card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-5px);
   border-color: color-mix(in srgb, var(--accent) 35%, var(--rule));
-  box-shadow: 0 16px 36px -8px color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: 0 18px 40px -10px color-mix(in srgb, var(--ink) 16%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.pc-page-ready [data-style="photos"].site,
+  html.pc-page-leave [data-style="photos"].site { animation: none; }
+  [data-style="photos"] .img-slot img,
+  [data-style="photos"] [data-variant="image-bg"] .img-slot img,
+  [data-style="photos"] .card,
+  [data-style="photos"].site::before {
+    transition: none !important;
+    transform: none !important;
+    will-change: auto;
+  }
+  [data-style="photos"] .img-slot:hover img,
+  [data-style="photos"] .card:hover {
+    transform: none !important;
+  }
 }
 [data-style="photos"] details, [data-style="motion"] details {
   border: 1px solid var(--rule);
@@ -575,6 +837,14 @@ body:has([data-style="motion"]) {
   padding: 0;
   padding-block: 0;
   border-radius: 0;
+}
+@media (max-width: 48rem) {
+  [data-style="motion"] .site-header {
+    padding-inline: 1.15rem;
+  }
+  [data-style="motion"] [data-type="hero"] {
+    min-height: 100svh;
+  }
 }
 [data-style="motion"] [data-type="hero"] .img-slot {
   display: block;
@@ -1017,14 +1287,79 @@ function pageInner(
     composition: Composition,
     visible: readonly SectionInstance[],
     motif: string,
+    continuous = false,
 ): string {
+    const site = {
+        title: composition.meta.title || '',
+        description: composition.meta.description || '',
+        vertical: composition.vertical || '',
+    };
     if (page.kind === 'settings') return settingsPageHtml(composition);
     if (page.kind === 'about' && page.sections.length === 0) return syntheticAboutHtml(composition);
     if (page.kind === 'contact' && page.sections.length === 0) return syntheticContactHtml(composition);
     return page.sections
-        .map((section, index) => renderSection(section, index, visible, motif))
+        .map((section, index) => renderSection(section, index, visible, motif, continuous, site))
         .join('\n');
 }
+
+function heroPhotoUrl(composition: Composition): string {
+    const hero = composition.sections.find((s) => s.visible && s.type === 'hero');
+    const image = hero?.props?.image;
+    if (image && typeof image === 'object' && !Array.isArray(image)) {
+        const rec = image as Record<string, unknown>;
+        const url = asString(rec.url) || asString(rec.src);
+        if (url.startsWith('http')) return url;
+    }
+    return '';
+}
+
+/** Soft fade between Pro HTML pages — mirrors the app glide, stays self-contained. */
+const PAGE_TRANSITION_JS = `(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.classList.add('pc-page-ready');
+  if (reduce) return;
+  document.addEventListener('click', (event) => {
+    const a = event.target instanceof Element ? event.target.closest('a[href]') : null;
+    if (!(a instanceof HTMLAnchorElement)) return;
+    const href = a.getAttribute('href') || '';
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    if (a.target === '_blank' || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    let url;
+    try { url = new URL(a.href, location.href); } catch { return; }
+    if (url.origin !== location.origin) return;
+    if (!/\\.html?$/i.test(url.pathname) && !url.pathname.endsWith('/')) return;
+    if (url.pathname === location.pathname && url.search === location.search) return;
+    event.preventDefault();
+    document.documentElement.classList.add('pc-page-leave');
+    window.setTimeout(() => { location.href = url.href; }, 260);
+  });
+})();`;
+
+/**
+ * Pro “alive” detail — subtle scroll parallax on the photo backdrop and hero,
+ * plus CSS hover zoom on cards/images. Quiet enough to stay below Premium.
+ */
+const PRO_PARALLAX_JS = `(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+  const site = document.querySelector('[data-style="photos"].site');
+  if (!(site instanceof HTMLElement)) return;
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const y = window.scrollY || 0;
+    const bg = Math.max(-28, Math.min(28, y * 0.08));
+    const hero = Math.max(-36, Math.min(36, y * 0.12));
+    site.style.setProperty('--pc-bg-shift', bg.toFixed(1) + 'px');
+    site.style.setProperty('--pc-hero-shift', hero.toFixed(1) + 'px');
+  };
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(update);
+  }, { passive: true });
+  update();
+})();`;
 
 /** A generated site as the file tree persistence already stores. */
 export function compositionToFiles(
@@ -1035,44 +1370,65 @@ export function compositionToFiles(
     // Premium only. interactionKit returns nothing for the other two looks, so a Free or Pro
     // page ships byte-identical to before.
     const interaction = style ? interactionKit(style, seed, composition.vertical) : [];
+    const continuous = style === 'motion';
     const visible = composition.sections.filter((s) => s.visible);
-    const pages = planSitePages(composition);
+    const pages = planSitePages(composition, { continuous });
+    const filePages = pages.filter((page) => !page.navOnly);
     const title = composition.meta.title || 'Home';
+    const chrome = style ? chromeForStyleId(style) : null;
     const styleAttr = style ? ` data-style="${escapeHtml(style)}"` : '';
-    const motif = style === 'motion'
+    const chromeAttr = chrome ? ` data-chrome="${escapeHtml(chrome)}"` : '';
+    const photoUrl = style === 'photos' ? heroPhotoUrl(composition) : '';
+    const photoStyle = photoUrl
+        ? ` style="--page-photo: url('${escapeHtml(photoUrl)}')"`
+        : '';
+    const motif = continuous
         ? `${motionStageMarkup()}${motionMotifMarkup(composition.vertical, `${composition.meta.title} ${composition.meta.description}`)}${motionTickerMarkup(composition.meta.title)}`
         : '';
-    // Free ships exactly what it shipped before: no tabs, no glow, no extra script.
-    // Every page carries its own copy of the stylesheet, because a published page has to
-    // stand alone. That makes each byte here cost once per page: the tab CSS and its script
-    // are 3 KB, and only the page holding the tabbed section can use them. Deciding per page
-    // rather than per site keeps eight of the nine pages from carrying rules for markup they
-    // do not contain.
+    const chromeCss = chrome ? tierChromeCss(chrome) : '';
     const baseCss = [
         PAGE_CSS,
-        style === 'motion' ? MOTION_CSS : '',
-        style === 'motion' ? PREMIUM_CSS : '',
+        chromeCss,
+        continuous ? MOTION_CSS : '',
+        continuous ? PREMIUM_CSS : '',
+        continuous ? CONTINUOUS_SCROLL_CSS : '',
     ].join('');
-    const baseJs = style === 'motion' ? PREMIUM_JS : '';
+    const baseJs = [
+        continuous ? PREMIUM_JS : '',
+        style === 'photos' ? PAGE_TRANSITION_JS : '',
+        style === 'photos' ? PRO_PARALLAX_JS : '',
+    ].filter(Boolean).join('\n');
     const footers = visible.filter((s) => s.type === 'footer');
+    const site = {
+        title: composition.meta.title || '',
+        description: composition.meta.description || '',
+        vertical: composition.vertical || '',
+    };
     const files: FileMap = {};
 
-    for (const page of pages) {
+    for (const page of filePages) {
         const inner = [
-            pageInner(page, composition, visible, motif),
-            footers.map((section, index) => renderSection(section, index, visible, '')).join('\n'),
+            pageInner(page, composition, visible, motif, continuous),
+            footers
+                .map((section, index) =>
+                    renderSection(section, index, visible, '', continuous, site),
+                )
+                .join('\n'),
         ].join('\n');
         const tabbed = inner.includes('data-tabs');
         const css = tabbed ? `${baseCss}${TABS_CSS}` : baseCss;
         const scripts = [tabbed ? TABS_JS : '', baseJs].filter(Boolean).join('\n');
+        const deckOpen = continuous ? `<div class="liquid-deck" id="top">` : `<main id="top">`;
+        const deckClose = continuous ? `</div>` : `</main>`;
+        const siteClass = continuous ? ' site-liquid' : '';
 
         const body = [
             `<style>${css}</style>`,
-            `<div class="site"${styleAttr}>`,
+            `<div class="site${siteClass}"${styleAttr}${chromeAttr}${photoStyle}>`,
             siteNav(pages, page.path, title),
-            `<main id="top">`,
+            deckOpen,
             inner,
-            `</main>`,
+            deckClose,
             `</div>`,
             scripts ? `<script>\n${scripts}\n</script>` : '',
         ].filter(Boolean).join('\n');
@@ -1090,3 +1446,93 @@ export function compositionToFiles(
 
     return files;
 }
+
+/** Premium continuous scroll — one section per viewport, like pagecrafts.in. */
+const CONTINUOUS_SCROLL_CSS = `
+html:has([data-style="motion"].site-liquid) {
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+[data-style="motion"].site-liquid {
+  min-height: 100svh;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+[data-style="motion"] .liquid-deck {
+  display: flex;
+  flex-direction: column;
+}
+[data-style="motion"] .liquid-slide,
+[data-style="motion"] section.liquid-slide {
+  /* svh first so phone URL chrome does not clip centred slides */
+  min-height: 100svh;
+  min-height: 100dvh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 6vw;
+  padding-top: max(5rem, calc(env(safe-area-inset-top, 0px) + 4.25rem));
+  padding-bottom: max(2.5rem, env(safe-area-inset-bottom, 0px));
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+  box-sizing: border-box;
+}
+[data-style="motion"] .liquid-slide > *,
+[data-style="motion"] section.liquid-slide > * {
+  width: min(100%, 48rem);
+  max-width: 100%;
+}
+[data-style="motion"] [data-type="hero"].liquid-slide {
+  padding: 6rem 6vw 5rem;
+  padding-top: max(6rem, calc(env(safe-area-inset-top, 0px) + 4.5rem));
+}
+[data-style="motion"] [data-type="footer"].liquid-slide {
+  min-height: auto;
+  padding-block: 3rem;
+  justify-content: center;
+}
+[data-style="motion"] .cards,
+[data-style="motion"] .contact-grid,
+[data-style="motion"] .form {
+  text-align: left;
+  margin-inline: auto;
+}
+@media (max-width: 48rem) {
+  [data-style="motion"] .liquid-slide,
+  [data-style="motion"] section.liquid-slide {
+    /* Prefer small viewport on phones — dvh overshoots when chrome is visible */
+    min-height: 100svh;
+    padding-inline: 1.15rem;
+    padding-top: max(4.75rem, calc(env(safe-area-inset-top, 0px) + 3.75rem));
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+  }
+  [data-style="motion"] [data-type="hero"].liquid-slide {
+    min-height: 100svh;
+    padding-inline: 1.15rem;
+    padding-top: max(5rem, calc(env(safe-area-inset-top, 0px) + 4rem));
+  }
+  [data-style="motion"] [data-type="hero"] h1 {
+    font-size: clamp(1.85rem, 9vw, 2.75rem);
+  }
+  [data-style="motion"] [data-type="footer"].liquid-slide {
+    min-height: auto;
+    padding: 2.25rem 1.15rem;
+  }
+  /* Tall copy: grow the slide instead of clipping under the sticky bar */
+  [data-style="motion"] .liquid-slide:has(.cards),
+  [data-style="motion"] .liquid-slide:has(.contact-grid),
+  [data-style="motion"] .liquid-slide:has(.form) {
+    justify-content: flex-start;
+    padding-top: max(5.25rem, calc(env(safe-area-inset-top, 0px) + 4.25rem));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has([data-style="motion"].site-liquid) {
+    scroll-behavior: auto;
+    scroll-snap-type: none;
+  }
+}
+`;

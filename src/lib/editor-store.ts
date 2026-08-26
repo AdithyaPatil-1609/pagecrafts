@@ -14,6 +14,7 @@ import {
     pickEntryFile,
     proposeProjectEdit,
     proposeCopyEdit,
+    proposePageEdit,
     type GenerationJobStatus,
 } from '@/lib/project-source';
 import { parseComposition } from '@/lib/editor/parse-composition';
@@ -24,6 +25,10 @@ import { sectionVariants } from '@/lib/editor/section-registry';
 import { isSiteGenerationRequest } from '@/lib/editor/site-intent';
 import { styleUpgradeFirewall } from '@/lib/editor/style-firewall';
 import { crossVerticalFirewall } from '@/lib/editor/cross-vertical-firewall';
+import {
+    offTopicWebsiteAsk,
+    shouldUsePageEdit,
+} from '@/lib/editor/website-ask-gate';
 import {
     parseRenameIntent,
     renameComposition,
@@ -76,12 +81,15 @@ export interface PendingChange {
     before: string;
     after: string;
     explanation: string;
+    /** Extra HTML files from a multi-page Ask edit (path → after). */
+    extraFiles?: Record<string, string>;
 }
 
 export interface ProposedChange {
     path: string;
     after: string;
     explanation: string;
+    extraFiles?: Record<string, string>;
 }
 
 export interface ChatTurn {
@@ -415,7 +423,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const before = vfs.read(proposed.path) ?? '';
 
         const compared = compareText(before, proposed.after);
-        if (compared.isEmpty) return;
+        const hasExtra = Boolean(
+            proposed.extraFiles &&
+                Object.keys(proposed.extraFiles).some((p) => p !== proposed.path),
+        );
+        if (compared.isEmpty && !hasExtra) return;
 
         set({
             pendingChange: {
@@ -423,6 +435,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 before,
                 after: proposed.after,
                 explanation: proposed.explanation,
+                ...(proposed.extraFiles ? { extraFiles: proposed.extraFiles } : {}),
             },
             activeFile: proposed.path,
         });
@@ -433,6 +446,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (!pendingChange) return;
 
         vfs.write(pendingChange.path, pendingChange.after);
+        if (pendingChange.extraFiles) {
+            for (const [path, content] of Object.entries(pendingChange.extraFiles)) {
+                if (path === pendingChange.path) continue;
+                vfs.write(path, content);
+            }
+        }
 
         if (pendingChange.path === 'composition.json') {
             const parsed = parseComposition(pendingChange.after);
@@ -504,6 +523,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
         const entry = entryPath(vfs);
         const entryHtml = entry ? vfs.read(entry) : null;
+        const offTopic = offTopicWebsiteAsk(text);
+        if (offTopic) {
+            set({ chatError: offTopic });
+            return;
+        }
+
         const blocked = styleUpgradeFirewall({
             instruction: text,
             html: entryHtml,
@@ -536,14 +561,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             return;
         }
         const htmlSite = Boolean(contentSchema?.sections.length) && sectionCount === 0;
-        if (htmlSite) {
-            if (text.length > 300) {
-                set({ chatError: 'Keep the request under 300 characters.' });
-                return;
-            }
-            await requestCopyRewrite(get, set, text);
-            return;
-        }
+
         if (isSiteGenerationRequest(text, sectionCount)) {
             if (text.length > MAX_CLASSIFY_CHARS) {
                 set({ chatError: 'Keep the request under 500 characters.' });
@@ -553,21 +571,43 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             return;
         }
 
+        // Whole-site rename before code edits — deterministic, no LLM.
+        if (composition && composition.sections.length > 0) {
+            const rename = parseRenameIntent(text, composition.meta.title);
+            if (rename) {
+                await requestSiteRename(get, set, text, rename.from, rename.to);
+                return;
+            }
+        }
+
+        // Prefer live HTML/CSS code for every website change Ask can make.
+        if (shouldUsePageEdit(text, { hasEntryHtml: Boolean(entryHtml?.trim()) })) {
+            if (text.length > 300) {
+                set({ chatError: 'Keep the request under 300 characters.' });
+                return;
+            }
+            await requestPageEdit(get, set, text);
+            return;
+        }
+        if (htmlSite) {
+            if (text.length > 300) {
+                set({ chatError: 'Keep the request under 300 characters.' });
+                return;
+            }
+            await requestCopyRewrite(get, set, text);
+            return;
+        }
+
         if (text.length > 300) {
             set({ chatError: 'Keep the request under 300 characters.' });
             return;
         }
         if (!composition || composition.sections.length === 0) {
+            if (entryHtml?.trim()) {
+                await requestPageEdit(get, set, text);
+                return;
+            }
             set({ chatError: 'Describe the website you want, or pick a section to change.' });
-            return;
-        }
-
-        // "Change Ravi Clothing to Pragna Clothing" is a whole-site rename, not a
-        // single-section AI tweak. Doing it here avoids the LLM and updates the
-        // title, footer, and every other place the old name appears.
-        const rename = parseRenameIntent(text, composition.meta.title);
-        if (rename) {
-            await requestSiteRename(get, set, text, rename.from, rename.to);
             return;
         }
 
@@ -577,6 +617,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             null;
 
         if (!section) {
+            if (entryHtml?.trim()) {
+                await requestPageEdit(get, set, text);
+                return;
+            }
             set({ chatError: 'Pick a section first.' });
             return;
         }
@@ -624,6 +668,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (epoch !== chatEpoch) return;
 
         if (error || !proposal) {
+            // Section props cannot express layout — fall through to the HTML page editor.
+            if (entryHtml?.trim()) {
+                set({ chatBusy: false });
+                await requestPageEdit(get, set, text, { skipUserBubble: true });
+                return;
+            }
             set({
                 chatBusy: false,
                 chatError: error ?? 'The suggestion could not be prepared. Try again.',
@@ -857,6 +907,13 @@ async function requestCopyRewrite(
     if (epoch !== chatEpoch) return;
 
     if (error || !proposal) {
+        // Copy path cannot move layout — try the page editor with the same ask.
+        const entry = entryPath(get().vfs);
+        if (entry && get().vfs.read(entry)?.trim()) {
+            set({ chatBusy: false, chatProgress: null });
+            await requestPageEdit(get, set, text, { skipUserBubble: true });
+            return;
+        }
         set({
             chatBusy: false,
             chatProgress: null,
@@ -869,6 +926,73 @@ async function requestCopyRewrite(
         path: proposal.path,
         after: proposal.after,
         explanation: proposal.explanation,
+    });
+
+    set({
+        chatBusy: false,
+        chatProgress: null,
+        chatMessages: [
+            ...get().chatMessages,
+            { role: 'assistant', text: proposal.explanation },
+        ],
+    });
+}
+
+async function requestPageEdit(
+    get: () => EditorState,
+    set: (partial: Partial<EditorState>) => void,
+    text: string,
+    opts: { skipUserBubble?: boolean } = {},
+) {
+    const { projectId, chatMessages } = get();
+    if (!projectId) return;
+
+    const epoch = ++chatEpoch;
+    set({
+        chatBusy: true,
+        chatError: null,
+        chatProgress: 'Updating the page…',
+        chatMessages: opts.skipUserBubble
+            ? chatMessages
+            : [...chatMessages, { role: 'user', text }],
+    });
+
+    autosave.cancel();
+    await get().saveProject();
+    if (epoch !== chatEpoch) return;
+
+    const { sha, error: commitError } = await createCommit(
+        projectId,
+        'Saved before a suggested change',
+    );
+    if (epoch !== chatEpoch) return;
+    if (sha) set({ lastCommitSha: sha });
+    if (!sha) {
+        set({
+            chatBusy: false,
+            chatProgress: null,
+            chatError: commitError ?? 'Could not save a version first. Try again.',
+        });
+        return;
+    }
+
+    const { proposal, error } = await proposePageEdit(projectId, text, get().activeFile);
+    if (epoch !== chatEpoch) return;
+
+    if (error || !proposal) {
+        set({
+            chatBusy: false,
+            chatProgress: null,
+            chatError: error ?? 'The suggestion could not be prepared. Try again.',
+        });
+        return;
+    }
+
+    get().proposeChange({
+        path: proposal.path,
+        after: proposal.after,
+        explanation: proposal.explanation,
+        ...(proposal.files ? { extraFiles: proposal.files } : {}),
     });
 
     set({
