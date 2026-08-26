@@ -62,6 +62,17 @@ const envSchema = z.object({
     GEMINI_API_KEY_6: z.string().default(''),
     GEMINI_API_KEY_7: z.string().default(''),
     GEMINI_API_KEY_8: z.string().default(''),
+    // Pictures, not words. A separate model because image generation is a separate quota
+    // and a separate failure mode from the text calls this provider also serves.
+    GEMINI_IMAGE_MODEL: z.string().default('gemini-2.5-flash-image'),
+    // How many photographs one build may draw. A generated site asks for a photo per
+    // section per look, which left alone is twenty images for one website.
+    AI_IMAGES_PER_SITE: z.coerce.number().int().min(0).default(4),
+    // Wall clock for the whole set. Past it the remaining slots take stock immediately, so
+    // a slow image service delays a build rather than holding it open.
+    AI_IMAGE_BUDGET_MS: z.coerce.number().int().min(0).default(75_000),
+    // 'off' turns generation off everywhere without pulling the keys out of Vercel.
+    AI_IMAGE_GENERATION: z.enum(['on', 'off']).default('on'),
     GEMINI_MODEL_FAST: z.string().default('gemini-3.5-flash-lite'),
     GEMINI_MODEL_STRONG: z.string().default('gemini-3.5-flash'),
     GEMINI_RPM: z.coerce.number().int().positive().default(5),
@@ -142,6 +153,16 @@ export interface ProviderConfig {
     pricing: ProviderPricing;
 }
 
+export interface ImageConfig {
+    /** False when generation is switched off; keys are checked separately. */
+    enabled: boolean;
+    model: string;
+    /** Most photographs one build may draw before the rest come from stock. */
+    maxPerSite: number;
+    /** Wall clock for the whole set, from the first lookup. */
+    budgetMs: number;
+}
+
 /** Undefined means "send nothing and let the provider decide". */
 export interface Sampling {
     temperature?: number;
@@ -170,6 +191,9 @@ export interface AiConfig {
     models: { fast: string; strong: string };
     quota: ProviderQuota;
     pricing: ProviderPricing;
+
+    /** Photographs for a generated site — see lib/images/site-photos.ts. */
+    images: ImageConfig;
 
     timeouts: Record<AiOperation, number>;
     maxOutputTokens: Record<AiOperation, number>;
@@ -323,6 +347,12 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
         models: active.models,
         quota: active.quota,
         pricing: active.pricing,
+        images: {
+            enabled: v.AI_IMAGE_GENERATION === 'on',
+            model: v.GEMINI_IMAGE_MODEL,
+            maxPerSite: v.AI_IMAGES_PER_SITE,
+            budgetMs: v.AI_IMAGE_BUDGET_MS,
+        },
         timeouts: {
             classify: v.GEMINI_TIMEOUT_CLASSIFY_MS,
             generate: v.GEMINI_TIMEOUT_GENERATE_MS,

@@ -131,7 +131,11 @@ function withUrl(value: unknown, url: string): Record<string, unknown> {
  */
 export async function stampPhotoUrls(
     composition: Composition,
-    lookup: (query: string) => Promise<string> = async (query) => bankPhotoUrl(query),
+    // The section type travels with the query so a generated photograph can be framed for
+    // the slot it is going into — wide for a hero, squarer for a card. A lookup that does
+    // not care simply ignores it, which is every stock lookup.
+    lookup: (query: string, sectionType?: string) => Promise<string> = async (query) =>
+        bankPhotoUrl(query),
     /** When set, only these section types receive photographs (Starter stamps the hero alone). */
     onlyTypes?: ReadonlyArray<Composition['sections'][number]['type']>,
     /** Job / attempt salt so regenerate (Set 2) does not reuse Set 1's bank photo. */
@@ -141,15 +145,19 @@ export async function stampPhotoUrls(
     const title = composition.meta.title ?? '';
     const allowed = onlyTypes ? new Set(onlyTypes) : null;
 
-    const resolve = async (query: string, fallback: string): Promise<string> => {
+    const resolve = async (
+        query: string,
+        fallback: string,
+        sectionType?: string,
+    ): Promise<string> => {
         const search = photoSearchQuery(composition.vertical, title, query || fallback);
-        const key = search.toLowerCase();
+        const key = `${sectionType ?? ""}|${search.toLowerCase()}`;
         const hit = cache.get(key);
         if (hit) return hit;
         // Live Unsplash on "sweet shop" returns villas and clothing rails.
         const url = isMithaiShop(composition.vertical, title, search)
             ? bankPhotoUrl(search, salt)
-            : await lookup(search);
+            : await lookup(search, sectionType);
         cache.set(key, url);
         return url;
     };
@@ -162,14 +170,14 @@ export async function stampPhotoUrls(
 
         if ('image' in props) {
             const query = imageQuery(props.image) || fallback;
-            props.image = withUrl(props.image, await resolve(query, fallback));
+            props.image = withUrl(props.image, await resolve(query, fallback, section.type));
         }
 
         if (Array.isArray(props.images)) {
             props.images = await Promise.all(
                 (props.images as unknown[]).map(async (item, index) => {
                     const query = imageQuery(item) || `${fallback} ${index + 1}`;
-                    return withUrl(item, await resolve(query, fallback));
+                    return withUrl(item, await resolve(query, fallback, section.type));
                 }),
             );
         }

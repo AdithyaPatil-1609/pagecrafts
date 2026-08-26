@@ -9,7 +9,7 @@ import { composeCustomSite } from '../generate/compose-custom';
 import { customBuildFits, estimateSiteBuild } from '../generate/complexity';
 import { expandBrief } from '../generate/expand-brief';
 import { aiConfig } from '../config';
-import { bankPhotoUrl } from '../generate/photos';
+import { stockPhotoUrl } from '@/lib/images/stock';
 import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
@@ -34,6 +34,15 @@ export interface RunnerDeps {
     recordUsage?: (usage: Pick<Usage, 'inputTokens' | 'outputTokens'>) => Promise<void>;
     /** Releases resources held for the full lifetime of this detached job. */
     release?: () => Promise<void>;
+    /**
+     * Where the site's photographs come from.
+     *
+     * The route supplies a Gemini-backed lookup, because drawing a picture means storing it
+     * against a project and that needs a request's Supabase client. Left unset — tests, the
+     * harness, anything without a project — it is stock photography, and the runner cannot
+     * tell the difference.
+     */
+    photoLookup?: (query: string, sectionType?: string) => Promise<string>;
 }
 
 /**
@@ -62,6 +71,9 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         ledger.add(stage, usage, ok ? 'completed' : 'failed');
         return usage.provider;
     };
+
+    // Stock photography unless the caller supplies something better.
+    const photoLookup = deps.photoLookup ?? ((q: string) => stockPhotoUrl(q, job.id));
 
     const persistSettled = async (settled: Job) => {
         if (!deps.persistSite) return;
@@ -248,7 +260,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
 
         const variants = await buildStyleOptions(
             composition,
-            (q) => lookupPhoto(q, job.id),
+            photoLookup,
             buildPrompt,
             job.id,
         );
@@ -389,27 +401,3 @@ function previewFiles(
     }
 }
 
-function pickIndex(salt: string, length: number): number {
-    if (length <= 1) return 0;
-    let hash = 0;
-    for (let i = 0; i < salt.length; i += 1) {
-        hash = (hash * 31 + salt.charCodeAt(i)) >>> 0;
-    }
-    return hash % length;
-}
-
-// A whole page of results comes back and only items[0] was ever read, so every restaurant
-// in the country got the same photograph and generating again returned it a second time.
-// The salt is the job id, which is why two attempts differ and two businesses differ.
-async function lookupPhoto(query: string, salt = ''): Promise<string> {
-    try {
-        const { isImageSearchConfigured, searchImages } = await import('@/lib/images/unsplash');
-        if (!isImageSearchConfigured()) return bankPhotoUrl(query, salt);
-        const { items } = await searchImages(query, 1);
-        if (!items.length) return bankPhotoUrl(query, salt);
-        return items[pickIndex(`${salt}:${query}`, items.length)]?.fullUrl
-            ?? bankPhotoUrl(query, salt);
-    } catch {
-        return bankPhotoUrl(query, salt);
-    }
-}

@@ -12,7 +12,13 @@ const nextConfig: NextConfig = {
   // from bundling it at all: Node requires it at runtime and picks that entry instead.
   // Cloudflare's direct upload needs blake3 specifically — it is the hash their API
   // deduplicates files by — so this cannot be swapped for node:crypto.
-  serverExternalPackages: ["blake3-wasm"],
+  //
+  // sharp is here for a different reason: it is a native module, and bundling a native
+  // module is not a thing that works. It recompresses the photographs Gemini draws for a
+  // generated site (lib/images/site-photos.ts) before they are stored — a megabyte and a
+  // half of PNG becomes a couple of hundred kilobytes of WebP, which is the difference
+  // between a fast published site and a slow one on a phone.
+  serverExternalPackages: ["blake3-wasm", "sharp"],
   async headers() {
     return [
       {

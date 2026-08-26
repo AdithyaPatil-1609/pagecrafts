@@ -12,6 +12,7 @@ import { persistLedger } from '@/lib/ai/cost/persist';
 import { guardAiRequest } from '@/lib/limits/ai-guard';
 import { TEMPLATES } from '@/lib/templates';
 import { persistGeneratedSite } from '@/lib/ai/generate/persist';
+import { createSitePhotoLookup } from '@/lib/images/site-photos';
 import { recordGenerationUse } from '@/lib/ai/jobs/counters';
 import {
     assertFreeGenerationAllowed,
@@ -178,6 +179,16 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                     prompt: body.prompt,
                 }, rows),
                 persistSite: (settled) => persistGeneratedSite(supabase, params.id, settled, TEMPLATES),
+                // Gemini draws this site's photographs; Groq goes on building the HTML
+                // around them. Only the route can supply this — a drawn picture is stored
+                // against the project, which needs this request's Supabase client and the
+                // owner's id, neither of which the detached runner has of its own.
+                photoLookup: createSitePhotoLookup({
+                    supabase,
+                    userId,
+                    projectId: params.id,
+                    salt: job.id,
+                }),
                 release: guard.release,
                 onSettled: (settled) => {
                     const elapsed = (settled.endedAt ?? Date.now()) - settled.startedAt;
