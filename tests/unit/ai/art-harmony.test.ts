@@ -18,8 +18,8 @@ const MOOD_TUPLES = new Set([
     'sunlit-craft/organic/airy/bright-clean',
     'calm-sage/organic/airy/warm-natural',
     'clinical-blue/framed/airy/bright-clean',
-    'mono-precision/sharp/airy/documentary',
-    'deep-luxury/framed/airy/muted-duotone',
+    'mono-precision/sharp/airy/bright-clean',
+    'deep-luxury/framed/airy/warm-natural',
     'tech-slate/sharp/tight/bold-contrast',
     'vivid-energy/pill/tight/bold-contrast',
 ]);
