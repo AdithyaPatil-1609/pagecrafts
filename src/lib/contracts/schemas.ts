@@ -18,6 +18,7 @@ export const createProjectSchema = z.object({
   brief: z
     .object({
       name: z.string().trim().min(1).max(80),
+      profession: z.string().trim().min(1).max(80),
       offer: z.string().trim().min(1).max(500),
       place: z.string().trim().min(1).max(80),
       phone: z.string().trim().max(20).optional(),

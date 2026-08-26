@@ -30,8 +30,9 @@ export function BriefFields({
     return (
         <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-                A name, a place, and what they do. Type it, or tap the mic and talk —
-                AI cannot invent a phone number you never gave.
+                Name the business, its profession or trade, where it is, and what it
+                offers. Type it, or tap the mic — AI cannot invent a phone number you
+                never gave.
             </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -41,29 +42,45 @@ export function BriefFields({
                         maxLength={BRIEF_LIMITS.name}
                         inputSize="lg"
                         autoComplete="organization"
-                        placeholder="Mithas Sweets"
+                        placeholder="Brain Surgery · Mithas Sweets"
                         value={value.name}
                         disabled={disabled}
                         onChange={(e) => set({ name: e.target.value })}
                     />
                 </Field>
-                <Field label="City or area" htmlFor="brief-place">
+                <Field
+                    label="Profession or trade"
+                    htmlFor="brief-profession"
+                    hint="The field of work — medical, bakery, plumbing. Photos are based on this."
+                >
                     <Input
-                        id="brief-place"
-                        maxLength={BRIEF_LIMITS.place}
+                        id="brief-profession"
+                        maxLength={BRIEF_LIMITS.profession}
                         inputSize="lg"
-                        placeholder="Old Delhi, Koramangala…"
-                        value={value.place}
+                        placeholder="Medical, sweet shop, plumber…"
+                        value={value.profession}
                         disabled={disabled}
-                        onChange={(e) => set({ place: e.target.value })}
+                        onChange={(e) => set({ profession: e.target.value })}
                     />
                 </Field>
             </div>
 
+            <Field label="City or area" htmlFor="brief-place">
+                <Input
+                    id="brief-place"
+                    maxLength={BRIEF_LIMITS.place}
+                    inputSize="lg"
+                    placeholder="Old Delhi, Koramangala…"
+                    value={value.place}
+                    disabled={disabled}
+                    onChange={(e) => set({ place: e.target.value })}
+                />
+            </Field>
+
             <Field
-                label="What do they do?"
+                label="What do they offer?"
                 htmlFor="brief-offer"
-                hint="The shop, the clinic, the services — the more specific, the better the site."
+                hint="Services and details — check-ups, cakes, emergency callouts. The profession field above is what photos follow."
             >
                 <div className="relative">
                     <textarea

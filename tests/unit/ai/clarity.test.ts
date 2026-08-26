@@ -45,6 +45,7 @@ describe('brief clarity — refuse gibberish before generation', () => {
             briefErrors(
                 brief({
                     name: 'asdfgh',
+                    profession: 'qwerty',
                     offer: 'qwer zxcv',
                     place: 'xxxxxx',
                 }),
@@ -54,6 +55,7 @@ describe('brief clarity — refuse gibberish before generation', () => {
         expect(
             briefClarityErrors({
                 name: 'Mithas Sweets',
+                profession: 'Sweet shop',
                 offer: 'kaju katli and laddu for festivals',
                 place: 'Old Delhi',
             }),

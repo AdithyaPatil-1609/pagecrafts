@@ -371,7 +371,11 @@ export async function createProject(
         site_meta: {
           title: req.brief?.name ?? req.name,
           ...(req.brief
-            ? { description: `${req.brief.offer} in ${req.brief.place}` }
+            ? {
+                description: req.brief.profession
+                  ? `${req.brief.profession}: ${req.brief.offer} in ${req.brief.place}`
+                  : `${req.brief.offer} in ${req.brief.place}`,
+              }
             : template.description
               ? { description: template.description as string }
               : {}),

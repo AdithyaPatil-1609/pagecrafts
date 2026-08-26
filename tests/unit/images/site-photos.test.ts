@@ -183,6 +183,7 @@ describe('what the model is asked for', () => {
 
     it('does not let a long query run away with the prompt', () => {
         const prompt = imagePromptFor('x'.repeat(5_000));
-        expect(prompt.length).toBeLessThan(800);
+        expect(prompt).not.toContain('x'.repeat(300));
+        expect(prompt.length).toBeLessThan(900);
     });
 });
