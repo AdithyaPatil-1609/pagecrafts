@@ -135,7 +135,7 @@ export function demoRestaurantComposition(): Composition {
                 image: { url: HERO, query: "fine dining restaurant", alt: "Dining table" },
             }),
             section("s_about", "about", "text", {
-                heading: "Our house",
+                heading: `${DEMO_BRAND.name} – Fine Dining in ${DEMO_BRAND.place}`,
                 body: "An evening restaurant in Bengaluru — seafood, wine, and a room that stays late.",
                 image: { url: ROOM, query: "restaurant dining room", alt: "Dining room" },
             }),
