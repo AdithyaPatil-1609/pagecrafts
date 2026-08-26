@@ -652,8 +652,11 @@ address { font-style: normal; }
   object-fit: cover;
   object-position: center;
   border-radius: 0;
-  /* Never let an imagery dial wash Pro photos to grey. */
-  filter: none !important;
+  /* Force colour on Pro heroes — never leave a B&W Gemini/stock photo looking mono. */
+  filter: saturate(1.22) contrast(1.04) !important;
+}
+[data-style="photos"] img {
+  filter: saturate(1.15) contrast(1.03) !important;
 }
 [data-style="photos"] [data-type="hero"]::after {
   content: "";

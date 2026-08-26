@@ -88,8 +88,10 @@ export function imagePromptFor(query: string): string {
     const subject = query.trim().replace(/\s+/g, " ").slice(0, 300);
 
     return [
-        `A professional photograph for a small business website: ${subject}.`,
-        "Real photography, natural daylight, shallow depth of field, warm and inviting,",
+        `A professional full-colour photograph for a small business website: ${subject}.`,
+        "Real colour photography — vivid natural colours, never black and white,",
+        "never grayscale, never monochrome, never desaturated editorial B&W.",
+        "Natural daylight, shallow depth of field, warm and inviting,",
         "clean uncluttered composition with room for a headline.",
         "No text, no words, no letters, no signage, no logos, no watermarks, no borders,",
         "no collage, no user interface, no illustration.",
