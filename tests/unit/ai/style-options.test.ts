@@ -7,6 +7,7 @@ import {
     CLOTHING_PHOTO_ID,
     DESSERT_PHOTO_ID,
     MITHAI_SEARCH,
+    photoKeyFromUrl,
     photoSearchQuery,
     stampPhotoUrls,
 } from '@/lib/ai/generate/photos';
@@ -92,6 +93,16 @@ describe('style presets — three looks from one brief', () => {
         expect(set1).not.toBe(set2);
         // Same set again is stable.
         expect(bankPhotoUrl(query, 'job_set_1')).toBe(set1);
+    });
+
+    it('never reuses a Set 1 hero when that photo is excluded for Set 2', () => {
+        const query = 'chinese restaurant fine dining bangalore';
+        const set1 = bankPhotoUrl(query, 'job_set_1');
+        const used = new Set([photoKeyFromUrl(set1)]);
+        // Even with the same salt that would have picked set1, exclude forces another.
+        const set2 = bankPhotoUrl(query, 'job_set_1', used);
+        expect(set2).not.toBe(set1);
+        expect(photoKeyFromUrl(set2)).not.toBe(photoKeyFromUrl(set1));
     });
 
     it('does not use a clothing shop photo for a sweet shop, even if the slot says shop interior', async () => {

@@ -94,9 +94,12 @@ describe('two people, or two attempts, do not get the same picture', () => {
     });
 
     it('varies by job, so generating again is not a duplicate', () => {
-        expect(RUNNER).toContain('lookupPhoto(q, job.id)');
+        expect(RUNNER).toContain('lookupPhoto(q, job.id');
         // Bank / offline fallback must take the same salt — keyword restaurant used to
         // ignore it and stamp the same dining table on every Set.
-        expect(RUNNER).toContain('bankPhotoUrl(query, salt)');
+        expect(RUNNER).toContain('bankPhotoUrl(query, salt');
+        // Set 2 must skip heroes already shown on earlier Sets — salt alone collides.
+        expect(RUNNER).toContain('usedHeroPhotoKeys');
+        expect(RUNNER).toContain('usedHeroes');
     });
 });

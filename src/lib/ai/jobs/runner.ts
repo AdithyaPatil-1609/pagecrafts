@@ -9,7 +9,11 @@ import { composeCustomSite } from '../generate/compose-custom';
 import { customBuildFits, estimateSiteBuild } from '../generate/complexity';
 import { expandBrief } from '../generate/expand-brief';
 import { aiConfig } from '../config';
-import { bankPhotoUrl } from '../generate/photos';
+import {
+    bankPhotoUrl,
+    heroPhotoKeysFromComposition,
+    photoKeyFromUrl,
+} from '../generate/photos';
 import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
@@ -246,11 +250,14 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             }
         }
 
+        const siblings = await store.listByProject(job.projectId);
+        const usedHeroes = usedHeroPhotoKeys(siblings, job.id);
         const variants = await buildStyleOptions(
             composition,
-            (q) => lookupPhoto(q, job.id),
+            (q) => lookupPhoto(q, job.id, usedHeroes),
             buildPrompt,
             job.id,
+            usedHeroes,
         );
         const picked = variants[0];
         const files = picked?.files ?? compositionToFiles(composition);
@@ -398,18 +405,62 @@ function pickIndex(salt: string, length: number): number {
     return hash % length;
 }
 
+/** Heroes already shown on earlier done Sets for this project. */
+function usedHeroPhotoKeys(
+    siblings: readonly Job[],
+    exceptJobId: string,
+): Set<string> {
+    const used = new Set<string>();
+    for (const sibling of siblings) {
+        if (sibling.id === exceptJobId || sibling.status !== 'done') continue;
+        for (const key of heroPhotoKeysFromComposition(sibling.composition)) {
+            used.add(key);
+        }
+        for (const variant of sibling.variants ?? []) {
+            for (const key of heroPhotoKeysFromComposition(variant.composition)) {
+                used.add(key);
+            }
+        }
+    }
+    return used;
+}
+
 // A whole page of results comes back and only items[0] was ever read, so every restaurant
 // in the country got the same photograph and generating again returned it a second time.
-// The salt is the job id, which is why two attempts differ and two businesses differ.
-async function lookupPhoto(query: string, salt = ''): Promise<string> {
+// The salt is the job id; exclude skips heroes already used on earlier Sets.
+async function lookupPhoto(
+    query: string,
+    salt = '',
+    exclude: ReadonlySet<string> = new Set(),
+): Promise<string> {
     try {
         const { isImageSearchConfigured, searchImages } = await import('@/lib/images/unsplash');
-        if (!isImageSearchConfigured()) return bankPhotoUrl(query, salt);
-        const { items } = await searchImages(query, 1);
-        if (!items.length) return bankPhotoUrl(query, salt);
-        return items[pickIndex(`${salt}:${query}`, items.length)]?.fullUrl
-            ?? bankPhotoUrl(query, salt);
+        if (!isImageSearchConfigured()) return bankPhotoUrl(query, salt, exclude);
+
+        const pickFresh = (
+            items: Array<{ id?: string; fullUrl: string }>,
+        ): string | undefined => {
+            const fresh = items.filter((item) => {
+                const key = photoKeyFromUrl(item.fullUrl);
+                const id = typeof item.id === 'string' ? item.id.toLowerCase() : '';
+                return !exclude.has(key) && (!id || !exclude.has(id));
+            });
+            const pool = fresh.length > 0 ? fresh : [];
+            if (!pool.length) return undefined;
+            return pool[pickIndex(`${salt}:${query}`, pool.length)]?.fullUrl;
+        };
+
+        const first = await searchImages(query, 1);
+        const fromFirst = pickFresh(first.items);
+        if (fromFirst) return fromFirst;
+
+        const second = await searchImages(query, 2);
+        const fromSecond = pickFresh(second.items);
+        if (fromSecond) return fromSecond;
+
+        // Prefer an unused bank photo over repeating a Set 1 Unsplash hero.
+        return bankPhotoUrl(query, salt, exclude);
     } catch {
-        return bankPhotoUrl(query, salt);
+        return bankPhotoUrl(query, salt, exclude);
     }
 }
