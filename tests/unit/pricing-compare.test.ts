@@ -66,4 +66,16 @@ describe("pricing and compare marketing pages", () => {
         expect(compare).not.toContain("Free /");
         expect(compare).toContain("See all pricing");
     });
+
+    it("uses plain Free / Pro / Premium badges — no unlocked copy, no red lock pill", () => {
+        const compare = read("src", "components", "marketing", "LookCompareDemo.tsx");
+        expect(compare).not.toContain("Pro unlocked");
+        expect(compare).not.toContain("Premium unlocked");
+        expect(compare).not.toContain("brand-gradient");
+        expect(compare).not.toContain("<Lock");
+        expect(compare).toContain('return "Free"');
+        expect(compare).toContain('return "Pro"');
+        expect(compare).toContain('return "Premium"');
+        expect(compare).toContain("COMPARE_BADGE");
+    });
 });
