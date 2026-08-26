@@ -12,7 +12,6 @@
   "records": [
     {
       "type": "APEXCNAME",
-      "host": "@",
       "pointsTo": "%pagesTarget%",
       "ttl": 600
     },
