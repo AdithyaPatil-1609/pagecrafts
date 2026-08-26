@@ -23,10 +23,14 @@ Local `.env.local` does not apply to https://pagecrafts.in.
 Create at https://dash.cloudflare.com/profile/api-tokens with:
 
 - **Account** → Cloudflare Pages → Edit
-- **Zone** → DNS → Edit (zone: `pagecrafts.in`)
+- **Zone** → Zone → Edit (needed to create zones for customer domains we register)
+- **Zone** → DNS → Edit (zone: `pagecrafts.in` and customer zones)
 - **Zone** → Zone → Read
 
 Simplest Production setup: set the raw token as `HOSTING_DEPLOY_TOKEN` (never commit it).
+
+Custom domain **buy** (ResellerClub + NS handoff) is documented in
+`docs/production-domains-setup.md`.
 
 Or seal it locally and set `HOSTING_DEPLOY_CREDENTIAL`:
 

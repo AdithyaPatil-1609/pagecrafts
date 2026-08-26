@@ -60,6 +60,9 @@ const NOT_WITH_ROUTE: Record<string, string> = {
     "/v1/payments/razorpay/webhook":
         "The caller is Razorpay, not a signed-in person. Authentication is an HMAC over the " +
         "raw bytes, and the status codes are instructions to their retry logic.",
+    "/v1/domains/domain-connect/callback":
+        "Registrar Domain Connect redirect after Authorize. Trust is an HMAC-signed state " +
+        "issued at start; the response is a Location back to the editor, not a JSON envelope.",
 };
 
 /** Routes with a write method and no Zod schema, and why that is right. */
@@ -70,6 +73,8 @@ const NO_SCHEMA: Record<string, string> = {
     "/v1/account/billing/downgrade":
         "No body. Switching to Starter is a session-scoped revoke, not a payload.",
     "/v1/projects/[id]/publish": "No body. The idempotency key is a header, checked in the route.",
+    "/v1/projects/[id]/domains/[domainId]/verify":
+        "No body. Re-checks host DNS for an existing domain id.",
     "/v1/account":
         "DELETE body is email + password, checked with readCredentials / authenticateWithPassword " +
         "in the handler (same as deleting a site) rather than a withRoute Zod schema — a stolen " +
@@ -95,6 +100,10 @@ const ADMIN_CLIENT = {
         "Public shop pay page. The visitor is not the owner, so the session client cannot " +
         "read site_meta.upiId under RLS; the handler returns only the UPI id and business " +
         "name, never email or other account fields.",
+    "/v1/domains/domain-connect/callback":
+        "Uses service role only to re-verify the domain row named in the signed state " +
+        "(projectId + userId + domain). No session cookie on the registrar redirect; state " +
+        "HMAC is the trust boundary.",
 };
 
 const usesWithRoute = (source: string) => /withRoute[<(]/.test(source);

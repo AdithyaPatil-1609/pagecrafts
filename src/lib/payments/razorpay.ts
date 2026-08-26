@@ -28,6 +28,7 @@ function razorpayAuthHeader(): string {
 export type OrderKind =
     | "publish"
     | "edit_unlock"
+    | "domain"
     | "pro"
     | "premium"
     | "template"
@@ -44,6 +45,8 @@ export interface OrderNotes {
     templateId?: string;
     /** Generated look being bought (`photos` or `motion`). */
     styleId?: string;
+    /** Hostname being registered (kind === domain). */
+    domainName?: string;
     /** Scratch-card code applied when the order was created. */
     discountCode?: string;
     /** List price in rupees, as a string because Razorpay notes are strings. */

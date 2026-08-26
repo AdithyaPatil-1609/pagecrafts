@@ -180,3 +180,8 @@ export const discountPreviewSchema = z.object({
   kind: z.enum(["pro", "premium", "publish", "advanced", "generation_pass"]),
 });
 
+/** POST /projects/{id}/domains — connect a hostname the owner already has. */
+export const connectDomainSchema = z.object({
+  name: z.string().trim().min(1).max(253),
+});
+

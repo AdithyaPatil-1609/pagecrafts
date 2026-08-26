@@ -1,26 +1,16 @@
 'use client';
 
-import { FormEvent, useRef, useState, useSyncExternalStore } from 'react';
-import { Globe, Loader2, Plus, Square, X } from 'lucide-react';
+import { FormEvent, useRef } from 'react';
+import { Loader2, Plus, Square, X } from 'lucide-react';
 import { MAX_INSTRUCTION_CHARS } from '@/lib/contracts';
 
 import { DictationButton } from '@/components/ui/DictationButton';
 import { cn } from '@/lib/utils';
 
-const DOMAIN_BANNER_KEY = 'pagecraft.editor.domainBanner';
-
 export interface ChatAttachment {
     id: string;
     name: string;
     url: string;
-}
-
-function domainBannerVisible(): boolean {
-    try {
-        return window.localStorage.getItem(DOMAIN_BANNER_KEY) !== '1';
-    } catch {
-        return true;
-    }
 }
 
 export default function ChatComposer({
@@ -49,24 +39,6 @@ export default function ChatComposer({
     autoFocus?: boolean;
 }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const persistBanner = useSyncExternalStore(
-        () => () => {},
-        domainBannerVisible,
-        () => false,
-    );
-    const [dismissed, setDismissed] = useState(false);
-    const [domainNote, setDomainNote] = useState(false);
-    const banner = persistBanner && !dismissed;
-
-    function dismissBanner() {
-        setDismissed(true);
-        setDomainNote(false);
-        try {
-            window.localStorage.setItem(DOMAIN_BANNER_KEY, '1');
-        } catch {
-            /* session-only hide is enough if storage is blocked */
-        }
-    }
 
     function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -78,43 +50,6 @@ export default function ChatComposer({
 
     return (
         <div className="glass-panel overflow-hidden rounded-3xl">
-            {banner ? (
-                <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2">
-                    <Globe
-                        className="size-4 shrink-0 text-muted-foreground"
-                        strokeWidth={1.75}
-                        aria-hidden
-                    />
-                    <p className="min-w-0 flex-1 truncate text-sm text-foreground">
-                        Set up a custom domain
-                    </p>
-                    <button
-                        type="button"
-                        onClick={() => setDomainNote((open) => !open)}
-                        aria-expanded={domainNote}
-                        className="cursor-pointer rounded-full border border-gold bg-gold px-3 py-1 text-xs font-semibold text-gold-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-                    >
-                        Get started
-                    </button>
-                    <button
-                        type="button"
-                        onClick={dismissBanner}
-                        aria-label="Hide domain setup"
-                        title="Hide for now"
-                        className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                        <X className="size-4" strokeWidth={1.75} />
-                    </button>
-                </div>
-            ) : null}
-
-            {banner && domainNote ? (
-                <p className="border-b border-border/70 px-3 py-2 text-xs leading-5 text-muted-foreground">
-                    Custom domains are coming. For now your site lives on a PageCrafts
-                    address — we will let you know when you can point your own name at it.
-                </p>
-            ) : null}
-
             <form onSubmit={handleSubmit} className="bg-field/70 px-3 pb-2 pt-3">
                 {attachments.length > 0 ? (
                     <ul className="mb-2 flex flex-wrap gap-2" aria-label="Attached images">

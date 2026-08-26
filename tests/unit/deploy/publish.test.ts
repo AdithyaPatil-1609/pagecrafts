@@ -17,6 +17,13 @@ function fakeProvider(): DeployProvider {
         enableHosting: async () => { },
         verifyLive: async () => true,
         removeSite: async () => { },
+        attachCustomDomain: async (_siteId, hostname) => ({
+            hostname,
+            target: 'spike.pages.dev',
+            records: [],
+        }),
+        domainStatus: async () => 'pending' as const,
+        ensureDnsZone: async () => ({ nameservers: ['ns1.example.net', 'ns2.example.net'] }),
     };
 }
 

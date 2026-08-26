@@ -87,6 +87,7 @@ interface CheckoutData {
     priceInr?: number;
     listPriceInr?: number;
     discountPercent?: number;
+    domainName?: string;
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
@@ -125,6 +126,8 @@ interface UseRazorpayCheckoutReturn {
     openAdvancedCheckout: (discountCode?: string) => Promise<void>;
     /** Buy one extra AI generation round. */
     openGenerationPassCheckout: (discountCode?: string) => Promise<void>;
+    /** Register a custom domain for a published project. */
+    openDomainCheckout: (projectId: string, domainName: string, discountCode?: string) => Promise<void>;
     /** Current status of the checkout flow. */
     status: CheckoutStatus;
     /** Human-readable error, set when status is 'error'. */
@@ -383,6 +386,19 @@ export function useRazorpayCheckout(
         [startOrder, withConfirm],
     );
 
+    const openDomainCheckout = useCallback(
+        (projectId: string, domainName: string, discountCode?: string) =>
+            withConfirm('domain', () =>
+                startOrder(
+                    `/api/v1/projects/${encodeURIComponent(projectId)}/domains/checkout`,
+                    (data) =>
+                        `Domain ${data.domainName ?? domainName} · Rs ${data.priceInr ?? data.listPriceInr ?? data.amountInPaise! / 100}`,
+                    discountCode ? { name: domainName, discountCode } : { name: domainName },
+                ),
+            ),
+        [startOrder, withConfirm],
+    );
+
     const confirmDialog = (
         <RazorpayConfirmDialog
             open={Boolean(pendingConfirm)}
@@ -400,6 +416,7 @@ export function useRazorpayCheckout(
         openPlanCheckout,
         openAdvancedCheckout,
         openGenerationPassCheckout,
+        openDomainCheckout,
         status,
         error,
         confirmDialog,

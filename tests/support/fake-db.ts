@@ -46,6 +46,7 @@ const POLICIES: Record<string, OwnerRule> = {
     generations: "own_user_id",
     entitlements: "own_user_id",
     ai_edit_proposals: "own_user_id",
+    domains: "own_user_id",
     // Reference data shared by every generation, written only by the service role.
     vertical_profiles: "public",
     vertical_profile_aliases: "public",
@@ -58,7 +59,7 @@ const POLICIES: Record<string, OwnerRule> = {
 export const TRANSCRIBED_TABLES: readonly string[] = Object.keys(POLICIES);
 
 // Tables whose updated_at is maintained by a `before update` trigger.
-const TOUCHES_UPDATED_AT = new Set(["projects", "users"]);
+const TOUCHES_UPDATED_AT = new Set(["projects", "users", "domains"]);
 
 interface QueryError {
     message: string;
