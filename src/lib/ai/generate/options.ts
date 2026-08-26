@@ -19,7 +19,14 @@ export interface StyleOption {
     files: FileMap;
 }
 
-export type PhotoLookup = (query: string) => Promise<string>;
+/**
+ * Finds a photograph for a search phrase.
+ *
+ * `sectionType` is a hint, not a requirement: a lookup that draws its own pictures uses it
+ * to frame them for the slot — wide for a hero, squarer for a card — and every stock lookup
+ * ignores it entirely.
+ */
+export type PhotoLookup = (query: string, sectionType?: string) => Promise<string>;
 
 function withRequestedExtras(files: FileMap, composition: Composition, prompt?: string): FileMap {
     const text = prompt?.trim() || composition.meta.description || '';

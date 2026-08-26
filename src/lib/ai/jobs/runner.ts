@@ -4,12 +4,16 @@ import { plan } from '../generate/plan';
 import { fillSection } from '../generate/fill';
 import { assemble } from '../generate/assemble';
 import { compositionToFiles } from '../generate/to-files';
-import { buildCustomStyleOptions, buildStyleOptions } from '../generate/options';
+import { buildCustomStyleOptions, buildStyleOptions, type PhotoLookup } from '../generate/options';
 import { composeCustomSite } from '../generate/compose-custom';
 import { customBuildFits, estimateSiteBuild } from '../generate/complexity';
 import { expandBrief } from '../generate/expand-brief';
 import { aiConfig } from '../config';
-import { stockPhotoUrl } from '@/lib/images/stock';
+import {
+    bankPhotoUrl,
+    heroPhotoKeysFromComposition,
+    photoKeyFromUrl,
+} from '../generate/photos';
 import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
 import { nearestTemplate } from '../generate/fallback';
@@ -35,14 +39,17 @@ export interface RunnerDeps {
     /** Releases resources held for the full lifetime of this detached job. */
     release?: () => Promise<void>;
     /**
-     * Where the site's photographs come from.
+     * Wraps the stock photo lookup with something better — the route wraps it with Gemini.
      *
-     * The route supplies a Gemini-backed lookup, because drawing a picture means storing it
-     * against a project and that needs a request's Supabase client. Left unset — tests, the
-     * harness, anything without a project — it is stock photography, and the runner cannot
-     * tell the difference.
+     * A wrapper rather than a replacement, because the lookup handed in is the one that
+     * knows this job's salt and which heroes earlier Sets already used, and none of that
+     * should have to be rebuilt by every caller that wants to draw a picture. Whatever goes
+     * in front of it falls back to it.
+     *
+     * Left unset — tests, the harness, anything without a project — the stock lookup is used
+     * directly and the runner cannot tell the difference.
      */
-    photoLookup?: (query: string, sectionType?: string) => Promise<string>;
+    photoLookup?: (stock: PhotoLookup) => PhotoLookup;
 }
 
 /**
@@ -71,9 +78,6 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         ledger.add(stage, usage, ok ? 'completed' : 'failed');
         return usage.provider;
     };
-
-    // Stock photography unless the caller supplies something better.
-    const photoLookup = deps.photoLookup ?? ((q: string) => stockPhotoUrl(q, job.id));
 
     const persistSettled = async (settled: Job) => {
         if (!deps.persistSite) return;
@@ -260,6 +264,11 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
 
         const siblings = await store.listByProject(job.projectId);
         const usedHeroes = usedHeroPhotoKeys(siblings, job.id);
+        // The stock floor, with this job's salt and this project's used heroes already
+        // bound. Whatever the route puts in front of it — Gemini, on the live site — falls
+        // back to exactly this, so a drawn picture and a stock one obey the same rules.
+        const stock: PhotoLookup = (q) => lookupPhoto(q, job.id, usedHeroes);
+        const photoLookup = deps.photoLookup?.(stock) ?? stock;
         const variants = await buildStyleOptions(
             composition,
             photoLookup,
@@ -404,3 +413,71 @@ function previewFiles(
     }
 }
 
+function pickIndex(salt: string, length: number): number {
+    if (length <= 1) return 0;
+    let hash = 0;
+    for (let i = 0; i < salt.length; i += 1) {
+        hash = (hash * 31 + salt.charCodeAt(i)) >>> 0;
+    }
+    return hash % length;
+}
+
+/** Heroes already shown on earlier done Sets for this project. */
+function usedHeroPhotoKeys(
+    siblings: readonly Job[],
+    exceptJobId: string,
+): Set<string> {
+    const used = new Set<string>();
+    for (const sibling of siblings) {
+        if (sibling.id === exceptJobId || sibling.status !== 'done') continue;
+        for (const key of heroPhotoKeysFromComposition(sibling.composition)) {
+            used.add(key);
+        }
+        for (const variant of sibling.variants ?? []) {
+            for (const key of heroPhotoKeysFromComposition(variant.composition)) {
+                used.add(key);
+            }
+        }
+    }
+    return used;
+}
+
+// A whole page of results comes back and only items[0] was ever read, so every restaurant
+// in the country got the same photograph and generating again returned it a second time.
+// The salt is the job id; exclude skips heroes already used on earlier Sets.
+async function lookupPhoto(
+    query: string,
+    salt = '',
+    exclude: ReadonlySet<string> = new Set(),
+): Promise<string> {
+    try {
+        const { isImageSearchConfigured, searchImages } = await import('@/lib/images/unsplash');
+        if (!isImageSearchConfigured()) return bankPhotoUrl(query, salt, exclude);
+
+        const pickFresh = (
+            items: Array<{ id?: string; fullUrl: string }>,
+        ): string | undefined => {
+            const fresh = items.filter((item) => {
+                const key = photoKeyFromUrl(item.fullUrl);
+                const id = typeof item.id === 'string' ? item.id.toLowerCase() : '';
+                return !exclude.has(key) && (!id || !exclude.has(id));
+            });
+            const pool = fresh.length > 0 ? fresh : [];
+            if (!pool.length) return undefined;
+            return pool[pickIndex(`${salt}:${query}`, pool.length)]?.fullUrl;
+        };
+
+        const first = await searchImages(query, 1);
+        const fromFirst = pickFresh(first.items);
+        if (fromFirst) return fromFirst;
+
+        const second = await searchImages(query, 2);
+        const fromSecond = pickFresh(second.items);
+        if (fromSecond) return fromSecond;
+
+        // Prefer an unused bank photo over repeating a Set 1 Unsplash hero.
+        return bankPhotoUrl(query, salt, exclude);
+    } catch {
+        return bankPhotoUrl(query, salt, exclude);
+    }
+}

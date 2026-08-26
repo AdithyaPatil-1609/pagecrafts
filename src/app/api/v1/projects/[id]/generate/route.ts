@@ -164,11 +164,15 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 // around them. Only the route can supply this — a drawn picture is stored
                 // against the project, which needs this request's Supabase client and the
                 // owner's id, neither of which the detached runner has of its own.
-                photoLookup: createSitePhotoLookup({
+                //
+                // The runner hands in its own stock lookup as the floor, so a build where
+                // the image model is busy, out of quota or switched off behaves exactly as
+                // it does today.
+                photoLookup: (stock) => createSitePhotoLookup({
                     supabase,
                     userId,
                     projectId: params.id,
-                    salt: job.id,
+                    fallback: stock,
                 }),
                 release: guard.release,
                 onSettled: (settled) => {

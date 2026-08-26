@@ -25,8 +25,7 @@ function lookupWith(overrides: Partial<SitePhotoOptions>) {
         supabase,
         userId: 'u1',
         projectId: 'p1',
-        salt: 'job_1',
-        fallback: async (query) => `stock:${query}`,
+        fallback: async (query: string) => `stock:${query}`,
         ...overrides,
     });
 }

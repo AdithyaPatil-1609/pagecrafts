@@ -135,21 +135,42 @@ export async function generateImage(
         if (exhausted.has(key)) continue;
 
         try {
-            const response = await sdk(key).models.generateContent({
-                model,
-                contents: prompt,
-                config: {
-                    responseModalities: ["TEXT", "IMAGE"],
-                    imageConfig: {
-                        imageSize: "1K",
-                        ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+            if (model.startsWith('imagen-')) {
+                const response = await sdk(key).models.generateImages({
+                    model,
+                    prompt,
+                    config: {
+                        numberOfImages: 1,
+                        outputMimeType: 'image/png',
+                        aspectRatio: options.aspectRatio === '16:9' ? '16:9' : options.aspectRatio === '4:3' ? '4:3' : '1:1',
+                        ...(options.signal ? { abortSignal: options.signal } : {}),
                     },
-                    ...(options.signal ? { abortSignal: options.signal } : {}),
-                },
-            });
+                });
 
-            const found = imageFromResponse(response.candidates?.[0]?.content?.parts);
-            if (found) return { ...found, prompt };
+                const b64 = response.generatedImages?.[0]?.image?.imageBytes;
+                if (b64) {
+                    const bytes = Uint8Array.from(Buffer.from(b64, 'base64'));
+                    if (bytes.byteLength > 0) {
+                        return { bytes, mimeType: 'image/png', prompt };
+                    }
+                }
+            } else {
+                const response = await sdk(key).models.generateContent({
+                    model,
+                    contents: prompt,
+                    config: {
+                        responseModalities: ["TEXT", "IMAGE"],
+                        imageConfig: {
+                            imageSize: "1K",
+                            ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+                        },
+                        ...(options.signal ? { abortSignal: options.signal } : {}),
+                    },
+                });
+
+                const found = imageFromResponse(response.candidates?.[0]?.content?.parts);
+                if (found) return { ...found, prompt };
+            }
 
             console.warn("[images] gemini returned no image part; falling back to stock.");
             return null;
