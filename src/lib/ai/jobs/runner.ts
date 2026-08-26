@@ -9,6 +9,7 @@ import { composeCustomSite } from '../generate/compose-custom';
 import { customBuildFits, estimateSiteBuild } from '../generate/complexity';
 import { expandBrief } from '../generate/expand-brief';
 import { aiConfig } from '../config';
+import { heroPhotoKeysFromComposition } from '../generate/photos';
 import { stockPhotoUrl } from '@/lib/images/stock';
 import { checkAndRecord } from '../composition/validate';
 import { withOneRepair } from '../generate/repair';
@@ -404,3 +405,27 @@ function previewFiles(
     }
 }
 
+/**
+ * Heroes already shown on earlier done Sets for this project.
+ *
+ * Lost in the merge that brought the generated-photo work onto main: the call site survived
+ * and this did not, so main stopped typechecking and every deploy failed. Restored verbatim.
+ */
+function usedHeroPhotoKeys(
+    siblings: readonly Job[],
+    exceptJobId: string,
+): Set<string> {
+    const used = new Set<string>();
+    for (const sibling of siblings) {
+        if (sibling.id === exceptJobId || sibling.status !== 'done') continue;
+        for (const key of heroPhotoKeysFromComposition(sibling.composition)) {
+            used.add(key);
+        }
+        for (const variant of sibling.variants ?? []) {
+            for (const key of heroPhotoKeysFromComposition(variant.composition)) {
+                used.add(key);
+            }
+        }
+    }
+    return used;
+}
