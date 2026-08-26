@@ -318,27 +318,36 @@ function multipagePreviewSrcDoc(
     return html + bridge;
   }
 
+  var current = { path: "", hash: "" };
   function go(path, hash) {
     var key = path && PAGES[path] ? path : "index.html";
+    var h = hash || "";
+    if (current.path === key && current.hash === h && view.getAttribute("data-ready") === "1") return;
+    current = { path: key, hash: h };
     var raw = PAGES[key];
     if (!raw) return;
     view.onload = function () {
-      if (!hash) return;
+      view.setAttribute("data-ready", "1");
+      if (!h) return;
       try {
         var doc = view.contentDocument;
         if (!doc) return;
-        var el = doc.getElementById(hash) || doc.querySelector('[id="' + hash + '"]');
+        var el = doc.getElementById(h) || doc.querySelector('[id="' + h + '"]');
         if (el) el.scrollIntoView();
       } catch (e) {}
     };
+    view.removeAttribute("data-ready");
     view.srcdoc = patch(raw);
     try {
-      parent.postMessage({ type: "pc-compare-nav", path: key, hash: hash || "" }, "*");
+      if (parent && parent !== window) {
+        parent.postMessage({ type: "pc-compare-nav", path: key, hash: h }, "*");
+      }
     } catch (e) {}
   }
 
   window.addEventListener("message", function (ev) {
-    var data = ev && ev.data;
+    if (!ev || ev.source === window) return;
+    var data = ev.data;
     if (!data) return;
     if (data.type === "pc-compare-go" || data.type === "pc-compare-nav") {
       go(data.path || "index.html", data.hash || "");
