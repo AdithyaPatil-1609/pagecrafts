@@ -79,8 +79,10 @@ describe('the animated headline', () => {
         expect(min?.trim()).toBe('2.4rem');
     });
 
-    it('is capped against its own font size, not a narrower parent', () => {
-        expect(hero).toContain('min(16ch, 100%)');
+    it('uses a distinctive Bodoni display face, not Impact-weight sans', () => {
+        expect(hero).toContain('font-family: var(--display-font)');
+        expect(CSS).toContain('"Bodoni Moda"');
+        expect(CSS).not.toMatch(/\[data-style="motion"\] \[data-type="hero"\] h1 \{[^}]*font-weight:\s*800/);
     });
 });
 
