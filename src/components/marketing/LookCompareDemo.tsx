@@ -31,7 +31,7 @@ function lookUnlocked(plan: AccountPlan, id: CompareLookId): boolean {
     return planCovers(plan, need);
 }
 
-/** Plain tier names on the card — Free / Pro / Premium, never "Pro unlocked". */
+/** Plain tier names on the card: Free, Pro, or Premium — never "… unlocked". */
 function tileLabel(id: CompareLookId): string {
     if (id === "starter") return "Free";
     if (id === "pro") return "Pro";
