@@ -138,9 +138,9 @@ export function explainCreationIssue(
         return {
             kind: 'chat',
             title: 'That change did not go through',
-            what: 'The last request could not be turned into a suggestion.',
-            // Never put the soft-failure sentence here — Fix with AI must retry the
-            // person's last instruction (ChatPanel), not this string.
+            // Surface the exact failure in `what`. Keep `instruction` generic —
+            // Fix with AI must retry the person's last ask (ChatPanel), not this string.
+            what: message || 'The last request could not be turned into a suggestion.',
             instruction: 'Try that change again and apply a working version of the page.',
         };
     }

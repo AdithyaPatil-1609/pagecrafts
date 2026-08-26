@@ -94,6 +94,47 @@ describe('AI chat (D11–D15)', () => {
         expect(useEditorStore.getState().chatError).toMatch(/Pro/);
     });
 
+    it('rejects off-topic asks that are not about this website', async () => {
+        const fetchMock = fakeServer();
+        vi.stubGlobal('fetch', fetchMock);
+
+        await useEditorStore.getState().requestAiEdit('Show me a photo of a lion');
+        expect(useEditorStore.getState().chatError).toMatch(/only changes this website/i);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('routes layout asks to page-edits instead of section props', async () => {
+        const fetchMock = vi.fn(async (url: string) => {
+            const path = String(url);
+            if (path.includes('/page-edits')) {
+                return jsonResponse({
+                    ok: true,
+                    data: {
+                        path: 'index.html',
+                        after: '<html><body><h1 style="text-align:center">Hi</h1></body></html>',
+                        explanation: 'Centred the home content.',
+                    },
+                });
+            }
+            if (path.includes('/commits')) {
+                return jsonResponse({ ok: true, data: { sha: 'pre-edit' } });
+            }
+            return jsonResponse({ ok: true, data: { projectId: 'p1', files: {}, updatedAt: 'now' } });
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        await useEditorStore.getState().requestAiEdit(
+            'I just want the home page to be more centre staged. It is a little to the top.',
+        );
+
+        const called = fetchMock.mock.calls.map(([url]) => String(url));
+        expect(called.some((url) => url.includes('/page-edits'))).toBe(true);
+        expect(called.some((url) => url.includes('/edits'))).toBe(false);
+        expect(useEditorStore.getState().pendingChange?.path).toBe('index.html');
+        expect(useEditorStore.getState().pendingChange?.explanation).toMatch(/Centred/i);
+        expect(useEditorStore.getState().chatError).toBeNull();
+    });
+
     it('saves a version, then proposes without writing the file', async () => {
         const fetchMock = fakeServer();
         vi.stubGlobal('fetch', fetchMock);

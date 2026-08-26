@@ -241,12 +241,14 @@ export async function proposeProjectEdit(
     projectId: string,
     payload: ProposeEditPayload,
 ): Promise<{ proposal: EditProposal | null; error: string | null }> {
-    const { data, error } = await apiPost<EditProposal>(
+    const { data, error, detail } = await apiPost<EditProposal>(
         `${projectUrl(projectId)}/edits`,
         payload,
     );
 
-    if (error || !data) return { proposal: null, error: error ?? EMPTY_REPLY };
+    if (error || !data) {
+        return { proposal: null, error: detail?.trim() || error || EMPTY_REPLY };
+    }
     return { proposal: data, error: null };
 }
 
@@ -289,12 +291,29 @@ export async function proposeCopyEdit(
     projectId: string,
     instruction: string,
 ): Promise<{ proposal: CopyEditProposal | null; error: string | null }> {
-    const { data, error } = await apiPost<CopyEditProposal>(
+    const { data, error, detail } = await apiPost<CopyEditProposal>(
         `${projectUrl(projectId)}/copy-edits`,
         { instruction },
     );
 
-    if (error || !data) return { proposal: null, error: error ?? EMPTY_REPLY };
+    if (error || !data) {
+        return { proposal: null, error: detail?.trim() || error || EMPTY_REPLY };
+    }
+    return { proposal: data, error: null };
+}
+
+export async function proposePageEdit(
+    projectId: string,
+    instruction: string,
+): Promise<{ proposal: CopyEditProposal | null; error: string | null }> {
+    const { data, error, detail } = await apiPost<CopyEditProposal>(
+        `${projectUrl(projectId)}/page-edits`,
+        { instruction },
+    );
+
+    if (error || !data) {
+        return { proposal: null, error: detail?.trim() || error || EMPTY_REPLY };
+    }
     return { proposal: data, error: null };
 }
 

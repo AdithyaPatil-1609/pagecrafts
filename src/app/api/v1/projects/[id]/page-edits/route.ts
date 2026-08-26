@@ -7,8 +7,8 @@ import { getProject } from '@/lib/data/projects';
 import { getProjectFiles } from '@/lib/data/project-files';
 import { assertCanEdit } from '@/lib/data/entitlements';
 import { asContentSchema } from '@/lib/content/schema';
-import { applyContentToHtml } from '@/lib/content/slots';
-import { rewriteTemplateCopy } from '@/lib/ai/edit/rewrite-copy';
+import { rewritePageHtml } from '@/lib/ai/edit/rewrite-page';
+import { styleUpgradeFirewall } from '@/lib/editor/style-firewall';
 import { crossVerticalFirewall } from '@/lib/editor/cross-vertical-firewall';
 import { offTopicWebsiteAsk } from '@/lib/editor/website-ask-gate';
 import { resolveSiteVertical } from '@/lib/editor/resolve-site-vertical';
@@ -16,6 +16,7 @@ import { parseComposition } from '@/lib/editor/parse-composition';
 import { persistLedger } from '@/lib/ai/cost/persist';
 import { rowFor } from '@/lib/ai/cost/ledger';
 import { nextJobId } from '@/lib/ai/jobs/store';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -30,8 +31,7 @@ function entryHtml(files: Record<string, string>): string | null {
     return Object.keys(files).find((name) => /\.html?$/i.test(name)) ?? null;
 }
 
-// POST /api/v1/projects/{id}/copy-edits — rewrite words on a forked design.
-// Layout stays. The editor shows the suggestion; keeping it is a separate write.
+// POST /api/v1/projects/{id}/page-edits — layout-aware HTML suggestion (CSS + snippets).
 export const POST = withRoute<z.infer<typeof schema>, Params>({
     auth: 'required',
     limit: 'ai',
@@ -45,26 +45,40 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         }
 
         const project = await getProject(supabase, params.id);
-        const schemaForPage = asContentSchema(project.contentSchema);
-        if (!schemaForPage.sections.length) {
-            throw new ApiError('validation_failed', 'This site has nothing to rewrite yet.');
-        }
-
         const tree = await getProjectFiles(supabase, params.id);
         const path = entryHtml(tree.files);
         if (!path) {
-            throw new ApiError('validation_failed', 'This site has no page to rewrite.');
+            throw new ApiError(
+                'validation_failed',
+                'This site has no HTML page to edit yet. Generate or open a page first.',
+            );
+        }
+
+        const before = tree.files[path] ?? '';
+        if (!before.trim()) {
+            throw new ApiError('validation_failed', 'The home page file is empty.');
         }
 
         const composition = parseComposition(tree.files['composition.json']);
+        const contentSchema = asContentSchema(project.contentSchema);
         const contextText = [
             composition?.meta.title,
             project.siteMeta?.title,
             project.name,
-            tree.files[path]?.slice(0, 4000),
+            before.slice(0, 4000),
         ]
             .filter(Boolean)
             .join(' ');
+
+        const styleBlocked = styleUpgradeFirewall({
+            instruction: body.instruction,
+            html: before,
+            composition,
+        });
+        if (styleBlocked) {
+            throw new ApiError('validation_failed', styleBlocked);
+        }
+
         const crossBlocked = crossVerticalFirewall({
             instruction: body.instruction,
             vertical: resolveSiteVertical({
@@ -73,31 +87,22 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 contextText,
             }),
             sectionCount: composition?.sections.length ?? 0,
-            hasContentPage: schemaForPage.sections.length > 0,
+            hasContentPage: contentSchema.sections.length > 0,
             contextText,
         });
         if (crossBlocked) {
             throw new ApiError('validation_failed', crossBlocked);
         }
 
-        const before = tree.files[path] ?? '';
         let rewritten;
         try {
-            rewritten = await rewriteTemplateCopy(schemaForPage, project.contentJson, body.instruction);
+            rewritten = await rewritePageHtml(before, body.instruction);
         } catch (error) {
             const detail =
                 error instanceof Error && error.message.trim()
                     ? error.message.trim()
-                    : 'The suggestion could not be prepared. Try again.';
+                    : 'The page suggestion could not be prepared. Try again.';
             throw new ApiError('validation_failed', detail);
-        }
-
-        const after = applyContentToHtml(before, schemaForPage, rewritten.content);
-        if (after === before) {
-            throw new ApiError(
-                'validation_failed',
-                'Nothing on the page changed. Try a more specific request.',
-            );
         }
 
         await Promise.all([
@@ -117,7 +122,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         return ok({
             path,
             before,
-            after,
+            after: rewritten.html,
             explanation: rewritten.explanation,
         });
     },
