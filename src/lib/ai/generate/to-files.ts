@@ -440,7 +440,10 @@ address { font-style: normal; }
   border-radius: var(--radius-md, 0.5rem);
   margin-inline: auto;
 }
-[data-style="casual"] [data-type="gallery"] .img-slot { display: none; }
+[data-style="casual"] [data-type="gallery"] .img-slot {
+  display: block;
+  min-height: 12rem;
+}
 [data-style="casual"] .card {
   box-shadow: none;
   border: 1px solid var(--rule);
