@@ -89,9 +89,21 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             throw new ApiError('validation_failed', crossBlocked);
         }
 
-        const clarity = await assessPromptClarity(body.prompt);
-        if (!clarity.usable) {
-            throw new ApiError('brief_unclear', clarity.message);
+        // Clarity judges a brief for a site that does not exist yet: does this name a
+        // business, a place, and what they do. On a site that already exists the prompt is
+        // an instruction — "make the hero more graphical" — which names none of those and
+        // is refused every time, with a message about details the person already gave.
+        //
+        // The same signal the firewall above uses decides it: a project with sections or a
+        // content page is being edited, not described.
+        const hasExistingSite =
+            (composition?.sections.length ?? 0) > 0 || contentSchema.sections.length > 0;
+
+        if (!hasExistingSite) {
+            const clarity = await assessPromptClarity(body.prompt);
+            if (!clarity.usable) {
+                throw new ApiError('brief_unclear', clarity.message);
+            }
         }
 
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
