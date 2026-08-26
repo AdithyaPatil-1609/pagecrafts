@@ -83,6 +83,17 @@ describe('style presets — three looks from one brief', () => {
         expect(bankPhotoUrl('indian sweets mithai')).not.toBe(bankPhotoUrl('a gym in koramangala'));
     });
 
+    it('gives Set 1 and Set 2 different restaurant heroes when salted by job id', () => {
+        const query = 'chinese restaurant fine dining bangalore';
+        const set1 = bankPhotoUrl(query, 'job_set_1');
+        const set2 = bankPhotoUrl(query, 'job_set_2');
+        expect(set1).toMatch(/images\.unsplash\.com\/photo-/);
+        expect(set2).toMatch(/images\.unsplash\.com\/photo-/);
+        expect(set1).not.toBe(set2);
+        // Same set again is stable.
+        expect(bankPhotoUrl(query, 'job_set_1')).toBe(set1);
+    });
+
     it('does not use a clothing shop photo for a sweet shop, even if the slot says shop interior', async () => {
         const shoppy = {
             ...composition,

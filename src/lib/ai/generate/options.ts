@@ -35,12 +35,13 @@ async function renderOption(
     lookup?: PhotoLookup,
     prompt?: string,
     seed = '',
+    photoSalt = '',
 ): Promise<StyleOption> {
     let composition = applyStyle(base, variedSpec(spec, seed));
     if (spec.photos === 'hero') {
-        composition = await stampPhotoUrls(composition, lookup, ['hero']);
+        composition = await stampPhotoUrls(composition, lookup, ['hero'], photoSalt);
     } else if (spec.photos) {
-        composition = await stampPhotoUrls(composition, lookup);
+        composition = await stampPhotoUrls(composition, lookup, undefined, photoSalt);
     }
     return {
         id: spec.id,
@@ -75,9 +76,12 @@ export async function buildStyleOptions(
         vertical: composition.vertical,
         jobId,
     });
+    const photoSalt = jobId ?? '';
 
     return Promise.all(
-        STYLE_IDS.map((id) => renderOption(composition, STYLE_SPECS[id], lookup, prompt, seed)),
+        STYLE_IDS.map((id) =>
+            renderOption(composition, STYLE_SPECS[id], lookup, prompt, seed, photoSalt),
+        ),
     );
 }
 

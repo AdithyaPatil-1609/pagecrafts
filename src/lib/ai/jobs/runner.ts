@@ -404,11 +404,12 @@ function pickIndex(salt: string, length: number): number {
 async function lookupPhoto(query: string, salt = ''): Promise<string> {
     try {
         const { isImageSearchConfigured, searchImages } = await import('@/lib/images/unsplash');
-        if (!isImageSearchConfigured()) return bankPhotoUrl(query);
+        if (!isImageSearchConfigured()) return bankPhotoUrl(query, salt);
         const { items } = await searchImages(query, 1);
-        if (!items.length) return bankPhotoUrl(query);
-        return items[pickIndex(`${salt}:${query}`, items.length)]?.fullUrl ?? bankPhotoUrl(query);
+        if (!items.length) return bankPhotoUrl(query, salt);
+        return items[pickIndex(`${salt}:${query}`, items.length)]?.fullUrl
+            ?? bankPhotoUrl(query, salt);
     } catch {
-        return bankPhotoUrl(query);
+        return bankPhotoUrl(query, salt);
     }
 }
