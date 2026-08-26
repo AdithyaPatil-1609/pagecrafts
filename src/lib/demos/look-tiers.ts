@@ -232,14 +232,184 @@ function ensureImageUrls(composition: Composition): Composition {
     return next;
 }
 
-export function lookTierPreviewHtml(look: CompareLookId): string {
+export type CompareNavPage = {
+    path: string;
+    label: string;
+    /** Same-document hash for Premium continuous decks (e.g. #about). */
+    href?: string;
+};
+
+function labelForPath(path: string): string {
+    if (path === "index.html") return "Home";
+    if (path === "faq.html") return "FAQ";
+    const base = path.replace(/\.html$/i, "");
+    return base.charAt(0).toUpperCase() + base.slice(1);
+}
+
+function demoFiles(look: CompareLookId): Record<string, string> {
     const styleId = STYLE_BY_LOOK[look];
     const styled = ensureImageUrls(applyStyle(demoRestaurantComposition(), STYLE_SPECS[styleId]));
-    const html = compositionToFiles(styled, styleId)["index.html"] ?? "";
-    if (!html) return "";
-    // Inject compact frame rules after <head> so live iframes stay readable.
-    if (/<head[^>]*>/i.test(html)) {
-        return html.replace(/<head[^>]*>/i, (open) => `${open}\n${COMPARE_FRAME_CSS}`);
+    const files = compositionToFiles(styled, styleId);
+    const html: Record<string, string> = {};
+    for (const [path, body] of Object.entries(files)) {
+        if (path.endsWith(".html") && typeof body === "string") html[path] = body;
     }
-    return `${COMPARE_FRAME_CSS}\n${html}`;
+    return html;
+}
+
+/**
+ * Shell srcDoc that keeps every AI-generated HTML page inside the Compare iframe.
+ *
+ * Clicking `about.html` in a lone index srcDoc navigates to pagecrafts.in/about.html
+ * and Chrome shows "refused to connect". This shell patches .html links and swaps
+ * the inner frame to the matching generated file instead.
+ */
+function multipagePreviewSrcDoc(
+    pages: Record<string, string>,
+    startPath: string,
+): string {
+    const payload = JSON.stringify(pages).replace(/</g, "\\u003c");
+    const start = pages[startPath] ? startPath : "index.html";
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Compare preview</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; }
+  #pc-view { display: block; width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<iframe id="pc-view" title="Site preview"></iframe>
+<script>
+(function () {
+  var PAGES = ${payload};
+  var FRAME_CSS = ${JSON.stringify(COMPARE_FRAME_CSS)};
+  var view = document.getElementById("pc-view");
+
+  function fileFromHref(href) {
+    try {
+      var u = new URL(href, "https://compare.local/index.html");
+      var path = (u.pathname || "/").replace(/^\\//, "");
+      if (!path || path.endsWith("/")) path += "index.html";
+      return { path: path, hash: u.hash ? u.hash.slice(1) : "" };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function patch(raw) {
+    var html = String(raw || "");
+    if (/<head[^>]*>/i.test(html)) {
+      html = html.replace(/<head[^>]*>/i, function (open) { return open + FRAME_CSS; });
+    } else {
+      html = FRAME_CSS + html;
+    }
+    html = html.replace(/\\bhref\\s*=\\s*(["'])([^"']+?\\.html[^"']*)\\1/gi, function (_, q, href) {
+      var nav = fileFromHref(href);
+      if (!nav || !PAGES[nav.path]) return "href=" + q + href + q;
+      var spec = nav.path + (nav.hash ? "#" + nav.hash : "");
+      return "href=" + q + "#" + q + " data-pc-file=" + q + spec + q;
+    });
+    var bridge = "<script>(function(){document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a[data-pc-file]');if(!a)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();var spec=a.getAttribute('data-pc-file')||'index.html';var i=spec.indexOf('#');var path=i<0?spec:spec.slice(0,i);var hash=i<0?'':spec.slice(i+1);parent.postMessage({type:'pc-compare-go',path:path,hash:hash},'*');},true);})();<\\/script>";
+    if (/<\\/body>/i.test(html)) return html.replace(/<\\/body>/i, bridge + "</body>");
+    return html + bridge;
+  }
+
+  function go(path, hash) {
+    var key = path && PAGES[path] ? path : "index.html";
+    var raw = PAGES[key];
+    if (!raw) return;
+    view.onload = function () {
+      if (!hash) return;
+      try {
+        var doc = view.contentDocument;
+        if (!doc) return;
+        var el = doc.getElementById(hash) || doc.querySelector('[id="' + hash + '"]');
+        if (el) el.scrollIntoView();
+      } catch (e) {}
+    };
+    view.srcdoc = patch(raw);
+    try {
+      parent.postMessage({ type: "pc-compare-nav", path: key, hash: hash || "" }, "*");
+    } catch (e) {}
+  }
+
+  window.addEventListener("message", function (ev) {
+    var data = ev && ev.data;
+    if (!data) return;
+    if (data.type === "pc-compare-go" || data.type === "pc-compare-nav") {
+      go(data.path || "index.html", data.hash || "");
+    }
+  });
+
+  go(${JSON.stringify(start)}, "");
+})();
+</script>
+</body>
+</html>`;
+}
+
+export function lookTierSite(look: CompareLookId): {
+    files: Record<string, string>;
+    nav: CompareNavPage[];
+    previewHtml: (path?: string) => string;
+} {
+    const files = demoFiles(look);
+    const styleId = STYLE_BY_LOOK[look];
+    const nav: CompareNavPage[] = [];
+
+    if (styleId === "motion") {
+        nav.push({ path: "index.html", label: "Home", href: "#top" });
+        const home = files["index.html"] ?? "";
+        for (const id of ["about", "services", "menu", "gallery", "faq", "contact"] as const) {
+            if (home.includes(`id="${id}"`) || home.includes(`data-type="${id}"`)) {
+                const labels: Record<string, string> = {
+                    about: "About",
+                    services: "Services",
+                    menu: "Menu",
+                    gallery: "Gallery",
+                    faq: "FAQ",
+                    contact: "Contact",
+                };
+                nav.push({ path: "index.html", label: labels[id], href: `#${id}` });
+            }
+        }
+        if (files["settings.html"]) {
+            nav.push({ path: "settings.html", label: "Settings" });
+        }
+    } else {
+        const order = [
+            "index.html",
+            "about.html",
+            "services.html",
+            "menu.html",
+            "gallery.html",
+            "contact.html",
+            "settings.html",
+        ];
+        for (const path of order) {
+            if (files[path]) nav.push({ path, label: labelForPath(path) });
+        }
+        for (const path of Object.keys(files).sort()) {
+            if (!nav.some((n) => n.path === path)) {
+                nav.push({ path, label: labelForPath(path) });
+            }
+        }
+    }
+
+    return {
+        files,
+        nav,
+        previewHtml(path = "index.html") {
+            return multipagePreviewSrcDoc(files, path);
+        },
+    };
+}
+
+/** Home thumbnail / default live frame — full multipage-capable srcDoc. */
+export function lookTierPreviewHtml(look: CompareLookId): string {
+    return lookTierSite(look).previewHtml("index.html");
 }
