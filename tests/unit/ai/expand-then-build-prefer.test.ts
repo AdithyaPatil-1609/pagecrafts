@@ -69,7 +69,7 @@ describe('Ask AI: Gemini expand then Groq build', () => {
         expect(done.ledger.some((l) => l.stage === 'expand')).toBe(true);
 
         const expandEvent = done.events.find(
-            (e) => e.type === 'plan' && (e.data as { mode?: string })?.mode === 'expand',
+            (e) => e.name === 'plan' && (e.data as { mode?: string })?.mode === 'expand',
         );
         // Soft assert: events array may be compacted; ledger+prompt prove expand ran.
         if (!expandEvent) {
