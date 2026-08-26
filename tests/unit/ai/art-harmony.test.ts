@@ -113,7 +113,9 @@ describe('the promise on the pricing page still holds', () => {
     // Tightening each tier so the ladder reads correctly costs raw combinations. What is
     // left is still far past the point any real customer list would collide.
     it('keeps enough distinct designs in the paid tiers', () => {
-        expect(paletteSize('photos')).toBeGreaterThan(20_000);
+        // Hero is locked to image-bg so every Pro site opens cinematic; the rest of the
+        // catalogue still clears ten thousand distinct designs.
+        expect(paletteSize('photos')).toBeGreaterThan(10_000);
         expect(paletteSize('motion')).toBeGreaterThan(500);
     });
 

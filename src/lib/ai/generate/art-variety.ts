@@ -94,7 +94,8 @@ const PALETTES: Record<StyleId, Palette> = {
         moods: [MOODS.editorial, MOODS.sunlit, MOODS.sage, MOODS.clinic, MOODS.press],
         motions: ['whisper', 'calm', 'editorial', 'showcase'],
         sections: {
-            hero: ['image-bg', 'split-image'],
+            // Always cinematic full-bleed — never split-image (that is Casual's job).
+            hero: ['image-bg'],
             about: ['media-split', 'text'],
             services: ['tabs'],
             menu: ['grouped', 'simple'],
@@ -195,10 +196,14 @@ export function variedVariants(
 export function variedSpec(spec: StyleSpec, seed: string): StyleSpec {
     if (!seed) return spec;
 
+    const variants = { ...spec.variants, ...variedVariants(spec.id, seed) };
+    // Product promise: every Photo-rich site opens on a cinematic full-bleed hero.
+    if (spec.id === 'photos') variants.hero = 'image-bg';
+
     return {
         ...spec,
         art: variedArtDirection(spec.id, seed),
-        variants: { ...spec.variants, ...variedVariants(spec.id, seed) },
+        variants,
     };
 }
 

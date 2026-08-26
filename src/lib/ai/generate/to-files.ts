@@ -575,17 +575,6 @@ address { font-style: normal; }
   max-width: 38rem;
   color: color-mix(in srgb, var(--ink) 78%, var(--muted));
 }
-[data-style="photos"] [data-variant="image-bg"] {
-  min-height: min(100dvh, 52rem);
-  border-radius: 0;
-}
-[data-style="photos"] [data-variant="image-bg"] .hero-copy {
-  padding: 5rem 2rem 3rem;
-  text-align: center;
-  justify-self: center;
-  max-width: 40rem;
-  width: 100%;
-}
 /* Pro: topic photograph as a full-site backdrop behind every page */
 [data-style="photos"].site {
   position: relative;
@@ -614,22 +603,107 @@ address { font-style: normal; }
   background: color-mix(in srgb, var(--bg) 72%, transparent);
   backdrop-filter: blur(14px) saturate(1.1);
 }
+/* Full-bleed main — hero must reach the screen edges (same promise as Premium) */
 [data-style="photos"] main {
   position: relative;
   z-index: 1;
+  max-width: none;
+  padding-inline: 0;
+  padding-bottom: 0;
 }
-[data-style="photos"] section:not([data-variant="image-bg"]) {
+/* Cinematic hero: edge-to-edge cover, no inset card / white gaps */
+[data-style="photos"] [data-type="hero"],
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"] {
+  position: relative;
+  isolation: isolate;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  place-items: center;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+  padding-block: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .img-slot {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  min-height: 100%;
+  height: 100%;
+  width: 100%;
+  box-shadow: none;
+  overflow: hidden;
+}
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .img-slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 0;
+}
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(12, 10, 9, 0.35) 0%,
+    rgba(12, 10, 9, 0.12) 42%,
+    rgba(12, 10, 9, 0.72) 100%
+  );
+}
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .hero-copy {
+  position: relative;
+  z-index: 2;
+  padding: clamp(5rem, 14vh, 8rem) clamp(1.25rem, 5vw, 3rem) clamp(3rem, 8vh, 5rem);
+  text-align: center;
+  justify-self: center;
+  align-self: center;
+  max-width: min(42rem, 92vw);
+  width: 100%;
+  background: none;
+  color: #fff;
+}
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .eyebrow,
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"] .lede,
+[data-style="photos"] [data-type="hero"][data-variant="image-bg"] h1 {
+  color: #fff;
+  text-shadow: 0 1px 18px rgba(12, 10, 9, 0.55);
+}
+[data-style="photos"] section:not([data-type="hero"]):not([data-type="footer"]) {
   background: color-mix(in srgb, var(--panel) 82%, transparent);
   border: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
   border-radius: var(--radius-lg, 0.85rem);
   padding: 2rem 1.5rem;
   margin-block: 1rem;
+  margin-inline: clamp(1rem, 4vw, 1.5rem);
+  max-width: 72rem;
+  width: auto;
   backdrop-filter: blur(8px);
+}
+@media (min-width: 72rem) {
+  [data-style="photos"] section:not([data-type="hero"]):not([data-type="footer"]) {
+    margin-inline: auto;
+  }
 }
 [data-style="photos"] [data-type="footer"] {
   background: transparent;
   border: 0;
   backdrop-filter: none;
+  padding-inline: clamp(1rem, 4vw, 1.5rem);
 }
 /* Smooth Pro page transitions between HTML files */
 html.pc-page-ready [data-style="photos"].site {

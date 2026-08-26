@@ -221,7 +221,9 @@ describe('style presets — three looks from one brief', () => {
         expect(home.photos).toContain('pc-page-ready');
         expect(home.photos).toContain('--pc-bg-shift');
         expect(home.photos).toContain('scale(1.06)');
-        expect(['image-bg', 'split-image', 'centred']).toContain(heroVariant(home.photos));
+        expect(heroVariant(home.photos)).toBe('image-bg');
+        expect(home.photos).toMatch(/\[data-style="photos"\] \[data-type="hero"\][\s\S]*?min-height:\s*100svh/);
+        expect(home.photos).toMatch(/\[data-style="photos"\] main[\s\S]*?padding-inline:\s*0/);
         expect(['media-split', 'text']).toContain(aboutVariant(about.photos));
         expect((allHtml.photos.match(/images\.unsplash\.com/g) ?? []).length)
             .toBeGreaterThan((allHtml.casual.match(/images\.unsplash\.com/g) ?? []).length);
