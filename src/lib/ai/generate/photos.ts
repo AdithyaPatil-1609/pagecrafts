@@ -7,32 +7,24 @@ const unsplash = (id: string) => `https://images.unsplash.com/${id}${PHOTO}`;
  * Photographs we can stamp without calling Unsplash at generation time.
  * Live search is preferred when a key is configured; this bank keeps the
  * photo-rich look from shipping empty frames in tests and offline deploys.
+ *
+ * Unmatched queries must NOT fall through to a food-heavy list — travel vlogs
+ * were landing on bakery bread because the old default bank started with food.
+ * Every id here must return 200 on images.unsplash.com (dead ids blank Pick a look).
  */
-const BANK = [
-    'photo-1509440159596-0249088772ff', // bakery shelf
-    'photo-1554118811-1e0d58224f24', // café table
-    'photo-1414235077428-338989a2e8c0', // restaurant dining
-    'photo-1517248135467-4c7edcad34c4', // restaurant interior
-    'photo-1504674900247-0877df9cc836', // plated food
-    'photo-1559339352-11d035aa65de', // restaurant service
-    'photo-1416879595882-3373a0480b5b', // outdoor dining
-    'photo-1424847653812-7ad6b33ea746', // pasta plate
-    'photo-1466978913421-dad2ebd01d17', // restaurant bar
-    'photo-1540189549336-e9fb1f3a1e3d', // salad bowl
-    'photo-1476224203421-9ac39bcb3327', // brunch table
+const GENERAL_PHOTOS = [
+    'photo-1476514525535-07fb3b4ae5f1', // lake
+    'photo-1469474968028-56623f02e42e', // mountain valley
+    'photo-1469854523086-cc02fe5d8800', // road trip overlook
+    'photo-1441974231531-c6227db76b6e', // forest path
+    'photo-1506905925346-21bda4d32df4', // alpine peaks
+    'photo-1452587925148-ce544e77e70d', // camera
     'photo-1499750310107-5fef28a66643', // desk
     'photo-1512917774080-9991f1c4c750', // house at dusk
-    'photo-1476514525535-07fb3b4ae5f1', // lake
     'photo-1521737604893-d14cc237f11d', // portrait
-    'photo-1452587925148-ce544e77e70d', // camera
     'photo-1560066984-138dadb4c035', // salon
     'photo-1534438327276-14e5300c3a48', // gym
 ] as const;
-
-/** Colourful plated desserts — not a clothing rail. */
-export const DESSERT_PHOTO_ID = 'photo-1551024506-0bccd828d307';
-/** Fashion retail interior. Only for clothing/saree/boutique queries. */
-export const CLOTHING_PHOTO_ID = 'photo-1441986300917-64674bd600d8';
 
 /** Dining / restaurant heroes — large enough that Set 2 can skip Set 1's pick. */
 const RESTAURANT_PHOTOS = [
@@ -41,9 +33,9 @@ const RESTAURANT_PHOTOS = [
     'photo-1504674900247-0877df9cc836',
     'photo-1559339352-11d035aa65de',
     'photo-1416879595882-3373a0480b5b',
-    'photo-1424847653812-7ad6b33ea746',
+    'photo-1565299624946-b28f40a0ae38',
     'photo-1466978913421-dad2ebd01d17',
-    'photo-1540189549336-e9fb1f3a1e3d',
+    'photo-1546069901-ba9599a7e63c',
     'photo-1476224203421-9ac39bcb3327',
 ] as const;
 
@@ -58,19 +50,53 @@ const BAKERY_PHOTOS = [
     'photo-1509440159596-0249088772ff',
     'photo-1517433670267-08bbd4be890f',
     'photo-1555507036-ab1f4038808a',
-    'photo-1486427944299-d1955d23fd34',
+    'photo-1578985545062-69928b1d9587',
 ] as const;
+
+/** Clinic / hospital / surgery — every id must 200 on images.unsplash.com. */
+const CLINIC_PHOTOS = [
+    'photo-1519494026892-80bbd2d6fd0d',
+    'photo-1516549655169-df83a0774514',
+    'photo-1579684385127-1ef15d508118',
+    'photo-1586773860418-d37222d8fce3',
+    'photo-1666214280557-f1b5022eb634',
+] as const;
+
+const GYM_PHOTOS = [
+    'photo-1534438327276-14e5300c3a48',
+    'photo-1517836357463-d25dfeac3438',
+    'photo-1571019614242-c5c5dee9f50b',
+] as const;
+
+/** Travel / nature / vlog — never food when the brief is about journeys outdoors. */
+const TRAVEL_PHOTOS = [
+    'photo-1469474968028-56623f02e42e', // green mountains
+    'photo-1469854523086-cc02fe5d8800', // road trip overlook
+    'photo-1476514525535-07fb3b4ae5f1', // lake canoe
+    'photo-1506905925346-21bda4d32df4', // snow peaks
+    'photo-1441974231531-c6227db76b6e', // sunlit forest
+    'photo-1488646953014-85cb44e25828', // suitcase travel
+    'photo-1530789253388-582c481c54b0', // traveler viewpoint
+    'photo-1470071459604-3b5ec3a7fe05', // foggy hills
+    'photo-1464822759023-fed622ff2c3b', // mountain ridge
+    'photo-1500530855697-b586d89ba3ee', // desert road trip
+] as const;
+
+/** Colourful plated desserts — not a clothing rail. */
+export const DESSERT_PHOTO_ID = 'photo-1551024506-0bccd828d307';
+/** Fashion retail interior. Only for clothing/saree/boutique queries. */
+export const CLOTHING_PHOTO_ID = 'photo-1441986300917-64674bd600d8';
+/** Known bakery shelf — used to assert travel briefs never pick food. */
+export const BAKERY_SHELF_PHOTO_ID = 'photo-1509440159596-0249088772ff';
 
 const KEYWORD_PHOTO: Array<[RegExp, readonly string[]]> = [
     [/\b(sweet|mithai|dessert|laddu|ladoo|jalebi|halwa|peda|barfi|gulab|confection|chocolate|cupcake)\b/i, [DESSERT_PHOTO_ID]],
     [/\b(bakery|bread|pastry|cake|patisserie)\b/i, BAKERY_PHOTOS],
     [/\b(cafe|coffee|chai)\b/i, CAFE_PHOTOS],
-    [/\b(restaurant|dining|kitchen)\b/i, RESTAURANT_PHOTOS],
-    [/\b(gym|fitness|yoga)\b/i, ['photo-1534438327276-14e5300c3a48', 'photo-1571902943202-507c674acf4a']],
-    [/\b(clinic|dental|hospital|doctor|veterinary|vet)\b/i, [
-        'photo-1519494026892-80bbd2d6fd0d',
-        'photo-1631217868264-e5b90bb7e629',
-    ]],
+    [/\b(restaurant|dining|kitchen|fine dining)\b/i, RESTAURANT_PHOTOS],
+    [/\b(travel|traveller|traveler|tourism|tourist|vlog|vlogger|journey|adventure|wander|wanderlust|nature|outdoor|outdoors|hiking|trek|trekking|camping|landscape|mountain|forest|lake|beach|safari|road.?trip|itinerary|explore)\b/i, TRAVEL_PHOTOS],
+    [/\b(gym|fitness|yoga)\b/i, GYM_PHOTOS],
+    [/\b(clinic|dental|hospital|doctor|veterinary|vet|surgery|surgical|surgeon|neurosurg|medical|healthcare)\b/i, CLINIC_PHOTOS],
     [/\b(saree|clothing|fashion|boutique|apparel|garment|dress|textile)\b/i, [CLOTHING_PHOTO_ID]],
 ];
 
@@ -123,10 +149,18 @@ export function isMithaiShop(vertical: string, title = '', query = ''): boolean 
         || /sweetshop/i.test(text);
 }
 
-/** Vertical + title + slot query, so "shop interior" on a sweet shop still searches for sweets. */
-export function photoSearchQuery(vertical: string, title: string, query: string): string {
-    if (isMithaiShop(vertical, title, query)) return MITHAI_SEARCH;
-    const bits = [vertical.replace(/[-_]/g, ' '), title, query]
+/**
+ * Vertical + title + description + slot query.
+ * Description matters: "Explore nature videos" must steer the photo away from food.
+ */
+export function photoSearchQuery(
+    vertical: string,
+    title: string,
+    query: string,
+    description = '',
+): string {
+    if (isMithaiShop(vertical, title, `${query} ${description}`)) return MITHAI_SEARCH;
+    const bits = [vertical.replace(/[-_]/g, ' '), title, description, query]
         .map((part) => part.trim())
         .filter(Boolean);
     const seen = new Set<string>();
@@ -158,7 +192,7 @@ export function bankPhotoUrl(
             return unsplash(pickFromPool(ids, key, exclude));
         }
     }
-    return unsplash(pickFromPool(BANK, key, exclude));
+    return unsplash(pickFromPool(GENERAL_PHOTOS, key, exclude));
 }
 
 function imageQuery(value: unknown): string {
@@ -194,15 +228,16 @@ export async function stampPhotoUrls(
 ): Promise<Composition> {
     const cache = new Map<string, string>();
     const title = composition.meta.title ?? '';
+    const description = composition.meta.description ?? '';
     const allowed = onlyTypes ? new Set(onlyTypes) : null;
 
     const resolve = async (query: string, fallback: string): Promise<string> => {
-        const search = photoSearchQuery(composition.vertical, title, query || fallback);
+        const search = photoSearchQuery(composition.vertical, title, query || fallback, description);
         const key = search.toLowerCase();
         const hit = cache.get(key);
         if (hit) return hit;
         // Live Unsplash on "sweet shop" returns villas and clothing rails.
-        const url = isMithaiShop(composition.vertical, title, search)
+        const url = isMithaiShop(composition.vertical, title, `${search} ${description}`)
             ? bankPhotoUrl(search, salt, exclude)
             : await lookup(search);
         cache.set(key, url);
