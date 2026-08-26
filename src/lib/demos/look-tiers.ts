@@ -178,8 +178,26 @@ export function demoRestaurantComposition(): Composition {
             section("s_faq", "faq", "accordion", {
                 heading: "Before you visit",
                 items: [
-                    { q: "Do you take walk-ins?", a: "We prefer a reservation after 7." },
-                    { q: "Dress code?", a: "Smart casual." },
+                    {
+                        question: "Do you take walk-ins?",
+                        answer: "We keep a few tables for walk-ins before 7pm. After that we prefer a reservation so we can pace the kitchen.",
+                    },
+                    {
+                        question: "What is the dress code?",
+                        answer: "Smart casual — no shorts or flip-flops in the dining room. Jackets are welcome, not required.",
+                    },
+                    {
+                        question: "Can you handle vegetarian or Jain meals?",
+                        answer: "Yes. Tell us when you book and the kitchen will set a tasting or à la carte path without onion or garlic if you need it.",
+                    },
+                    {
+                        question: "Is there parking nearby?",
+                        answer: "Valet runs from 6:30pm on Indiranagar 100 Feet Road. Street parking fills up after 8 — we recommend the valet.",
+                    },
+                    {
+                        question: "Do you take kids?",
+                        answer: "Children are welcome before 8pm. We have a shorter plate list; high chairs are limited, so mention it in the reservation.",
+                    },
                 ],
             }),
             section("s_contact", "contact", "simple", {
