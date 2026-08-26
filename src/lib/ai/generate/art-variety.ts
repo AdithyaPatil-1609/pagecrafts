@@ -110,6 +110,7 @@ const PALETTES: Record<StyleId, Palette> = {
         moods: [MOODS.luxe, MOODS.slate, MOODS.voltage],
         motions: ['kinetic', 'showcase'],
         sections: {
+            // Both variants render full-bleed via MOTION_CSS (image-bg must not become an inset card).
             hero: ['image-bg', 'centred'],
             about: ['text', 'media-split'],
             services: ['timeline', 'cards', 'grid'],

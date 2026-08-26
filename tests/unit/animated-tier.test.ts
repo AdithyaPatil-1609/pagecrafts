@@ -46,8 +46,12 @@ describe('the premium tier is given a photograph', () => {
 
         expect(slot).toContain('position: absolute');
         expect(slot).toContain('inset: 0');
+        expect(slot).toContain('border-radius: 0');
         expect(rule('[data-style="motion"] [data-type="hero"] .img-slot img {'))
             .toContain('object-fit: cover');
+        expect(rule('[data-style="motion"] [data-type="hero"] {')).toContain('min-height: 100vh');
+        expect(rule('[data-style="motion"] [data-type="hero"] {')).toContain('border-radius: 0');
+        expect(rule('[data-style="motion"] [data-type="hero"] {')).toContain('padding: 0');
     });
 
     it('darkens it under the type, or the headline cannot be read', () => {
