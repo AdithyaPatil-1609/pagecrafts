@@ -80,10 +80,21 @@ export function tierChromeCss(kind: ChromeKind): string {
 .site-sidebar .nav a[aria-current="page"] {
   color: var(--ink); background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-.site-main { min-width: 0; }
+.site-main { min-width: 0; display: flex; flex-direction: column; min-height: 100dvh; }
+.site-main .hero {
+  flex: 1 1 auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+  text-align: center; min-height: min(88dvh, 44rem);
+}
+.site-main .hero-copy {
+  margin-inline: auto; text-align: center; max-width: 36rem;
+}
+.site-main .section, .site-main .footer {
+  text-align: center; max-width: 42rem; margin-inline: auto; width: 100%;
+}
 .site-main .hero-frame,
 .site-main [data-type="hero"] .img-slot {
-  border-radius: 0; min-height: 16rem;
+  border-radius: 0.75rem; min-height: 14rem; max-width: 28rem; margin-inline: auto;
 }
 @media (max-width: 48rem) {
   .site-shell { grid-template-columns: 1fr; }
@@ -121,6 +132,23 @@ export function tierChromeCss(kind: ChromeKind): string {
 .site-topbar .nav a[aria-current="page"],
 .site-topbar-blend .nav a[aria-current="page"] {
   color: var(--ink); border-bottom-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+/* Pro templates: topic photograph as a full-page backdrop when a hero image exists */
+body[data-chrome="topbar"] {
+  min-height: 100dvh;
+  background-attachment: fixed;
+}
+body[data-chrome="topbar"] .hero.full-bleed-photo,
+body[data-chrome="topbar"][data-layout="full-bleed"] .hero {
+  min-height: 100dvh;
+  display: flex; flex-direction: column; justify-content: safe center;
+}
+body[data-chrome="topbar"] .section {
+  background: color-mix(in srgb, var(--panel, #fff) 88%, transparent);
+  backdrop-filter: blur(6px);
+  border-radius: 0.85rem;
+  margin: 1rem 1.5rem;
+  padding: 2rem 1.5rem;
 }
 `;
     }
@@ -165,14 +193,18 @@ export function tierChromeCss(kind: ChromeKind): string {
   display: flex; flex-direction: column; gap: 0;
 }
 .liquid-slide {
-  min-height: min(92dvh, 48rem);
-  display: flex; flex-direction: column; justify-content: center;
+  min-height: 100dvh;
+  display: flex; flex-direction: column; justify-content: safe center;
   padding: 4.5rem 6vw;
   border-bottom: 1px solid color-mix(in srgb, var(--bloom-sky) 14%, transparent);
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+  box-sizing: border-box;
 }
-/* Smooth continuous scroll — no html scroll-snap (snap was locking page-to-page). */
+/* Continuous scroll like pagecrafts.in — proximity snap, not hard page locks. */
 html:has(.site-liquid) {
   scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
 }
 .site-liquid h1, .site-liquid h2 {
   font-family: Outfit, ui-sans-serif, system-ui, sans-serif;
@@ -184,7 +216,7 @@ html:has(.site-liquid) {
   background: var(--liquid-gold); color: #05070a; font-weight: 650;
 }
 @media (prefers-reduced-motion: reduce) {
-  html:has(.site-liquid) { scroll-behavior: auto; }
+  html:has(.site-liquid) { scroll-behavior: auto; scroll-snap-type: none; }
 }
 `;
 }

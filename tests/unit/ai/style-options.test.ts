@@ -74,7 +74,7 @@ describe('style presets — three looks from one brief', () => {
         expect(photos.artDirection.motionId).not.toBe(STYLE_SPECS.motion.art.motionId);
         expect(photos.sections.find((s) => s.type === 'hero')?.variant).toBe('image-bg');
         expect(applyStyle(composition, STYLE_SPECS.casual).sections.find((s) => s.type === 'hero')?.variant)
-            .toBe('split-image');
+            .toBe('centred');
         expect(applyStyle(composition, STYLE_SPECS.casual).artDirection.themeId).toBe('sunlit-craft');
         expect(applyStyle(composition, STYLE_SPECS.motion).artDirection.motionId).toBe('kinetic');
     });
@@ -142,24 +142,28 @@ describe('style presets — three looks from one brief', () => {
         expect(home.photos).toContain('data-style="photos"');
         expect(home.motion).toContain('data-style="motion"');
 
-        // Casual shows one hero photograph in a split layout (not a grey wall of type).
+        // Casual shows one hero photograph, centre-oriented in the viewport.
         expect(home.casual).toContain('images.unsplash.com');
         expect(home.casual).toContain('<img src="');
-        // The layout is drawn per business now, so the assertion is the tier's pool rather
-        // than one variant. Every Photo-rich site sharing one hero was the thing the Rs 499
-        // tier is sold as not doing.
-        expect(['split-image', 'centred', 'minimal']).toContain(heroVariant(home.casual));
+        expect(['centred', 'split-image', 'minimal']).toContain(heroVariant(home.casual));
         expect(home.casual).toContain('site-header');
-        // About lives on about.html after the multi-page split.
+        expect(home.casual).toMatch(/min-height:\s*min\(88dvh/);
+        // About still has a page on Starter / Pro multi-page sites.
         expect(['text', 'media-split']).toContain(aboutVariant(about.casual));
-        // Photo-rich goes further: cinematic hero + more photos site-wide.
+        // Photo-rich: cinematic hero + full-site topic photograph + page transitions.
         expect(home.photos).toContain('images.unsplash.com');
+        expect(home.photos).toContain('--page-photo');
+        expect(home.photos).toContain('pc-page-ready');
         expect(['image-bg', 'split-image', 'centred']).toContain(heroVariant(home.photos));
         expect(['media-split', 'text']).toContain(aboutVariant(about.photos));
         expect((allHtml.photos.match(/images\.unsplash\.com/g) ?? []).length)
             .toBeGreaterThan((allHtml.casual.match(/images\.unsplash\.com/g) ?? []).length);
-        // Each tier keeps its character while it varies: quiet stays quiet, kinetic stays
-        // in motion. What must never happen is Casual animating like Animated.
+        // Premium is a continuous scroll deck (like pagecrafts.in), not multi-page.
+        expect(home.motion).toContain('site-liquid');
+        expect(home.motion).toContain('liquid-deck');
+        expect(home.motion).toContain('liquid-slide');
+        expect(home.motion).toContain('href="#about"');
+        expect(options.find((o) => o.id === 'motion')?.files['about.html']).toBeUndefined();
         expect(['none', 'whisper']).toContain(bodyMotion(home.casual));
         expect(['whisper', 'calm', 'editorial', 'showcase']).toContain(bodyMotion(home.photos));
         expect(['kinetic', 'showcase', 'editorial']).toContain(bodyMotion(home.motion));

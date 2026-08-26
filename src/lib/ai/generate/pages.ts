@@ -5,6 +5,10 @@ export interface SitePage {
     label: string;
     sections: SectionInstance[];
     kind: 'content' | 'about' | 'contact' | 'settings';
+    /** Nav href when different from the file path (hash links on a continuous Premium site). */
+    href?: string;
+    /** Hash-nav entry that must not emit a separate HTML file. */
+    navOnly?: boolean;
 }
 
 const PAGE_FOR: Partial<Record<SectionKey, { path: string; label: string }>> = {
@@ -17,6 +21,18 @@ const PAGE_FOR: Partial<Record<SectionKey, { path: string; label: string }>> = {
     testimonials: { path: 'stories.html', label: 'Stories' },
     faq: { path: 'faq.html', label: 'FAQ' },
     contact: { path: 'contact.html', label: 'Contact' },
+};
+
+const NAV_LABEL: Partial<Record<SectionKey, string>> = {
+    hero: 'Home',
+    about: 'About',
+    services: 'Services',
+    menu: 'Menu',
+    gallery: 'Gallery',
+    team: 'Team',
+    testimonials: 'Stories',
+    faq: 'FAQ',
+    contact: 'Contact',
 };
 
 function esc(value: string): string {
@@ -36,12 +52,27 @@ function contactProps(composition: Composition): Record<string, unknown> {
     return contact?.props ?? {};
 }
 
+export interface PlanSitePagesOptions {
+    /**
+     * Premium continuous scroll — one Home deck with every section, hash nav,
+     * Settings still a separate page. Matches pagecrafts.in / signature templates.
+     */
+    continuous?: boolean;
+}
+
 /**
  * Split a composition into real HTML files: Home, at least two more content
  * pages, then Settings last. Empty gaps are filled from facts already on the
  * composition so a thin plan still ships a working site.
+ *
+ * When `continuous` is set (Premium), Home holds the full scroll deck instead.
  */
-export function planSitePages(composition: Composition): SitePage[] {
+export function planSitePages(
+    composition: Composition,
+    opts: PlanSitePagesOptions = {},
+): SitePage[] {
+    if (opts.continuous) return planContinuousPages(composition);
+
     const visible = composition.sections.filter((s) => s.visible);
     const pages: SitePage[] = [];
 
@@ -102,7 +133,46 @@ export function planSitePages(composition: Composition): SitePage[] {
     return pages;
 }
 
-export function pageHref(path: string, current: string): string {
+/** One continuous Premium deck + Settings. */
+function planContinuousPages(composition: Composition): SitePage[] {
+    const visible = composition.sections.filter((s) => s.visible && s.type !== 'footer');
+    const pages: SitePage[] = [
+        {
+            path: 'index.html',
+            href: '#top',
+            label: 'Home',
+            sections: visible,
+            kind: 'content',
+        },
+    ];
+
+    for (const section of visible) {
+        if (section.type === 'hero') continue;
+        const label = NAV_LABEL[section.type];
+        if (!label) continue;
+        if (pages.some((p) => p.label === label)) continue;
+        pages.push({
+            path: 'index.html',
+            href: `#${section.type}`,
+            label,
+            sections: [],
+            kind: section.type === 'contact' ? 'contact' : 'content',
+            navOnly: true,
+        });
+    }
+
+    pages.push({
+        path: 'settings.html',
+        label: 'Settings',
+        sections: [],
+        kind: 'settings',
+    });
+
+    return pages;
+}
+
+export function pageHref(path: string, current: string, href?: string): string {
+    if (href) return href;
     return path === current ? '#top' : path;
 }
 

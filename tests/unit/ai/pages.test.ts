@@ -87,4 +87,23 @@ describe('thin compositions still ship a working site', () => {
             'settings.html',
         ]);
     });
+
+    it('plans a continuous Premium deck with hash nav', () => {
+        const full: Composition = {
+            ...thin,
+            sections: [
+                section('s_01', 'hero', { heading: 'Kettle' }),
+                section('s_02', 'about', { heading: 'Our story', body: 'Tea.' }),
+                section('s_03', 'services', { heading: 'Pour' }),
+                section('s_04', 'contact', { heading: 'Visit' }),
+                section('s_05', 'footer', { tagline: 'Kettle' }),
+            ],
+        };
+        const pages = planSitePages(full, { continuous: true });
+        const files = pages.filter((p) => !p.navOnly);
+        expect(files.map((p) => p.path)).toEqual(['index.html', 'settings.html']);
+        expect(pages.some((p) => p.href === '#about')).toBe(true);
+        expect(pages.find((p) => p.path === 'index.html' && !p.navOnly)?.sections.map((s) => s.type))
+            .toEqual(['hero', 'about', 'services', 'contact']);
+    });
 });

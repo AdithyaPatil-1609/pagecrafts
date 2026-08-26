@@ -81,7 +81,7 @@ const PALETTES: Record<StyleId, Palette> = {
         moods: [MOODS.paper, MOODS.note, MOODS.ward],
         motions: ['none'],
         sections: {
-            hero: ['split-image', 'centred'],
+            hero: ['centred', 'split-image'],
             about: ['text'],
             services: ['grid'],
             menu: ['simple'],

@@ -14,6 +14,8 @@ import {
     workingForm,
     type SitePage,
 } from './pages';
+import { chromeForStyleId } from '@/lib/sites/tier-chrome';
+import { tierChromeCss } from '@/lib/sites/tier-chrome-markup';
 
 /**
  * D15 — turn a composition into a file tree the rest of the product already
@@ -95,14 +97,16 @@ function renderSection(
     index: number,
     visible: readonly SectionInstance[],
     motifHtml: string,
+    continuous = false,
 ): string {
     const p = section.props;
     const key = sectionContentKey(section, visible);
     const heading = asString(p.heading);
     const anchor = sectionAnchor(section, visible);
-    const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate style="--i:${index}">`;
+    const slideClass = continuous ? ' class="liquid-slide"' : '';
+    const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate${slideClass} style="--i:${index}">`;
     const motif = section.type === 'hero' ? motifHtml : '';
-    return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant)}</section>`;
+    return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant, continuous)}</section>`;
 }
 
 /**
@@ -138,8 +142,8 @@ function tabbedItems(key: string, items: readonly Record<string, unknown>[]): st
     return `<div class="tabs" data-tabs><div class="tablist" role="tablist">${tabs}</div><div class="tabpanels">${panels}</div></div>`;
 }
 
-function contactHref(): string {
-    return 'contact.html';
+function contactHref(continuous = false): string {
+    return continuous ? '#contact' : 'contact.html';
 }
 
 function renderInner(
@@ -148,6 +152,7 @@ function renderInner(
     p: Record<string, unknown>,
     heading: string,
     variant = '',
+    continuous = false,
 ): string {
     const h = (tag: 'h1' | 'h2', text: string) =>
         text ? slot(tag, `${key}.heading`, escapeHtml(text)) : '';
@@ -160,7 +165,7 @@ function renderInner(
                 h('h1', asString(p.heading)),
                 asString(p.sub) ? slot('p', `${key}.sub`, escapeHtml(asString(p.sub)), ' class="lede"') : '',
                 asString(p.ctaLabel)
-                    ? slot('a', `${key}.ctaLabel`, escapeHtml(asString(p.ctaLabel)), ` class="cta" href="${contactHref()}"`)
+                    ? slot('a', `${key}.ctaLabel`, escapeHtml(asString(p.ctaLabel)), ` class="cta" href="${contactHref(continuous)}"`)
                     : '',
                 '</div>',
                 imageSlot(`${key}.image`, p.image, asString(p.heading) || 'Hero'),
@@ -254,8 +259,11 @@ function renderInner(
 function siteNav(pages: readonly SitePage[], current: string, title: string): string {
     const links = pages
         .map((page) => {
-            const href = pageHref(page.path, current);
-            const currentAttr = page.path === current ? ' aria-current="page"' : '';
+            const href = pageHref(page.path, current, page.href);
+            const currentAttr =
+                !page.navOnly && page.path === current && !page.href?.startsWith('#')
+                    ? ' aria-current="page"'
+                    : '';
             return `<a href="${escapeHtml(href)}"${currentAttr}>${escapeHtml(page.label)}</a>`;
         })
         .join('');
@@ -339,20 +347,83 @@ address { font-style: normal; }
 .settings-list dd { margin: 0 0 0.75rem; }
 .form-status { margin: 0; color: var(--muted); }
 
-/* Casual: plain but tidy — clean lines, minimal flat surface, clean typography, one photo */
+/* Casual / Starter: centre-oriented, fills the viewport — no top-clustered stub */
+[data-style="casual"] {
+  text-align: center;
+}
+[data-style="casual"] .site-header {
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+[data-style="casual"] .site-header nav {
+  justify-content: center;
+}
+[data-style="casual"] main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100dvh - 6rem);
+  justify-content: safe center;
+  text-align: center;
+  padding-block: 2rem 4rem;
+}
+[data-style="casual"] section {
+  width: min(100%, 42rem);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 [data-style="casual"] [data-type="hero"] {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1.75rem;
-  padding: 1.25rem 0;
+  min-height: min(88dvh, 44rem);
+  padding: 2.5rem 0;
+  grid-template-columns: none !important;
+  text-align: center;
+}
+[data-style="casual"] [data-type="hero"] .hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 36rem;
+}
+[data-style="casual"] [data-type="hero"] .lede,
+[data-style="casual"] .lede {
+  margin-inline: auto;
+  max-width: 34rem;
 }
 [data-style="casual"] [data-type="hero"] .img-slot {
-  min-height: 13rem;
+  width: min(100%, 28rem);
+  min-height: 14rem;
   border: 1px solid var(--rule);
   border-radius: var(--radius-md, 0.5rem);
+  margin-inline: auto;
 }
 [data-style="casual"] [data-type="gallery"] .img-slot { display: none; }
 [data-style="casual"] .card {
   box-shadow: none;
   border: 1px solid var(--rule);
+  text-align: left;
+}
+[data-style="casual"] .cards {
+  width: 100%;
+  text-align: left;
+}
+[data-style="casual"] .contact-grid,
+[data-style="casual"] .form {
+  width: min(100%, 28rem);
+  margin-inline: auto;
+  text-align: left;
+}
+[data-style="casual"] .form button { justify-self: center; }
+[data-style="casual"] [data-type="footer"] {
+  text-align: center;
+  width: 100%;
 }
 
 /* Casual: plain system sans — Pro gets editorial Newsreader; keep Free simpler */
@@ -401,10 +472,77 @@ address { font-style: normal; }
   color: color-mix(in srgb, var(--ink) 78%, var(--muted));
 }
 [data-style="photos"] [data-variant="image-bg"] {
-  min-height: min(34rem, 92vh);
+  min-height: min(100dvh, 52rem);
+  border-radius: 0;
 }
 [data-style="photos"] [data-variant="image-bg"] .hero-copy {
   padding: 5rem 2rem 3rem;
+  text-align: center;
+  justify-self: center;
+  max-width: 40rem;
+  width: 100%;
+}
+/* Pro: topic photograph as a full-site backdrop behind every page */
+[data-style="photos"].site {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+}
+[data-style="photos"].site::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg) 78%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 88%, transparent) 45%,
+      color-mix(in srgb, var(--bg) 92%, transparent) 100%
+    ),
+    var(--page-photo, none) center / cover no-repeat fixed;
+  background-color: var(--bg);
+}
+[data-style="photos"] .site-header {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+}
+[data-style="photos"] main {
+  position: relative;
+  z-index: 1;
+}
+[data-style="photos"] section:not([data-variant="image-bg"]) {
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
+  border-radius: var(--radius-lg, 0.85rem);
+  padding: 2rem 1.5rem;
+  margin-block: 1rem;
+  backdrop-filter: blur(8px);
+}
+[data-style="photos"] [data-type="footer"] {
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+}
+/* Smooth Pro page transitions between HTML files */
+html.pc-page-ready [data-style="photos"].site {
+  animation: pc-page-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html.pc-page-leave [data-style="photos"].site {
+  animation: pc-page-out 0.28s ease both;
+}
+@keyframes pc-page-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pc-page-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.pc-page-ready [data-style="photos"].site,
+  html.pc-page-leave [data-style="photos"].site { animation: none; }
 }
 [data-style="photos"] .wordmark {
   font-family: var(--display-font);
@@ -962,14 +1100,47 @@ function pageInner(
     composition: Composition,
     visible: readonly SectionInstance[],
     motif: string,
+    continuous = false,
 ): string {
     if (page.kind === 'settings') return settingsPageHtml(composition);
     if (page.kind === 'about' && page.sections.length === 0) return syntheticAboutHtml(composition);
     if (page.kind === 'contact' && page.sections.length === 0) return syntheticContactHtml(composition);
     return page.sections
-        .map((section, index) => renderSection(section, index, visible, motif))
+        .map((section, index) => renderSection(section, index, visible, motif, continuous))
         .join('\n');
 }
+
+function heroPhotoUrl(composition: Composition): string {
+    const hero = composition.sections.find((s) => s.visible && s.type === 'hero');
+    const image = hero?.props?.image;
+    if (image && typeof image === 'object' && !Array.isArray(image)) {
+        const url = asString((image as Record<string, unknown>).url);
+        if (url.startsWith('http')) return url;
+    }
+    return '';
+}
+
+/** Soft fade between Pro HTML pages — mirrors the app glide, stays self-contained. */
+const PAGE_TRANSITION_JS = `(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.classList.add('pc-page-ready');
+  if (reduce) return;
+  document.addEventListener('click', (event) => {
+    const a = event.target instanceof Element ? event.target.closest('a[href]') : null;
+    if (!(a instanceof HTMLAnchorElement)) return;
+    const href = a.getAttribute('href') || '';
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    if (a.target === '_blank' || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    let url;
+    try { url = new URL(a.href, location.href); } catch { return; }
+    if (url.origin !== location.origin) return;
+    if (!/\\.html?$/i.test(url.pathname) && !url.pathname.endsWith('/')) return;
+    if (url.pathname === location.pathname && url.search === location.search) return;
+    event.preventDefault();
+    document.documentElement.classList.add('pc-page-leave');
+    window.setTimeout(() => { location.href = url.href; }, 260);
+  });
+})();`;
 
 /** A generated site as the file tree persistence already stores. */
 export function compositionToFiles(
@@ -980,44 +1151,59 @@ export function compositionToFiles(
     // Premium only. interactionKit returns nothing for the other two looks, so a Free or Pro
     // page ships byte-identical to before.
     const interaction = style ? interactionKit(style, seed, composition.vertical) : [];
+    const continuous = style === 'motion';
     const visible = composition.sections.filter((s) => s.visible);
-    const pages = planSitePages(composition);
+    const pages = planSitePages(composition, { continuous });
+    const filePages = pages.filter((page) => !page.navOnly);
     const title = composition.meta.title || 'Home';
+    const chrome = style ? chromeForStyleId(style) : null;
     const styleAttr = style ? ` data-style="${escapeHtml(style)}"` : '';
-    const motif = style === 'motion'
+    const chromeAttr = chrome ? ` data-chrome="${escapeHtml(chrome)}"` : '';
+    const photoUrl = style === 'photos' ? heroPhotoUrl(composition) : '';
+    const photoStyle = photoUrl
+        ? ` style="--page-photo: url('${escapeHtml(photoUrl)}')"`
+        : '';
+    const motif = continuous
         ? `${motionStageMarkup()}${motionMotifMarkup(composition.vertical, `${composition.meta.title} ${composition.meta.description}`)}${motionTickerMarkup(composition.meta.title)}`
         : '';
-    // Free ships exactly what it shipped before: no tabs, no glow, no extra script.
-    // Every page carries its own copy of the stylesheet, because a published page has to
-    // stand alone. That makes each byte here cost once per page: the tab CSS and its script
-    // are 3 KB, and only the page holding the tabbed section can use them. Deciding per page
-    // rather than per site keeps eight of the nine pages from carrying rules for markup they
-    // do not contain.
+    const chromeCss = chrome ? tierChromeCss(chrome) : '';
     const baseCss = [
         PAGE_CSS,
-        style === 'motion' ? MOTION_CSS : '',
-        style === 'motion' ? PREMIUM_CSS : '',
+        chromeCss,
+        continuous ? MOTION_CSS : '',
+        continuous ? PREMIUM_CSS : '',
+        continuous ? CONTINUOUS_SCROLL_CSS : '',
     ].join('');
-    const baseJs = style === 'motion' ? PREMIUM_JS : '';
+    const baseJs = [
+        continuous ? PREMIUM_JS : '',
+        style === 'photos' ? PAGE_TRANSITION_JS : '',
+    ].filter(Boolean).join('\n');
     const footers = visible.filter((s) => s.type === 'footer');
     const files: FileMap = {};
 
-    for (const page of pages) {
+    for (const page of filePages) {
         const inner = [
-            pageInner(page, composition, visible, motif),
-            footers.map((section, index) => renderSection(section, index, visible, '')).join('\n'),
+            pageInner(page, composition, visible, motif, continuous),
+            footers
+                .map((section, index) =>
+                    renderSection(section, index, visible, '', continuous),
+                )
+                .join('\n'),
         ].join('\n');
         const tabbed = inner.includes('data-tabs');
         const css = tabbed ? `${baseCss}${TABS_CSS}` : baseCss;
         const scripts = [tabbed ? TABS_JS : '', baseJs].filter(Boolean).join('\n');
+        const deckOpen = continuous ? `<div class="liquid-deck" id="top">` : `<main id="top">`;
+        const deckClose = continuous ? `</div>` : `</main>`;
+        const siteClass = continuous ? ' site-liquid' : '';
 
         const body = [
             `<style>${css}</style>`,
-            `<div class="site"${styleAttr}>`,
+            `<div class="site${siteClass}"${styleAttr}${chromeAttr}${photoStyle}>`,
             siteNav(pages, page.path, title),
-            `<main id="top">`,
+            deckOpen,
             inner,
-            `</main>`,
+            deckClose,
             `</div>`,
             scripts ? `<script>\n${scripts}\n</script>` : '',
         ].filter(Boolean).join('\n');
@@ -1035,3 +1221,55 @@ export function compositionToFiles(
 
     return files;
 }
+
+/** Premium continuous scroll — one section per viewport, like pagecrafts.in. */
+const CONTINUOUS_SCROLL_CSS = `
+html:has([data-style="motion"].site-liquid) {
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+[data-style="motion"].site-liquid {
+  min-height: 100dvh;
+}
+[data-style="motion"] .liquid-deck {
+  display: flex;
+  flex-direction: column;
+}
+[data-style="motion"] .liquid-slide,
+[data-style="motion"] section.liquid-slide {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 6vw;
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+  box-sizing: border-box;
+}
+[data-style="motion"] .liquid-slide > *,
+[data-style="motion"] section.liquid-slide > * {
+  width: min(100%, 48rem);
+}
+[data-style="motion"] [data-type="hero"].liquid-slide {
+  padding: 6rem 6vw 5rem;
+}
+[data-style="motion"] [data-type="footer"].liquid-slide {
+  min-height: auto;
+  padding-block: 3rem;
+  justify-content: center;
+}
+[data-style="motion"] .cards,
+[data-style="motion"] .contact-grid,
+[data-style="motion"] .form {
+  text-align: left;
+  margin-inline: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has([data-style="motion"].site-liquid) {
+    scroll-behavior: auto;
+    scroll-snap-type: none;
+  }
+}
+`;

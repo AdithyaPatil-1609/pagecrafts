@@ -44,9 +44,8 @@ export const STYLE_SPECS: Record<StyleId, StyleSpec> = {
             imageryId: 'bright-clean',
         },
         variants: {
-            // Split hero shows one picture beside the words. Photo-rich uses image-bg
-            // plus photos through the rest of the page; Casual stops at the hero.
-            hero: 'split-image',
+            // Centre-first Starter: words and the one photo sit in the middle of the viewport.
+            hero: 'centred',
             about: 'text',
             services: 'cards',
             menu: 'simple',
