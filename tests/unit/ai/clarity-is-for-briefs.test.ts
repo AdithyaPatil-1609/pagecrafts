@@ -35,6 +35,17 @@ describe('clarity only judges a brief for a site that does not exist yet', () =>
         expect(route).toContain('assessPromptClarity');
         expect(route).toContain('brief_unclear');
     });
+
+    // Ahead of the caps it answered "we cannot read your brief" to somebody whose real
+    // problem was a daily limit — and it costs a model call to say so, which nobody over
+    // their limit should pay for.
+    it('runs after the caps and before anything is spent', () => {
+        const at = (needle: string) => route.indexOf(needle);
+
+        expect(at('checkGenerationBudget')).toBeLessThan(at('assessPromptClarity'));
+        expect(at('assertFreeGenerationAllowed')).toBeLessThan(at('assessPromptClarity'));
+        expect(at('assessPromptClarity')).toBeLessThan(at('recordGenerationUse('));
+    });
 });
 
 // Why skipping the gate is the fix rather than loosening it.

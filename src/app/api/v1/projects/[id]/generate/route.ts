@@ -94,23 +94,6 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             throw new ApiError('validation_failed', crossBlocked);
         }
 
-        // Clarity judges a brief for a site that does not exist yet: does this name a
-        // business, a place, and what they do. On a site that already exists the prompt is
-        // an instruction — "make the hero more graphical" — which names none of those and
-        // is refused every time, with a message about details the person already gave.
-        //
-        // The same signal the firewall above uses decides it: a project with sections or a
-        // content page is being edited, not described.
-        const hasExistingSite =
-            (composition?.sections.length ?? 0) > 0 || contentSchema.sections.length > 0;
-
-        if (!hasExistingSite) {
-            const clarity = await assessPromptClarity(body.prompt);
-            if (!clarity.usable) {
-                throw new ApiError('brief_unclear', clarity.message);
-            }
-        }
-
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
 
@@ -128,6 +111,27 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         });
         if (heavy) {
             await assertHeavyBuildAllowed(quota);
+        }
+
+        // Clarity judges a brief for a site that does not exist yet: does this name a
+        // business, a place, and what they do. On a site that already exists the prompt is
+        // an instruction — "make the hero more graphical" — which names none of those and
+        // was refused every time, with a message about details the person already gave.
+        //
+        // The same signal the firewall above uses decides it: a project with sections or a
+        // content page is being edited, not described.
+        //
+        // It runs after the caps and before anything is spent. Ahead of them it answered
+        // "we cannot read your brief" to somebody whose real problem was a daily cap, and
+        // it costs a model call to say so — one nobody over their limit should pay for.
+        const hasExistingSite =
+            (composition?.sections.length ?? 0) > 0 || contentSchema.sections.length > 0;
+
+        if (!hasExistingSite) {
+            const clarity = await assessPromptClarity(body.prompt);
+            if (!clarity.usable) {
+                throw new ApiError('brief_unclear', clarity.message);
+            }
         }
 
         const admin = supabaseAdminOrNull();
