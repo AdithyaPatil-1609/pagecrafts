@@ -19,7 +19,14 @@ export interface StyleOption {
     files: FileMap;
 }
 
-export type PhotoLookup = (query: string) => Promise<string>;
+/**
+ * Finds a photograph for a search phrase.
+ *
+ * `sectionType` is a hint, not a requirement: a lookup that draws its own pictures uses it
+ * to frame them for the slot — wide for a hero, squarer for a card — and every stock lookup
+ * ignores it entirely.
+ */
+export type PhotoLookup = (query: string, sectionType?: string) => Promise<string>;
 
 function withRequestedExtras(files: FileMap, composition: Composition, prompt?: string): FileMap {
     const text = prompt?.trim() || composition.meta.description || '';
@@ -36,12 +43,17 @@ async function renderOption(
     prompt?: string,
     seed = '',
     photoSalt = '',
+    excludePhotos: ReadonlySet<string> = new Set(),
 ): Promise<StyleOption> {
     let composition = applyStyle(base, variedSpec(spec, seed));
     if (spec.photos === 'hero') {
-        composition = await stampPhotoUrls(composition, lookup, ['hero'], photoSalt);
+        composition = await stampPhotoUrls(
+            composition, lookup, ['hero'], photoSalt, excludePhotos,
+        );
     } else if (spec.photos) {
-        composition = await stampPhotoUrls(composition, lookup, undefined, photoSalt);
+        composition = await stampPhotoUrls(
+            composition, lookup, undefined, photoSalt, excludePhotos,
+        );
     }
     return {
         id: spec.id,
@@ -70,6 +82,7 @@ export async function buildStyleOptions(
     lookup?: PhotoLookup,
     prompt?: string,
     jobId?: string,
+    excludePhotos: ReadonlySet<string> = new Set(),
 ): Promise<StyleOption[]> {
     const seed = artSeed({
         title: composition.meta.title,
@@ -80,7 +93,15 @@ export async function buildStyleOptions(
 
     return Promise.all(
         STYLE_IDS.map((id) =>
-            renderOption(composition, STYLE_SPECS[id], lookup, prompt, seed, photoSalt),
+            renderOption(
+                composition,
+                STYLE_SPECS[id],
+                lookup,
+                prompt,
+                seed,
+                photoSalt,
+                excludePhotos,
+            ),
         ),
     );
 }

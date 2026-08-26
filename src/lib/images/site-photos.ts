@@ -4,7 +4,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { aiConfig } from "@/lib/ai/config";
 import { createAssetFromUpload } from "@/lib/data/project-assets";
 import { generateImage, isImageGenerationConfigured } from "./gemini-image";
-import { stockPhotoUrl } from "./stock";
 
 /**
  * The photograph lookup a generated site is built with.
@@ -37,8 +36,15 @@ export interface SitePhotoOptions {
     supabase: SupabaseClient;
     userId: string;
     projectId: string;
-    /** Job id — salts the stock fallback so a second attempt differs from the first. */
-    salt?: string;
+    /**
+     * The floor, and not optional.
+     *
+     * The job runner owns this: its lookup already knows the job's salt and which heroes
+     * earlier Sets of this project used, and rebuilding either of those here would be a
+     * second copy that quietly drifts from the first. So the runner hands one in and this
+     * only decides whether to try something better before falling back to it.
+     */
+    fallback: (query: string) => Promise<string>;
     /** How many photographs Gemini may draw for one build. */
     maxImages?: number;
     /** Wall clock for the whole set, from the moment the lookup is created. */
@@ -51,8 +57,6 @@ export interface SitePhotoOptions {
     generate?: typeof generateImage;
     /** Puts the bytes somewhere the published page can fetch them, and returns that URL. */
     store?: (image: { bytes: Uint8Array; mimeType: string }) => Promise<string | null>;
-    /** The stock floor: Unsplash, then the bundled bank. */
-    fallback?: (query: string, salt: string) => Promise<string>;
 }
 
 /** Below this a call cannot realistically finish, so it is not worth starting. */
@@ -106,9 +110,8 @@ async function shrink(
 }
 
 export function createSitePhotoLookup(options: SitePhotoOptions): PhotoLookup {
-    const salt = options.salt ?? "";
     const generate = options.generate ?? generateImage;
-    const fallback = options.fallback ?? stockPhotoUrl;
+    const { fallback } = options;
     const store = options.store ?? (async (image) => {
         const asset = await createAssetFromUpload(
             options.supabase,
@@ -174,7 +177,7 @@ export function createSitePhotoLookup(options: SitePhotoOptions): PhotoLookup {
                 drawn -= 1;
             }
 
-            return fallback(query, salt);
+            return fallback(query);
         })();
 
         inFlight.set(key, settle);
