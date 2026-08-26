@@ -13,17 +13,38 @@ const unsplash = (id: string) => `https://images.unsplash.com/${id}${PHOTO}`;
  * Every id here must return 200 on images.unsplash.com (dead ids blank Pick a look).
  */
 const GENERAL_PHOTOS = [
+    'photo-1499750310107-5fef28a66643', // desk
+    'photo-1512917774080-9991f1c4c750', // house at dusk
+    'photo-1521737604893-d14cc237f11d', // portrait
+    'photo-1486406146926-c627a92ad1ab', // modern architecture
+    'photo-1497366216548-37526070297c', // bright office workspace
+    'photo-1452587925148-ce544e77e70d', // camera
     'photo-1476514525535-07fb3b4ae5f1', // lake
     'photo-1469474968028-56623f02e42e', // mountain valley
     'photo-1469854523086-cc02fe5d8800', // road trip overlook
     'photo-1441974231531-c6227db76b6e', // forest path
     'photo-1506905925346-21bda4d32df4', // alpine peaks
-    'photo-1452587925148-ce544e77e70d', // camera
-    'photo-1499750310107-5fef28a66643', // desk
-    'photo-1512917774080-9991f1c4c750', // house at dusk
-    'photo-1521737604893-d14cc237f11d', // portrait
-    'photo-1560066984-138dadb4c035', // salon
-    'photo-1534438327276-14e5300c3a48', // gym
+] as const;
+
+/** Technology / software / electronics / smart home / developer — clean devices and workspaces. */
+const TECH_PHOTOS = [
+    'photo-1518770660439-4636190af475', // microchip / circuitry
+    'photo-1531297484001-80022131f5a1', // modern laptop workspace
+    'photo-1550751827-4bd374c3f58b', // cybersecurity / futuristic tech
+    'photo-1526374965328-7f61d4dc18c5', // code / digital data
+    'photo-1519389950473-47ba0277781c', // tech team collaboration
+    'photo-1581091226825-a6a2a5aee158', // hardware engineering
+    'photo-1558494949-ef010cbdcc31', // server infrastructure
+    'photo-1451187580459-43490279c0fa', // global network
+    'photo-1504384308090-c894fdcc538d', // dev workstation
+    'photo-1525547719571-a2d4ac8945e2', // laptop device
+] as const;
+
+/** Salon / spa / beauty — styling & wellness. */
+const SALON_PHOTOS = [
+    'photo-1560066984-138dadb4c035', // salon styling
+    'photo-1522337360788-8b13dee7a37e', // makeup / beauty
+    'photo-1540555700478-4be289fbecef', // spa wellness
 ] as const;
 
 /** Dining / restaurant heroes — large enough that Set 2 can skip Set 1's pick. */
@@ -98,6 +119,8 @@ const KEYWORD_PHOTO: Array<[RegExp, readonly string[]]> = [
     [/\b(gym|fitness|yoga)\b/i, GYM_PHOTOS],
     [/\b(clinic|dental|hospital|doctor|veterinary|vet|surgery|surgical|surgeon|neurosurg|medical|healthcare)\b/i, CLINIC_PHOTOS],
     [/\b(saree|clothing|fashion|boutique|apparel|garment|dress|textile)\b/i, [CLOTHING_PHOTO_ID]],
+    [/\b(tech|technology|software|hardware|device|devices|smart.?home|electronics|ai|artificial intelligence|app|developer|computing|it|digital|saas|gadget|gadgets|robotics|robotic|automation|iot|cloud)\b/i, TECH_PHOTOS],
+    [/\b(salon|spa|haircut|hairstyl|barber|beauty|massage|skincare|facial)\b/i, SALON_PHOTOS],
 ];
 
 function hashPick(text: string, size: number): number {

@@ -141,6 +141,15 @@ describe('style presets — three looks from one brief', () => {
         );
     });
 
+    it('stamps tech / device photos for technology briefs, never gym dumbbells', () => {
+        const techQuery = 'Smart Technology Company Nexora Smart Technology Smart home integration devices';
+        const photo = bankPhotoUrl(techQuery, 'job_tech_1');
+        // Must match tech pool
+        expect(photo).toMatch(/photo-1518770660439|photo-1531297484001|photo-1550751827|photo-1526374965328|photo-1519389950473|photo-1581091226825|photo-1558494949|photo-1451187580459|photo-1504384308090|photo-1525547719571/);
+        // Must NOT match gym dumbbells or food
+        expect(photo).not.toMatch(/photo-1534438327276|photo-1509440159596|photo-1551024506/);
+    });
+
     it('gives Set 1 and Set 2 different restaurant heroes when salted by job id', () => {
         const query = 'chinese restaurant fine dining bangalore';
         const set1 = bankPhotoUrl(query, 'job_set_1');

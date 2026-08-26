@@ -64,7 +64,7 @@ const envSchema = z.object({
     GEMINI_API_KEY_8: z.string().default(''),
     // Pictures, not words. A separate model because image generation is a separate quota
     // and a separate failure mode from the text calls this provider also serves.
-    GEMINI_IMAGE_MODEL: z.string().default('gemini-2.5-flash-image'),
+    GEMINI_IMAGE_MODEL: z.string().default('imagen-3.0-generate-002'),
     // How many photographs one build may draw. A generated site asks for a photo per
     // section per look, which left alone is twenty images for one website.
     AI_IMAGES_PER_SITE: z.coerce.number().int().min(0).default(4),
