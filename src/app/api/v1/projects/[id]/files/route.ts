@@ -7,6 +7,7 @@ import { ok } from "@/lib/errors/respond";
 import { putFilesSchema } from "@/lib/contracts/schemas";
 import { getProjectFiles, putProjectFiles } from "@/lib/data/project-files";
 import { assertCanEdit } from "@/lib/data/entitlements";
+import { assertPagesEditable } from "@/lib/data/page-locks";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +33,17 @@ export const PUT = withRoute<PutBody, Params>({
     {
     // Doc 22 P5: a live site needs an edit unlock, after the goodwill window (R3 D14).
     await assertCanEdit(supabase, userId, params.id);
+
+    // A page confirmed in the walkthrough is finished on the free plan. The editor sends
+    // the whole tree on every save, so what matters is which pages this write would
+    // actually change — locking on "sent" would freeze the site the moment one page was
+    // confirmed. Compare against what is stored and refuse only the real edits.
+    const { files: current } = await getProjectFiles(supabase, params.id);
+    const changing = Object.keys(body.files).filter(
+      (path) => body.files[path] !== current[path],
+    );
+    await assertPagesEditable(supabase, userId, params.id, changing);
+
     return ok(await putProjectFiles(supabase, params.id, body.files, body.expectedUpdatedAt));
   }
 });

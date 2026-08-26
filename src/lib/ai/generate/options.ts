@@ -76,6 +76,8 @@ async function renderOption(
  * `jobId` seeds the art direction, so the same business asking twice gets the same site back
  * while a different business -- or the same one pressing "generate another look" -- gets a
  * different one. Without a seed every site in the product shared one theme.
+ *
+ * `excludePhotos` are Unsplash ids already used as heroes on earlier Sets for this project.
  */
 export async function buildStyleOptions(
     composition: Composition,

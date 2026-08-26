@@ -37,11 +37,41 @@ const VERTICAL_FAMILIES: Record<string, readonly string[]> = {
         'cloud kitchen',
     ],
     fitness: ['gym', 'fitness', 'workout', 'crossfit', 'yoga', 'pilates', 'personal trainer', 'training studio'],
-    healthcare: ['clinic', 'hospital', 'dental', 'doctor', 'medical', 'physiotherapy', 'pharmacy'],
+    healthcare: [
+        'clinic',
+        'hospital',
+        'dental',
+        'doctor',
+        'medical',
+        'physiotherapy',
+        'pharmacy',
+        'surgery',
+        'surgical',
+        'surgeon',
+        'neurosurgery',
+        'neurosurgical',
+        'ortho',
+        'cardiology',
+        'healthcare',
+    ],
     photography: ['photographer', 'photography', 'photo studio'],
     portfolio: ['portfolio', 'freelancer', 'designer portfolio'],
     education: ['school', 'college', 'academy', 'tuition', 'coaching centre', 'coaching center'],
-    travel: ['travel agency', 'tour operator', 'hotel', 'resort', 'homestay'],
+    travel: [
+        'travel agency',
+        'tour operator',
+        'hotel',
+        'resort',
+        'homestay',
+        'travel',
+        'traveller',
+        'traveler',
+        'tourism',
+        'tourist',
+        'vlog',
+        'vlogger',
+        'journey',
+    ],
     event: ['wedding planner', 'wedding', 'conference', 'event venue'],
     store: ['online shop', 'e-commerce', 'ecommerce', 'storefront', 'boutique shop'],
     saas: ['saas', 'software product', 'startup platform'],
@@ -83,6 +113,11 @@ export function verticalFamily(vertical: string | null | undefined): string | nu
     for (const [family, keywords] of Object.entries(VERTICAL_FAMILIES)) {
         if (keywords.some((keyword) => keywordPattern(keyword).test(text))) return family;
     }
+    // Slugs like neurosurgery / travel-vlog should still resolve to a family when the
+    // keyword list matches the slug text — otherwise regenerate looked like a cross-site
+    // swap against a brief that said "hospital" or "travel".
+    const fromSlug = detectRequestedVerticalFamily(text);
+    if (fromSlug) return fromSlug;
     return `slug:${slug}`;
 }
 

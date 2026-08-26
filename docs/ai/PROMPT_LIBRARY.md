@@ -38,7 +38,7 @@ AI_PROMPT_PLAN=plan.v2 AI_PROMPT_FILL=fill-section.v2 npm run grade -- --label=v
 | `fill-section.v3.md` ← | fill-section | v3 | strong | `e409bb5aa1b6` | one section → typed content fields |
 | `plan.v1.md` | plan | v1 | strong | `d67841ff84fd` | recipe + description → ordered sections with layout variants |
 | `plan.v2.md` | plan | v2 | strong | `938aa19e682b` | recipe + description → ordered sections with layout variants |
-| `plan.v3.md` ← | plan | v3 | strong | `6c8ce17a0074` | recipe + description → ordered sections with layout variants |
+| `plan.v3.md` ← | plan | v3 | strong | `0123445e27cb` | recipe + description → ordered sections with layout variants |
 | `profile.v1.md` ← | profile | v1 | strong | `4bfa7d530f1c` | vertical → section recipe, art direction, vocabulary |
 
 ## Variables

@@ -68,14 +68,14 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                     id="compare-heading"
                     className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
                 >
-                    Pick a <span className="hero-mix">look</span> — side by side
+                    Pick a <span className="hero-mix">look</span> — live preview
                 </h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground">
                     {plan === "premium"
-                        ? "Same restaurant, three looks. Premium is active — every look and Pro design is unlocked."
+                        ? "Same restaurant, three live sites. Premium is active — every look and Pro design is unlocked."
                         : plan === "pro"
-                          ? "Same restaurant, three looks. Pro is active — Casual is Free, Photo-rich is Pro unlocked, plus every Pro template. Animated unlocks with Premium."
-                          : "Same restaurant, three looks. Casual comes with Starter. Photo-rich unlocks with Pro (Rs 499) — every Pro design too. Animated unlocks with Premium (Rs 999). Fixed preview, not live AI."}
+                          ? "Same restaurant, three live sites. Pro is active — Starter is Free, Photo-rich is unlocked, plus every Pro template. Continuous-scroll Premium unlocks with Premium."
+                          : "Same restaurant rendered three ways with our real generators. Starter is Free. Pro (Rs 499) unlocks the photographic look. Premium (Rs 999) unlocks continuous scroll. Click a card, then scroll the live preview."}
                 </p>
                 <p className="text-sm text-muted-foreground">
                     <Link href="/plans" className="underline-offset-4 hover:underline">
@@ -107,17 +107,8 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                                 )}
                             >
                                 <CardIndex n={i + 1} />
-                                {/* The card renders a real page shrunk to fit, so the two
-                                    ratios have to agree with the scale: 200% at scale 0.5
-                                    is exactly 100% in both directions. It was 180% wide and
-                                    220% tall at 0.56 -- 101% across, 123% down -- so a
-                                    quarter of every preview was cut off the bottom, which
-                                    is what clipped the Animated headline mid-word.
-
-                                    h-56 rather than h-48 because the viewport this creates
-                                    is 448px tall, and image-bg heroes are min-height: 28rem.
-                                    A shorter card showed the top edge of a dark photograph
-                                    and nothing else, which is why Photo-rich looked blank. */}
+                                {/* Thumbnail: real page at 50% scale. Pointer-events off so the
+                                    card button still receives the click to switch the live frame. */}
                                 <div className="relative h-56 overflow-hidden bg-muted">
                                     <iframe
                                         title={`${item.label} preview`}
@@ -143,6 +134,9 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                                 <div className="relative z-[1] flex flex-1 flex-col gap-2 p-4">
                                     <h2 className="text-base font-semibold text-foreground">
                                         {item.label}
+                                        <span className="ml-2 text-xs font-medium text-muted-foreground">
+                                            {item.lookName}
+                                        </span>
                                     </h2>
                                     <p className="text-sm leading-5 text-muted-foreground">
                                         {item.blurb}
@@ -169,12 +163,15 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                         <span className="size-1.5 rounded-full bg-signal" />
                         <span className="size-1.5 rounded-full bg-bloom-sky" />
                         <span className="ml-2 truncate font-mono text-[10px] text-muted-foreground">
-                            {DEMO_BRAND.domain} · {active.label}
+                            {DEMO_BRAND.domain} · {active.label} · live preview
+                        </span>
+                        <span className="ml-auto hidden text-[10px] text-muted-foreground sm:inline">
+                            Scroll inside to explore
                         </span>
                     </div>
                     <iframe
                         key={look}
-                        title={`${DEMO_BRAND.name} ${active.label} preview`}
+                        title={`${DEMO_BRAND.name} ${active.label} live preview`}
                         srcDoc={srcDoc}
                         className="h-[min(70vh,42rem)] w-full bg-white"
                         sandbox="allow-scripts allow-same-origin"
@@ -246,24 +243,28 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                             ))}
                         </tr>
                         <tr className="border-b border-border/70">
-                            <td className="px-4 py-3 text-muted-foreground">Chrome</td>
-                            <td className="px-4 py-3">Sidebar</td>
-                            <td className="px-4 py-3">Blended top bar</td>
-                            <td className="px-4 py-3">Liquid scroll</td>
+                            <td className="px-4 py-3 text-muted-foreground">Layout</td>
+                            <td className="px-4 py-3">Centre-filled pages</td>
+                            <td className="px-4 py-3">Photo backdrop + page fades</td>
+                            <td className="px-4 py-3">Continuous scroll deck</td>
                         </tr>
                         <tr className="border-b border-border/70">
-                            <td className="px-4 py-3 text-muted-foreground">Page count</td>
-                            {COMPARE_LOOKS.map((item) => (
-                                <td key={item.id} className="px-4 py-3">
-                                    {item.pages.length}
-                                </td>
-                            ))}
+                            <td className="px-4 py-3 text-muted-foreground">Chrome</td>
+                            <td className="px-4 py-3">Simple header</td>
+                            <td className="px-4 py-3">Blended top bar</td>
+                            <td className="px-4 py-3">Liquid sticky bar</td>
+                        </tr>
+                        <tr className="border-b border-border/70">
+                            <td className="px-4 py-3 text-muted-foreground">Photography</td>
+                            <td className="px-4 py-3">One hero photo</td>
+                            <td className="px-4 py-3">Full-site topic photo</td>
+                            <td className="px-4 py-3">Hero + kinetic stage</td>
                         </tr>
                         <tr>
-                            <td className="px-4 py-3 text-muted-foreground">Booking CTA</td>
-                            <td className="px-4 py-3">Contact only</td>
-                            <td className="px-4 py-3">Table booking</td>
-                            <td className="px-4 py-3">Reservations section</td>
+                            <td className="px-4 py-3 text-muted-foreground">Motion</td>
+                            <td className="px-4 py-3">None</td>
+                            <td className="px-4 py-3">Parallax + page fades + card zoom</td>
+                            <td className="px-4 py-3">Scroll reveals + motif</td>
                         </tr>
                     </tbody>
                 </table>

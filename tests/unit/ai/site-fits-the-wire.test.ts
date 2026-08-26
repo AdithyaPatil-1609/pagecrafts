@@ -99,7 +99,9 @@ describe('a page carries only the assets its markup uses', () => {
         for (const option of await build()) {
             for (const [path, html] of Object.entries(option.files)) {
                 expect(html, `${option.id}/${path}`).not.toMatch(/<script[^>]+src=/i);
-                expect(html, `${option.id}/${path}`).not.toMatch(/<link[^>]+rel=["']?stylesheet/i);
+                const nonFontStylesheets = (html.match(/<link[^>]+rel=["']?stylesheet[^>]*>/gi) ?? [])
+                    .filter((tag) => !tag.includes('fonts.googleapis.com'));
+                expect(nonFontStylesheets, `${option.id}/${path}`).toEqual([]);
             }
         }
     });

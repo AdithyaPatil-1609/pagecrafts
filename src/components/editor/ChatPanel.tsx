@@ -7,7 +7,7 @@ import {
     generationSteps,
     generationThought,
 } from '@/lib/editor/generation-steps';
-import { explainCreationIssue } from '@/lib/editor/ai-fix';
+import { explainCreationIssue, lastRetryableChatInstruction } from '@/lib/editor/ai-fix';
 import { uploadProjectImage } from '@/lib/project-source';
 import ChangeSummary from './ChangeSummary';
 import ChatComposer, { type ChatAttachment } from './ChatComposer';
@@ -56,6 +56,8 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
     const suggestions = chatSuggestions({ composition, lastUserText, hasPage });
     const showChoices = !busy && !pendingChange;
     const fix = error ? explainCreationIssue(error, 'chat') : null;
+    const retryInstruction =
+        (error ? lastRetryableChatInstruction(messages, error) : null) ?? fix?.instruction ?? null;
 
     useEffect(() => {
         endRef.current?.scrollIntoView({ block: 'end' });
@@ -101,9 +103,9 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
                 {messages.length === 0 && !busy ? (
                     <p className="max-w-md text-sm leading-6 text-muted-foreground">
                         {hasPage
-                            ? 'Describe a change, or pick a suggestion. Nothing is applied until you keep it.'
+                            ? 'Describe a change to this website — copy, layout, colours, or images on the page. Nothing is applied until you keep it.'
                             : hasSections
-                              ? 'Describe a change, or pick a suggestion. You can also ask for a whole new website. Nothing is applied until you keep it.'
+                              ? 'Describe a change to this website, or pick a suggestion. You can also ask for a whole new website. Nothing is applied until you keep it.'
                               : 'Describe the website you want, or pick a suggestion. Nothing is applied until you keep it.'}
                     </p>
                 ) : (
@@ -237,7 +239,8 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
                     onDismiss={() => setAskOpen(false)}
                     onConfirm={() => {
                         setAskOpen(false);
-                        void send(fix.instruction);
+                        if (!retryInstruction) return;
+                        void send(retryInstruction);
                     }}
                 />
             ) : null}

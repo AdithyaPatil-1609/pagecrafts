@@ -12,6 +12,8 @@ export interface ShellOptions {
     body: string;
     /** Premium only. Empty for every other look, which is what the tier is sold on. */
     interaction?: readonly InteractionId[];
+    /** Optional Google Fonts (or similar) link tags for look-tier display type. */
+    fontLinks?: string;
 }
 
 /**
@@ -27,6 +29,7 @@ export function compositionShell(o: {
     artDirection: ArtDirection;
     body: string;
     interaction?: readonly InteractionId[];
+    fontLinks?: string;
 }): string {
     return pageShell({
         title: o.title,
@@ -36,7 +39,27 @@ export function compositionShell(o: {
         themeCss: artDirectionCss(o.artDirection),
         body: o.body,
         interaction: o.interaction,
+        fontLinks: o.fontLinks,
     });
+}
+
+/** Display faces for paid looks — system Didot/Iowan are missing on most machines. */
+export function lookFontLinks(style?: 'casual' | 'photos' | 'motion'): string {
+    if (style === 'motion') {
+        return [
+            '<link rel="preconnect" href="https://fonts.googleapis.com">',
+            '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+            '<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&display=swap" rel="stylesheet">',
+        ].join('\n');
+    }
+    if (style === 'photos') {
+        return [
+            '<link rel="preconnect" href="https://fonts.googleapis.com">',
+            '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+            '<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">',
+        ].join('\n');
+    }
+    return '';
 }
 
 export function pageShell(o: ShellOptions): string {
@@ -44,6 +67,7 @@ export function pageShell(o: ShellOptions): string {
     const fx = kit.length > 0 ? ` data-fx="${kit.join(' ')}"` : '';
     const fxCss = interactionCss(kit);
     const fxJs = interactionJs(kit);
+    const fonts = o.fontLinks ? `\n${o.fontLinks}` : '';
 
     return `<!doctype html>
 <html lang="${o.lang}" class="no-js">
@@ -52,7 +76,7 @@ export function pageShell(o: ShellOptions): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${o.title}</title>
 <meta name="description" content="${o.description}">
-<script>document.documentElement.classList.remove('no-js')</script>
+<script>document.documentElement.classList.remove('no-js')</script>${fonts}
 <style>
 ${o.themeCss}
 ${motionCss}${fxCss ? `\n${fxCss}` : ''}

@@ -17,6 +17,7 @@ import { asContentSchema } from '@/lib/content/schema';
 import { MAX_INSTRUCTION_CHARS } from '@/lib/contracts';
 import { styleUpgradeFirewall } from '@/lib/editor/style-firewall';
 import { crossVerticalFirewall } from '@/lib/editor/cross-vertical-firewall';
+import { offTopicWebsiteAsk } from '@/lib/editor/website-ask-gate';
 import { resolveSiteVertical } from '@/lib/editor/resolve-site-vertical';
 import { parseComposition } from '@/lib/editor/parse-composition';
 
@@ -70,6 +71,10 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
                 ]
                     .filter(Boolean)
                     .join(' ');
+                const offTopic = offTopicWebsiteAsk(body.instruction);
+                if (offTopic) {
+                    throw new ApiError('validation_failed', offTopic);
+                }
                 const blocked = styleUpgradeFirewall({
                     instruction: body.instruction,
                     html,

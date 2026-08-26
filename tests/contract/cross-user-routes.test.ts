@@ -74,6 +74,8 @@ const CROSS_USER: Record<string, "covered" | { skipped: string }> = {
             "projectId is not the caller's before it touches the project at all. Covered by " +
             "tests/contract/generate-job.test.ts.",
     },
+    "/page-edits": "covered",
+    "/pages": "covered",
     "/publish": "covered",
     "/restore": "covered",
 };
@@ -243,6 +245,16 @@ describe("a signed-in stranger, asking for somebody else's project", () => {
         await expectHidden("POST /edit-unlock/checkout", () =>
             startEditUnlockCheckout(db.asUser(STRANGER), STRANGER, theirs),
         );
+    });
+
+    it("cannot ask for page edits on it", async () => {
+        const { db, theirs } = twoPeople();
+        await expectHidden("POST /page-edits", () => getProject(db.asUser(STRANGER), theirs));
+    });
+
+    it("cannot read or confirm its walkthrough pages", async () => {
+        const { db, theirs } = twoPeople();
+        await expectHidden("GET /pages", () => getProject(db.asUser(STRANGER), theirs));
     });
 
     it("cannot learn edit-access for it beyond a draft answer", async () => {
