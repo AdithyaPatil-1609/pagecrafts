@@ -384,6 +384,16 @@ export function StyleChooser({
                 <AiCreditsNotice className="mx-auto max-w-lg" />
             ) : null}
 
+            {error && !creditsSpent && !overlay ? (
+                <div
+                    role="alert"
+                    className="mx-auto max-w-lg rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-center text-sm text-foreground"
+                >
+                    <p className="font-semibold">{fix?.title ?? "That generation did not start"}</p>
+                    <p className="mt-1 text-muted-foreground">{error}</p>
+                </div>
+            ) : null}
+
             {lookSets.map((attempt) => (
                 <section key={attempt.job_id || attempt.index} className="flex flex-col gap-3">
                     {lookSets.length > 1 && (
