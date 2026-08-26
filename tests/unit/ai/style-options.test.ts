@@ -147,7 +147,15 @@ describe('style presets — three looks from one brief', () => {
         expect(home.casual).toContain('<img src="');
         expect(['centred', 'split-image', 'minimal']).toContain(heroVariant(home.casual));
         expect(home.casual).toContain('site-header');
-        expect(home.casual).toMatch(/min-height:\s*min\(88dvh/);
+        expect(home.casual).toMatch(/min-height:\s*min\(88(?:svh|dvh)/);
+        // Fully centre-paged on phone, tablet, and laptop — never top-aligned.
+        expect(home.casual).toMatch(/justify-content:\s*safe center/);
+        expect(home.casual).toMatch(/\[data-type="about"\][\s\S]*min-height:\s*min\(70(?:svh|dvh)/);
+        expect(home.casual).toMatch(/@media \(min-width:\s*48\.01rem\) and \(max-width:\s*64rem\)/);
+        expect(home.casual).toMatch(/@media \(max-width:\s*48rem\)[\s\S]*min-height:\s*calc\(100svh/);
+        expect(home.casual).toMatch(/min-height:\s*min\(80svh/);
+        expect(home.casual).not.toMatch(/\[data-style="casual"\] main[\s\S]{0,200}justify-content:\s*flex-start/);
+        expect(home.casual).not.toMatch(/@media \(max-width:\s*48rem\)[\s\S]*justify-content:\s*flex-start/);
         // About still has a page on Starter / Pro multi-page sites.
         expect(['text', 'media-split']).toContain(aboutVariant(about.casual));
         // Photo-rich: cinematic hero + full-site topic photograph + page transitions.
@@ -164,6 +172,8 @@ describe('style presets — three looks from one brief', () => {
         expect(home.motion).toContain('site-liquid');
         expect(home.motion).toContain('liquid-deck');
         expect(home.motion).toContain('liquid-slide');
+        expect(home.motion).toMatch(/min-height:\s*100svh/);
+        expect(home.motion).toMatch(/@media \(max-width:\s*48rem\)[\s\S]*min-height:\s*100svh/);
         expect(home.motion).toContain('href="#about"');
         expect(options.find((o) => o.id === 'motion')?.files['about.html']).toBeUndefined();
         expect(['none', 'whisper']).toContain(bodyMotion(home.casual));

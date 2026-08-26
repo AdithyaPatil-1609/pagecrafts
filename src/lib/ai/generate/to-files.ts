@@ -369,26 +369,32 @@ address { font-style: normal; }
 .settings-list dd { margin: 0 0 0.75rem; }
 .form-status { margin: 0; color: var(--muted); }
 
-/* Casual / Starter: centre-oriented, fills the viewport — no top-clustered stub */
+/* Casual / Starter: fully centre-paged on every viewport — no top-clustered stub */
 [data-style="casual"] {
   text-align: center;
+  overflow-x: clip;
 }
 [data-style="casual"] .site-header {
   justify-content: center;
   flex-direction: column;
+  align-items: center;
   gap: 0.85rem;
+  text-align: center;
 }
 [data-style="casual"] .site-header nav {
   justify-content: center;
+  flex-wrap: wrap;
 }
 [data-style="casual"] main {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: calc(100svh - 6rem);
   min-height: calc(100dvh - 6rem);
   justify-content: safe center;
   text-align: center;
   padding-block: 2rem 4rem;
+  padding-inline: 1.25rem;
 }
 [data-style="casual"] section {
   width: min(100%, 42rem);
@@ -396,6 +402,8 @@ address { font-style: normal; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: safe center;
+  text-align: center;
 }
 [data-style="casual"] [data-type="hero"] {
   display: flex !important;
@@ -403,6 +411,7 @@ address { font-style: normal; }
   align-items: center;
   justify-content: center;
   gap: 1.75rem;
+  min-height: min(88svh, 44rem);
   min-height: min(88dvh, 44rem);
   padding: 2.5rem 0;
   grid-template-columns: none !important;
@@ -412,12 +421,15 @@ address { font-style: normal; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-inline: auto;
   max-width: 36rem;
+  text-align: center;
 }
 [data-style="casual"] [data-type="hero"] .lede,
 [data-style="casual"] .lede {
   margin-inline: auto;
   max-width: 34rem;
+  text-align: center;
 }
 [data-style="casual"] [data-type="hero"] .img-slot {
   width: min(100%, 28rem);
@@ -434,6 +446,7 @@ address { font-style: normal; }
 }
 [data-style="casual"] .cards {
   width: 100%;
+  margin-inline: auto;
   text-align: left;
 }
 [data-style="casual"] .contact-grid,
@@ -443,9 +456,76 @@ address { font-style: normal; }
   text-align: left;
 }
 [data-style="casual"] .form button { justify-self: center; }
+[data-style="casual"] [data-type="about"],
+[data-style="casual"] [data-type="services"],
+[data-style="casual"] [data-type="menu"],
+[data-style="casual"] [data-type="contact"] {
+  min-height: min(70svh, 36rem);
+  min-height: min(70dvh, 36rem);
+  justify-content: safe center;
+  align-items: center;
+  padding-block: 2.5rem;
+  text-align: center;
+}
 [data-style="casual"] [data-type="footer"] {
   text-align: center;
   width: 100%;
+  align-items: center;
+}
+
+/* Phones: same centre composition; svh-only so URL chrome does not clip */
+@media (max-width: 48rem) {
+  [data-style="casual"] .site-header {
+    padding-inline: 1rem;
+    gap: 0.65rem;
+  }
+  [data-style="casual"] main {
+    min-height: calc(100svh - 5rem);
+    padding-block: 1.25rem 2.75rem;
+    padding-inline: 1rem;
+  }
+  [data-style="casual"] section {
+    width: 100%;
+  }
+  [data-style="casual"] [data-type="hero"] {
+    min-height: min(80svh, 36rem);
+    padding: 1.75rem 0 2rem;
+    gap: 1.25rem;
+  }
+  [data-style="casual"] [data-type="hero"] .img-slot {
+    width: min(100%, 22rem);
+    min-height: 11rem;
+  }
+  [data-style="casual"] h1 {
+    font-size: clamp(1.65rem, 8vw, 2.35rem);
+  }
+  [data-style="casual"] [data-type="about"],
+  [data-style="casual"] [data-type="services"],
+  [data-style="casual"] [data-type="menu"],
+  [data-style="casual"] [data-type="contact"] {
+    min-height: min(70svh, 32rem);
+    padding-block: 2rem;
+  }
+}
+
+/* Tablets + small laptops: keep every band centre-paged in the viewport */
+@media (min-width: 48.01rem) and (max-width: 64rem) {
+  [data-style="casual"] main {
+    min-height: calc(100svh - 5.5rem);
+    min-height: calc(100dvh - 5.5rem);
+    padding-inline: 1.5rem;
+  }
+  [data-style="casual"] [data-type="hero"] {
+    min-height: min(84svh, 40rem);
+    min-height: min(84dvh, 40rem);
+  }
+  [data-style="casual"] [data-type="about"],
+  [data-style="casual"] [data-type="services"],
+  [data-style="casual"] [data-type="menu"],
+  [data-style="casual"] [data-type="contact"] {
+    min-height: min(72svh, 34rem);
+    min-height: min(72dvh, 34rem);
+  }
 }
 
 /* Casual: plain system sans — Pro gets editorial Newsreader; keep Free simpler */
@@ -736,8 +816,18 @@ body:has([data-style="motion"]) {
   grid-template-columns: 1fr;
   place-items: center;
   text-align: center;
-  min-height: 92vh;
+  min-height: 92svh;
+  min-height: 92dvh;
   padding: 7rem 6vw 8.5rem;
+}
+@media (max-width: 48rem) {
+  [data-style="motion"] .site-header {
+    padding-inline: 1.15rem;
+  }
+  [data-style="motion"] [data-type="hero"] {
+    min-height: 100svh;
+    padding: 5.25rem 1.15rem 3.5rem;
+  }
 }
 [data-style="motion"] [data-type="hero"] .img-slot {
   display: block;
@@ -1313,7 +1403,9 @@ html:has([data-style="motion"].site-liquid) {
   scroll-snap-type: y proximity;
 }
 [data-style="motion"].site-liquid {
+  min-height: 100svh;
   min-height: 100dvh;
+  overflow-x: clip;
 }
 [data-style="motion"] .liquid-deck {
   display: flex;
@@ -1321,13 +1413,18 @@ html:has([data-style="motion"].site-liquid) {
 }
 [data-style="motion"] .liquid-slide,
 [data-style="motion"] section.liquid-slide {
+  /* svh first so phone URL chrome does not clip centred slides */
+  min-height: 100svh;
   min-height: 100dvh;
+  height: auto;
   display: flex;
   flex-direction: column;
   justify-content: safe center;
   align-items: center;
   text-align: center;
   padding: 5rem 6vw;
+  padding-top: max(5rem, calc(env(safe-area-inset-top, 0px) + 4.25rem));
+  padding-bottom: max(2.5rem, env(safe-area-inset-bottom, 0px));
   scroll-snap-align: start;
   scroll-snap-stop: normal;
   box-sizing: border-box;
@@ -1335,9 +1432,11 @@ html:has([data-style="motion"].site-liquid) {
 [data-style="motion"] .liquid-slide > *,
 [data-style="motion"] section.liquid-slide > * {
   width: min(100%, 48rem);
+  max-width: 100%;
 }
 [data-style="motion"] [data-type="hero"].liquid-slide {
   padding: 6rem 6vw 5rem;
+  padding-top: max(6rem, calc(env(safe-area-inset-top, 0px) + 4.5rem));
 }
 [data-style="motion"] [data-type="footer"].liquid-slide {
   min-height: auto;
@@ -1349,6 +1448,35 @@ html:has([data-style="motion"].site-liquid) {
 [data-style="motion"] .form {
   text-align: left;
   margin-inline: auto;
+}
+@media (max-width: 48rem) {
+  [data-style="motion"] .liquid-slide,
+  [data-style="motion"] section.liquid-slide {
+    /* Prefer small viewport on phones — dvh overshoots when chrome is visible */
+    min-height: 100svh;
+    padding-inline: 1.15rem;
+    padding-top: max(4.75rem, calc(env(safe-area-inset-top, 0px) + 3.75rem));
+    padding-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+  }
+  [data-style="motion"] [data-type="hero"].liquid-slide {
+    min-height: 100svh;
+    padding-inline: 1.15rem;
+    padding-top: max(5rem, calc(env(safe-area-inset-top, 0px) + 4rem));
+  }
+  [data-style="motion"] [data-type="hero"] h1 {
+    font-size: clamp(1.85rem, 9vw, 2.75rem);
+  }
+  [data-style="motion"] [data-type="footer"].liquid-slide {
+    min-height: auto;
+    padding: 2.25rem 1.15rem;
+  }
+  /* Tall copy: grow the slide instead of clipping under the sticky bar */
+  [data-style="motion"] .liquid-slide:has(.cards),
+  [data-style="motion"] .liquid-slide:has(.contact-grid),
+  [data-style="motion"] .liquid-slide:has(.form) {
+    justify-content: flex-start;
+    padding-top: max(5.25rem, calc(env(safe-area-inset-top, 0px) + 4.25rem));
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   html:has([data-style="motion"].site-liquid) {
