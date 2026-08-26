@@ -83,7 +83,7 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
         if (expanded.usage.model !== 'none') bill('expand', expanded.usage);
         const buildPrompt = expanded.data.expandedPrompt || job.prompt;
         if (expanded.data.expanded) {
-            await store.update(job.id, { prompt: buildPrompt });
+            await store.update(job.id, { buildPrompt });
             await emit('plan', {
                 mode: 'expand',
                 expanded: true,

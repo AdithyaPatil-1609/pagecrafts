@@ -234,7 +234,10 @@ describe('the job runner', () => {
         expect(names).toContain('validate');
         expect(names.at(-1)).toBe('done');
         expect(names.indexOf('validate')).toBeGreaterThan(names.lastIndexOf('section'));
-        const plan = job.events.find((e) => e.name === 'plan');
+        // Two events are named 'plan' now: the expand step announces itself with
+        // { mode: 'expand' } before the recipe is chosen. The section list belongs to the
+        // second one, so match on the shape rather than taking the first.
+        const plan = job.events.find((e) => e.name === 'plan' && Array.isArray(e.data?.types));
         expect(plan?.data?.types).toEqual(expect.arrayContaining(['hero']));
     });
 
