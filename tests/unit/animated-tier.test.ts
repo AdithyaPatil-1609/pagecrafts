@@ -94,9 +94,9 @@ describe('two people, or two attempts, do not get the same picture', () => {
     });
 
     it('varies by job, so generating again is not a duplicate', () => {
-        expect(RUNNER).toContain('lookupPhoto(q, job.id)');
+        expect(RUNNER).toMatch(/lookupPhoto\([^)]*job\.id/);
         // Bank / offline fallback must take the same salt — keyword restaurant used to
         // ignore it and stamp the same dining table on every Set.
-        expect(RUNNER).toContain('bankPhotoUrl(query, salt)');
+        expect(RUNNER).toContain('bankPhotoUrl(query, salt');
     });
 });
