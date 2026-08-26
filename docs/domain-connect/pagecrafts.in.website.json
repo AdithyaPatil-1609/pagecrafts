@@ -11,7 +11,7 @@
   "syncRedirectDomain": "pagecrafts.in",
   "records": [
     {
-      "type": "CNAME",
+      "type": "APEXCNAME",
       "host": "@",
       "pointsTo": "%pagesTarget%",
       "ttl": 600
