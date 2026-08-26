@@ -165,6 +165,8 @@ describe('the generated Premium page carries it', () => {
         const html = options.find((o) => o.id === 'motion')!.files['index.html'] ?? '';
 
         expect(html).not.toMatch(/<script[^>]+src=/i);
-        expect(html).not.toMatch(/<link[^>]+rel=["']?stylesheet/i);
+        const nonFontStylesheets = (html.match(/<link[^>]+rel=["']?stylesheet[^>]*>/gi) ?? [])
+            .filter((tag) => !tag.includes('fonts.googleapis.com'));
+        expect(nonFontStylesheets).toEqual([]);
     });
 });

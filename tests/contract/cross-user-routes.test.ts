@@ -273,6 +273,16 @@ describe("a signed-in stranger, asking for somebody else's project", () => {
         );
     });
 
+    it("cannot ask for page edits on it", async () => {
+        const { db, theirs } = twoPeople();
+        await expectHidden("POST /page-edits", () => getProject(db.asUser(STRANGER), theirs));
+    });
+
+    it("cannot read or confirm its walkthrough pages", async () => {
+        const { db, theirs } = twoPeople();
+        await expectHidden("GET /pages", () => getProject(db.asUser(STRANGER), theirs));
+    });
+
     it("cannot learn edit-access for it beyond a draft answer", async () => {
         // Same shape as checkEditPermission: no live history visible → never_published.
         const { db, theirs } = twoPeople();
