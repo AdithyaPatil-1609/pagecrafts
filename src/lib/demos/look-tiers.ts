@@ -313,7 +313,7 @@ function multipagePreviewSrcDoc(
       var spec = nav.path + (nav.hash ? "#" + nav.hash : "");
       return "href=" + q + "#" + q + " data-pc-file=" + q + spec + q;
     });
-    var bridge = "<script>(function(){document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a[data-pc-file]');if(!a)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();var spec=a.getAttribute('data-pc-file')||'index.html';var i=spec.indexOf('#');var path=i<0?spec:spec.slice(0,i);var hash=i<0?'':spec.slice(i+1);parent.postMessage({type:'pc-compare-go',path:path,hash:hash},'*');},true);})();<\\/script>";
+    var bridge = "<script>(function(){document.addEventListener('click',function(e){var t=e.target;if(t&&t.nodeType===3)t=t.parentElement;var a=t&&t.closest&&t.closest('a[data-pc-file]');if(!a)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();var spec=a.getAttribute('data-pc-file')||'index.html';var i=spec.indexOf('#');var path=i<0?spec:spec.slice(0,i);var hash=i<0?'':spec.slice(i+1);parent.postMessage({type:'pc-compare-go',path:path,hash:hash},'*');},true);})();<\\/script>";
     if (/<\\/body>/i.test(html)) return html.replace(/<\\/body>/i, bridge + "</body>");
     return html + bridge;
   }
