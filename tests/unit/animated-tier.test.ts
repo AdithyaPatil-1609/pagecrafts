@@ -46,8 +46,12 @@ describe('the premium tier is given a photograph', () => {
 
         expect(slot).toContain('position: absolute');
         expect(slot).toContain('inset: 0');
+        expect(slot).toContain('border-radius: 0');
         expect(rule('[data-style="motion"] [data-type="hero"] .img-slot img {'))
             .toContain('object-fit: cover');
+        expect(rule('[data-style="motion"] [data-type="hero"] {')).toContain('min-height: 100vh');
+        expect(rule('[data-style="motion"] [data-type="hero"] {')).toContain('border-radius: 0');
+        expect(rule('[data-style="motion"] [data-type="hero"] {')).toContain('padding: 0');
     });
 
     it('darkens it under the type, or the headline cannot be read', () => {
@@ -79,8 +83,10 @@ describe('the animated headline', () => {
         expect(min?.trim()).toBe('2.4rem');
     });
 
-    it('is capped against its own font size, not a narrower parent', () => {
-        expect(hero).toContain('min(16ch, 100%)');
+    it('uses a distinctive Bodoni display face, not Impact-weight sans', () => {
+        expect(hero).toContain('font-family: var(--display-font)');
+        expect(CSS).toContain('"Bodoni Moda"');
+        expect(CSS).not.toMatch(/\[data-style="motion"\] \[data-type="hero"\] h1 \{[^}]*font-weight:\s*800/);
     });
 });
 
@@ -94,9 +100,12 @@ describe('two people, or two attempts, do not get the same picture', () => {
     });
 
     it('varies by job, so generating again is not a duplicate', () => {
-        expect(RUNNER).toContain('lookupPhoto(q, job.id)');
+        expect(RUNNER).toContain('lookupPhoto(q, job.id');
         // Bank / offline fallback must take the same salt — keyword restaurant used to
         // ignore it and stamp the same dining table on every Set.
-        expect(RUNNER).toContain('bankPhotoUrl(query, salt)');
+        expect(RUNNER).toContain('bankPhotoUrl(query, salt');
+        // Set 2 must skip heroes already shown on earlier Sets — salt alone collides.
+        expect(RUNNER).toContain('usedHeroPhotoKeys');
+        expect(RUNNER).toContain('usedHeroes');
     });
 });

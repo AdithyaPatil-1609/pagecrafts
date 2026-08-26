@@ -258,11 +258,14 @@ export async function runJob(job: Job, deps: RunnerDeps = {}): Promise<Job> {
             }
         }
 
+        const siblings = await store.listByProject(job.projectId);
+        const usedHeroes = usedHeroPhotoKeys(siblings, job.id);
         const variants = await buildStyleOptions(
             composition,
             photoLookup,
             buildPrompt,
             job.id,
+            usedHeroes,
         );
         const picked = variants[0];
         const files = picked?.files ?? compositionToFiles(composition);

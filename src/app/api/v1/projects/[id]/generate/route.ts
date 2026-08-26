@@ -25,9 +25,7 @@ import { supabaseAdminOrNull } from '@/lib/data/supabase-admin';
 import { getProject } from '@/lib/data/projects';
 import { getProjectFiles } from '@/lib/data/project-files';
 import { asContentSchema } from '@/lib/content/schema';
-import { crossVerticalFirewall } from '@/lib/editor/cross-vertical-firewall';
 import { parseComposition } from '@/lib/editor/parse-composition';
-import { resolveSiteVertical } from '@/lib/editor/resolve-site-vertical';
 import { setProfileStore } from '@/lib/ai/profile-cache';
 import { SupabaseProfileStore } from '@/lib/ai/profile/persist';
 import { assessPromptClarity } from '@/lib/ai/assess-clarity';
@@ -72,28 +70,14 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             files['index.html'] ??
             Object.keys(files).find((name) => /\.html?$/i.test(name)) ??
             null;
-        const contextText = [
-            composition?.meta.title,
-            project.siteMeta?.title,
-            project.name,
-            entry ? files[entry]?.slice(0, 4000) : null,
-        ]
-            .filter(Boolean)
-            .join(' ');
-        const crossBlocked = crossVerticalFirewall({
-            instruction: body.prompt,
-            vertical: resolveSiteVertical({
-                composition,
-                sourceTemplateId: project.sourceTemplateId,
-                contextText,
-            }),
-            sectionCount: composition?.sections.length ?? 0,
-            hasContentPage: contentSchema.sections.length > 0,
-            contextText,
-        });
-        if (crossBlocked) {
-            throw new ApiError('validation_failed', crossBlocked);
-        }
+        // Cross-vertical firewall belongs on Ask / edit routes — not here.
+        //
+        // "Generate another look" posts the same business brief again after Set 1 already
+        // wrote composition.json. A prompt like "I want a website for Preethi Brain Surgery
+        // hospital…" then looked like a whole-site recreate. If classify had stored a slug
+        // such as `neurosurgery` (not in the healthcare keyword list) while the brief said
+        // "hospital", the firewall 422'd and the picker never got a new Set — it felt like
+        // regenerate did nothing.
 
         const budget = await checkGenerationBudget(userId, params.id, body.prompt);
         if (!budget.ok) throw new ApiError(budget.code, budget.message);
@@ -116,11 +100,8 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
 
         // Clarity judges a brief for a site that does not exist yet: does this name a
         // business, a place, and what they do. On a site that already exists the prompt is
-        // an instruction — "make the hero more graphical" — which names none of those and
-        // was refused every time, with a message about details the person already gave.
-        //
-        // The same signal the firewall above uses decides it: a project with sections or a
-        // content page is being edited, not described.
+        // often a regenerate of the same brief ("Generate another look"), which still names
+        // the business — and must not be refused as unclear.
         //
         // It runs after the caps and before anything is spent. Ahead of them it answered
         // "we cannot read your brief" to somebody whose real problem was a daily cap, and
