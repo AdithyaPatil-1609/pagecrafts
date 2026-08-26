@@ -1,5 +1,5 @@
 import type { Composition, FileMap, SectionInstance, SectionKey } from '@/lib/contracts';
-import { compositionShell } from '@/lib/render/page-shell';
+import { compositionShell, lookFontLinks } from '@/lib/render/page-shell';
 import { PREMIUM_CSS, PREMIUM_JS, TABS_CSS, TABS_JS } from '@/lib/render/tier-assets';
 import { sectionContentKey } from './schema';
 import type { StyleId } from './styles';
@@ -357,7 +357,62 @@ address { font-style: normal; }
   border: 1px solid var(--rule);
 }
 
-/* Photo-rich (Pro): rich photographic layouts, soft shadows, image hover zoom, interactive tabs & accordion */
+/* Casual: plain system sans — Pro gets editorial Newsreader; keep Free simpler */
+[data-style="casual"] h1,
+[data-style="casual"] h2,
+[data-style="casual"] h3 {
+  font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(1.85rem, 3.6vw, 2.75rem);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+[data-style="casual"] h2,
+[data-style="casual"] h3 {
+  font-size: clamp(1.25rem, 2vw, 1.55rem);
+  font-weight: 600;
+}
+[data-style="casual"] .lede {
+  font-size: 1.05rem;
+  max-width: 36rem;
+}
+/* Photo-rich (Pro): Newsreader editorial type + photographic layouts — clearly above Casual */
+[data-style="photos"] {
+  --display-font: Newsreader, "Iowan Old Style", Palatino, Georgia, serif;
+  --display-weight: 500;
+  --display-tracking: -0.028em;
+}
+[data-style="photos"] h1 {
+  font-family: var(--display-font);
+  font-size: clamp(2.35rem, 5.4vw, 4.1rem);
+  font-weight: var(--display-weight, 500);
+  letter-spacing: var(--display-tracking, -0.028em);
+  line-height: 1.04;
+  max-width: 14ch;
+}
+[data-style="photos"] h2 {
+  font-family: var(--display-font);
+  font-size: clamp(1.45rem, 2.3vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+[data-style="photos"] .lede {
+  font-size: clamp(1.1rem, 1.35vw, 1.28rem);
+  line-height: 1.65;
+  max-width: 38rem;
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+}
+[data-style="photos"] [data-variant="image-bg"] {
+  min-height: min(34rem, 92vh);
+}
+[data-style="photos"] [data-variant="image-bg"] .hero-copy {
+  padding: 5rem 2rem 3rem;
+}
+[data-style="photos"] .wordmark {
+  font-family: var(--display-font);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
 [data-style="photos"] .img-slot {
   border-radius: var(--radius-lg, 0.85rem);
   box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--ink) 12%, transparent);
@@ -453,16 +508,19 @@ details[open] summary::after {
 /** Premium look only — kinetic canvas CSS must not leak into Casual/Photo-rich HTML. */
 const MOTION_CSS = `
 body:has([data-style="motion"]) {
-  --bg: #06040c;
-  --ink: #f6f3ff;
-  --muted: #b7b0cc;
-  --accent: #ff2d6a;
-  --accent-ink: #ffffff;
-  --panel: rgba(255, 255, 255, 0.055);
+  --bg: #08070a;
+  --ink: #f7f4ef;
+  --muted: #b8b0a4;
+  /* Champagne gold — not hot pink. Themes can still tint via --accent on CTAs. */
+  --accent: #c8a962;
+  --accent-ink: #0c0a09;
+  --panel: rgba(255, 255, 255, 0.05);
   --rule: rgba(255, 255, 255, 0.12);
-  --display-tracking: -0.06em;
-  background: #06040c;
-  color: #f6f3ff;
+  --display-font: "Bodoni Moda", Didot, "Bodoni MT", "Times New Roman", serif;
+  --display-weight: 400;
+  --display-tracking: 0.045em;
+  background: #08070a;
+  color: #f7f4ef;
 }
 [data-style="motion"] .site-header {
   position: sticky;
@@ -470,12 +528,18 @@ body:has([data-style="motion"]) {
   z-index: 8;
   max-width: none;
   padding-inline: 6vw;
-  background: color-mix(in srgb, #06040c 62%, transparent);
+  background: color-mix(in srgb, #08070a 62%, transparent);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-[data-style="motion"] .site-header nav a { color: rgba(246, 243, 255, 0.72); }
+[data-style="motion"] .site-header nav a { color: rgba(247, 244, 239, 0.72); }
 [data-style="motion"] .site-header nav a:hover { color: #fff; }
+[data-style="motion"] .wordmark {
+  font-family: var(--display-font);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  text-transform: none;
+}
 [data-style="motion"] main {
   max-width: none;
   padding-inline: 0;
@@ -533,28 +597,37 @@ body:has([data-style="motion"]) {
 }
 [data-style="motion"] [data-type="hero"] .lede {
   margin-inline: auto;
-  max-width: 46ch;
-  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
-  line-height: 1.6;
-  color: rgba(250, 248, 255, 0.92);
+  max-width: 42ch;
+  font-size: clamp(1.05rem, 1.45vw, 1.28rem);
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+  color: rgba(247, 244, 239, 0.9);
   text-shadow: 0 1px 14px rgba(8, 5, 16, 0.7);
 }
 [data-style="motion"] [data-type="hero"] h1 {
-  font-size: clamp(2.4rem, 8.2vw, 6.6rem);
-  font-weight: 800;
-  letter-spacing: -0.055em;
-  line-height: 0.94;
+  font-family: var(--display-font);
+  font-size: clamp(2.4rem, 7vw, 5.4rem);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  line-height: 1.05;
   margin: 0 auto 0.7em;
   max-width: min(16ch, 100%);
   overflow-wrap: break-word;
   text-wrap: balance;
-  background: linear-gradient(115deg, #fff 8%, #fff 32%, var(--accent) 52%, #fbbf24 74%, #fff 100%);
-  background-size: 220% 100%;
+  color: #f7f4ef;
+  background: linear-gradient(
+    165deg,
+    #fff8ef 0%,
+    #f7f4ef 38%,
+    color-mix(in srgb, var(--accent) 75%, #fff) 72%,
+    #e8d5a3 100%
+  );
+  background-size: 100% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: pc-type 9s ease-in-out infinite;
-  filter: drop-shadow(0 2px 18px rgba(8, 5, 16, 0.75));
+  filter: drop-shadow(0 2px 22px rgba(8, 5, 16, 0.55));
+  animation: none;
 }
 @keyframes pc-kenburns {
   from { transform: scale(1.05) translate3d(0, 0, 0); }
@@ -567,7 +640,7 @@ body:has([data-style="motion"]) {
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: #ffd0dc;
+  color: color-mix(in srgb, var(--accent) 85%, #fff);
   letter-spacing: 0.22em;
   font-size: 0.68rem;
 }
@@ -582,8 +655,8 @@ body:has([data-style="motion"]) {
   inset: 0;
   background:
     radial-gradient(ellipse 52% 42% at 16% 28%, color-mix(in srgb, var(--accent) 58%, transparent), transparent 62%),
-    radial-gradient(ellipse 46% 36% at 86% 12%, rgba(124, 58, 237, 0.55), transparent 64%),
-    radial-gradient(ellipse 42% 38% at 72% 86%, rgba(245, 158, 11, 0.34), transparent 62%);
+    radial-gradient(ellipse 46% 36% at 86% 12%, rgba(200, 169, 98, 0.35), transparent 64%),
+    radial-gradient(ellipse 42% 38% at 72% 86%, rgba(245, 158, 11, 0.28), transparent 62%);
   filter: blur(30px);
   animation: pc-aurora 16s ease-in-out infinite alternate;
 }
@@ -731,18 +804,20 @@ body:has([data-style="motion"]) {
   overflow: hidden;
   pointer-events: none;
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  font-size: clamp(2.4rem, 7vw, 5.4rem);
-  font-weight: 800;
-  letter-spacing: -0.06em;
+  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+  font-weight: 400;
+  letter-spacing: 0.08em;
   line-height: 1;
   white-space: nowrap;
-  color: #fff;
-  opacity: 0.1;
+  color: color-mix(in srgb, var(--accent) 55%, #fff);
+  opacity: 0.14;
+  text-transform: uppercase;
 }
 [data-style="motion"] .motion-ticker p {
   display: inline-block;
   max-width: none;
   margin: 0;
+  font-family: var(--display-font);
   animation: pc-marquee 22s linear infinite;
 }
 [data-style="motion"] .cta {
@@ -956,6 +1031,7 @@ export function compositionToFiles(
             artDirection: composition.artDirection,
             body,
             interaction,
+            fontLinks: lookFontLinks(style),
         });
     }
 
