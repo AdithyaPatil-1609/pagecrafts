@@ -35,35 +35,34 @@ export function BriefFields({
                 never gave.
             </p>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Business name" htmlFor="brief-name">
-                    <Input
-                        id="brief-name"
-                        maxLength={BRIEF_LIMITS.name}
-                        inputSize="lg"
-                        autoComplete="organization"
-                        placeholder="Brain Surgery · Mithas Sweets"
-                        value={value.name}
-                        disabled={disabled}
-                        onChange={(e) => set({ name: e.target.value })}
-                    />
-                </Field>
-                <Field
-                    label="Profession or trade"
-                    htmlFor="brief-profession"
-                    hint="The field of work — medical, bakery, plumbing. Photos are based on this."
-                >
-                    <Input
-                        id="brief-profession"
-                        maxLength={BRIEF_LIMITS.profession}
-                        inputSize="lg"
-                        placeholder="Medical, sweet shop, plumber…"
-                        value={value.profession}
-                        disabled={disabled}
-                        onChange={(e) => set({ profession: e.target.value })}
-                    />
-                </Field>
-            </div>
+            <Field label="Business name" htmlFor="brief-name">
+                <Input
+                    id="brief-name"
+                    maxLength={BRIEF_LIMITS.name}
+                    inputSize="lg"
+                    autoComplete="organization"
+                    placeholder="Brain Surgery · Mithas Sweets"
+                    value={value.name}
+                    disabled={disabled}
+                    onChange={(e) => set({ name: e.target.value })}
+                />
+            </Field>
+
+            <Field
+                label="Profession or trade"
+                htmlFor="brief-profession"
+                hint="The field of work — medical, bakery, plumbing. Photos are based on this."
+            >
+                <Input
+                    id="brief-profession"
+                    maxLength={BRIEF_LIMITS.profession}
+                    inputSize="lg"
+                    placeholder="Medical, sweet shop, plumber…"
+                    value={value.profession}
+                    disabled={disabled}
+                    onChange={(e) => set({ profession: e.target.value })}
+                />
+            </Field>
 
             <Field label="City or area" htmlFor="brief-place">
                 <Input
