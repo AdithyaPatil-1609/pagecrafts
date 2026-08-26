@@ -57,9 +57,36 @@ describe('thin compositions still ship a working site', () => {
         expect(files['contact.html']).toContain('Get in touch');
         expect(files['contact.html']).toContain('data-working-form');
         expect(files['contact.html']).not.toContain('hello@example.com');
+        expect(files['contact.html']).toContain('Prefer to message first');
+        expect(files['contact.html']).toContain('Hours by appointment');
         expect(files['settings.html']).toContain('Tea in Pune');
         expect(files['settings.html']).toContain('data-working-form');
         expect(files['index.html']).toContain('href="contact.html"');
+    });
+
+    it('keeps contact finished when optional facts are empty (all looks)', () => {
+        const emptyFacts: Composition = {
+            ...thin,
+            sections: [
+                section('s_01', 'hero', { heading: 'Kettle', ctaLabel: 'Visit' }),
+                section('s_02', 'about', { heading: 'Our story' }),
+                section('s_03', 'contact', { heading: '', blurb: '', phone: '', email: '', address: '', hours: '' }),
+                section('s_04', 'footer', { tagline: '' }),
+            ],
+        };
+        for (const style of ['casual', 'photos', 'motion'] as const) {
+            const files = compositionToFiles(emptyFacts, style);
+            const html = Object.values(files).join('\n');
+            expect(html, style).toContain('Get in touch');
+            expect(html, style).toContain('Send Kettle a message');
+            expect(html, style).toContain('Prefer to message first');
+            expect(html, style).toContain('Hours by appointment');
+            expect(html, style).toContain('Send message');
+            expect(html, style).toContain('data-working-form');
+            expect(html, style).not.toContain('hello@example.com');
+            expect(html, style).toContain('Kettle'); // footer fallback
+            expect(html, style).toMatch(/About Kettle|Our story/);
+        }
     });
 
     it('puts about and services on the home page when they exist', () => {

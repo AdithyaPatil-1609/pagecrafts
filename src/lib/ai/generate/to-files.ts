@@ -6,6 +6,9 @@ import type { StyleId } from './styles';
 import { motionMotifMarkup, motionStageMarkup, motionTickerMarkup } from './motion-motif';
 import { interactionKit } from './interaction';
 import {
+    finishedAboutBody,
+    finishedContactFacts,
+    finishedFooterTagline,
     pageHref,
     planSitePages,
     settingsPageHtml,
@@ -98,6 +101,7 @@ function renderSection(
     visible: readonly SectionInstance[],
     motifHtml: string,
     continuous = false,
+    site?: { title: string; description: string; vertical: string },
 ): string {
     const p = section.props;
     const key = sectionContentKey(section, visible);
@@ -106,7 +110,7 @@ function renderSection(
     const slideClass = continuous ? ' class="liquid-slide"' : '';
     const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate${slideClass} style="--i:${index}">`;
     const motif = section.type === 'hero' ? motifHtml : '';
-    return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant, continuous)}</section>`;
+    return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant, continuous, site)}</section>`;
 }
 
 /**
@@ -153,9 +157,11 @@ function renderInner(
     heading: string,
     variant = '',
     continuous = false,
+    site?: { title: string; description: string; vertical: string },
 ): string {
     const h = (tag: 'h1' | 'h2', text: string) =>
         text ? slot(tag, `${key}.heading`, escapeHtml(text)) : '';
+    const siteTitle = site?.title?.trim() || '';
 
     switch (type) {
         case 'hero':
@@ -170,8 +176,15 @@ function renderInner(
                 '</div>',
                 imageSlot(`${key}.image`, p.image, asString(p.heading) || 'Hero'),
             ].join('');
-        case 'about':
-            return `${h('h2', heading)}${asString(p.body) ? slot('p', `${key}.body`, escapeHtml(asString(p.body))) : ''}${imageSlot(`${key}.image`, p.image, heading || 'About')}`;
+        case 'about': {
+            const body = finishedAboutBody(p, {
+                title: siteTitle,
+                description: site?.description,
+                vertical: site?.vertical,
+            });
+            const title = asString(p.heading) || (siteTitle ? `About ${siteTitle}` : 'About');
+            return `${h('h2', title)}${slot('p', `${key}.body`, escapeHtml(body))}${imageSlot(`${key}.image`, p.image, title)}`;
+        }
         case 'services': {
             if (variant === 'tabs') {
                 const tabbed = tabbedItems(key, asList(p.items));
@@ -213,33 +226,41 @@ function renderInner(
                     }</details>`;
             }).join('')}`;
         case 'contact': {
-            const send = asString(p.ctaLabel) || 'Send';
+            const facts = finishedContactFacts(p, siteTitle || 'us');
             return [
-                h('h2', heading),
-                asString(p.blurb) ? slot('p', `${key}.blurb`, escapeHtml(asString(p.blurb))) : '',
+                slot('h2', `${key}.heading`, escapeHtml(facts.heading)),
+                slot('p', `${key}.blurb`, escapeHtml(facts.blurb)),
                 '<div class="contact-grid">',
                 '<address>',
-                asString(p.address) ? slot('p', `${key}.address`, escapeHtml(asString(p.address))) : '',
-                asString(p.phone)
-                    ? `<p><a href="tel:${escapeHtml(asString(p.phone))}">${slot('span', `${key}.phone`, escapeHtml(asString(p.phone)))}</a></p>`
+                facts.address
+                    ? slot('p', `${key}.address`, escapeHtml(facts.address))
+                    : `<p class="contact-note">${escapeHtml(facts.addressNote)}</p>`,
+                facts.phone
+                    ? `<p><a href="tel:${escapeHtml(facts.phone)}">${slot('span', `${key}.phone`, escapeHtml(facts.phone))}</a></p>`
                     : '',
-                asString(p.email)
-                    ? `<p><a href="mailto:${escapeHtml(asString(p.email))}">${slot('span', `${key}.email`, escapeHtml(asString(p.email)))}</a></p>`
+                facts.email
+                    ? `<p><a href="mailto:${escapeHtml(facts.email)}">${slot('span', `${key}.email`, escapeHtml(facts.email))}</a></p>`
                     : '',
-                asString(p.hours) ? slot('p', `${key}.hours`, escapeHtml(asString(p.hours))) : '',
+                facts.hours
+                    ? slot('p', `${key}.hours`, escapeHtml(facts.hours))
+                    : `<p class="contact-note">${escapeHtml(facts.hoursNote)}</p>`,
                 '</address>',
                 workingForm(
-                    asString(p.email) ? `mailto:${asString(p.email)}` : '#',
+                    facts.email ? `mailto:${facts.email}` : '#contact-form',
                     `<input type="text" name="name" placeholder="Your name" aria-label="Name" autocomplete="name" required />
         <input type="email" name="email" placeholder="you@example.com" aria-label="Email" autocomplete="email" required />
         <textarea name="message" rows="4" placeholder="How can we help?" aria-label="Message" required></textarea>`,
-                    send,
+                    facts.ctaLabel,
                 ),
                 '</div>',
             ].join('');
         }
         case 'footer':
-            return slot('p', `${key}.tagline`, escapeHtml(asString(p.tagline)));
+            return slot(
+                'p',
+                `${key}.tagline`,
+                escapeHtml(finishedFooterTagline(p, siteTitle)),
+            );
         default: {
             const exhaustive: never = type;
             return exhaustive;
@@ -332,6 +353,7 @@ details { border-bottom: 1px solid var(--rule); padding: 0.75rem 0; cursor: poin
 .contact-grid { display: grid; gap: var(--stack-gap, 1rem); margin-top: 1.5rem; }
 @media (min-width: 720px) { .contact-grid { grid-template-columns: 1fr 1fr; } }
 address { font-style: normal; }
+.contact-note { color: var(--muted); margin: 0.35rem 0; }
 .form { display: grid; gap: 0.75rem; }
 .form input, .form textarea {
   width: 100%; padding: 0.75rem 1rem; border: var(--border-width, 1px) solid var(--rule);
@@ -1126,11 +1148,16 @@ function pageInner(
     motif: string,
     continuous = false,
 ): string {
+    const site = {
+        title: composition.meta.title || '',
+        description: composition.meta.description || '',
+        vertical: composition.vertical || '',
+    };
     if (page.kind === 'settings') return settingsPageHtml(composition);
     if (page.kind === 'about' && page.sections.length === 0) return syntheticAboutHtml(composition);
     if (page.kind === 'contact' && page.sections.length === 0) return syntheticContactHtml(composition);
     return page.sections
-        .map((section, index) => renderSection(section, index, visible, motif, continuous))
+        .map((section, index) => renderSection(section, index, visible, motif, continuous, site))
         .join('\n');
 }
 
@@ -1231,6 +1258,11 @@ export function compositionToFiles(
         style === 'photos' ? PRO_PARALLAX_JS : '',
     ].filter(Boolean).join('\n');
     const footers = visible.filter((s) => s.type === 'footer');
+    const site = {
+        title: composition.meta.title || '',
+        description: composition.meta.description || '',
+        vertical: composition.vertical || '',
+    };
     const files: FileMap = {};
 
     for (const page of filePages) {
@@ -1238,7 +1270,7 @@ export function compositionToFiles(
             pageInner(page, composition, visible, motif, continuous),
             footers
                 .map((section, index) =>
-                    renderSection(section, index, visible, '', continuous),
+                    renderSection(section, index, visible, '', continuous, site),
                 )
                 .join('\n'),
         ].join('\n');

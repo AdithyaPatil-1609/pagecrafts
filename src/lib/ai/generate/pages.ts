@@ -52,6 +52,63 @@ function contactProps(composition: Composition): Record<string, unknown> {
     return contact?.props ?? {};
 }
 
+/**
+ * Honesty pass for empty optional contact facts.
+ * Never invent phone/email/address — fill the section with finished visitor copy instead.
+ */
+export interface FinishedContactFacts {
+    heading: string;
+    blurb: string;
+    ctaLabel: string;
+    address: string;
+    phone: string;
+    email: string;
+    hours: string;
+    /** Shown when address was not given — visitor-facing, not a fake street. */
+    addressNote: string;
+    /** Shown when hours were not given. */
+    hoursNote: string;
+}
+
+export function finishedContactFacts(
+    props: Record<string, unknown>,
+    siteTitle = 'us',
+): FinishedContactFacts {
+    const title = siteTitle.trim() || 'us';
+    return {
+        heading: asString(props.heading) || 'Get in touch',
+        blurb:
+            asString(props.blurb) ||
+            `Send ${title} a message — we read every note and reply as soon as we can.`,
+        ctaLabel: asString(props.ctaLabel) || 'Send message',
+        address: asString(props.address),
+        phone: asString(props.phone),
+        email: asString(props.email),
+        hours: asString(props.hours),
+        addressNote: 'Prefer to message first — we will share directions when you write.',
+        hoursNote: 'Hours by appointment — message us to book a time.',
+    };
+}
+
+export function finishedAboutBody(
+    props: Record<string, unknown>,
+    meta: { title?: string; description?: string; vertical?: string },
+): string {
+    const body = asString(props.body);
+    if (body) return body;
+    if (meta.description?.trim()) return meta.description.trim();
+    const title = meta.title?.trim() || 'This business';
+    const vertical = (meta.vertical ?? '').replace(/-/g, ' ').trim();
+    return vertical ? `${title} — ${vertical}.` : `${title} — a simple site for what we do.`;
+}
+
+export function finishedFooterTagline(
+    props: Record<string, unknown>,
+    siteTitle = '',
+): string {
+    return asString(props.tagline) || siteTitle.trim() || 'Thanks for visiting.';
+}
+
 export interface PlanSitePagesOptions {
     /**
      * Premium continuous scroll — one Home deck with every section, hash nav,
@@ -187,8 +244,12 @@ ${fields}
 
 export function syntheticAboutHtml(composition: Composition): string {
     const title = composition.meta.title || 'About';
-    const body = composition.meta.description
-        || `${title} — ${asString(composition.vertical).replace(/-/g, ' ')}.`;
+    const about = composition.sections.find((s) => s.visible && s.type === 'about');
+    const body = finishedAboutBody(about?.props ?? {}, {
+        title: composition.meta.title,
+        description: composition.meta.description,
+        vertical: composition.vertical,
+    });
     return `<section id="about" data-section="about" data-type="about" data-animate>
 <h2>About ${esc(title)}</h2>
 <p>${esc(body)}</p>
@@ -196,47 +257,34 @@ export function syntheticAboutHtml(composition: Composition): string {
 }
 
 export function syntheticContactHtml(composition: Composition): string {
-    const p = contactProps(composition);
-    const email = asString(p.email);
-    const phone = asString(p.phone);
-    const address = asString(p.address);
-    const hours = asString(p.hours);
-    const title = composition.meta.title || 'us';
-    const heading = asString(p.heading) || 'Get in touch';
-    const blurb =
-        asString(p.blurb) ||
-        `Send ${title} a message — we read every note and reply as soon as we can.`;
-    const formAction = email ? `mailto:${email}` : '#contact-form';
+    const facts = finishedContactFacts(contactProps(composition), composition.meta.title || 'us');
+    const formAction = facts.email ? `mailto:${facts.email}` : '#contact-form';
     return `<section id="contact" data-section="contact" data-type="contact" data-animate>
-<h2>${esc(heading)}</h2>
-<p>${esc(blurb)}</p>
+<h2>${esc(facts.heading)}</h2>
+<p>${esc(facts.blurb)}</p>
 <div class="contact-grid">
 <address>
-${address ? `<p>${esc(address)}</p>` : `<p>Visit us — add your street address in Settings when you have it.</p>`}
-${phone ? `<p><a href="tel:${esc(phone)}">${esc(phone)}</a></p>` : ''}
-${email ? `<p><a href="mailto:${esc(email)}">${esc(email)}</a></p>` : ''}
-${hours ? `<p>${esc(hours)}</p>` : `<p>Hours by appointment — message us to book a time.</p>`}
+${facts.address ? `<p>${esc(facts.address)}</p>` : `<p>${esc(facts.addressNote)}</p>`}
+${facts.phone ? `<p><a href="tel:${esc(facts.phone)}">${esc(facts.phone)}</a></p>` : ''}
+${facts.email ? `<p><a href="mailto:${esc(facts.email)}">${esc(facts.email)}</a></p>` : ''}
+${facts.hours ? `<p>${esc(facts.hours)}</p>` : `<p>${esc(facts.hoursNote)}</p>`}
 </address>
 ${workingForm(
         formAction,
         `<input type="text" name="name" placeholder="Your name" aria-label="Name" autocomplete="name" required />
 <input type="email" name="email" placeholder="you@example.com" aria-label="Email" autocomplete="email" required />
 <textarea name="message" rows="4" placeholder="How can we help?" aria-label="Message" required></textarea>`,
-        asString(p.ctaLabel) || 'Send message',
+        facts.ctaLabel,
     )}
 </div>
 </section>`;
 }
 
 export function settingsPageHtml(composition: Composition): string {
-    const p = contactProps(composition);
+    const facts = finishedContactFacts(contactProps(composition), composition.meta.title || 'This business');
     const title = composition.meta.title || 'This business';
-    const email = asString(p.email);
-    const phone = asString(p.phone);
-    const hours = asString(p.hours);
-    const address = asString(p.address);
-    const formAction = email
-        ? `mailto:${email}?subject=${encodeURIComponent(`Settings — ${title}`)}`
+    const formAction = facts.email
+        ? `mailto:${facts.email}?subject=${encodeURIComponent(`Settings — ${title}`)}`
         : '#settings-form';
     return `<section id="settings" data-section="settings" data-type="about" data-animate>
 <h2>Settings</h2>
@@ -244,10 +292,10 @@ export function settingsPageHtml(composition: Composition): string {
 <dl class="settings-list">
 <dt>Business</dt><dd>${esc(title)}</dd>
 <dt>About</dt><dd>${esc(composition.meta.description || '—')}</dd>
-${address ? `<dt>Place</dt><dd>${esc(address)}</dd>` : ''}
-${phone ? `<dt>Phone</dt><dd><a href="tel:${esc(phone)}">${esc(phone)}</a></dd>` : ''}
-${email ? `<dt>Email</dt><dd><a href="mailto:${esc(email)}">${esc(email)}</a></dd>` : '<dt>Email</dt><dd>Add your email when you are ready</dd>'}
-${hours ? `<dt>Hours</dt><dd>${esc(hours)}</dd>` : '<dt>Hours</dt><dd>By appointment</dd>'}
+${facts.address ? `<dt>Place</dt><dd>${esc(facts.address)}</dd>` : `<dt>Place</dt><dd>${esc(facts.addressNote)}</dd>`}
+${facts.phone ? `<dt>Phone</dt><dd><a href="tel:${esc(facts.phone)}">${esc(facts.phone)}</a></dd>` : '<dt>Phone</dt><dd>Use the form — add a number when you have one</dd>'}
+${facts.email ? `<dt>Email</dt><dd><a href="mailto:${esc(facts.email)}">${esc(facts.email)}</a></dd>` : '<dt>Email</dt><dd>Add your email when you are ready</dd>'}
+${facts.hours ? `<dt>Hours</dt><dd>${esc(facts.hours)}</dd>` : `<dt>Hours</dt><dd>${esc(facts.hoursNote)}</dd>`}
 </dl>
 <h3>Message the business</h3>
 ${workingForm(
