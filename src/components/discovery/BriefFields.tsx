@@ -2,19 +2,11 @@
 
 import {
     BRIEF_LIMITS,
-    BRIEF_TONES,
-    type BriefTone,
     type SiteBrief,
 } from "@/lib/ai/generate/brief";
 import { DictationButton } from "@/components/ui/DictationButton";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const TONE_LABEL: Record<BriefTone, string> = {
-    simple: "Simple",
-    warm: "Warm",
-    bold: "Bold",
-};
 
 export function BriefFields({
     value,
@@ -149,35 +141,6 @@ export function BriefFields({
                     />
                 </Field>
             </div>
-
-            <fieldset className="flex flex-col gap-2">
-                <legend className="text-sm font-medium text-foreground">
-                    How should it feel?{" "}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                </legend>
-                <div className="flex flex-wrap gap-2">
-                    {BRIEF_TONES.map((tone) => {
-                        const on = value.tone === tone;
-                        return (
-                            <button
-                                key={tone}
-                                type="button"
-                                disabled={disabled}
-                                aria-pressed={on}
-                                onClick={() => set({ tone: on ? "" : tone })}
-                                className={cn(
-                                    "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    on
-                                        ? "border-primary bg-accent text-foreground"
-                                        : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-                                )}
-                            >
-                                {TONE_LABEL[tone]}
-                            </button>
-                        );
-                    })}
-                </div>
-            </fieldset>
 
             <Field label="Anything else?" htmlFor="brief-extra" optional>
                 <div className="relative">

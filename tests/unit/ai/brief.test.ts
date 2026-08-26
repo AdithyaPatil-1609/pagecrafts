@@ -43,14 +43,12 @@ describe('site brief — enough facts to generate a real page', () => {
             offer: 'home bakery, custom birthday cakes brownies and cupcakes',
             place: 'Indiranagar',
             hours: 'orders on WhatsApp',
-            tone: 'warm',
         }));
         expect(bakery).toContain('Profession field: Bakery');
         expect(bakery).toContain('Rise');
         expect(bakery).toContain('Indiranagar');
         expect(bakery).toContain('cupcakes');
         expect(bakery).toContain('WhatsApp');
-        expect(bakery).toContain('warm and friendly');
         expect(bakery).not.toContain('braces');
 
         const plumber = composeBrief(brief({
@@ -59,12 +57,10 @@ describe('site brief — enough facts to generate a real page', () => {
             offer: 'emergency callouts, leak repairs and bathroom fittings',
             place: 'Pune',
             extra: '24/7',
-            tone: 'bold',
         }));
         expect(plumber).toContain('Profession field: Plumber');
         expect(plumber).toContain('Pune');
         expect(plumber).toContain('24/7');
-        expect(plumber).toContain('bold and energetic');
         expect(plumber).not.toContain('cupcakes');
     });
 
@@ -107,7 +103,6 @@ describe('site brief — enough facts to generate a real page', () => {
             phone: 'D'.repeat(40),
             hours: 'E'.repeat(80),
             extra: 'F'.repeat(200),
-            tone: 'simple',
         }));
         expect(text.length).toBeLessThanOrEqual(MAX_CLASSIFY_CHARS);
     });
