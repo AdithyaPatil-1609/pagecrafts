@@ -31,7 +31,7 @@ describe('website ask gate', () => {
         expect(isLayoutOrVisualAsk("It's a little to the top")).toBe(true);
         expect(isLayoutOrVisualAsk('shorten the headline')).toBe(false);
         expect(shouldUsePageEdit("push the hero down", { hasEntryHtml: true })).toBe(true);
-        expect(shouldUsePageEdit('shorten the headline', { hasEntryHtml: true })).toBe(false);
+        expect(shouldUsePageEdit('shorten the headline', { hasEntryHtml: true })).toBe(true);
         expect(shouldUsePageEdit('centre the hero', { hasEntryHtml: false })).toBe(false);
     });
 });

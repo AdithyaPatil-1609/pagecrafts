@@ -285,6 +285,8 @@ export interface CopyEditProposal {
     path: string;
     after: string;
     explanation: string;
+    /** Extra HTML files changed in the same Ask turn (path → content). */
+    files?: Record<string, string>;
 }
 
 export async function proposeCopyEdit(
@@ -305,10 +307,11 @@ export async function proposeCopyEdit(
 export async function proposePageEdit(
     projectId: string,
     instruction: string,
+    focusPath?: string | null,
 ): Promise<{ proposal: CopyEditProposal | null; error: string | null }> {
     const { data, error, detail } = await apiPost<CopyEditProposal>(
         `${projectUrl(projectId)}/page-edits`,
-        { instruction },
+        { instruction, ...(focusPath ? { focusPath } : {}) },
     );
 
     if (error || !data) {

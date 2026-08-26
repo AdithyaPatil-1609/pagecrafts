@@ -81,12 +81,15 @@ export interface PendingChange {
     before: string;
     after: string;
     explanation: string;
+    /** Extra HTML files from a multi-page Ask edit (path → after). */
+    extraFiles?: Record<string, string>;
 }
 
 export interface ProposedChange {
     path: string;
     after: string;
     explanation: string;
+    extraFiles?: Record<string, string>;
 }
 
 export interface ChatTurn {
@@ -420,7 +423,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const before = vfs.read(proposed.path) ?? '';
 
         const compared = compareText(before, proposed.after);
-        if (compared.isEmpty) return;
+        const hasExtra = Boolean(
+            proposed.extraFiles &&
+                Object.keys(proposed.extraFiles).some((p) => p !== proposed.path),
+        );
+        if (compared.isEmpty && !hasExtra) return;
 
         set({
             pendingChange: {
@@ -428,6 +435,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 before,
                 after: proposed.after,
                 explanation: proposed.explanation,
+                ...(proposed.extraFiles ? { extraFiles: proposed.extraFiles } : {}),
             },
             activeFile: proposed.path,
         });
@@ -438,6 +446,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (!pendingChange) return;
 
         vfs.write(pendingChange.path, pendingChange.after);
+        if (pendingChange.extraFiles) {
+            for (const [path, content] of Object.entries(pendingChange.extraFiles)) {
+                if (path === pendingChange.path) continue;
+                vfs.write(path, content);
+            }
+        }
 
         if (pendingChange.path === 'composition.json') {
             const parsed = parseComposition(pendingChange.after);
@@ -547,6 +561,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             return;
         }
         const htmlSite = Boolean(contentSchema?.sections.length) && sectionCount === 0;
+
+        if (isSiteGenerationRequest(text, sectionCount)) {
+            if (text.length > MAX_CLASSIFY_CHARS) {
+                set({ chatError: 'Keep the request under 500 characters.' });
+                return;
+            }
+            await requestFullSite(get, set, text);
+            return;
+        }
+
+        // Whole-site rename before code edits — deterministic, no LLM.
+        if (composition && composition.sections.length > 0) {
+            const rename = parseRenameIntent(text, composition.meta.title);
+            if (rename) {
+                await requestSiteRename(get, set, text, rename.from, rename.to);
+                return;
+            }
+        }
+
+        // Prefer live HTML/CSS code for every website change Ask can make.
         if (shouldUsePageEdit(text, { hasEntryHtml: Boolean(entryHtml?.trim()) })) {
             if (text.length > 300) {
                 set({ chatError: 'Keep the request under 300 characters.' });
@@ -563,14 +597,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             await requestCopyRewrite(get, set, text);
             return;
         }
-        if (isSiteGenerationRequest(text, sectionCount)) {
-            if (text.length > MAX_CLASSIFY_CHARS) {
-                set({ chatError: 'Keep the request under 500 characters.' });
-                return;
-            }
-            await requestFullSite(get, set, text);
-            return;
-        }
 
         if (text.length > 300) {
             set({ chatError: 'Keep the request under 300 characters.' });
@@ -582,15 +608,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 return;
             }
             set({ chatError: 'Describe the website you want, or pick a section to change.' });
-            return;
-        }
-
-        // "Change Ravi Clothing to Pragna Clothing" is a whole-site rename, not a
-        // single-section AI tweak. Doing it here avoids the LLM and updates the
-        // title, footer, and every other place the old name appears.
-        const rename = parseRenameIntent(text, composition.meta.title);
-        if (rename) {
-            await requestSiteRename(get, set, text, rename.from, rename.to);
             return;
         }
 
@@ -959,7 +976,7 @@ async function requestPageEdit(
         return;
     }
 
-    const { proposal, error } = await proposePageEdit(projectId, text);
+    const { proposal, error } = await proposePageEdit(projectId, text, get().activeFile);
     if (epoch !== chatEpoch) return;
 
     if (error || !proposal) {
@@ -975,6 +992,7 @@ async function requestPageEdit(
         path: proposal.path,
         after: proposal.after,
         explanation: proposal.explanation,
+        ...(proposal.files ? { extraFiles: proposal.files } : {}),
     });
 
     set({

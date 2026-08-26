@@ -50,11 +50,15 @@ export function offTopicWebsiteAsk(instruction: string): string | null {
     return null;
 }
 
-/** Prefer the page HTML path for layout/visual asks when a page file exists. */
+/** Prefer the page HTML path whenever the site has code Ask can edit. */
 export function shouldUsePageEdit(
     instruction: string,
     opts: { hasEntryHtml: boolean },
 ): boolean {
     if (!opts.hasEntryHtml) return false;
-    return isLayoutOrVisualAsk(instruction);
+    // Layout always; any other website ask also goes through code so Ask can
+    // change whatever the live HTML needs — not only section JSON props.
+    if (isLayoutOrVisualAsk(instruction)) return true;
+    if (offTopicWebsiteAsk(instruction)) return false;
+    return true;
 }

@@ -7,7 +7,7 @@ import { getProject } from '@/lib/data/projects';
 import { getProjectFiles } from '@/lib/data/project-files';
 import { assertCanEdit } from '@/lib/data/entitlements';
 import { asContentSchema } from '@/lib/content/schema';
-import { rewritePageHtml } from '@/lib/ai/edit/rewrite-page';
+import { rewriteSiteFiles } from '@/lib/ai/edit/rewrite-page';
 import { styleUpgradeFirewall } from '@/lib/editor/style-firewall';
 import { crossVerticalFirewall } from '@/lib/editor/cross-vertical-firewall';
 import { offTopicWebsiteAsk } from '@/lib/editor/website-ask-gate';
@@ -24,6 +24,7 @@ type Params = { id: string };
 
 const schema = z.object({
     instruction: z.string().min(1).max(300),
+    focusPath: z.string().max(200).optional(),
 });
 
 function entryHtml(files: Record<string, string>): string | null {
@@ -31,7 +32,7 @@ function entryHtml(files: Record<string, string>): string | null {
     return Object.keys(files).find((name) => /\.html?$/i.test(name)) ?? null;
 }
 
-// POST /api/v1/projects/{id}/page-edits — layout-aware HTML suggestion (CSS + snippets).
+// POST /api/v1/projects/{id}/page-edits — code-aware multi-page HTML suggestion.
 export const POST = withRoute<z.infer<typeof schema>, Params>({
     auth: 'required',
     limit: 'ai',
@@ -46,17 +47,24 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
 
         const project = await getProject(supabase, params.id);
         const tree = await getProjectFiles(supabase, params.id);
-        const path = entryHtml(tree.files);
-        if (!path) {
+        const focus =
+            (body.focusPath && tree.files[body.focusPath] ? body.focusPath : null) ??
+            entryHtml(tree.files);
+        if (!focus) {
             throw new ApiError(
                 'validation_failed',
                 'This site has no HTML page to edit yet. Generate or open a page first.',
             );
         }
 
-        const before = tree.files[path] ?? '';
-        if (!before.trim()) {
-            throw new ApiError('validation_failed', 'The home page file is empty.');
+        const htmlFiles: Record<string, string> = {};
+        for (const [path, content] of Object.entries(tree.files)) {
+            if (/\.html?$/i.test(path) && typeof content === 'string') {
+                htmlFiles[path] = content;
+            }
+        }
+        if (!htmlFiles[focus]?.trim()) {
+            throw new ApiError('validation_failed', 'The page file is empty.');
         }
 
         const composition = parseComposition(tree.files['composition.json']);
@@ -65,14 +73,14 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             composition?.meta.title,
             project.siteMeta?.title,
             project.name,
-            before.slice(0, 4000),
+            htmlFiles[focus]?.slice(0, 4000),
         ]
             .filter(Boolean)
             .join(' ');
 
         const styleBlocked = styleUpgradeFirewall({
             instruction: body.instruction,
-            html: before,
+            html: htmlFiles[focus],
             composition,
         });
         if (styleBlocked) {
@@ -96,13 +104,18 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
 
         let rewritten;
         try {
-            rewritten = await rewritePageHtml(before, body.instruction);
+            rewritten = await rewriteSiteFiles(htmlFiles, body.instruction, focus);
         } catch (error) {
             const detail =
                 error instanceof Error && error.message.trim()
                     ? error.message.trim()
                     : 'The page suggestion could not be prepared. Try again.';
             throw new ApiError('validation_failed', detail);
+        }
+
+        const changed: Record<string, string> = {};
+        for (const [path, after] of Object.entries(rewritten.files)) {
+            if (after !== htmlFiles[path]) changed[path] = after;
         }
 
         await Promise.all([
@@ -119,11 +132,13 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             ),
         ]);
 
+        const primary = rewritten.primaryPath;
         return ok({
-            path,
-            before,
-            after: rewritten.html,
+            path: primary,
+            before: htmlFiles[primary] ?? '',
+            after: rewritten.files[primary] ?? '',
             explanation: rewritten.explanation,
+            files: changed,
         });
     },
 });

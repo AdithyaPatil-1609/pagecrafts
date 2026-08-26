@@ -349,8 +349,6 @@ address { font-style: normal; }
   border: 1px solid var(--rule);
   border-radius: var(--radius-md, 0.5rem);
 }
-[data-style="casual"] [data-type="about"] .img-slot,
-[data-style="casual"] [data-type="services"] .img-slot,
 [data-style="casual"] [data-type="gallery"] .img-slot { display: none; }
 [data-style="casual"] .card {
   box-shadow: none;

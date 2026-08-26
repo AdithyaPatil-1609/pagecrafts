@@ -51,13 +51,40 @@ describe('htmlPagesOf', () => {
 });
 
 describe('thin compositions still ship a working site', () => {
-    it('synthesises About, Contact, and Settings with a mailto form', () => {
+    it('synthesises About, Contact, and Settings with a working form', () => {
         const files = compositionToFiles(thin);
         expect(files['about.html']).toContain('About Kettle');
-        expect(files['contact.html']).toContain('mailto:');
+        expect(files['contact.html']).toContain('Get in touch');
         expect(files['contact.html']).toContain('data-working-form');
+        expect(files['contact.html']).not.toContain('hello@example.com');
         expect(files['settings.html']).toContain('Tea in Pune');
         expect(files['settings.html']).toContain('data-working-form');
         expect(files['index.html']).toContain('href="contact.html"');
+    });
+
+    it('puts about and services on the home page when they exist', () => {
+        const full: Composition = {
+            ...thin,
+            sections: [
+                section('s_01', 'hero', { heading: 'Kettle', ctaLabel: 'Visit' }),
+                section('s_02', 'about', { heading: 'Our story', body: 'Tea since dawn.' }),
+                section('s_03', 'services', {
+                    heading: 'What we pour',
+                    items: [{ title: 'Assam', description: 'Strong cup' }],
+                }),
+                section('s_04', 'contact', { heading: 'Visit' }),
+                section('s_05', 'footer', { tagline: 'Kettle' }),
+            ],
+        };
+        const pages = planSitePages(full);
+        const home = pages.find((p) => p.path === 'index.html');
+        expect(home?.sections.map((s) => s.type)).toEqual(['hero', 'about', 'services']);
+        expect(pages.map((p) => p.path)).toEqual([
+            'index.html',
+            'about.html',
+            'services.html',
+            'contact.html',
+            'settings.html',
+        ]);
     });
 });
