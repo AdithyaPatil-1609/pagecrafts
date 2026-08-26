@@ -52,6 +52,9 @@ export interface CheckoutResponse {
     priceInr?: number;
     listPriceInr?: number;
     discountPercent?: number;
+    /** Hostname when kind is domain. */
+    domainName?: string;
+    paidInr?: number;
 }
 
 function checkoutFields(priced: PricedWithCode): Pick<CheckoutResponse, "priceInr" | "listPriceInr" | "discountPercent"> {
@@ -283,6 +286,91 @@ export async function startPublishCheckout(
 }
 
 /**
+ * Pay for a custom domain registration, then attach it to the live Pages project.
+ * Caller must have published the site first (`projects.repo_full_name` set).
+ */
+export async function startDomainCheckout(
+    supabase: SupabaseClient,
+    userId: string,
+    projectId: string,
+    domainName: string,
+    discountCode?: string,
+): Promise<CheckoutResponse> {
+    await priceOf(supabase, projectId);
+
+    const { validateHostname } = await import("@/lib/domains/hostname");
+    const { domainRegistrar } = await import("@/lib/domains/registrar");
+
+    const checked = validateHostname(domainName);
+    if (!checked.ok) {
+        throw new ApiError("validation_failed", checked.reason);
+    }
+
+    const quote = await domainRegistrar().search(checked.name);
+    if (!quote.available) {
+        throw new ApiError(
+            "conflict",
+            "That domain is not available. Try another suggestion.",
+        );
+    }
+    if (Date.parse(quote.quoteExpiresAt) < Date.now()) {
+        throw new ApiError(
+            "validation_failed",
+            "That price quote expired. Search again for a fresh price.",
+        );
+    }
+
+    if (!paymentsConfigured()) {
+        // Dev / launch without Razorpay: register + attach immediately.
+        const { purchaseAndAttachDomain } = await import("@/lib/data/domains");
+        await purchaseAndAttachDomain(supabase, userId, projectId, checked.name, {
+            name: "PageCrafts customer",
+            email: "support@pagecrafts.in",
+        });
+        return {
+            granted: true,
+            listPriceInr: quote.priceInr,
+            paidInr: quote.priceInr,
+            domainName: checked.name,
+        };
+    }
+
+    const { priced, order } = await startDiscountedOrder({
+        userId,
+        kind: "domain",
+        listPriceInr: quote.priceInr,
+        receipt: `dom_${projectId.slice(0, 8)}_${Date.now()}`,
+        notes: {
+            projectId,
+            userId,
+            kind: "domain",
+            domainName: checked.name,
+        },
+        discountCode,
+    });
+
+    if (!order) {
+        const { purchaseAndAttachDomain } = await import("@/lib/data/domains");
+        await purchaseAndAttachDomain(supabase, userId, projectId, checked.name, {
+            name: "PageCrafts customer",
+            email: "support@pagecrafts.in",
+        });
+        await captureCodeIfUsed(priced, userId, "domain");
+        return { granted: true, ...checkoutFields(priced), domainName: checked.name };
+    }
+
+    return {
+        granted: false,
+        orderId: order.id,
+        amountInPaise: order.amount,
+        currency: "INR",
+        keyId: publishableKeyId(),
+        ...checkoutFields(priced),
+        domainName: checked.name,
+    };
+}
+
+/**
  * Pay Rs 249 to reopen editing on a published site (and republish to the same address).
  */
 export async function startEditUnlockCheckout(
@@ -459,6 +547,20 @@ export async function grantFromOrderNotes(notes: Partial<OrderNotes>): Promise<{
             throw new ApiError("validation_failed", "That payment has no site on it.");
         }
         await grantEditUnlock(projectId, userId, "paid");
+        return { kind, userId };
+    }
+    if (kind === "domain") {
+        const projectId = typeof notes.projectId === "string" ? notes.projectId.trim() : "";
+        const domainName = typeof notes.domainName === "string" ? notes.domainName.trim() : "";
+        if (!projectId || !domainName) {
+            throw new ApiError("validation_failed", "That payment has no domain on it.");
+        }
+        const { purchaseAndAttachDomain } = await import("@/lib/data/domains");
+        const { supabaseAdmin } = await import("@/lib/data/supabase-admin");
+        await purchaseAndAttachDomain(supabaseAdmin(), userId, projectId, domainName, {
+            name: "PageCrafts customer",
+            email: "support@pagecrafts.in",
+        });
         return { kind, userId };
     }
 
@@ -872,6 +974,8 @@ export async function grantGenerationPassPurchase(userId: string): Promise<void>
 
 const ORDER_KINDS = new Set<OrderNotes["kind"]>([
     "publish",
+    "edit_unlock",
+    "domain",
     "pro",
     "premium",
     "template",
@@ -895,7 +999,7 @@ export async function fulfillPaidNotes(
     meta: { paymentId: string; orderId: string },
     options?: { requireUserId?: string },
 ): Promise<{ kind: OrderNotes["kind"] }> {
-    const { userId, kind, projectId, templateId, styleId } = notes;
+    const { userId, kind, projectId, templateId, styleId, domainName: notesDomain } = notes;
 
     if (!userId || !kind || !ORDER_KINDS.has(kind as OrderNotes["kind"])) {
         console.error("[payments] captured payment carries no usable notes", {
@@ -984,6 +1088,48 @@ export async function fulfillPaidNotes(
         const label = resolvedKind === "premium" ? "Premium" : "Pro";
         console.info(`[payments] ${label} unlocked`, { userId, paymentId: meta.paymentId });
         return finish();
+    }
+
+    if (resolvedKind === "edit_unlock") {
+        if (!projectId) {
+            console.error("[payments] captured edit_unlock payment carries no project", meta);
+            throw new ApiError(
+                "validation_failed",
+                "This payment could not be matched to a site. Please contact support if you were charged.",
+            );
+        }
+        await grantEditUnlock(projectId, userId, "paid");
+        console.info("[payments] edit unlock granted", { projectId, paymentId: meta.paymentId });
+        return finish();
+    }
+
+    if (resolvedKind === "domain") {
+        const domainName =
+            (typeof notesDomain === "string" ? notesDomain.trim() : "") ||
+            (typeof notes.domainName === "string" ? notes.domainName.trim() : "");
+        if (!projectId || !domainName) {
+            console.error("[payments] captured domain payment missing project or name", meta);
+            throw new ApiError(
+                "validation_failed",
+                "This payment could not be matched to a domain. Please contact support if you were charged.",
+            );
+        }
+        const { purchaseAndAttachDomain } = await import("@/lib/data/domains");
+        const { supabaseAdmin } = await import("@/lib/data/supabase-admin");
+        await purchaseAndAttachDomain(supabaseAdmin(), userId, projectId, domainName, {
+            name: "PageCrafts customer",
+            email: "support@pagecrafts.in",
+        });
+        console.info("[payments] domain registered", {
+            projectId,
+            domainName,
+            paymentId: meta.paymentId,
+        });
+        return finish();
+    }
+
+    if (resolvedKind !== "publish") {
+        throw new ApiError("validation_failed", "That payment is not for a plan we recognise.");
     }
 
     if (!projectId) {

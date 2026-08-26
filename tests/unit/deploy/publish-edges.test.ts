@@ -56,6 +56,15 @@ function provider(
             return live;
         },
         async removeSite() {},
+        async attachCustomDomain(_siteId, hostname) {
+            return { hostname, target: "spike.pages.dev", records: [] };
+        },
+        async domainStatus() {
+            return "pending";
+        },
+        async ensureDnsZone() {
+            return { nameservers: ["ns1.example.net", "ns2.example.net"] };
+        },
     } as DeployProvider & { record: Recorder };
 }
 
