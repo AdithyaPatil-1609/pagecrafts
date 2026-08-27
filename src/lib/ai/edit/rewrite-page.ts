@@ -151,13 +151,14 @@ function packSiteFiles(
 ): { paths: string[]; pack: string } {
     // Compute how many chars the HTML payload can use. The provider ceiling is
     // in tokens; at ~4 chars/token this converts to a character budget.
-    // We reserve room for the output token ceiling (max_tokens: 2,000) and prompt overhead
-    // so total request tokens stay strictly under Groq's per-minute ceiling.
+    // Budget rule: the HTML pack gets at most 50% of the provider ceiling.
+    // The other 50% covers output tokens (max_tokens: 2,000), the containment
+    // envelope, system prompt, user-message boilerplate, and safety margin.
+    // This keeps total (input+output) well under Groq's 8K TPM on free tier.
     const cfg = aiConfig();
     const ceiling = cfg.providers[cfg.provider].quota.maxRequestTokens;
-    const outputTokens = cfg.maxOutputTokens.edit ?? 2_000;
-    const maxInputTokens = Math.max(1_000, ceiling - outputTokens - 800);
-    const charBudget = Math.max(2_000, maxInputTokens * 4 - OVERHEAD_CHARS);
+    const htmlTokenBudget = Math.max(800, Math.floor(ceiling * 0.50));
+    const charBudget = Math.max(2_000, htmlTokenBudget * 4);
 
     let htmlPaths = Object.keys(files)
         .filter((p) => /\.html?$/i.test(p))

@@ -141,7 +141,7 @@ describe('failure path', () => {
         await expect(
             new OpenAICompatGateway('groq', cfg)
                 .complete({ tier: 'strong', job: 'generate', user: 'x'.repeat(5000) }),
-        ).rejects.toMatchObject({ code: 'validation_failed', retryable: false });
+        ).rejects.toMatchObject({ code: 'payload_too_large', retryable: true });
 
         expect(fetchMock).not.toHaveBeenCalled();
     });
