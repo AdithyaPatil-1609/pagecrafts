@@ -1,10 +1,19 @@
 import { model } from '../gateway';
 import { contain } from '../containment/envelope';
 import { stripFences, sanitise } from '../sanitise';
+import { aiConfig } from '../config';
 
 const STYLE_MARK = 'data-pagecrafts-ask';
 const PER_FILE_CHARS = 10_000;
 const MAX_FILES_IN_PROMPT = 6;
+
+/**
+ * Characters reserved for the system prompt (containment rule, role instruction)
+ * plus the fixed instruction text and JSON schema example in the user message.
+ * Estimated conservatively — the actual overhead is ~1,800 chars, so 3,000 leaves
+ * comfortable headroom.
+ */
+const OVERHEAD_CHARS = 3_000;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
     return value && typeof value === 'object' && !Array.isArray(value)
@@ -63,9 +72,10 @@ export function applyPageEditPlan(html: string, plan: PageEditPlan): string {
     return next;
 }
 
-function clipFile(content: string): string {
-    if (content.length <= PER_FILE_CHARS) return content;
-    return `${content.slice(0, PER_FILE_CHARS)}\n<!-- truncated -->`;
+
+function clipFileAt(content: string, limit: number): string {
+    if (content.length <= limit) return content;
+    return `${content.slice(0, limit)}\n<!-- truncated -->`;
 }
 
 function unwrapContained(wrapped: string, field: string): string {
@@ -139,7 +149,14 @@ function packSiteFiles(
     files: Record<string, string>,
     focusPath: string,
 ): { paths: string[]; pack: string } {
-    const htmlPaths = Object.keys(files)
+    // Compute how many chars the HTML payload can use. The provider ceiling is
+    // in tokens; at ~4 chars/token this converts to a character budget. The
+    // overhead constant accounts for the system prompt + fixed instruction text.
+    const cfg = aiConfig();
+    const ceiling = cfg.providers[cfg.provider].quota.maxRequestTokens;
+    const charBudget = Math.max(2_000, ceiling * 4 - OVERHEAD_CHARS);
+
+    let htmlPaths = Object.keys(files)
         .filter((p) => /\.html?$/i.test(p))
         .sort((a, b) => {
             if (a === focusPath) return -1;
@@ -150,8 +167,20 @@ function packSiteFiles(
         })
         .slice(0, MAX_FILES_IN_PROMPT);
 
+    // Per-file clip: divide the budget evenly, but never exceed the static cap.
+    let perFile = Math.min(PER_FILE_CHARS, Math.floor(charBudget / Math.max(1, htmlPaths.length)));
+
+    // If even the smallest useful clip doesn't fit, drop non-focus files until
+    // the focus page has enough room.
+    const MIN_USEFUL_CHARS = 500;
+    while (perFile < MIN_USEFUL_CHARS && htmlPaths.length > 1) {
+        htmlPaths = htmlPaths.filter((p) => p === focusPath || p === 'index.html');
+        if (htmlPaths.length === 0) htmlPaths = [focusPath];
+        perFile = Math.min(PER_FILE_CHARS, Math.floor(charBudget / htmlPaths.length));
+    }
+
     const parts = htmlPaths.map((path) => {
-        const body = clipFile(files[path] ?? '');
+        const body = clipFileAt(files[path] ?? '', perFile);
         return `=== FILE: ${path} ===\n${body}\n=== END FILE ===`;
     });
 
