@@ -320,6 +320,26 @@ export async function proposePageEdit(
     return { proposal: data, error: null };
 }
 
+export interface ClientEditQuota {
+    used: number;
+    limit: number;
+    remaining: number;
+    plan: string;
+    canEdit: boolean;
+}
+
+export async function fetchEditQuota(
+    projectId: string,
+): Promise<{ quota: ClientEditQuota | null; error: string | null }> {
+    const { data, error } = await apiGet<ClientEditQuota>(
+        `${projectUrl(projectId)}/page-edits`,
+    );
+
+    if (error || !data) return { quota: null, error: error ?? EMPTY_REPLY };
+    return { quota: data, error: null };
+}
+
+
 export async function loadGenerationJob(
     jobId: string,
 ): Promise<{ job: GenerationJobStatus | null; error: string | null }> {

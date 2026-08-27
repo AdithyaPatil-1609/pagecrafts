@@ -16,11 +16,22 @@ import { parseComposition } from '@/lib/editor/parse-composition';
 import { persistLedger } from '@/lib/ai/cost/persist';
 import { rowFor } from '@/lib/ai/cost/ledger';
 import { nextJobId } from '@/lib/ai/jobs/store';
+import { assertEditAllowed, recordEditUse, readEditQuota } from '@/lib/ai/jobs/edit-quota';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 type Params = { id: string };
+
+// GET /api/v1/projects/{id}/page-edits — read current edit quota for the project.
+export const GET = withRoute<undefined, Params>({
+    auth: 'required',
+    handler: async ({ params, userId, supabase }) => {
+        await assertCanEdit(supabase, userId, params.id);
+        const quota = await readEditQuota(params.id, userId, supabase);
+        return ok(quota);
+    },
+});
 
 const schema = z.object({
     instruction: z.string().min(1).max(300),
@@ -34,6 +45,7 @@ function entryHtml(files: Record<string, string>): string | null {
 
 // POST /api/v1/projects/{id}/page-edits — code-aware multi-page HTML suggestion.
 export const POST = withRoute<z.infer<typeof schema>, Params>({
+
     auth: 'required',
     limit: 'ai',
     schema,
@@ -102,6 +114,8 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
             throw new ApiError('validation_failed', crossBlocked);
         }
 
+        await assertEditAllowed(params.id, userId, supabase);
+
         let rewritten;
         try {
             rewritten = await rewriteSiteFiles(htmlFiles, body.instruction, focus);
@@ -119,6 +133,7 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         }
 
         await Promise.all([
+            recordEditUse(params.id),
             recordUsage(rewritten.usage),
             persistLedger(
                 supabase,
@@ -142,3 +157,4 @@ export const POST = withRoute<z.infer<typeof schema>, Params>({
         });
     },
 });
+

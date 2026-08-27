@@ -11,6 +11,7 @@ import { explainCreationIssue, lastRetryableChatInstruction } from '@/lib/editor
 import { uploadProjectImage } from '@/lib/project-source';
 import ChangeSummary from './ChangeSummary';
 import ChatComposer, { type ChatAttachment } from './ChatComposer';
+import ChatQuotaTracker from './ChatQuotaTracker';
 import { GenerationTimeline } from './GenerationTimeline';
 import { AskAiFixDialog } from './AskAiFixDialog';
 
@@ -211,7 +212,8 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
             </div>
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-4 sm:px-6">
-                <div className="pointer-events-auto">
+                <div className="pointer-events-auto flex flex-col gap-2">
+                    <ChatQuotaTracker />
                     <ChatComposer
                         draft={draft}
                         onDraftChange={setDraft}
@@ -229,6 +231,7 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
                     />
                 </div>
             </div>
+
 
             {fix ? (
                 <AskAiFixDialog

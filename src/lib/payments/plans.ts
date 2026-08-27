@@ -4,6 +4,9 @@ import {
     FREE_GENERATIONS_PER_PROJECT,
     PREMIUM_GENERATIONS_PER_PROJECT,
     PRO_GENERATIONS_PER_PROJECT,
+    STARTER_EDITS_PER_PROJECT,
+    PRO_EDITS_PER_PROJECT,
+    PREMIUM_EDITS_PER_PROJECT,
 } from "@/lib/limits/config";
 import { PREMIUM_PRICE_INR, PRO_PRICE_INR } from "@/lib/payments/pricing";
 
@@ -26,6 +29,7 @@ export const PLAN_COPY: Record<
       "Build and edit sites with AI",
       "All Starter catalogue designs",
       `${FREE_GENERATIONS_PER_PROJECT} AI generations per site`,
+      `${STARTER_EDITS_PER_PROJECT} AI chatbot edits per site`,
       "Publish free designs at no charge",
     ],
   },
@@ -39,6 +43,7 @@ export const PLAN_COPY: Record<
       "All templates marked Pro",
       "Photo-rich look on AI sites",
       `${PRO_GENERATIONS_PER_PROJECT} AI generations per site (5× Starter)`,
+      `${PRO_EDITS_PER_PROJECT} AI chatbot edits per site`,
       "Edit live sites after the free window",
     ],
   },
@@ -52,6 +57,7 @@ export const PLAN_COPY: Record<
       "All templates — Premium and Pro",
       "Animated look on AI sites",
       `${PREMIUM_GENERATIONS_PER_PROJECT} AI generations per site (15× Starter)`,
+      `${PREMIUM_EDITS_PER_PROJECT} AI chatbot edits per site`,
     ],
   },
 };
@@ -71,4 +77,10 @@ export function generationsLimitForPlan(plan: AccountPlan): number {
   if (plan === "premium") return PREMIUM_GENERATIONS_PER_PROJECT;
   if (plan === "pro") return PRO_GENERATIONS_PER_PROJECT;
   return FREE_GENERATIONS_PER_PROJECT;
+}
+
+export function editsLimitForPlan(plan: AccountPlan): number {
+  if (plan === "premium") return PREMIUM_EDITS_PER_PROJECT;
+  if (plan === "pro") return PRO_EDITS_PER_PROJECT;
+  return STARTER_EDITS_PER_PROJECT;
 }
