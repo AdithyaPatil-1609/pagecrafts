@@ -64,7 +64,7 @@ describe('OpenAICompatGateway', () => {
             quota: { rpm: 30, rpd: 1000, tpm: 8000, tpd: 200000, rpdHeadroomPct: 15, maxRequestTokens: 5 },
         }));
         await expect(gw.complete(req({ user: 'x'.repeat(1000) })))
-            .rejects.toMatchObject({ code: 'validation_failed' });
+            .rejects.toMatchObject({ code: 'payload_too_large' });
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
