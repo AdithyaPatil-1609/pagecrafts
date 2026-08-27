@@ -61,3 +61,10 @@ export const PREMIUM_GENERATIONS_PER_PROJECT = 45;
 export const ADVANCED_GENERATIONS_PER_PROJECT = PRO_GENERATIONS_PER_PROJECT;
 export const ADVANCED_PACKAGE_PRICE_INR = 699;
 export const GENERATION_PASS_PRICE_INR = 199;
+
+// AI chatbot page edits per site, by account plan (Starter / Pro / Premium).
+export const STARTER_EDITS_PER_PROJECT = 10;
+export const PRO_EDITS_PER_PROJECT = 20;
+export const PREMIUM_EDITS_PER_PROJECT = 30;
+export const FREE_EDITS_PER_PROJECT = STARTER_EDITS_PER_PROJECT;
+

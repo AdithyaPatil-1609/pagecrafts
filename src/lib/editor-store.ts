@@ -15,8 +15,11 @@ import {
     proposeProjectEdit,
     proposeCopyEdit,
     proposePageEdit,
+    fetchEditQuota,
+    type ClientEditQuota,
     type GenerationJobStatus,
 } from '@/lib/project-source';
+
 import { parseComposition } from '@/lib/editor/parse-composition';
 import { applyEditPatch } from '@/lib/editor/apply-patch';
 import { writeCompositionFiles, writeRenderedSite } from '@/lib/editor/sync-site';
@@ -136,6 +139,8 @@ interface EditorState {
     historyLoading: boolean;
     historyError: string | null;
     restoringSha: string | null;
+    editQuota: ClientEditQuota | null;
+    refreshEditQuota: () => Promise<void>;
     setGenerationNotice: (text: string | null) => void;
     setProjectName: (name: string) => void;
     loadProject: (projectId: string) => Promise<void>;
@@ -237,6 +242,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     historyLoading: false,
     historyError: null,
     restoringSha: null,
+    editQuota: null,
+
+    refreshEditQuota: async () => {
+        const { projectId } = get();
+        if (!projectId) return;
+        const { quota } = await fetchEditQuota(projectId);
+        if (quota) set({ editQuota: quota });
+    },
 
     setGenerationNotice: (text) => set({ generationNotice: text }),
 
@@ -329,7 +342,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             // worth refusing to open over.
             contentError: detailError,
         });
+
+        void get().refreshEditQuota();
     },
+
 
     openFile: (path) => {
         autosave.flush();
@@ -1003,7 +1019,10 @@ async function requestPageEdit(
             { role: 'assistant', text: proposal.explanation },
         ],
     });
+
+    void get().refreshEditQuota();
 }
+
 
 /** One-page generation from Ask. The result is a suggestion until Keep. */
 async function requestFullSite(
