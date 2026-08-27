@@ -150,11 +150,14 @@ function packSiteFiles(
     focusPath: string,
 ): { paths: string[]; pack: string } {
     // Compute how many chars the HTML payload can use. The provider ceiling is
-    // in tokens; at ~4 chars/token this converts to a character budget. The
-    // overhead constant accounts for the system prompt + fixed instruction text.
+    // in tokens; at ~4 chars/token this converts to a character budget.
+    // We reserve room for the output token ceiling (max_tokens: 2,000) and prompt overhead
+    // so total request tokens stay strictly under Groq's per-minute ceiling.
     const cfg = aiConfig();
     const ceiling = cfg.providers[cfg.provider].quota.maxRequestTokens;
-    const charBudget = Math.max(2_000, ceiling * 4 - OVERHEAD_CHARS);
+    const outputTokens = cfg.maxOutputTokens.edit ?? 2_000;
+    const maxInputTokens = Math.max(1_000, ceiling - outputTokens - 800);
+    const charBudget = Math.max(2_000, maxInputTokens * 4 - OVERHEAD_CHARS);
 
     let htmlPaths = Object.keys(files)
         .filter((p) => /\.html?$/i.test(p))
@@ -167,25 +170,29 @@ function packSiteFiles(
         })
         .slice(0, MAX_FILES_IN_PROMPT);
 
-    // Per-file clip: divide the budget evenly, but never exceed the static cap.
-    let perFile = Math.min(PER_FILE_CHARS, Math.floor(charBudget / Math.max(1, htmlPaths.length)));
+    // Give the focus page priority (up to 40% of budget), and split the rest among other pages.
+    const focusCap = Math.min(PER_FILE_CHARS, Math.floor(charBudget * 0.45));
+    const secondaryBudget = Math.max(1_000, charBudget - focusCap);
+    const secondaryCount = Math.max(1, htmlPaths.length - 1);
+    let secondaryPerFile = Math.min(PER_FILE_CHARS, Math.floor(secondaryBudget / secondaryCount));
 
-    // If even the smallest useful clip doesn't fit, drop non-focus files until
-    // the focus page has enough room.
-    const MIN_USEFUL_CHARS = 500;
-    while (perFile < MIN_USEFUL_CHARS && htmlPaths.length > 1) {
+    // If even a minimal clip doesn't fit, drop non-focus files until the budget fits.
+    const MIN_USEFUL_CHARS = 400;
+    while (secondaryPerFile < MIN_USEFUL_CHARS && htmlPaths.length > 1) {
         htmlPaths = htmlPaths.filter((p) => p === focusPath || p === 'index.html');
         if (htmlPaths.length === 0) htmlPaths = [focusPath];
-        perFile = Math.min(PER_FILE_CHARS, Math.floor(charBudget / htmlPaths.length));
+        secondaryPerFile = Math.min(PER_FILE_CHARS, Math.floor(secondaryBudget / Math.max(1, htmlPaths.length - 1)));
     }
 
     const parts = htmlPaths.map((path) => {
-        const body = clipFileAt(files[path] ?? '', perFile);
+        const limit = path === focusPath ? focusCap : secondaryPerFile;
+        const body = clipFileAt(files[path] ?? '', limit);
         return `=== FILE: ${path} ===\n${body}\n=== END FILE ===`;
     });
 
     return { paths: htmlPaths, pack: parts.join('\n\n') };
 }
+
 
 /**
  * Site-wide Ask edit: the model sees the HTML files and returns surgical updates.

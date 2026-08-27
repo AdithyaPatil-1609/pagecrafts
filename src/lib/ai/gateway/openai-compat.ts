@@ -218,8 +218,10 @@ export class OpenAICompatGateway implements NamedGateway {
                 403: 'forbidden',
                 402: 'payment_required',
                 404: 'not_found',
+                413: 'payload_too_large',
                 429: 'rate_limited',
             };
+
             const code: ErrorCode = byStatus[res.status] ?? 'generation_failed';
             throw new GatewayError(
                 code,

@@ -10,8 +10,9 @@ import {
 /** Defines error conditions where fallback logic should try the next provider. */
 const ADVANCE_ON: ReadonlySet<string> = new Set([
     'rate_limited', 'unauthorized', 'forbidden', 'payment_required',
-    'spend_capped', 'not_found', 'hosting_error',
+    'spend_capped', 'not_found', 'hosting_error', 'payload_too_large',
 ]);
+
 
 /** Faults that will not fix themselves mid-run, so the provider is dropped. */
 const TERMINAL: ReadonlySet<string> = new Set([
