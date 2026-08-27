@@ -50,6 +50,7 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
     const [uploadingFiles, setUploadingFiles] = useState(false);
     const [fileError, setFileError] = useState<string | null>(null);
     const [askOpen, setAskOpen] = useState(false);
+    const [countdown, setCountdown] = useState<number>(0);
     const endRef = useRef<HTMLDivElement>(null);
 
     const lastUserText = [...messages].reverse().find((turn) => turn.role === 'user')?.text ?? null;
@@ -57,12 +58,29 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
     const suggestions = chatSuggestions({ composition, lastUserText, hasPage });
     const showChoices = !busy && !pendingChange;
     const fix = error ? explainCreationIssue(error, 'chat') : null;
+    const isTokenLimit = fix?.kind === 'busy' || fix?.kind === 'too_long' || /token|limit|60 second/i.test(fix?.what ?? '');
     const retryInstruction =
         (error ? lastRetryableChatInstruction(messages, error) : null) ?? fix?.instruction ?? null;
 
     useEffect(() => {
+        if (error && isTokenLimit) {
+            setCountdown(60);
+        } else if (!error) {
+            setCountdown(0);
+        }
+    }, [error, isTokenLimit]);
+
+    useEffect(() => {
+        if (countdown <= 0) return;
+        const timer = setInterval(() => {
+            setCountdown((prev) => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [countdown]);
+
+    useEffect(() => {
         endRef.current?.scrollIntoView({ block: 'end' });
-    }, [messages, busy, pendingChange, error]);
+    }, [messages, busy, pendingChange, error, countdown]);
 
     async function send(text: string) {
         const next = messageWithAttachments(text, attachments).trim();
@@ -165,14 +183,35 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
 
                 {fix ? (
                     <div className="mt-4 rounded-2xl border border-border/70 bg-card/80 p-4">
-                        <p className="text-sm font-medium text-foreground">{fix.title}</p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">{fix.what}</p>
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-medium text-foreground">{fix.title}</p>
+                                <p className="mt-1 text-sm leading-6 text-muted-foreground">{fix.what}</p>
+                            </div>
+                        </div>
+
+                        {isTokenLimit && countdown > 0 ? (
+                            <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                <span className="inline-block h-2 w-2 animate-ping rounded-full bg-amber-500" />
+                                <span>Retry available in <strong>{countdown}s</strong></span>
+                            </div>
+                        ) : isTokenLimit && countdown === 0 ? (
+                            <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                <span>✓ Ready to retry now</span>
+                            </div>
+                        ) : null}
+
                         <button
                             type="button"
+                            disabled={isTokenLimit && countdown > 0}
                             onClick={() => setAskOpen(true)}
-                            className="mt-3 h-11 cursor-pointer rounded-full border border-gold bg-gold px-4 text-sm font-semibold text-gold-foreground hover:opacity-90"
+                            className={`mt-3 h-11 rounded-full px-4 text-sm font-semibold transition-all ${
+                                isTokenLimit && countdown > 0
+                                    ? 'cursor-not-allowed border border-border bg-muted/60 text-muted-foreground opacity-60'
+                                    : 'cursor-pointer border border-gold bg-gold text-gold-foreground hover:opacity-90 shadow-sm'
+                            }`}
                         >
-                            Fix with AI
+                            {isTokenLimit && countdown > 0 ? `Retry in ${countdown}s` : 'Fix with AI'}
                         </button>
                     </div>
                 ) : null}

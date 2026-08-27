@@ -135,6 +135,14 @@ export function explainCreationIssue(
     }
 
     if (kind === 'chat') {
+        if (looksLikeBusy(message) || looksLikeTooLong(message) || /token|413|429|limit|quota|ceiling/i.test(message)) {
+            return {
+                kind: 'busy',
+                title: "You've hit the token limit",
+                what: "You've hit the AI token limit. Please retry after 60 seconds.",
+                instruction: 'Try that change again and apply a working version of the page.',
+            };
+        }
         return {
             kind: 'chat',
             title: 'That change did not go through',
