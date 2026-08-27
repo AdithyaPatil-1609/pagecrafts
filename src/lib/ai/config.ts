@@ -17,7 +17,7 @@ const envSchema = z.object({
     // Per-operation output ceilings (FR-103). Shared across providers; sent as max_tokens.
     AI_OUTPUT_CLASSIFY_TOKENS: z.coerce.number().int().positive().default(1_024),
     AI_OUTPUT_GENERATE_TOKENS: z.coerce.number().int().positive().default(4_000),
-    AI_OUTPUT_EDIT_TOKENS: z.coerce.number().int().positive().default(2_000),
+    AI_OUTPUT_EDIT_TOKENS: z.coerce.number().int().positive().default(4_000),
     AI_OUTPUT_COMPOSE_TOKENS: z.coerce.number().int().positive().default(6_000),
 
     // Sampling, per operation (D12). Deliberately optional: left unset nothing is
