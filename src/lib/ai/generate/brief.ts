@@ -2,9 +2,6 @@ import { MAX_CLASSIFY_CHARS } from '@/lib/contracts';
 import { projectNameFromPrompt } from './name';
 import { briefClarityErrors } from './clarity';
 
-export const BRIEF_TONES = ['simple', 'warm', 'bold'] as const;
-export type BriefTone = (typeof BRIEF_TONES)[number];
-
 export interface SiteBrief {
     name: string;
     /** Exact trade/profession — primary signal for vertical + photo subjects. */
@@ -14,7 +11,6 @@ export interface SiteBrief {
     phone: string;
     hours: string;
     extra: string;
-    tone: BriefTone | '';
 }
 
 export function emptyBrief(): SiteBrief {
@@ -26,7 +22,6 @@ export function emptyBrief(): SiteBrief {
         phone: '',
         hours: '',
         extra: '',
-        tone: '',
     };
 }
 
@@ -35,12 +30,6 @@ export function briefFromQuery(q: string): SiteBrief {
     next.offer = q.trim();
     return next;
 }
-
-const TONE_LINE: Record<BriefTone, string> = {
-    simple: 'keep it clean and simple',
-    warm: 'warm and friendly',
-    bold: 'bold and energetic',
-};
 
 function clean(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
@@ -152,7 +141,6 @@ export function composeBrief(brief: SiteBrief): string {
     }
     if (clean(brief.phone)) parts.push(`phone ${clean(brief.phone)}`);
     if (clean(brief.hours)) parts.push(sentence(clean(brief.hours)));
-    if (brief.tone) parts.push(TONE_LINE[brief.tone]);
     if (clean(brief.extra)) parts.push(sentence(clean(brief.extra)));
 
     const joined = parts

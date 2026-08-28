@@ -70,7 +70,6 @@ describe('the composed prompt fits everywhere it is sent', () => {
             phone: '1'.repeat(BRIEF_LIMITS.phone),
             hours: pad('open weekdays nine to six', BRIEF_LIMITS.hours),
             extra: pad('people can book an appointment online', BRIEF_LIMITS.extra),
-            tone: 'warm' as const,
         };
 
         expect(composeBrief(full).length).toBeLessThanOrEqual(MAX_CLASSIFY_CHARS);

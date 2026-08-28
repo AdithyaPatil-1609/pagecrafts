@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { lookTierPreviewHtml, COMPARE_LOOKS, DEMO_BRAND } from "@/lib/demos/look-tiers";
+import { lookTierPreviewHtml, lookTierSite, COMPARE_LOOKS, DEMO_BRAND } from "@/lib/demos/look-tiers";
 
 const read = (...parts: string[]) => readFileSync(join(process.cwd(), ...parts), "utf8");
 
@@ -30,27 +30,33 @@ describe("pricing and compare marketing pages", () => {
         expect(COMPARE_LOOKS.map((l) => l.id)).toEqual(["starter", "pro", "premium"]);
         expect(COMPARE_LOOKS.map((l) => l.styleId)).toEqual(["casual", "photos", "motion"]);
         expect(COMPARE_LOOKS.map((l) => l.label)).toEqual(["Starter", "Pro", "Premium"]);
-        const starter = lookTierPreviewHtml("starter");
-        const pro = lookTierPreviewHtml("pro");
-        const premium = lookTierPreviewHtml("premium");
-        expect(starter).toContain('data-style="casual"');
-        expect(starter).toContain("site-header");
-        expect(starter).toContain(DEMO_BRAND.name);
-        expect(starter).toContain("<img src=");
-        expect(starter).toContain("images.unsplash.com");
-        expect(pro).toContain('data-style="photos"');
-        expect(pro).toContain("image-bg");
-        expect(pro).toContain("--page-photo");
-        expect(pro).toContain("--pc-bg-shift");
-        expect(pro).toContain("pc-page-ready");
-        expect(pro).toContain("<img src=");
-        expect(premium).toContain('data-style="motion"');
-        expect(premium).toContain("site-liquid");
-        expect(premium).toContain("liquid-slide");
-        expect(premium).toContain("motion-stage");
-        expect(premium).toContain('data-motion="kinetic"');
-        expect(starter).not.toContain("Loom");
-        expect(pro).not.toContain("cloth brand");
+        const starterSite = lookTierSite("starter");
+        const proSite = lookTierSite("pro");
+        const premiumSite = lookTierSite("premium");
+        const starterHome = starterSite.files["index.html"] ?? "";
+        const proHome = proSite.files["index.html"] ?? "";
+        const premiumHome = premiumSite.files["index.html"] ?? "";
+        const starterShell = lookTierPreviewHtml("starter");
+        expect(starterShell).toContain("pc-view");
+        expect(starterShell).toContain("about.html");
+        expect(starterHome).toContain('data-style="casual"');
+        expect(starterHome).toContain("site-header");
+        expect(starterHome).toContain(DEMO_BRAND.name);
+        expect(starterHome).toContain("<img src=");
+        expect(starterHome).toContain("images.unsplash.com");
+        expect(proHome).toContain('data-style="photos"');
+        expect(proHome).toContain("image-bg");
+        expect(proHome).toContain("--page-photo");
+        expect(proHome).toContain("--pc-bg-shift");
+        expect(proHome).toContain("pc-page-ready");
+        expect(proHome).toContain("<img src=");
+        expect(premiumHome).toContain('data-style="motion"');
+        expect(premiumHome).toContain("site-liquid");
+        expect(premiumHome).toContain("liquid-slide");
+        expect(premiumHome).toContain("motion-stage");
+        expect(premiumHome).toContain('data-motion="kinetic"');
+        expect(starterHome).not.toContain("Loom");
+        expect(proHome).not.toContain("cloth brand");
     });
 
     it("does not lock home deck slides with scroll-snap-stop always", () => {

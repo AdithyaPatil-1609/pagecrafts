@@ -114,7 +114,11 @@ const KEYWORD_PHOTO: Array<[RegExp, readonly string[]]> = [
     [/\b(sweet|mithai|dessert|laddu|ladoo|jalebi|halwa|peda|barfi|gulab|confection|chocolate|cupcake)\b/i, [DESSERT_PHOTO_ID]],
     [/\b(bakery|bread|pastry|cake|patisserie)\b/i, BAKERY_PHOTOS],
     [/\b(cafe|coffee|chai)\b/i, CAFE_PHOTOS],
-    [/\b(restaurant|dining|kitchen|fine dining)\b/i, RESTAURANT_PHOTOS],
+    // Teaching people to cook is a food business. "cooking school" matched nothing here, so
+    // it fell to the general pool and a cookery class in Bengaluru was handed a photograph
+    // of skyscrapers. Live Unsplash hid it — Set 1 found a real kitchen — until Set 2
+    // excluded Set 1's hero and dropped through to this bank.
+    [/\b(restaurant|dining|kitchen|fine dining|cook|cooks|cooking|cookery|culinary|chef|chefs)\b/i, RESTAURANT_PHOTOS],
     [/\b(travel|traveller|traveler|tourism|tourist|vlog|vlogger|journey|adventure|wander|wanderlust|nature|outdoor|outdoors|hiking|trek|trekking|camping|landscape|mountain|forest|lake|beach|safari|road.?trip|itinerary|explore)\b/i, TRAVEL_PHOTOS],
     [/\b(gym|fitness|yoga)\b/i, GYM_PHOTOS],
     [/\b(clinic|dental|hospital|doctor|veterinary|vet|surgery|surgical|surgeon|neurosurg|medical|healthcare)\b/i, CLINIC_PHOTOS],

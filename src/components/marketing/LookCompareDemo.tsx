@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 
@@ -10,7 +10,7 @@ import type { AccountPlan } from "@/lib/contracts";
 import {
     COMPARE_LOOKS,
     DEMO_BRAND,
-    lookTierPreviewHtml,
+    lookTierSite,
     type CompareLookId,
 } from "@/lib/demos/look-tiers";
 import { planCovers } from "@/lib/payments/plans";
@@ -44,15 +44,51 @@ function footerPrice(plan: AccountPlan, id: CompareLookId, priceInr: number): st
 
 export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
     const [look, setLook] = useState<CompareLookId>("starter");
+    const [pagePath, setPagePath] = useState("index.html");
+    const [pageHash, setPageHash] = useState("");
+    const frameRef = useRef<HTMLIFrameElement>(null);
     const active = COMPARE_LOOKS.find((item) => item.id === look) ?? COMPARE_LOOKS[0];
-    const previews = useMemo(
-        () =>
-            Object.fromEntries(
-                COMPARE_LOOKS.map((item) => [item.id, lookTierPreviewHtml(item.id)]),
-            ) as Record<CompareLookId, string>,
+    const sites = useMemo(
+        () => ({
+            starter: lookTierSite("starter"),
+            pro: lookTierSite("pro"),
+            premium: lookTierSite("premium"),
+        }),
         [],
     );
-    const srcDoc = previews[look];
+    const site = sites[look];
+    const srcDoc = useMemo(() => site.previewHtml("index.html"), [site]);
+    const pageLabel =
+        site.nav.find((p) => p.path === pagePath && (!pageHash || p.href === `#${pageHash}`))
+            ?.label ??
+        site.nav.find((p) => p.path === pagePath)?.label ??
+        "Home";
+
+    useEffect(() => {
+        setPagePath("index.html");
+        setPageHash("");
+    }, [look]);
+
+    useEffect(() => {
+        function onMessage(ev: MessageEvent) {
+            const data = ev.data;
+            if (!data || data.type !== "pc-compare-nav") return;
+            if (typeof data.path === "string") setPagePath(data.path);
+            setPageHash(typeof data.hash === "string" ? data.hash : "");
+        }
+        window.addEventListener("message", onMessage);
+        return () => window.removeEventListener("message", onMessage);
+    }, []);
+
+    function openPage(path: string, href?: string) {
+        const hash = href?.startsWith("#") ? href.slice(1) : "";
+        setPagePath(path);
+        setPageHash(hash === "top" ? "" : hash);
+        frameRef.current?.contentWindow?.postMessage(
+            { type: "pc-compare-nav", path, hash: hash === "top" ? "" : hash },
+            "*",
+        );
+    }
 
     return (
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -71,8 +107,8 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                     {plan === "premium"
                         ? "Same restaurant, three live sites. Premium is on — every look and Pro design is yours."
                         : plan === "pro"
-                          ? "Same restaurant, three live sites. Pro is on — Starter and Photo-rich are yours, plus all Pro designs."
-                          : "Same restaurant shown three ways using our real tools. Click a card below to see the live preview."}
+                          ? "Same restaurant, three live sites. Pro is active — Starter is Free, Photo-rich is unlocked, plus every Pro template. Continuous-scroll Premium unlocks with Premium."
+                          : "Same restaurant rendered three ways with our real generators. Starter is Free. Pro (Rs 499) unlocks the photographic look. Premium (Rs 999) unlocks continuous scroll. Click a card, then open About, Contact, and the other pages in the live preview — the same pages AI builds."}
                 </p>
                 <p className="text-sm text-muted-foreground">
                     <Link href="/plans" className="underline-offset-4 hover:underline">
@@ -87,6 +123,7 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                     const unlocked = lookUnlocked(plan, item.id);
                     const paid = !unlocked;
                     const label = tileLabel(item.id);
+                    const thumb = sites[item.id].files["index.html"] ?? "";
                     return (
                         <li
                             key={item.id}
@@ -104,12 +141,11 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                                 )}
                             >
                                 <CardIndex n={i + 1} />
-                                {/* Thumbnail: real page at 50% scale. Pointer-events off so the
-                                    card button still receives the click to switch the live frame. */}
+                                {/* Thumbnail: home page only (no nested multipage shell). */}
                                 <div className="relative h-56 overflow-hidden bg-muted">
                                     <iframe
                                         title={`${item.label} preview`}
-                                        srcDoc={previews[item.id]}
+                                        srcDoc={thumb}
                                         sandbox="allow-scripts"
                                         tabIndex={-1}
                                         className="pointer-events-none absolute left-0 top-0 h-[200%] w-[200%] origin-top-left scale-50 border-0 bg-transparent"
@@ -161,14 +197,15 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                         <span className="size-1.5 rounded-full bg-signal" />
                         <span className="size-1.5 rounded-full bg-bloom-sky" />
                         <span className="ml-2 truncate font-mono text-[10px] text-muted-foreground">
-                            {DEMO_BRAND.domain} · {active.label} · live preview
+                            {DEMO_BRAND.domain} · {active.label} · {pageLabel}
                         </span>
                         <span className="ml-auto hidden text-[10px] text-muted-foreground sm:inline">
-                            Scroll inside to explore the preview
+                            Click nav or Pages to explore
                         </span>
                     </div>
                     <iframe
                         key={look}
+                        ref={frameRef}
                         title={`${DEMO_BRAND.name} ${active.label} live preview`}
                         srcDoc={srcDoc}
                         className="h-[min(70vh,42rem)] w-full bg-white"
@@ -186,12 +223,32 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                             Pages
                         </p>
                         <ul className="mt-2 space-y-1.5 text-sm text-foreground">
-                            {active.pages.map((page) => (
-                                <li key={page} className="flex gap-2">
-                                    <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-                                    {page}
-                                </li>
-                            ))}
+                            {site.nav.map((page) => {
+                                const on =
+                                    page.path === pagePath &&
+                                    (page.href
+                                        ? page.href === `#${pageHash}` ||
+                                          (!pageHash && (page.href === "#top" || page.label === "Home"))
+                                        : !pageHash);
+                                return (
+                                    <li key={`${page.path}-${page.label}`}>
+                                        <button
+                                            type="button"
+                                            onClick={() => openPage(page.path, page.href)}
+                                            className={cn(
+                                                "flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-secondary/60",
+                                                on && "bg-secondary/80 font-medium",
+                                            )}
+                                        >
+                                            <Check
+                                                className="mt-0.5 size-4 shrink-0 text-primary"
+                                                aria-hidden
+                                            />
+                                            {page.label}
+                                        </button>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                     <div>
