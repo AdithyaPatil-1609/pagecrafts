@@ -12,7 +12,7 @@ import { capturedPayment, verifyWebhook } from "@/lib/payments/razorpay";
 
 describe("pricing", () => {
     it("charges what the tile says", () => {
-        expect(publishPriceInr("free")).toBe(0);
+        expect(publishPriceInr("free")).toBe(199);
         expect(publishPriceInr("premium")).toBe(499);
         expect(publishPriceInr("signature")).toBe(999);
         expect(PRO_PRICE_INR).toBe(499);
@@ -27,8 +27,8 @@ describe("pricing", () => {
         expect(inrToPaise(publishPriceInr("premium"))).not.toBe(499);
     });
 
-    it("knows when there is nothing to pay", () => {
-        expect(isFree("free")).toBe(true);
+    it("knows plan requirements", () => {
+        expect(isFree("free")).toBe(false);
         expect(isFree("premium")).toBe(false);
         expect(isPaidTier("free")).toBe(false);
         expect(isPaidTier(undefined)).toBe(false);

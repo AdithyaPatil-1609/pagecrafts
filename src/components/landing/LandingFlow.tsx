@@ -18,13 +18,13 @@ export function LandingFlow() {
             <div className="mx-auto w-full max-w-7xl px-6">
                 <div data-reveal className="mx-auto max-w-2xl text-center">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-brand-ink">
-                        Then you pick a look
+                        Pick a look you like
                     </p>
                     <h2 className="mt-4 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
                         Same words. Three different sites.
                     </h2>
                     <p className="mt-5 text-base leading-7 text-muted-foreground">
-                            Starter, Pro, or Premium — same words, three different sites.
+                            Starter, Pro, or Premium — you give us the same info, and we build three different sites from it.
                     </p>
                 </div>
 

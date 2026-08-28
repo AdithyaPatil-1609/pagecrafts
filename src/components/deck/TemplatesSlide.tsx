@@ -87,15 +87,15 @@ export async function TemplatesSlide({ params }: { params: Params }) {
     );
 }
 
-async function loadUnlockedTemplateIds(): Promise<string[]> {
+async function loadViewerInfo(): Promise<{ user: boolean; unlockedTemplateIds: string[] }> {
     try {
         const user = await viewer();
-        if (!user) return [];
+        if (!user) return { user: false, unlockedTemplateIds: [] };
         const supabase = await supabaseViewerClient();
         const billing = await getBilling(supabase, user.id);
-        return billing.unlockedTemplateIds;
+        return { user: true, unlockedTemplateIds: billing.unlockedTemplateIds };
     } catch {
-        return [];
+        return { user: false, unlockedTemplateIds: [] };
     }
 }
 
@@ -132,6 +132,8 @@ async function Gallery({
         ...(query.sort !== DEFAULT_SORT ? { sort: query.sort } : {}),
     };
 
+    const viewerInfo = await loadViewerInfo();
+
     return (
         <>
             <FilterChips query={query} preserve={chipPreserve} resetHref="/templates" />
@@ -145,7 +147,8 @@ async function Gallery({
                 resetHref="/templates"
                 ranked={query.sort === "recommended" && Boolean(query.intent)}
                 lockable
-                unlockedTemplateIds={await loadUnlockedTemplateIds()}
+                unlockedTemplateIds={viewerInfo.unlockedTemplateIds}
+                signedIn={viewerInfo.user}
             />
         </>
     );

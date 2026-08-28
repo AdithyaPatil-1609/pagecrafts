@@ -1,8 +1,8 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Check, ExternalLink, Loader2, Rocket } from 'lucide-react';
+import { AlertCircle, Check, Clock, ExternalLink, Loader2, Rocket } from 'lucide-react';
 
 import {
     Dialog,
@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/lib/editor-store';
 import { previewSiteUrl } from '@/lib/publish/site-address';
-import { EDIT_UNLOCK_PRICE_INR } from '@/lib/payments/pricing';
 import {
     pollDeployment,
     saveProjectSettings,
@@ -26,9 +25,11 @@ import { apiGet, apiPost } from '@/lib/api/client';
 import { useRazorpayCheckout } from '@/hooks/useRazorpayCheckout';
 import { cn } from '@/lib/utils';
 
+/** 5 minutes in seconds for the post-publish countdown. */
+const PUBLISH_COUNTDOWN_SECONDS = 5 * 60;
+
 type Phase =
     | 'idle'
-    | 'warn'
     | 'address'
     | 'own_domain'
     | 'confirm_domain'
@@ -68,6 +69,7 @@ export default function GoLiveButton({
     const [error, setError] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<DomainSuggestion | null>(null);
     const [ownedDomain, setOwnedDomain] = useState('');
+    const [countdown, setCountdown] = useState(0);
     const cancelledRef = useRef(false);
 
     const checkout = useRazorpayCheckout({
@@ -106,14 +108,15 @@ export default function GoLiveButton({
         setPhase('success');
     }
 
-    function openWarn() {
+    function openPublish() {
         cancelledRef.current = false;
         setSiteName(projectName?.trim() || 'My site');
         setError(null);
         setSuggestion(null);
         setOwnedDomain('');
         setLiveUrl(null);
-        setPhase('warn');
+        setCountdown(0);
+        setPhase('address');
     }
 
     function closeAll() {
@@ -123,6 +126,7 @@ export default function GoLiveButton({
         setLiveUrl(null);
         setSuggestion(null);
         setOwnedDomain('');
+        setCountdown(0);
     }
 
     function goToYourSites() {
@@ -137,10 +141,29 @@ export default function GoLiveButton({
         goToYourSites();
     }
 
-    function continueFromWarn() {
-        setError(null);
-        setPhase('address');
-    }
+    // Start countdown when success phase is entered
+    const startCountdown = useCallback(() => {
+        setCountdown(PUBLISH_COUNTDOWN_SECONDS);
+    }, []);
+
+    useEffect(() => {
+        if (countdown <= 0) return;
+        const timer = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [countdown]);
+
+    const countdownMinutes = Math.floor(countdown / 60);
+    const countdownSeconds = countdown % 60;
+    const countdownText = `${countdownMinutes}:${String(countdownSeconds).padStart(2, '0')}`;
+    const countdownDone = phase === 'success' && countdown <= 0;
 
     function continueFromAddress(e?: FormEvent) {
         e?.preventDefault();
@@ -333,6 +356,7 @@ export default function GoLiveButton({
 
         setLiveUrl(resolvedLive ?? null);
         setPhase('success');
+        startCountdown();
     }
 
     const busy =
@@ -350,7 +374,7 @@ export default function GoLiveButton({
                 id="go-live-button"
                 type="button"
                 disabled={busy || phase === 'success'}
-                onClick={openWarn}
+                onClick={openPublish}
                 className={
                     className ??
                     'inline-flex h-11 cursor-pointer items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-40'
@@ -366,48 +390,7 @@ export default function GoLiveButton({
                 {busy ? 'Publishing…' : phase === 'success' ? 'Live' : 'Go Live'}
             </button>
 
-            <Dialog
-                open={phase === 'warn'}
-                onOpenChange={(open) => {
-                    if (!open) closeAll();
-                }}
-            >
-                <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
-                    <DialogHeader>
-                        <DialogTitle>Publish once — then edits are locked</DialogTitle>
-                        <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            This is a one-time deploy. After your site goes live you cannot edit
-                            it for free. Further changes need Rs {EDIT_UNLOCK_PRICE_INR}.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <p
-                        role="alert"
-                        className="rounded-xl border border-border bg-muted px-3 py-2.5 text-sm leading-6 text-muted-foreground"
-                    >
-                        <span className="font-medium text-muted-foreground">One chance:</span>{' '}
-                        once this website is live, you cannot make changes to it on the free
-                        plan. Make sure everything looks right before you confirm.
-                    </p>
-                    <DialogFooter className="pt-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="min-h-11 cursor-pointer"
-                            onClick={closeAll}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="brand"
-                            className="min-h-11 cursor-pointer"
-                            onClick={continueFromWarn}
-                        >
-                            I understand — continue
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Warn phase removed — editing is free after publish */}
 
             <Dialog
                 open={phase === 'address'}
@@ -417,10 +400,9 @@ export default function GoLiveButton({
             >
                 <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
                     <DialogHeader>
-                        <DialogTitle>Your publishing address</DialogTitle>
+                        <DialogTitle>Where should your site live?</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            Default free address on PageCrafts, or choose a custom domain we
-                            register and point for you.
+                            Get a free address on PageCrafts, or pick a custom domain.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={continueFromAddress} className="grid gap-3">
@@ -480,9 +462,9 @@ export default function GoLiveButton({
                                 type="button"
                                 variant="outline"
                                 className="min-h-11 cursor-pointer"
-                                onClick={() => setPhase('warn')}
+                                onClick={closeAll}
                             >
-                                Back
+                                Cancel
                             </Button>
                             <Button
                                 type="submit"
@@ -504,10 +486,10 @@ export default function GoLiveButton({
             >
                 <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
                     <DialogHeader>
-                        <DialogTitle>Connect a domain you already own</DialogTitle>
+                        <DialogTitle>Use a domain you already own</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            Enter your domain. If your domain company supports one-click
-                            connect, we send you there to tap Authorize — no DNS typing.
+                            Type your domain below. If your provider supports one-click setup,
+                            we will send you there — no technical steps needed.
                         </DialogDescription>
                     </DialogHeader>
                     <form
@@ -662,10 +644,9 @@ export default function GoLiveButton({
             >
                 <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
                     <DialogHeader>
-                        <DialogTitle>Publishing your site</DialogTitle>
+                        <DialogTitle>Setting up your site</DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            Setting up hosting and pushing your latest changes. This should
-                            finish within about a minute.
+                            We are putting your site online. This takes about a minute.
                         </DialogDescription>
                     </DialogHeader>
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -688,20 +669,60 @@ export default function GoLiveButton({
             <Dialog
                 open={phase === 'success'}
                 onOpenChange={(open) => {
-                    if (!open) goToYourSites();
+                    if (!open && countdownDone) goToYourSites();
                 }}
             >
                 <DialogContent className="border-border/70 bg-card/90 backdrop-blur-xl">
                     <DialogHeader>
-                        <DialogTitle>Your site is live</DialogTitle>
+                        <DialogTitle>
+                            {countdownDone ? 'Your site is live!' : 'Your site is getting ready'}
+                        </DialogTitle>
                         <DialogDescription className="text-sm leading-6 text-muted-foreground">
-                            {siteName.trim()} is live
-                            {suggestion ? ` on ${suggestion.name}` : ' on PageCrafts'}. This live
-                            site cannot be edited for free — further changes need Rs{' '}
-                            {EDIT_UNLOCK_PRICE_INR}.
+                            {countdownDone
+                                ? `${siteName.trim()} is live${suggestion ? ` on ${suggestion.name}` : ' on PageCrafts'}. You can edit it anytime.`
+                                : `${siteName.trim()} is being set up${suggestion ? ` on ${suggestion.name}` : ' on PageCrafts'}. It takes about 5 minutes.`}
                         </DialogDescription>
                     </DialogHeader>
-                    {liveUrl ? (
+
+                    {/* 5-minute countdown stopwatch */}
+                    {!countdownDone ? (
+                        <div className="flex flex-col items-center gap-3 py-4">
+                            <div className="relative flex size-28 items-center justify-center">
+                                <svg className="absolute inset-0 -rotate-90" viewBox="0 0 112 112">
+                                    <circle
+                                        cx="56" cy="56" r="50"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                        className="text-border"
+                                    />
+                                    <circle
+                                        cx="56" cy="56" r="50"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        className="text-primary transition-all duration-1000"
+                                        strokeDasharray={2 * Math.PI * 50}
+                                        strokeDashoffset={
+                                            2 * Math.PI * 50 * (countdown / PUBLISH_COUNTDOWN_SECONDS)
+                                        }
+                                    />
+                                </svg>
+                                <div className="z-[1] flex flex-col items-center">
+                                    <Clock className="mb-1 size-4 text-primary" aria-hidden />
+                                    <span className="font-mono text-2xl font-bold tabular-nums text-foreground">
+                                        {countdownText}
+                                    </span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Your site will be ready to open in {countdownText}
+                            </p>
+                        </div>
+                    ) : null}
+
+                    {liveUrl && countdownDone ? (
                         <button
                             type="button"
                             onClick={openLiveAndLeave}
@@ -713,24 +734,49 @@ export default function GoLiveButton({
                             Open {liveUrl.replace(/^https:\/\//, '')}
                             <ExternalLink aria-hidden className="size-4" />
                         </button>
+                    ) : liveUrl ? (
+                        <button
+                            type="button"
+                            disabled
+                            className={cn(
+                                'inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-muted px-4',
+                                'cursor-not-allowed text-sm font-semibold text-muted-foreground opacity-60',
+                            )}
+                        >
+                            <Clock aria-hidden className="size-4" />
+                            Opens in {countdownText}
+                        </button>
                     ) : null}
                     <DialogFooter className="pt-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="min-h-11 cursor-pointer"
-                            onClick={goToYourSites}
-                        >
-                            Close
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="brand"
-                            className="min-h-11 cursor-pointer"
-                            onClick={goToYourSites}
-                        >
-                            Your sites
-                        </Button>
+                        {countdownDone ? (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="min-h-11 cursor-pointer"
+                                    onClick={goToYourSites}
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="brand"
+                                    className="min-h-11 cursor-pointer"
+                                    onClick={goToYourSites}
+                                >
+                                    Your sites
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="min-h-11 cursor-pointer"
+                                onClick={closeAll}
+                            >
+                                Close
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -767,7 +813,7 @@ export default function GoLiveButton({
                             type="button"
                             variant="brand"
                             className="min-h-11 cursor-pointer"
-                            onClick={() => setPhase('warn')}
+                            onClick={openPublish}
                         >
                             Try again
                         </Button>

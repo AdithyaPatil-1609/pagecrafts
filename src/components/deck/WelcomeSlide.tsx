@@ -144,9 +144,8 @@ export function WelcomeSlide({
                         Hello, <span className="hero-gold">{name}</span>
                     </h1>
                     <p className="mt-5 max-w-[38.75rem] text-lg leading-8 text-muted-foreground">
-                        Pick a design you like, or tell us the name, the place, and what they
-                        do. We write the pages from that. You edit in place, then go live free
-                        on PageCrafts.
+                        Pick a design you like, or just tell us the name, the place, and what you
+                        do. We will build the pages from that. You can edit anything, then go live.
                     </p>
                     <div className="mt-8 w-full">
                         <WelcomePrompt />

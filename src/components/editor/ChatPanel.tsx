@@ -122,10 +122,10 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
                 {messages.length === 0 && !busy ? (
                     <p className="max-w-md text-sm leading-6 text-muted-foreground">
                         {hasPage
-                            ? 'Describe a change to this website — copy, layout, colours, or images on the page. Nothing is applied until you keep it.'
+                            ? 'Tell AI what to change — words, design, colors, photos, or background. Nothing changes until you choose to keep it.'
                             : hasSections
-                              ? 'Describe a change to this website, or pick a suggestion. You can also ask for a whole new website. Nothing is applied until you keep it.'
-                              : 'Describe the website you want, or pick a suggestion. Nothing is applied until you keep it.'}
+                              ? 'Tell AI what to change, or pick a suggestion below. You can also ask for a whole new website.'
+                              : 'Describe the website you want, or pick a suggestion below.'}
                     </p>
                 ) : (
                     <ol className="space-y-4">

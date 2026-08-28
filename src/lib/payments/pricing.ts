@@ -15,7 +15,7 @@ import type { TemplateTier } from "@/lib/contracts";
 // before publish is free, and the price is stated plainly at the one moment it applies.
 
 export const TIER_PRICE_INR: Record<TemplateTier, number> = {
-    free: 0,
+    free: 199,
     premium: 499,
     signature: 999,
 };
@@ -24,8 +24,8 @@ export const TIER_PRICE_INR: Record<TemplateTier, number> = {
 export const PRO_PRICE_INR = TIER_PRICE_INR.premium;
 export const PREMIUM_PRICE_INR = TIER_PRICE_INR.signature;
 
-/** One-time unlock to edit and republish a site after the free first Go Live. */
-export const EDIT_UNLOCK_PRICE_INR = 249;
+/** Edit-unlock removed — editing is free after publish. Kept as 0 for API compat. */
+export const EDIT_UNLOCK_PRICE_INR = 0;
 
 /**
  * Rupees as Razorpay wants them.

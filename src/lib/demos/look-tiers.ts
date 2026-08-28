@@ -49,12 +49,12 @@ export const COMPARE_LOOKS: {
         priceInr: STYLE_SPECS.casual.priceInr,
         pages: ["Home", "About", "Services", "Contact", "Settings"],
         features: [
-            "Centre-oriented layout that fills the screen",
-            "One hero photograph",
-            "Clean multi-page site",
-            "Free to use",
+            "Clean layout that fills the screen",
+            "One main photo",
+            "Multi-page site",
+            "Rs 199",
         ],
-        blurb: "A centred, finished website — clear words, one photo, nothing stuck at the top.",
+        blurb: "A clean, finished website — simple words, one photo, easy to read.",
     },
     {
         id: "pro",
@@ -64,13 +64,13 @@ export const COMPARE_LOOKS: {
         priceInr: STYLE_SPECS.photos.priceInr,
         pages: ["Home", "About", "Menu", "Gallery", "Contact", "Settings"],
         features: [
-            "Topic photograph as a full-site backdrop",
-            "Subtle photo parallax and soft card zoom",
-            "Editorial type and cinematic hero",
-            "Smooth fade between pages",
+            "Full photo as the background",
+            "Smooth photo effects and card zoom",
+            "Big, bold text and cinematic look",
+            "Smooth page transitions",
             "Pro · Rs 499",
         ],
-        blurb: "Photographic and editorial — the room fills the page, with soft parallax and page fades as you move.",
+        blurb: "Photo-rich and editorial — the room fills the page, with smooth effects as you scroll.",
     },
     {
         id: "premium",
@@ -80,12 +80,12 @@ export const COMPARE_LOOKS: {
         priceInr: STYLE_SPECS.motion.priceInr,
         pages: ["Continuous Home deck", "About", "Services", "FAQ", "Contact", "Settings"],
         features: [
-            "Continuous scroll like pagecrafts.in",
-            "Full-viewport liquid slides",
-            "Kinetic canvas, motif, and ticker",
+            "One long scrolling page",
+            "Full-screen sliding sections",
+            "Moving backgrounds and animations",
             "Premium · Rs 999",
         ],
-        blurb: "A continuous-scroll site — one flowing deck, hash navigation, motion drawn from the business.",
+        blurb: "A one-page scrolling site — everything flows together, with smooth animations throughout.",
     },
 ];
 

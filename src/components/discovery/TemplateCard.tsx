@@ -86,6 +86,7 @@ export function TemplateCard({
     showPrice = true,
     lockable = false,
     unlocked = true,
+    signedIn = true,
 }: {
     template: TemplateSummary;
     index: number;
@@ -93,6 +94,7 @@ export function TemplateCard({
     showPrice?: boolean;
     lockable?: boolean;
     unlocked?: boolean;
+    signedIn?: boolean;
     /** Kept for callers; unlock is plan-based, not per-template. */
     forkId?: string;
 }) {
@@ -106,6 +108,7 @@ export function TemplateCard({
                 templateName={template.name}
                 showPrice={showPrice}
                 locked={locked}
+                signedIn={signedIn}
             >
                 <button
                     type="button"
