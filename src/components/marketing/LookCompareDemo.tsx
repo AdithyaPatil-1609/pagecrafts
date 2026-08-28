@@ -64,10 +64,12 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
         site.nav.find((p) => p.path === pagePath)?.label ??
         "Home";
 
-    useEffect(() => {
+    const [prevLook, setPrevLook] = useState(look);
+    if (prevLook !== look) {
+        setPrevLook(look);
         setPagePath("index.html");
         setPageHash("");
-    }, [look]);
+    }
 
     useEffect(() => {
         function onMessage(ev: MessageEvent) {

@@ -13,7 +13,7 @@ const MAX_FILES_IN_PROMPT = 6;
  * Estimated conservatively — the actual overhead is ~1,800 chars, so 3,000 leaves
  * comfortable headroom.
  */
-const OVERHEAD_CHARS = 3_000;
+const _OVERHEAD_CHARS = 3_000;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
     return value && typeof value === 'object' && !Array.isArray(value)
