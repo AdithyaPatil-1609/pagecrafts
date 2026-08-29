@@ -18,22 +18,22 @@ const LOOKS = [
         label: "Starter",
         look: "Casual",
         price: TIER_PRICE_INR.free,
-        blurb: "Free Starter templates and the Casual look. Publish at no charge, with a limited number of AI rebuilds per site.",
-        detail: `${FREE_GENERATIONS_PER_PROJECT} AI generations per site`,
+        blurb: "All Starter designs and the simple look. Build your site and go live.",
+        detail: `${FREE_GENERATIONS_PER_PROJECT} AI builds per site`,
     },
     {
         label: "Pro",
         look: "Photo-rich",
         price: TIER_PRICE_INR.premium,
-        blurb: "One payment unlocks every Pro template and the Photo-rich look — not one design at a time.",
-        detail: `${PRO_GENERATIONS_PER_PROJECT} AI generations per site (5× Starter)`,
+        blurb: "One payment unlocks every Pro design and the photo-rich look — not one design at a time.",
+        detail: `${PRO_GENERATIONS_PER_PROJECT} AI builds per site (5× Starter)`,
     },
     {
         label: "Premium",
         look: "Animated",
         price: TIER_PRICE_INR.signature,
-        blurb: "The top unlock: every Premium and Pro template, plus the Animated look on AI-built sites.",
-        detail: `${PREMIUM_GENERATIONS_PER_PROJECT} AI generations per site (15× Starter)`,
+        blurb: "The best unlock: every Premium and Pro design, plus the animated look on AI-built sites.",
+        detail: `${PREMIUM_GENERATIONS_PER_PROJECT} AI builds per site (15× Starter)`,
     },
 ] as const;
 
@@ -52,22 +52,20 @@ export function PricingGuide({ signedIn = false }: { signedIn?: boolean }) {
                     Starter, Pro, or <span className="hero-mix">Premium</span>
                 </h1>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                    No monthly subscription. Start free on Starter templates and the Casual look.
-                    Upgrade once on your account to unlock every design marked for that plan — Pro
-                    unlocks all Pro templates; Premium unlocks every template. You do not buy designs
-                    one at a time.{" "}
+                    No monthly fees. Start with Starter designs and the simple look.
+                    Upgrade once to unlock every design in that plan — Pro unlocks all Pro
+                    designs; Premium unlocks everything.{" "}
                     <Link
                         href="/plans"
                         className="font-medium text-foreground underline-offset-4 hover:underline"
                     >
-                        See User Plans
+                        See Plans
                     </Link>
                     .
                 </p>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                    AI rebuild limits follow your plan: Starter gets {FREE_GENERATIONS_PER_PROJECT}{" "}
-                    generations per site, Pro gets 5× that, Premium gets 15×. Template generation
-                    counts toward that cap; edits in the editor use the style firewall instead.
+                    AI build limits depend on your plan: Starter gets {FREE_GENERATIONS_PER_PROJECT}{" "}
+                    builds per site, Pro gets 5 times that, Premium gets 15 times.
                 </p>
             </header>
 
@@ -82,7 +80,7 @@ export function PricingGuide({ signedIn = false }: { signedIn?: boolean }) {
                                 {item.label} · {item.look}
                             </p>
                             <p className="mt-1 text-2xl font-bold">
-                                {item.price === 0 ? "Free" : `Rs ${item.price}`}
+                                Rs {item.price}
                             </p>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
                                 {item.blurb}
@@ -108,7 +106,7 @@ export function PricingGuide({ signedIn = false }: { signedIn?: boolean }) {
 
             {signedIn ? (
                 <p className="text-sm text-muted-foreground">
-                    Need more AI rebuilds on a site?{" "}
+                    Need more AI builds on a site?{" "}
                     <Link
                         href="/plans"
                         className="font-medium text-foreground underline-offset-4 hover:underline"

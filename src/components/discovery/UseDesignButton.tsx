@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import type { TemplateTier } from "@/lib/contracts";
@@ -5,9 +7,8 @@ import { buttonVariants } from "@/components/ui/button";
 
 // "Use this design" (R3 D8).
 //
-// The button used to fork immediately into the editor, with the template's own placeholder
-// words still on the page. It now takes them to the same brief screen as "Ask AI" — name,
-// place, what they do — and those facts replace the placeholders on this design.
+// If the user is not signed in, they are redirected to sign in first, then
+// returned to the brief screen with this design pre-selected.
 
 export function UseDesignButton({
     forkId,
@@ -15,30 +16,39 @@ export function UseDesignButton({
     tier,
     showPayNote = true,
     unlocked = false,
+    signedIn = true,
 }: {
     forkId: string;
     name: string;
     tier: TemplateTier;
     showPayNote?: boolean;
     unlocked?: boolean;
+    signedIn?: boolean;
 }) {
-    const href = `/new?template=${encodeURIComponent(forkId)}`;
+    const briefHref = `/new?template=${encodeURIComponent(forkId)}`;
+    const href = signedIn
+        ? briefHref
+        : `/signin?next=${encodeURIComponent(briefHref)}`;
     const needsPlan = tier !== "free" && !unlocked;
 
     return (
         <div className="flex flex-col items-end gap-1.5">
             <Link
                 href={href}
-                aria-label={`Use ${name}`}
+                aria-label={signedIn ? `Use ${name}` : `Sign in to use ${name}`}
                 className={buttonVariants({ variant: "brand", size: "lg" }) + " cursor-pointer"}
             >
-                Use this design
+                {signedIn ? "Use this design" : "Sign in to use"}
             </Link>
-            {showPayNote && needsPlan ? (
+            {!signedIn ? (
+                <span className="text-xs text-muted-foreground">
+                    Sign in first to use this design.
+                </span>
+            ) : showPayNote && needsPlan ? (
                 <span className="text-xs text-muted-foreground">
                     {tier === "signature"
-                        ? "Needs Premium on User Plans."
-                        : "Needs Pro on User Plans."}
+                        ? "Needs Premium plan."
+                        : "Needs Pro plan."}
                 </span>
             ) : null}
         </div>

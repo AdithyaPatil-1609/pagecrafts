@@ -7,20 +7,20 @@ const PROPS = [
     {
         icon: Sparkles,
         step: "01",
-        title: "Never a technical word",
-        body: "No code, no accounts to connect, nothing to install. You describe the name, the place, and what they do — in plain English.",
+        title: "No hard words",
+        body: "No code, no accounts to set up, nothing to download. Just tell us the name, the place, and what you do — in everyday words.",
     },
     {
         icon: ShieldCheck,
         step: "02",
-        title: "You stay in charge",
-        body: "Every change is shown to you first, and a version is saved before it happens. You cannot lose your work by exploring.",
+        title: "You are always in control",
+        body: "Every change is shown to you first. A copy is saved before anything happens. You cannot lose your work.",
     },
     {
         icon: Globe,
         step: "03",
-        title: "A real site, at a real address",
-        body: "Publishing gives you a live website we host for you. Building is free, and going live on a PageCrafts address is free. Pro and Premium unlock richer looks.",
+        title: "A real website, at a real address",
+        body: "When you are ready, we put your site online and host it for you. Pro and Premium give you fancier looks.",
     },
 ];
 
@@ -46,8 +46,8 @@ export function ValueProps() {
                         How it works
                     </h2>
                     <p className="mt-3 text-base leading-7 text-muted-foreground">
-                        Tell us the business. We write every page. You pick a look, then change
-                        anything by saying it — the site updates in front of you.
+                        Tell us about your business. We build every page. You pick a look, then
+                        change anything by just saying it — the site updates right in front of you.
                     </p>
                 </header>
 
@@ -76,11 +76,11 @@ export function ValueProps() {
                 <div className="grid items-center gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
                     <div>
                         <h3 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                            Editing feels like <span className="hero-mix">talking</span>
+                            Editing is like <span className="hero-mix">talking</span>
                         </h3>
                         <p className="mt-3 max-w-md text-base leading-7 text-muted-foreground">
-                            Point at anything on the page and say what you want changed. Keep it or
-                            throw it away. Nothing is applied until you say so.
+                            Click on anything and say what you want changed. Keep it or throw it
+                            away. Nothing changes until you say yes.
                         </p>
                         <ul className="mt-4 flex flex-col gap-2.5">
                             {SAY.map((line) => (

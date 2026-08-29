@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Monitor, RefreshCw, Smartphone } from 'lucide-react';
+import { Edit3, Image as ImageIcon, Monitor, RefreshCw, Smartphone, Trash2, X } from 'lucide-react';
 import { useEditorStore } from '@/lib/editor-store';
 import { assemblePreview, injectErrorHook } from '@/lib/preview';
 import { PREVIEW_IFRAME_SANDBOX, withPreviewCsp } from '@/lib/preview-security';
@@ -12,13 +12,22 @@ import { sectionLabel } from '@/lib/editor/section-registry';
 import { htmlPagesOf } from '@/lib/ai/generate/pages';
 import { cn } from '@/lib/utils';
 import { AskAiFixDialog } from './AskAiFixDialog';
+import ImagePicker, { type PickedImage } from './ImagePicker';
 
 const DEBOUNCE_MS = 120;
 
 type Viewport = 'full' | 'phone';
 
+interface SelectedImageState {
+    src: string;
+    alt: string;
+    isBg: boolean;
+    rect?: { top: number; left: number; width: number; height: number };
+}
+
 export default function PreviewPane() {
     const vfs = useEditorStore((s) => s.vfs);
+    const projectId = useEditorStore((s) => s.projectId);
     const dirtyPaths = useEditorStore((s) => s.dirtyPaths);
     const tree = useEditorStore((s) => s.tree);
     const pendingChange = useEditorStore((s) => s.pendingChange);
@@ -38,6 +47,9 @@ export default function PreviewPane() {
     });
     const [runtimeError, setRuntimeError] = useState<string | null>(null);
     const [askOpen, setAskOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<SelectedImageState | null>(null);
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const [pickerKind, setPickerKind] = useState<'image' | 'background'>('image');
     const last = useRef(preview.doc);
 
     useEffect(() => {
@@ -53,6 +65,7 @@ export default function PreviewPane() {
             setPreview({ doc: next, warnings: r.warnings });
             setRuntimeError(null);
             setAskOpen(false);
+            setSelectedImage(null);
         }, DEBOUNCE_MS);
         return () => clearTimeout(t);
     }, [vfs, dirtyPaths, tree, pendingChange, reloadTick, entry]);
@@ -68,11 +81,29 @@ export default function PreviewPane() {
     useEffect(() => {
         function onMessage(e: MessageEvent) {
             if (e.source !== frame.current?.contentWindow) return;
-            const data = e.data as { __pagecraft?: boolean; message?: string; kind?: string; path?: string };
+            const data = e.data as {
+                __pagecraft?: boolean;
+                message?: string;
+                kind?: string;
+                path?: string;
+                src?: string;
+                alt?: string;
+                isBg?: boolean;
+                rect?: { top: number; left: number; width: number; height: number };
+            };
             if (!data?.__pagecraft) return;
             if (data.kind === 'navigate' && typeof data.path === 'string' && data.path.trim()) {
                 last.current = '';
                 setEntry(data.path.trim());
+                return;
+            }
+            if (data.kind === 'image_click' && data.src) {
+                setSelectedImage({
+                    src: data.src,
+                    alt: data.alt || '',
+                    isBg: Boolean(data.isBg),
+                    rect: data.rect,
+                });
                 return;
             }
             if (data.message) setRuntimeError(data.message);
@@ -80,6 +111,51 @@ export default function PreviewPane() {
         window.addEventListener('message', onMessage);
         return () => window.removeEventListener('message', onMessage);
     }, []);
+
+    async function handleDeleteImage() {
+        if (!selectedImage) return;
+        const isBg = selectedImage.isBg;
+        const target = selectedImage;
+        setSelectedImage(null);
+        if (isBg) {
+            await requestAiEdit('Remove the background photo from this section');
+        } else {
+            const desc = target.alt ? `the image "${target.alt}"` : 'the selected photo';
+            await requestAiEdit(`Delete or remove ${desc}`);
+        }
+    }
+
+    function handleEditImagePrompt() {
+        if (!selectedImage) return;
+        const desc = selectedImage.isBg ? 'the background photo' : (selectedImage.alt ? `the image "${selectedImage.alt}"` : 'this image');
+        setSelectedImage(null);
+        const composer = document.getElementById('chat-composer-input') as HTMLTextAreaElement | null;
+        if (composer) {
+            composer.value = `Change ${desc}: `;
+            composer.focus();
+        } else {
+            void requestAiEdit(`Make ${desc} look more modern and visually appealing`);
+        }
+    }
+
+    function openImagePicker(kind: 'image' | 'background') {
+        setPickerKind(kind);
+        setPickerOpen(true);
+    }
+
+    async function handleImagePicked(picked: PickedImage) {
+        setPickerOpen(false);
+        const target = selectedImage;
+        setSelectedImage(null);
+        if (pickerKind === 'background' || target?.isBg) {
+            await requestAiEdit(`Change the background photo to ${picked.url}`);
+        } else if (target) {
+            const desc = target.alt ? `the image "${target.alt}"` : 'the selected image';
+            await requestAiEdit(`Replace ${desc} with ${picked.url}`);
+        } else {
+            await requestAiEdit(`Use this image on the page: ${picked.url}`);
+        }
+    }
 
     const issues = [...preview.warnings, ...(runtimeError ? [runtimeError] : [])]
         .map(friendlyPreviewIssue);
@@ -140,6 +216,17 @@ export default function PreviewPane() {
                         <RefreshCw className="size-4" strokeWidth={1.75} />
                     </button>
                 </div>
+
+                <button
+                    type="button"
+                    onClick={() => openImagePicker('background')}
+                    className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card/80 px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title="Change background photo"
+                >
+                    <ImageIcon className="size-3.5 text-primary" aria-hidden />
+                    <span>Change background</span>
+                </button>
+
                 {htmlPages.length > 1 ? (
                     <label className="min-w-0">
                         <span className="sr-only">Page</span>
@@ -204,6 +291,61 @@ export default function PreviewPane() {
                             className="pointer-events-auto absolute inset-0 z-0 h-full w-full border-0 bg-card"
                         />
                     )}
+
+                    {/* Inline Image Action Toolbar on clicked image */}
+                    {selectedImage && !chatBusy && (
+                        <div
+                            role="dialog"
+                            aria-label="Image actions"
+                            className="pointer-events-auto absolute inset-x-4 top-4 z-20 mx-auto flex max-w-md items-center justify-between gap-2 rounded-2xl border border-border/80 bg-card/95 p-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+                        >
+                            <div className="flex min-w-0 items-center gap-2 px-2">
+                                <ImageIcon className="size-4 shrink-0 text-primary" aria-hidden />
+                                <span className="truncate text-xs font-medium text-foreground">
+                                    {selectedImage.isBg
+                                        ? 'Background photo'
+                                        : (selectedImage.alt || 'Selected image')}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => openImagePicker(selectedImage.isBg ? 'background' : 'image')}
+                                    className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                                    title="Change image"
+                                >
+                                    <ImageIcon className="size-3" aria-hidden />
+                                    <span>Change</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleEditImagePrompt}
+                                    className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-accent"
+                                    title="Edit image"
+                                >
+                                    <Edit3 className="size-3" aria-hidden />
+                                    <span>Edit</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => void handleDeleteImage()}
+                                    className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 text-xs font-medium text-destructive hover:bg-destructive/20"
+                                    title="Delete image"
+                                >
+                                    <Trash2 className="size-3" aria-hidden />
+                                    <span>Delete</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedImage(null)}
+                                    className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                                    aria-label="Close"
+                                >
+                                    <X className="size-3.5" aria-hidden />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {showNotice && !empty && (
@@ -239,6 +381,17 @@ export default function PreviewPane() {
                     void requestAiEdit(fix.instruction);
                 }}
             />
+
+            {/* Image Picker for replacing images or background photos */}
+            <ImagePicker
+                open={pickerOpen}
+                projectId={projectId}
+                kind="image"
+                title={pickerKind === 'background' ? 'Choose background photo' : 'Choose a photo'}
+                onClose={() => setPickerOpen(false)}
+                onPicked={(picked) => void handleImagePicked(picked)}
+            />
         </div>
     );
 }
+

@@ -3,16 +3,16 @@ import { CardIndex } from "@/components/ui/card-index";
 
 const MOVES = [
     {
-        title: "Describe the vibe",
-        body: "Type it like you'd say it to a friend. Colours, mood, what they do — no jargon needed.",
+        title: "Tell us about it",
+        body: "Just type what your business does, where it is, and the look you want. No special words needed.",
     },
     {
-        title: "Watch it build",
-        body: "Pages, images and copy appear on the canvas as we write the site from your words.",
+        title: "Watch it appear",
+        body: "Pages, pictures and text show up on screen as we build the site from what you told us.",
     },
     {
-        title: "Nudge and publish",
-        body: "“Warmer”, “bigger headline”, “add a menu”. Then go live on a PageCrafts address — free. Pro and Premium unlock richer looks.",
+        title: "Change and go live",
+        body: "Say things like \"make it bigger\" or \"change the colour\". When it looks right, put it online — it is that simple.",
     },
 ];
 

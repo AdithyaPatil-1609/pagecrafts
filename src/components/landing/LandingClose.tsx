@@ -9,25 +9,40 @@ export function LandingClose() {
                 Ready when you are
             </p>
             <h2 className="mt-4 max-w-xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-                Tell us the business. We will write the site.
+                Tell us your business. We will build the site.
             </h2>
             <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">
-                Name, place, and what they do. Then pick a look and go live when it feels right.
+                Just give us the name, the place, and what you do. Pick a look you like, and go
+                live when you are happy with it.
             </p>
-            <Link
-                href="/new"
-                className={buttonVariants({
-                    variant: "brand",
-                    size: "xl",
-                    className: "mt-8 w-fit rounded-xl font-semibold",
-                })}
-            >
-                Ask AI to create a website
-                <ArrowRight aria-hidden />
-            </Link>
+            <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                    href="/new"
+                    className={buttonVariants({
+                        variant: "brand",
+                        size: "xl",
+                        className: "w-fit rounded-xl font-semibold",
+                    })}
+                >
+                    Ask AI to build it
+                    <ArrowRight aria-hidden />
+                </Link>
+                <Link
+                    href="/templates"
+                    className={buttonVariants({
+                        variant: "outline-brand",
+                        size: "xl",
+                        className: "w-fit rounded-xl font-semibold",
+                    })}
+                >
+                    Browse designs
+                    <ArrowRight aria-hidden />
+                </Link>
+            </div>
             <p className="mt-6 text-sm text-muted-foreground">
-                PageCrafts — building is free. Going live on a PageCrafts address is free too.
+                PageCrafts — building is free. Going live on a PageCrafts address costs just Rs 199.
             </p>
         </div>
     );
 }
+

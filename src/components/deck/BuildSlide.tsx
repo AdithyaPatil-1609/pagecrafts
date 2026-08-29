@@ -30,10 +30,10 @@ export function BuildSlide({
                             id="build-heading"
                             className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
                         >
-                            Start from a design
+                            Pick a design to start
                         </h2>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            Twelve of ours. Open one and make it yours.
+                            Here are some of ours. Open one and make it yours.
                         </p>
                     </header>
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -70,16 +70,15 @@ export function BuildSlide({
                         Or ask AI
                     </p>
                     <h3 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-                        Ask AI to build it for you
+                        Or let AI build it for you
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Name, place, and what they do. We write every page from those facts.
+                        Tell us the name, the place, and what they do. We will build every page from that.
                     </p>
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                        On Starter, you can create or regenerate a site{" "}
-                        <span className="font-medium text-foreground">3 times</span> (each round
-                        gives three looks). Pro gives 5× AI usage; Premium gives 15× — both on
-                        User Plans.
+                        On Starter, you can build or rebuild a site{" "}
+                        <span className="font-medium text-foreground">3 times</span> (each time
+                        gives three looks). Pro gives 5 times more; Premium gives 15 times more.
                     </p>
                     <Link
                         href="/plans"
@@ -89,7 +88,7 @@ export function BuildSlide({
                             className: "mt-3 rounded-full font-semibold",
                         })}
                     >
-                        View User Plans
+                        View Plans
                         <ArrowRight aria-hidden />
                     </Link>
                     <div className="mt-5">

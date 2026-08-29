@@ -16,7 +16,6 @@ describe("pricing and compare marketing pages", () => {
         expect(page).toContain("Photo-rich");
         expect(page).toContain("Animated");
         expect(page).toContain("every design");
-        expect(page).toContain("marked for that plan");
         expect(page).not.toContain("Two kinds of price");
         expect(page).not.toContain("do not mix");
         expect(page).not.toContain("Free / Advanced");

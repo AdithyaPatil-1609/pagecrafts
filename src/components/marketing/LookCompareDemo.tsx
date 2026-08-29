@@ -105,7 +105,7 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                 </h1>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground">
                     {plan === "premium"
-                        ? "Same restaurant, three live sites. Premium is active — every look and Pro design is unlocked."
+                        ? "Same restaurant, three live sites. Premium is on — every look and Pro design is yours."
                         : plan === "pro"
                           ? "Same restaurant, three live sites. Pro is active — Starter is Free, Photo-rich is unlocked, plus every Pro template. Continuous-scroll Premium unlocks with Premium."
                           : "Same restaurant rendered three ways with our real generators. Starter is Free. Pro (Rs 499) unlocks the photographic look. Premium (Rs 999) unlocks continuous scroll. Click a card, then open About, Contact, and the other pages in the live preview — the same pages AI builds."}
@@ -134,7 +134,7 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                                 type="button"
                                 onClick={() => setLook(item.id)}
                                 className={cn(
-                                    "glass-panel card-hover relative flex h-full w-full flex-col overflow-hidden rounded-2xl text-left transition-[box-shadow,ring-color]",
+                                    "glass-panel card-hover group/card relative flex h-full w-full flex-col overflow-hidden rounded-2xl text-left transition-[box-shadow,ring-color]",
                                     on && "ring-2 ring-primary/70",
                                     item.id === "premium" &&
                                         "shadow-[0_0_28px_color-mix(in_srgb,var(--gold)_28%,transparent)]",
@@ -159,6 +159,12 @@ export function LookCompareDemo({ plan = "starter" }: { plan?: AccountPlan }) {
                                         {label}
                                     </span>
                                 </div>
+                                {/* Click to view overlay */}
+                                {!on && (
+                                    <span className="absolute inset-0 z-[3] flex items-center justify-center bg-background/40 text-xs font-semibold text-foreground opacity-0 transition-opacity group-hover/card:opacity-100">
+                                        Click to view
+                                    </span>
+                                )}
                                 <div className="relative z-[1] flex flex-1 flex-col gap-2 p-4">
                                     <h2 className="text-base font-semibold text-foreground">
                                         {item.label}
