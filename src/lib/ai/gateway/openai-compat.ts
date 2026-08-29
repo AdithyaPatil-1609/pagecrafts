@@ -91,22 +91,34 @@ export class OpenAICompatGateway implements NamedGateway {
         messages.push({ role: 'user', content: req.user });
 
         // AC-F10-5: reject before dispatch, not after.
+        // Groq (and similar) count prompt_tokens + max_tokens against the model
+        // context / TPM ceiling. We must validate the *combined* total, and
+        // shrink max_tokens when the input is large so the request always fits.
         const estimatedInput = estimateTokens((req.system ?? '') + req.user);
         const ceiling = this.cfg.quota.maxRequestTokens;
-        if (estimatedInput > ceiling) {
+        const idealOutput = maxOutputFor(req.job);
+
+        // Hard minimum output we need for a usable response.
+        const MIN_OUTPUT = 256;
+        const availableForOutput = ceiling - estimatedInput;
+
+        if (availableForOutput < MIN_OUTPUT) {
             throw new GatewayError(
-                'validation_failed',
-                `${this.name}: input ~${estimatedInput} tokens exceeds the ${ceiling}-token ceiling`,
-                false,
+                'payload_too_large',
+                `${this.name}: input ~${estimatedInput} tokens + ${MIN_OUTPUT} min output exceeds the ${ceiling}-token ceiling`,
+                true, // retryable so fallback can advance
             );
         }
+
+        // Cap output so input + output ≤ ceiling.
+        const effectiveOutput = Math.min(idealOutput, availableForOutput);
 
         const { temperature, topP } = samplingFor(req.job);
 
         const body: Record<string, unknown> = {
             model,
             messages,
-            max_tokens: maxOutputFor(req.job),
+            max_tokens: effectiveOutput,
             // Omitted entirely when unconfigured, so the provider default stands.
             ...(temperature === undefined ? {} : { temperature }),
             ...(topP === undefined ? {} : { top_p: topP }),
@@ -218,8 +230,10 @@ export class OpenAICompatGateway implements NamedGateway {
                 403: 'forbidden',
                 402: 'payment_required',
                 404: 'not_found',
+                413: 'payload_too_large',
                 429: 'rate_limited',
             };
+
             const code: ErrorCode = byStatus[res.status] ?? 'generation_failed';
             throw new GatewayError(
                 code,

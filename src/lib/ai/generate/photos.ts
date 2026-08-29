@@ -114,7 +114,11 @@ const KEYWORD_PHOTO: Array<[RegExp, readonly string[]]> = [
     [/\b(sweet|mithai|dessert|laddu|ladoo|jalebi|halwa|peda|barfi|gulab|confection|chocolate|cupcake)\b/i, [DESSERT_PHOTO_ID]],
     [/\b(bakery|bread|pastry|cake|patisserie)\b/i, BAKERY_PHOTOS],
     [/\b(cafe|coffee|chai)\b/i, CAFE_PHOTOS],
-    [/\b(restaurant|dining|kitchen|fine dining)\b/i, RESTAURANT_PHOTOS],
+    // Teaching people to cook is a food business. "cooking school" matched nothing here, so
+    // it fell to the general pool and a cookery class in Bengaluru was handed a photograph
+    // of skyscrapers. Live Unsplash hid it — Set 1 found a real kitchen — until Set 2
+    // excluded Set 1's hero and dropped through to this bank.
+    [/\b(restaurant|dining|kitchen|fine dining|cook|cooks|cooking|cookery|culinary|chef|chefs)\b/i, RESTAURANT_PHOTOS],
     [/\b(travel|traveller|traveler|tourism|tourist|vlog|vlogger|journey|adventure|wander|wanderlust|nature|outdoor|outdoors|hiking|trek|trekking|camping|landscape|mountain|forest|lake|beach|safari|road.?trip|itinerary|explore)\b/i, TRAVEL_PHOTOS],
     [/\b(gym|fitness|yoga)\b/i, GYM_PHOTOS],
     [/\b(clinic|dental|hospital|doctor|veterinary|vet|surgery|surgical|surgeon|neurosurg|medical|healthcare)\b/i, CLINIC_PHOTOS],
@@ -172,9 +176,75 @@ export function isMithaiShop(vertical: string, title = '', query = ''): boolean 
         || /sweetshop/i.test(text);
 }
 
+const SLOT_NOISE = new Set([
+    'hero', 'gallery', 'about', 'services', 'menu', 'contact', 'footer', 'banner',
+    'cover', 'cta', 'image', 'photo', 'section', 'page', 'home', 'website', 'site',
+]);
+
+function tokens(value: string): string[] {
+    return value
+        .toLowerCase()
+        .replace(/[-_/]+/g, ' ')
+        .match(/[a-z0-9\u00c0-\u024f]+/g) ?? [];
+}
+
+/**
+ * Pull the tagged profession from a composed brief description, or fall back to vertical.
+ * composeBrief writes `Profession field: Medical.` at the start on purpose.
+ */
+export function professionFromDescription(description: string, vertical = ''): string {
+    const marked = description.match(/Profession field:\s*([^.\n]+)/i);
+    if (marked?.[1]?.trim()) return marked[1].trim();
+    const biz = description.match(/\ba\s+([^,]+?)\s+business\b/i);
+    if (biz?.[1]?.trim()) return biz[1].trim();
+    return vertical.replace(/[-_]/g, ' ').trim();
+}
+
+/**
+ * Profession is the category base; business title layers specialty on top.
+ * Example: profession "Medical" + title "Brain Surgery" → "medical brain surgery …"
+ */
+export function buildPhotoSubject(opts: {
+    profession: string;
+    title?: string;
+    offer?: string;
+    slot?: string;
+}): string {
+    const profession = opts.profession.trim();
+    const title = (opts.title ?? '').trim();
+    const offer = (opts.offer ?? '').trim();
+    const slot = (opts.slot ?? '').trim();
+
+    const out: string[] = [];
+    const seen = new Set<string>();
+
+    const pushUnique = (words: string[]) => {
+        for (const word of words) {
+            if (word.length < 2) continue;
+            if (SLOT_NOISE.has(word)) continue;
+            if (seen.has(word)) continue;
+            seen.add(word);
+            out.push(word);
+        }
+    };
+
+    // 1) Profession / field — required base for every photograph.
+    pushUnique(tokens(profession));
+    // 2) Business name / title — specialty within that field (Brain Surgery under Medical).
+    pushUnique(tokens(title));
+    // 3) A little offer detail when it adds terms not already present.
+    pushUnique(tokens(offer).slice(0, 6));
+    // 4) Slot cue only if it is concrete (not "hero").
+    pushUnique(tokens(slot));
+
+    return out.join(' ').trim();
+}
+
 /**
  * Vertical + title + description + slot query.
- * Description matters: "Explore nature videos" must steer the photo away from food.
+ *
+ * Profession (from the brief tag, or vertical) is the base. The business title
+ * adds specificity so "Medical" + "Brain Surgery" does not become generic clinic stock.
  */
 export function photoSearchQuery(
     vertical: string,
@@ -183,18 +253,20 @@ export function photoSearchQuery(
     description = '',
 ): string {
     if (isMithaiShop(vertical, title, `${query} ${description}`)) return MITHAI_SEARCH;
-    const bits = [vertical.replace(/[-_]/g, ' '), title, description, query]
-        .map((part) => part.trim())
-        .filter(Boolean);
-    const seen = new Set<string>();
-    const unique: string[] = [];
-    for (const bit of bits) {
-        const key = bit.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        unique.push(bit);
-    }
-    return unique.join(' ');
+
+    const profession = professionFromDescription(description, vertical);
+    // Prefer offer fragment from "a X business (offer)" when present.
+    const offerMatch = description.match(/\bbusiness\s*\(([^)]+)\)/i);
+    const offer = offerMatch?.[1]?.trim() ?? '';
+
+    const subject = buildPhotoSubject({
+        profession: profession || vertical.replace(/[-_]/g, ' '),
+        title,
+        offer,
+        slot: query,
+    });
+
+    return subject || [vertical.replace(/[-_]/g, ' '), title, query].filter(Boolean).join(' ');
 }
 
 /**

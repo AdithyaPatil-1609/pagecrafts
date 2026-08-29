@@ -2,19 +2,11 @@
 
 import {
     BRIEF_LIMITS,
-    BRIEF_TONES,
-    type BriefTone,
     type SiteBrief,
 } from "@/lib/ai/generate/brief";
 import { DictationButton } from "@/components/ui/DictationButton";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const TONE_LABEL: Record<BriefTone, string> = {
-    simple: "Simple",
-    warm: "Warm",
-    bold: "Bold",
-};
 
 export function BriefFields({
     value,
@@ -30,40 +22,56 @@ export function BriefFields({
     return (
         <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-                A name, a place, and what they do. Type it, or tap the mic and talk —
-                AI cannot invent a phone number you never gave.
+                Name the business, its profession or trade, where it is, and what it
+                offers. Type it, or tap the mic — AI cannot invent a phone number you
+                never gave.
             </p>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Business name" htmlFor="brief-name">
-                    <Input
-                        id="brief-name"
-                        maxLength={BRIEF_LIMITS.name}
-                        inputSize="lg"
-                        autoComplete="organization"
-                        placeholder="Mithas Sweets"
-                        value={value.name}
-                        disabled={disabled}
-                        onChange={(e) => set({ name: e.target.value })}
-                    />
-                </Field>
-                <Field label="City or area" htmlFor="brief-place">
-                    <Input
-                        id="brief-place"
-                        maxLength={BRIEF_LIMITS.place}
-                        inputSize="lg"
-                        placeholder="Old Delhi, Koramangala…"
-                        value={value.place}
-                        disabled={disabled}
-                        onChange={(e) => set({ place: e.target.value })}
-                    />
-                </Field>
-            </div>
+            <Field label="Business name" htmlFor="brief-name">
+                <Input
+                    id="brief-name"
+                    maxLength={BRIEF_LIMITS.name}
+                    inputSize="lg"
+                    autoComplete="organization"
+                    placeholder="Brain Surgery · Mithas Sweets"
+                    value={value.name}
+                    disabled={disabled}
+                    onChange={(e) => set({ name: e.target.value })}
+                />
+            </Field>
 
             <Field
-                label="What do they do?"
+                label="Profession or trade"
+                htmlFor="brief-profession"
+                hint="The field of work — medical, bakery, plumbing. Photos are based on this."
+            >
+                <Input
+                    id="brief-profession"
+                    maxLength={BRIEF_LIMITS.profession}
+                    inputSize="lg"
+                    placeholder="Medical, sweet shop, plumber…"
+                    value={value.profession}
+                    disabled={disabled}
+                    onChange={(e) => set({ profession: e.target.value })}
+                />
+            </Field>
+
+            <Field label="City or area" htmlFor="brief-place">
+                <Input
+                    id="brief-place"
+                    maxLength={BRIEF_LIMITS.place}
+                    inputSize="lg"
+                    placeholder="Old Delhi, Koramangala…"
+                    value={value.place}
+                    disabled={disabled}
+                    onChange={(e) => set({ place: e.target.value })}
+                />
+            </Field>
+
+            <Field
+                label="What do they offer?"
                 htmlFor="brief-offer"
-                hint="The shop, the clinic, the services — the more specific, the better the site."
+                hint="Services and details — check-ups, cakes, emergency callouts. The profession field above is what photos follow."
             >
                 <div className="relative">
                     <textarea
@@ -133,35 +141,6 @@ export function BriefFields({
                     />
                 </Field>
             </div>
-
-            <fieldset className="flex flex-col gap-2">
-                <legend className="text-sm font-medium text-foreground">
-                    How should it feel?{" "}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                </legend>
-                <div className="flex flex-wrap gap-2">
-                    {BRIEF_TONES.map((tone) => {
-                        const on = value.tone === tone;
-                        return (
-                            <button
-                                key={tone}
-                                type="button"
-                                disabled={disabled}
-                                aria-pressed={on}
-                                onClick={() => set({ tone: on ? "" : tone })}
-                                className={cn(
-                                    "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    on
-                                        ? "border-primary bg-accent text-foreground"
-                                        : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-                                )}
-                            >
-                                {TONE_LABEL[tone]}
-                            </button>
-                        );
-                    })}
-                </div>
-            </fieldset>
 
             <Field label="Anything else?" htmlFor="brief-extra" optional>
                 <div className="relative">

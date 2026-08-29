@@ -54,6 +54,7 @@ export function GalleryGrid({
     ranked = false,
     unlockedTemplateIds = [],
     lockable = false,
+    signedIn = true,
 }: {
     templates: TemplateSummary[];
     /** How many designs the library holds, for the "showing N of M" line. */
@@ -67,6 +68,7 @@ export function GalleryGrid({
     ranked?: boolean;
     unlockedTemplateIds?: string[];
     lockable?: boolean;
+    signedIn?: boolean;
 }) {
     const owned = new Set(unlockedTemplateIds);
     const filtered = templates.length !== total;
@@ -82,6 +84,7 @@ export function GalleryGrid({
                 lockable={lockable}
                 unlocked={unlocked}
                 forkId={forkId}
+                signedIn={signedIn}
             />
         );
     }

@@ -33,8 +33,13 @@ export const metadata: Metadata = {
   description:
     "Build a real website by describing it. No code, nothing to install. Free to build and go live on PageCrafts; Pro and Premium unlock richer looks.",
   icons: {
-    icon: "/brand/pagecrafts-lockup.png",
-    apple: "/brand/pagecrafts-lockup.png",
+    // Square PC mark — browsers (and Chrome's address bar) prefer /favicon.ico
+    // and square icons; the wide lockup is kept for Open Graph only.
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/brand/pagecrafts-mark.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/brand/pagecrafts-mark.png",
   },
   openGraph: {
     title: "PageCrafts — craft. publish. impact.",

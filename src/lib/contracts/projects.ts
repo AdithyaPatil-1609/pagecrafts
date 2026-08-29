@@ -79,6 +79,8 @@ export interface ProjectDetail extends ProjectSummary {
 /** Facts for a template fork — written onto the design instead of generating a new site. */
 export interface ProjectBrief {
   name: string;
+  /** Trade / profession — primary signal for photos and vertical. */
+  profession: string;
   offer: string;
   place: string;
   phone?: string;

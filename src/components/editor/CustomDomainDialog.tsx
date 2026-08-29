@@ -116,6 +116,7 @@ export function CustomDomainDialog({
 
     useEffect(() => {
         if (!open) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- async fetch when dialog opens
         void load();
     }, [open, load]);
 

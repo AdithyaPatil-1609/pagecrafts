@@ -24,41 +24,40 @@ export function chatSuggestions(input: {
 
     if (sections.length === 0 && input.hasPage) {
         const next: ChatSuggestion[] = [
-            { id: 'headline', label: 'Rewrite the headline', send: 'Rewrite the headline for this business' },
-            { id: 'warmer', label: 'Make the copy warmer', send: 'Make the copy warmer and more personal' },
-            { id: 'phone', label: 'Put the phone on the page', send: 'Put the phone number on the page if we have it' },
+            { id: 'headline', label: 'Rewrite the headline', send: 'Rewrite the headline for this business to be clear and catchy' },
+            { id: 'bg-photo', label: 'Change background photo', send: 'Suggest a better background photo for this website' },
+            { id: 'warmer', label: 'Make the text friendly', send: 'Make the words friendly and easy to read' },
+            { id: 'phone', label: 'Add contact details', send: 'Add contact details and phone number clearly on the page' },
         ];
         if (last) {
             next.push({ id: 'keep-going', label: 'Keep going with my last instruction', send: last });
         } else {
             next.push({ id: 'describe', label: 'Describe a change', compose: true });
         }
-        return next.slice(0, 4);
+        return next.slice(0, 5);
     }
 
     if (sections.length === 0) {
         return [
             { id: 'sweet-shop', label: 'Create a sweet shop website' },
             { id: 'clinic', label: 'Create a family clinic website' },
+            { id: 'restaurant', label: 'Create a modern restaurant website' },
             { id: 'describe', label: 'Describe the website you want', compose: true },
         ];
     }
 
-    // Ask rewrites the words in one section. edit.v1 says it outright — "you change the
-    // content of ONE section" and "never write HTML" — so a layout is not something it can
-    // return, and "use a slide-through layout" came back as "that change did not go
-    // through" every time. Two of the four chips were asking for the one thing the path
-    // cannot do, and they were the app's own suggestions.
-    //
-    // Each one now names a change to the copy, and says it in full rather than in three
-    // words, the way the starter branch above already does.
     const next: ChatSuggestion[] = [];
 
     if (types.has('hero')) {
         next.push({
             id: 'hero-headline',
             label: 'Sharpen the headline',
-            send: 'Rewrite the hero heading so it names the business and what it sells',
+            send: 'Rewrite the main headline so it clearly states the business and what it offers',
+        });
+        next.push({
+            id: 'bg-photo',
+            label: 'Change background photo',
+            send: 'Update the hero background photo to something more striking',
         });
     }
 
@@ -79,22 +78,22 @@ export function chatSuggestions(input: {
     if (types.has('menu') || types.has('services')) {
         next.push({
             id: 'offerings',
-            label: 'Make the list of offerings richer',
-            send: 'Give each item on the list a fuller description, inventing nothing new',
+            label: 'Improve services list',
+            send: 'Give each item on the list a clearer and more engaging description',
         });
     }
 
     if (types.has('contact')) {
         next.push({
             id: 'contact-clear',
-            label: 'Make it easier to get in touch',
-            send: 'Rewrite the contact section so the hours and the way to reach us are plain',
+            label: 'Make contact info clear',
+            send: 'Make the opening hours and contact methods clear and easy to find',
         });
     }
 
-    if (next.length < 4) {
+    if (next.length < 5) {
         next.push({ id: 'new-site', label: 'Start a whole new website' });
     }
 
-    return next.slice(0, 4);
+    return next.slice(0, 5);
 }

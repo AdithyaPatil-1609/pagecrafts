@@ -41,7 +41,17 @@ function readStoredBrief(raw: string | null, fallbackPrompt: string): SiteBrief 
     if (raw) {
         try {
             const parsed = JSON.parse(raw) as Partial<SiteBrief>;
-            return { ...emptyBrief(), ...parsed };
+            // Drop unknown keys (e.g. retired brief.tone) so old session drafts still load.
+            const base = { ...emptyBrief(), ...parsed };
+            return {
+                name: base.name,
+                profession: base.profession,
+                offer: base.offer,
+                place: base.place,
+                phone: base.phone,
+                hours: base.hours,
+                extra: base.extra,
+            };
         } catch {
             // fall through
         }

@@ -127,21 +127,22 @@ export const SPACING: Record<SpacingId, { section: string; gap: string; measure:
 /**
  * Photographic treatment, applied to every image the page renders.
  *
- * Never grayscale / black-and-white. Customers sell colourful shops, food, and
- * products — a B&W filter made Pro look broken next to Casual and Premium.
+ * Never grayscale / black-and-white, and never desaturate below full colour.
+ * Customers sell colourful shops, food, and products — a B&W or washed photo
+ * made Pro look broken next to Casual and Premium.
  */
 export const IMAGERY: Record<ImageryId, { filter: string; overlay: string }> = {
-    'bright-clean': { filter: 'saturate(1.05) contrast(1.02)', overlay: 'transparent' },
-    'warm-natural': { filter: 'saturate(1.1) sepia(0.08)', overlay: 'rgba(180,120,60,0.05)' },
-    'bold-contrast': { filter: 'contrast(1.18) saturate(1.15)', overlay: 'transparent' },
-    // Soft cool grade — was grayscale(0.55); keep colour, mute the punch.
+    'bright-clean': { filter: 'saturate(1.12) contrast(1.02)', overlay: 'transparent' },
+    'warm-natural': { filter: 'saturate(1.18) sepia(0.06)', overlay: 'rgba(180,120,60,0.04)' },
+    'bold-contrast': { filter: 'contrast(1.14) saturate(1.2)', overlay: 'transparent' },
+    // Soft cool grade — colour stays; never grayscale.
     'muted-duotone': {
-        filter: 'saturate(0.78) contrast(1.06) brightness(0.98)',
-        overlay: 'rgba(40, 55, 85, 0.08)',
+        filter: 'saturate(1.08) contrast(1.04) brightness(0.99)',
+        overlay: 'rgba(40, 55, 85, 0.06)',
     },
-    // Editorial press — was grayscale(1); keep colour with a crisp finish.
+    // Editorial press — crisp colour, never mono.
     documentary: {
-        filter: 'contrast(1.14) saturate(0.92) brightness(1.02)',
+        filter: 'contrast(1.1) saturate(1.12) brightness(1.01)',
         overlay: 'transparent',
     },
 };
@@ -212,9 +213,16 @@ section { padding-block: var(--section-gap); }
 img {
   max-width: 100%;
   height: auto;
+  /* Imagery dials may grade colour — they must never grayscale. */
   filter: var(--image-filter);
   border-radius: var(--radius-md);
-}`;
+}
+/* Hard ban: no generated page may wash photographs to black-and-white. */
+img[style*="grayscale"],
+img.grayscale {
+  filter: saturate(1.15) !important;
+}
+`;
 }
 
 /** Every dial, for the eval report and the D14 write-up. */

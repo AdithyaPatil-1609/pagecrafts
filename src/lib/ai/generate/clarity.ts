@@ -102,6 +102,16 @@ export function placeLooksClear(place: string): boolean {
     return real.length >= 1;
 }
 
+export function professionLooksClear(profession: string): boolean {
+    const text = clean(profession);
+    if (text.length < 2) return false;
+    if (KEYBOARD_SPAM.test(text)) return false;
+    if (/(.)\1{4,}/.test(text)) return false;
+    if (textLooksGibberish(text)) return false;
+    const real = words(text).filter(looksLikeWord);
+    return real.length >= 1;
+}
+
 /** Free-text prompt (composed brief or regenerate instruction). */
 export function promptLooksClear(prompt: string): boolean {
     const text = clean(prompt);
@@ -118,11 +128,16 @@ export function promptLooksClear(prompt: string): boolean {
 
 export function briefClarityErrors(brief: {
     name: string;
+    profession?: string;
     offer: string;
     place: string;
 }): string[] {
     const errors: string[] = [];
     if (clean(brief.name) && !nameLooksClear(brief.name)) {
+        errors.push(UNCLEAR_BRIEF_MESSAGE);
+        return errors;
+    }
+    if (clean(brief.profession ?? '') && !professionLooksClear(brief.profession ?? '')) {
         errors.push(UNCLEAR_BRIEF_MESSAGE);
         return errors;
     }

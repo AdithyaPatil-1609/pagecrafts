@@ -159,6 +159,22 @@ export const PREVIEW_BOOTSTRAP_JS = `(function () {
     (document.body || document.documentElement).appendChild(bar);
     input.focus();
   }
+  function findImage(start) {
+    var node = asElement(start);
+    while (node && node !== document && node !== document.documentElement) {
+      if (node.tagName === 'IMG') {
+        return { el: node, src: node.currentSrc || node.src || node.getAttribute('src') || '', alt: node.alt || node.getAttribute('alt') || '', isBg: false };
+      }
+      var bg = '';
+      try { bg = window.getComputedStyle(node).backgroundImage; } catch (e) {}
+      if (bg && bg !== 'none' && bg.indexOf('url(') !== -1) {
+        var match = bg.match(/url\(["']?([^"']+)["']?\)/);
+        return { el: node, src: match ? match[1] : '', alt: node.getAttribute('aria-label') || 'Background photo', isBg: true };
+      }
+      node = node.parentElement;
+    }
+    return null;
+  }
   function onClick(e) {
     var el = asElement(e.target);
     if (!el) return;
@@ -168,6 +184,25 @@ export const PREVIEW_BOOTSTRAP_JS = `(function () {
       e.stopPropagation();
       toggleFind();
       return;
+    }
+    var imgInfo = findImage(el);
+    if (imgInfo && imgInfo.src) {
+      try {
+        var rect = imgInfo.el.getBoundingClientRect();
+        parent.postMessage({
+          __pagecraft: true,
+          kind: 'image_click',
+          src: imgInfo.src,
+          alt: imgInfo.alt || '',
+          isBg: imgInfo.isBg,
+          rect: {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          }
+        }, '*');
+      } catch (err) {}
     }
     var a = el.closest ? el.closest('a') : null;
     if (!a) return;
@@ -183,8 +218,8 @@ export const PREVIEW_BOOTSTRAP_JS = `(function () {
       return;
     }
     if (/^(javascript|mailto|tel):/i.test(href)) return;
-    var path = href.split('?')[0].split('#')[0].replace(/^\\.\\//, '').replace(/^\\//, '');
-    if (/\\.html?$/i.test(path) && !/^[a-z][a-z0-9+.-]*:/i.test(href)) {
+    var path = href.split('?')[0].split('#')[0].replace(/^\.\//, '').replace(/^\//, '');
+    if (/\.html?$/i.test(path) && !/^[a-z][a-z0-9+.-]*:/i.test(href)) {
       e.preventDefault();
       try { parent.postMessage({ __pagecraft: true, kind: 'navigate', path: path }, '*'); } catch (err) {}
       return;

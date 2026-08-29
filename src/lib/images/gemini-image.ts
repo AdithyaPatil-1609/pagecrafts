@@ -119,6 +119,17 @@ export function imagePromptFor(query: string, sectionType?: string): string {
         `A professional photograph for a small business website: ${subject}.`,
         "Real photography, natural daylight, shallow depth of field, warm and inviting.",
         framingFor(sectionType),
+export function imagePromptFor(query: string): string {
+    const subject = query.trim().replace(/\s+/g, " ").slice(0, 220);
+
+    return [
+        `A professional full-colour photograph for a small business website depicting: ${subject}.`,
+        "Profession named first is the category; show any following specialty clearly",
+        "(medical + brain surgery → neurosurgery, not a generic waiting room).",
+        "Real colour photography — vivid natural colours, never black and white,",
+        "never grayscale, never monochrome, never desaturated editorial B&W.",
+        "Natural daylight, shallow depth of field, warm and inviting,",
+        "clean uncluttered composition with room for a headline.",
         "No text, no words, no letters, no signage, no logos, no watermarks, no borders,",
         "no collage, no user interface, no illustration.",
     ].join(" ");

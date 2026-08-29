@@ -117,12 +117,14 @@ export function TemplateDetailModal({
     children,
     showPrice = true,
     locked = false,
+    signedIn = true,
 }: {
     templateId: string;
     templateName: string;
     children: React.ReactNode;
     showPrice?: boolean;
     locked?: boolean;
+    signedIn?: boolean;
 }) {
     const [state, setState] = useState<State>({ status: "idle" });
 
@@ -309,6 +311,7 @@ export function TemplateDetailModal({
                                         tier={detail.tier}
                                         showPayNote={showPrice}
                                         unlocked={!locked}
+                                        signedIn={signedIn}
                                     />
                                 </>
                             )}
