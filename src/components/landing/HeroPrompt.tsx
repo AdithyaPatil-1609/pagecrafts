@@ -56,6 +56,18 @@ export function HeroPrompt() {
                     </span>
                 ) : null}
             </div>
+            {/*
+             * A button, not only the Enter key.
+             *
+             * The typewriter makes the field look like a caption rather than something you
+             * fill in, so a visitor who has read the headline has nothing obvious to press.
+             * It submits the same form: describe first at /new, and sign in only when there
+             * is a site to save — IntentCapture keeps the brief in sessionStorage across
+             * that, so nobody types their business twice.
+             */}
+            <button type="submit" className="welcome-prompt-cta">
+                Build it →
+            </button>
         </form>
     );
 }

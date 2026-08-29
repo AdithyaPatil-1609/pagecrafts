@@ -61,14 +61,15 @@ export default function ChatPanel({ autoFocus = false }: { autoFocus?: boolean }
     const isTokenLimit = fix?.kind === 'busy' || fix?.kind === 'too_long' || /token|limit|60 second/i.test(fix?.what ?? '');
     const retryInstruction =
         (error ? lastRetryableChatInstruction(messages, error) : null) ?? fix?.instruction ?? null;
-
-    useEffect(() => {
+    const [prevError, setPrevError] = useState<string | null>(error);
+    if (prevError !== error) {
+        setPrevError(error);
         if (error && isTokenLimit) {
             setCountdown(60);
         } else if (!error) {
             setCountdown(0);
         }
-    }, [error, isTokenLimit]);
+    }
 
     useEffect(() => {
         if (countdown <= 0) return;

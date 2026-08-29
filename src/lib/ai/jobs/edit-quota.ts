@@ -3,7 +3,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { ApiError } from '@/lib/errors/respond';
 import { accountPlan } from '@/lib/data/entitlements';
 import { redis, isRedisConfigured } from '@/lib/limits/redis';
-import { STARTER_EDITS_PER_PROJECT } from '@/lib/limits/config';
 import type { AccountPlan } from '@/lib/contracts';
 import { ACCOUNT_PLAN_LABEL } from '@/lib/contracts';
 import { editsLimitForPlan } from '@/lib/payments/plans';
