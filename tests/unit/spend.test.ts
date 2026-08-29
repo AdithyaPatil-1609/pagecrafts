@@ -16,6 +16,9 @@ const hincrbyfloat = vi.fn(async (key: string, field: string, by: number) => {
 const expire = vi.fn(async () => {});
 
 vi.mock("@/lib/limits/redis", () => ({
+  // The modules under test now fail open when redis is not configured, so the mock has
+  // to answer that question before any of the redis-backed paths below are reached.
+  isRedisConfigured: () => true,
   redis: () => ({ hgetall, hincrby, hincrbyfloat, expire }),
 }));
 

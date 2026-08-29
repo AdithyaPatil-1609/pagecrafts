@@ -13,7 +13,8 @@ function writableFields(schema: ContentSchema): { path: string; field: Field }[]
     const out: { path: string; field: Field }[] = [];
     for (const section of schema.sections) {
         for (const field of section.fields) {
-            if (field.type === 'image' || field.type === 'color' || field.type === 'select') continue;
+            if (field.type === 'image' || field.type === 'backgroundImage') continue;
+            if (field.type === 'color' || field.type === 'select') continue;
             out.push({ path: `${section.key}.${field.key}`, field });
         }
     }

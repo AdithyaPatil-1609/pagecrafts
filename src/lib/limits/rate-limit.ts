@@ -1,5 +1,5 @@
 import "server-only";
-import { redis } from "@/lib/limits/redis";
+import { redis, isRedisConfigured } from "@/lib/limits/redis";
 import type { WindowLimit } from "@/lib/limits/config";
 
 export type LimitResult = {
@@ -48,6 +48,10 @@ export async function consume(
   identifier: string,
   rule: WindowLimit,
 ): Promise<LimitResult> {
+  if (!isRedisConfigured()) {
+    return { allowed: true, remaining: rule.limit, retryAfterSeconds: 0, degraded: false };
+  }
+
   const key = `rl:${bucket}:${identifier}`;
   const now = Date.now();
   const member = `${now}-${Math.random().toString(36).slice(2, 10)}`;

@@ -5,7 +5,11 @@ import {
 } from '@/lib/ai/sections/contracts';
 import { SECTION_KEYS, type SectionKey } from '@/lib/contracts';
 
-const FROZEN_FIELD_TYPES = ['text', 'richtext', 'image', 'color', 'select', 'list'];
+// BR-10 freezes this vocabulary so no design can smuggle in a control only it understands.
+// backgroundImage is an addition to the vocabulary itself, not a special case inside it:
+// any design opts in by naming the custom property it drives, exactly as a colour does.
+const FROZEN_FIELD_TYPES =
+    ['text', 'richtext', 'image', 'backgroundImage', 'color', 'select', 'list'];
 
 describe('section contracts', () => {
     it('every section key has a contract', () => {

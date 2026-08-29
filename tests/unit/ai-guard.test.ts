@@ -9,6 +9,9 @@ const hincrbyfloatMock = vi.fn();
 const expireMock = vi.fn();
 
 vi.mock("@/lib/limits/redis", () => ({
+  // The modules under test now fail open when redis is not configured, so the mock has
+  // to answer that question before any of the redis-backed paths below are reached.
+  isRedisConfigured: () => true,
   redis: () => ({
     eval: evalMock,
     zrem: zremMock,

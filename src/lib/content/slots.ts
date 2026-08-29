@@ -104,6 +104,47 @@ function writeImage(inner: string, url: string | null, alt: string): string {
   return `<img class="hero-photo" src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="eager" decoding="async" fetchpriority="high" />`;
 }
 
+/* ---------------------------------------------------- background photos */
+
+// A background is not a picture the section contains, it is the surface the section is
+// painted on, so it travels the same road as a colour rather than the same road as an
+// <img>: the template names the custom property, the engine sets it.
+//
+//   <section class="hero image-bg" data-slot="hero.background"
+//            data-slot-var="--section-bg" style="--section-bg: url(…)">
+//
+// Clearing writes `none` rather than dropping the declaration. A design's own stylesheet
+// may set a fallback backdrop, and an owner who clears the photo is saying "no photo", not
+// "surprise me".
+const CSS_URL = /^\s*url\(\s*["']?([^"')]*)["']?\s*\)\s*$/i;
+
+// Quotes are optional in CSS, and here they are worse than optional. The value is written
+// into an HTML attribute, so a quote arrives back as `&quot;` — an entity whose trailing
+// semicolon ends the declaration in the middle of itself, and the next edit then writes the
+// new value over the wreckage. Percent-encoding the characters that could close the url(),
+// end the declaration or separate a layer keeps the CSS and the attribute both parseable.
+//
+// Encoding only, never decoding: the encoded form is already a correct URL, and `%` is not
+// in the set, so running it twice changes nothing. Decoding on read would quietly turn a
+// literal `%20` in someone's filename into a space.
+const CSS_UNSAFE = /["'()\s;,]/g;
+
+// Hand-rolled rather than encodeURIComponent, which leaves `(`, `)` and `'` alone — and a
+// bare `)` closes the url() early, which is the whole thing this is here to prevent.
+function percentEncode(char: string): string {
+  return `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`;
+}
+
+function readCssUrl(value: string | null): string | null {
+  const found = value ? value.match(CSS_URL)?.[1] : null;
+  return found && found.trim() ? found.trim() : null;
+}
+
+function cssUrl(url: string | null): string {
+  if (url === null) return "none";
+  return `url(${url.replace(CSS_UNSAFE, percentEncode)})`;
+}
+
 /* --------------------------------------------------------------- colours */
 
 // A colour is not words on the page, so a colour slot says what it drives:
@@ -261,9 +302,17 @@ function readField(html: string, section: ContentSection, field: Field): unknown
 
   const path = `${section.key}.${field.key}`;
   const inner = readSlotHtml(html, path);
-  if (inner === null) return field.type === "image" ? null : "";
+  if (inner === null) {
+    return field.type === "image" || field.type === "backgroundImage" ? null : "";
+  }
 
   if (field.type === "image") return readImage(inner);
+
+  if (field.type === "backgroundImage") {
+    const open = readSlotOpenTag(html, path) ?? "";
+    const name = slotVar(open);
+    return name ? readCssUrl(readStyleVar(open, name)) : null;
+  }
 
   if (field.type === "color") {
     const open = readSlotOpenTag(html, path) ?? "";
@@ -352,6 +401,17 @@ export function applySlotValue(
   if (field.type === "image") {
     const url = typeof value === "string" && value.trim() ? value : null;
     return writeSlotHtml(html, slot, writeImage(inner, url, field.label));
+  }
+
+  if (field.type === "backgroundImage") {
+    const open = readSlotOpenTag(html, slot);
+    const name = open ? slotVar(open) : null;
+    // No custom property named means the design has no backdrop to drive. Falling through
+    // would write the URL as text and print it across the section, so leave the page alone.
+    if (!open || !name) return html;
+
+    const url = typeof value === "string" && value.trim() ? value.trim() : null;
+    return replaceSlotOpenTag(html, slot, writeStyleVar(open, name, cssUrl(url)));
   }
 
   if (field.type === "color") {

@@ -44,7 +44,7 @@ export function contentFromComposition(composition: Composition): Record<string,
         const slice: Record<string, unknown> = {};
 
         for (const field of fields) {
-            if (field.type === 'image') continue;
+            if (field.type === 'image' || field.type === 'backgroundImage') continue;
             const value = section.props[field.key];
             if (value === undefined) continue;
             slice[field.key] = value;

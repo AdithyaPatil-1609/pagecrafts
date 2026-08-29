@@ -28,6 +28,7 @@ export function checkScalar(field: Field, value: unknown): string | null {
       }
       return null;
     case "image":
+    case "backgroundImage":
       // An asset id, or null to clear the slot.
       // Worded for a person, because these strings travel out as validation detail and
       // this file mixes the two kinds — "Too long — the limit is N characters" above is

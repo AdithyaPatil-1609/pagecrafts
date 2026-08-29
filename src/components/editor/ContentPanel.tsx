@@ -296,6 +296,7 @@ function AssetSlot({
     error,
     projectId,
     kind,
+    noun = 'image',
     onSet,
     onClear,
 }: {
@@ -304,6 +305,8 @@ function AssetSlot({
     error?: string;
     projectId: string;
     kind: AssetKind;
+    /** What this slot holds, for the line that says whether it is filled. */
+    noun?: string;
     onSet: (assetId: string) => void;
     onClear: () => void;
 }) {
@@ -312,7 +315,7 @@ function AssetSlot({
             <span className="mb-1 block text-sm">{label}</span>
             <div className="flex items-center gap-2 rounded border border-dashed border-border px-2 py-1.5">
                 <p className="flex-1 text-xs text-muted-foreground">
-                    {assetId ? 'An image is set.' : 'No image chosen yet.'}
+                    {assetId ? `A ${noun} is set.` : `No ${noun} chosen yet.`}
                 </p>
                 <AssetPicker label={label} projectId={projectId} kind={kind} onPicked={onSet} />
                 {assetId && (
@@ -536,6 +539,20 @@ export function FieldControl({
                     error={error}
                     projectId={projectId}
                     kind="image"
+                    onSet={(id) => onChange(id)}
+                    onClear={() => onChange(null)}
+                />
+            );
+
+        case 'backgroundImage':
+            return (
+                <AssetSlot
+                    label={field.label}
+                    assetId={typeof value === 'string' ? value : null}
+                    error={error}
+                    projectId={projectId}
+                    kind="image"
+                    noun="background photo"
                     onSet={(id) => onChange(id)}
                     onClear={() => onChange(null)}
                 />

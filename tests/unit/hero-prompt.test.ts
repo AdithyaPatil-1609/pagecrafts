@@ -111,7 +111,11 @@ describe("the prompt bar is shared", () => {
         const artwork = read("src", "components", "landing", "HeroArtwork.tsx");
         const deck = read("src", "components", "landing", "LandingDeck.tsx");
         expect(artwork).toContain("thumbnailUrl");
-        expect(artwork).toContain("object-cover object-[center_12%]");
+        // The crop, whatever it is, has to hold the top of the page: a site thumbnail
+        // centred on its own middle shows a band of body copy and reads as a screenshot
+        // of nothing. The cinematic hero pins it to the top; the mosaic it replaced used
+        // object-[center_12%] for the same reason.
+        expect(artwork).toContain("object-cover object-top");
         expect(artwork).not.toContain("/landing/");
         expect(deck).toContain("pickLandingHeroTemplates");
         expect(deck).toContain("pickLandingShowcaseTemplates");
@@ -160,7 +164,10 @@ describe("the public header", () => {
         expect(header).toContain("sign-in-cta");
         expect(css).toContain(".sign-in-cta");
         expect(css).toContain("var(--gold)");
-        expect(css).toContain("--gold: #c4a86a");
+        // The token is what this asserts — that the CTA takes its colour from one place.
+        // Its value desaturated from #c4a86a when the landing went monochrome; pinning the
+        // hex here made a palette decision fail a test about where Sign in and Sign up sit.
+        expect(css).toMatch(/--gold:\s*#[0-9a-f]{3,8}\s*;/i);
         const cta = css.slice(css.indexOf(".sign-in-cta {"), css.indexOf(".sign-in-cta:hover"));
         expect(cta).not.toContain("var(--signal)");
         expect(cta).not.toContain("var(--bloom-amber)");

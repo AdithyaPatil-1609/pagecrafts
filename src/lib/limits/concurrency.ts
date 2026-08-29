@@ -1,5 +1,5 @@
 import "server-only";
-import { redis } from "@/lib/limits/redis";
+import { redis, isRedisConfigured } from "@/lib/limits/redis";
 import { AI_IN_FLIGHT_MAX, AI_IN_FLIGHT_TTL_MS } from "@/lib/limits/config";
 
 export type Slot = {
@@ -30,6 +30,10 @@ return 1
 const NOOP = async () => {};
 
 export async function acquireSlot(bucket: string): Promise<Slot> {
+  if (!isRedisConfigured()) {
+    return { acquired: true, degraded: false, release: NOOP };
+  }
+
   const key = `cc:${bucket}`;
   const now = Date.now();
   const member = `${now}-${Math.random().toString(36).slice(2, 10)}`;

@@ -194,3 +194,48 @@ To reproduce the D11 baseline, pin v1:
 ```bash
 AI_PROMPT_PLAN=plan.v1 AI_PROMPT_FILL=fill-section.v1 npm run grade -- --label=baseline
 ```
+
+---
+
+## expand-brief.v2 — pushing the known failures upstream (2026-08-29)
+
+`expand-brief` is the one text prompt that runs on Gemini (`prefer: 'gemini'`);
+classify, profile, plan, fill and edit all prefer Groq. It also runs *before* all
+of them and is the only thing they see, so a fact it drops is a fact they invent.
+
+v2 changes nothing on taste. Every rule added answers a failure already recorded
+above against the stages downstream of it — the point being that a rule enforced
+after the brief is written is a repair, and the same rule in the brief is a
+prevention:
+
+| Rule added to v2 | The observation it answers |
+|---|---|
+| Business name kept character for character, never transliterated | D15 v29 — मिठास स्वीट्स came back as "Mithaas Sweet Shop"; `preserveNativeFields` repairs it after fill |
+| Never write 555 / 1-800-555 / anything@example.com; say a fact was not given | D15 v21 — invented contact, scrubbed after the fact by `scrubOptionalFields` |
+| Say plainly when no staff and no reviews were given | v27 `unspecified` — fill died on empty quotes; v3 stopped *planning* those sections, but the planner had to infer their absence |
+| Name what the business actually sells, in its own terms, with a bad/good contrast | plan.v2 — "briefs must name the specific thing this business says"; a vague brief is fill's only input |
+| A thin brief ("a website") describes one person's own work, first person, no company | v3 D15 amendment — a personal site is not a resume shop |
+| Register / book / venue / event date means contact matters | v3 — `event` (v22) completed without a contact section |
+| States what the answer is used for (a section planner, then a copy writer) | New. The prompt asked for "a detailed build brief" without saying who reads it |
+
+Selectable like the others: `AI_PROMPT_EXPAND`, defaulting to `expand-brief.v2`.
+v1 stays on disk. To reproduce a pre-v2 figure:
+
+```bash
+AI_PROMPT_EXPAND=expand-brief.v1 npm run grade -- --label=pre-v2
+```
+
+**Not measured.** No eval run has been taken against v2 — this changes the bytes
+sent to Gemini, so a figure from before it and one from after it do not belong in
+the same table. It needs a six-run before it can be called an improvement.
+
+### Image prompts — framing follows the section (same date)
+
+`imagePromptFor` (Gemini, `src/lib/images/gemini-image.ts`) asked every photograph
+for "room for a headline", including the ones that never carry one. `site-photos`
+already varies the aspect ratio by section type; the framing now uses the same
+signal — heroes hold space for a headline, team photos are portraits, and gallery
+or menu tiles let the subject fill the frame. The negatives are unchanged and a
+test asserts they survive on every section.
+
+Also unmeasured, and cheaper to judge: the output is a picture you can look at.

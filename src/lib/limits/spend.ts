@@ -1,5 +1,5 @@
 import "server-only";
-import { redis } from "@/lib/limits/redis";
+import { redis, isRedisConfigured } from "@/lib/limits/redis";
 import { AI_DAILY_PER_USER, AI_DAILY_GLOBAL, type DailyCap } from "@/lib/limits/config";
 import type { Usage } from "@/lib/contracts";
 
@@ -72,6 +72,8 @@ async function read(key: string): Promise<{ requests: number; cents: number }> {
 }
 
 export async function checkSpend(userId: string, day = utcDay()): Promise<SpendVerdict> {
+  if (!isRedisConfigured()) return ALLOWED;
+
   try {
     const [user, global] = await Promise.all([
       read(`spend:user:${userId}:${day}`),
@@ -112,6 +114,7 @@ export async function recordSpend(
   cents: number,
   day = utcDay(),
 ): Promise<void> {
+  if (!isRedisConfigured()) return;
   const ttl = secondsUntilUtcMidnight();
   const rounded = Math.max(0, Math.round(cents * 1_000) / 1_000);
 

@@ -89,6 +89,13 @@ function listMarkup(
     }).join('')}</ul>`;
 }
 
+// Kept beside the contracts that declare the field: a section listed here without a
+// `background` field would advertise a slot the panel never offers, and one with the field
+// but missing here would offer a control that moves nothing on the page.
+const BACKDROP_SECTIONS: ReadonlySet<string> = new Set([
+    'hero', 'about', 'testimonials', 'contact',
+]);
+
 function sectionAnchor(
     section: SectionInstance,
     visible: readonly SectionInstance[],
@@ -110,7 +117,13 @@ function renderSection(
     const heading = asString(p.heading);
     const anchor = sectionAnchor(section, visible);
     const slideClass = continuous ? ' class="liquid-slide"' : '';
-    const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate${slideClass} style="--i:${index}">`;
+    // The backdrop slot, on the sections whose contract offers one. It ships set to `none`,
+    // so a generated site looks exactly as its design intended until an owner picks a photo
+    // in the editor; the engine then rewrites this one custom property and nothing else.
+    const backdrop = BACKDROP_SECTIONS.has(section.type)
+        ? ` data-slot="${escapeHtml(key)}.background" data-slot-var="--section-bg"`
+        : '';
+    const open = `<section id="${escapeHtml(anchor)}" data-section-id="${escapeHtml(section.id)}" data-type="${section.type}" data-variant="${escapeHtml(section.variant)}" data-animate${slideClass}${backdrop} style="--i:${index}; --section-bg: none">`;
     const motif = section.type === 'hero' ? motifHtml : '';
     return `${open}${motif}${renderInner(section.type, key, p, heading, section.variant, continuous, site)}</section>`;
 }
@@ -313,6 +326,16 @@ a { color: inherit; }
 .site-header nav a:hover { color: var(--ink); }
 main { max-width: 72rem; margin: 0 auto; padding-inline: 1.5rem; padding-bottom: 3rem; }
 section { padding-block: var(--section-gap, 3.5rem); }
+/* An owner-chosen backdrop. With --section-bg set to none — how every section ships — this
+   resolves to no image at all, so a design that has never been touched paints exactly as
+   before. No scrim is layered on automatically: darkening someone's photograph by default
+   is a design decision the design did not ask for, and the editor shows the result live. */
+section[data-slot-var="--section-bg"] {
+  background-image: var(--section-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 [data-type="hero"] {
   display: grid; gap: 1.5rem; align-items: center;
   grid-template-columns: minmax(0, 1fr);

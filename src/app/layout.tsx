@@ -1,6 +1,6 @@
 import { PageFlow } from "@/components/site/PageFlow";
 import type { Metadata } from "next";
-import { Geist_Mono, Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant_Garamond, Geist_Mono, Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -13,6 +13,14 @@ const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
   weight: ["500", "600", "700", "800"],
+});
+
+// The cinematic display face (R4). Light-weight high-contrast serif, wide
+// tracking — the register the reference sites use for a hero word.
+const cormorant = Cormorant_Garamond({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
 });
 
 const geistMono = Geist_Mono({
@@ -46,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${plusJakarta.variable} ${outfit.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${plusJakarta.variable} ${outfit.variable} ${cormorant.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <PageFlow>{children}</PageFlow>
