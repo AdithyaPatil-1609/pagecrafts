@@ -1,7 +1,3 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-
-import { buttonVariants } from "@/components/ui/button";
 import { HeroPrompt } from "@/components/landing/HeroPrompt";
 
 export function Hero() {
@@ -25,18 +21,6 @@ export function Hero() {
             <div className="mt-9 max-w-xl">
                 <HeroPrompt />
             </div>
-
-            <Link
-                href="/templates"
-                className={buttonVariants({
-                    variant: "outline-brand",
-                    size: "lg",
-                    className: "mt-5 w-fit rounded-full font-semibold",
-                })}
-            >
-                Build it
-                <ArrowRight aria-hidden />
-            </Link>
         </section>
     );
 }
