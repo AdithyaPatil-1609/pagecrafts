@@ -33,8 +33,8 @@ export type DailyCap = {
 };
 
 export const AI_DAILY_PER_USER: DailyCap = {
-  requests: 60,
-  cents: 100,
+  requests: 500,
+  cents: 10_000,
 };
 
 export const AI_DAILY_GLOBAL: DailyCap = {
