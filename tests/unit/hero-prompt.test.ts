@@ -164,7 +164,10 @@ describe("the public header", () => {
         expect(header).toContain("sign-in-cta");
         expect(css).toContain(".sign-in-cta");
         expect(css).toContain("var(--gold)");
-        expect(css).toContain("--gold: #c4a86a");
+        // The token is what this asserts — that the CTA takes its colour from one place.
+        // Its value desaturated from #c4a86a when the landing went monochrome; pinning the
+        // hex here made a palette decision fail a test about where Sign in and Sign up sit.
+        expect(css).toMatch(/--gold:\s*#[0-9a-f]{3,8}\s*;/i);
         const cta = css.slice(css.indexOf(".sign-in-cta {"), css.indexOf(".sign-in-cta:hover"));
         expect(cta).not.toContain("var(--signal)");
         expect(cta).not.toContain("var(--bloom-amber)");

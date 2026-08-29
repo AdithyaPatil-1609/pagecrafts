@@ -68,7 +68,9 @@
   --mix-tan: #cfd2d6;
   --mix-gold: #dfe1e4;
 
-  /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
+  /* Header Sign in / Sign up / Buy. Named gold from when it was one (#c4a86a); it
+     desaturated with the rest of the palette when the landing went monochrome. The
+     name stayed so every call site did not have to move for a colour change. */
   --gold: #e6e8ea;
   --gold-foreground: #07080a;
 }
@@ -124,7 +126,9 @@
   --mix-tan: #cfd2d6;
   --mix-gold: #dfe1e4;
 
-  /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
+  /* Header Sign in / Sign up / Buy. Named gold from when it was one (#c4a86a); it
+     desaturated with the rest of the palette when the landing went monochrome. The
+     name stayed so every call site did not have to move for a colour change. */
   --gold: #e6e8ea;
   --gold-foreground: #07080a;
 }
@@ -180,7 +184,9 @@
   --mix-tan: #cfd2d6;
   --mix-gold: #dfe1e4;
 
-  /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
+  /* Header Sign in / Sign up / Buy. Named gold from when it was one (#c4a86a); it
+     desaturated with the rest of the palette when the landing went monochrome. The
+     name stayed so every call site did not have to move for a colour change. */
   --gold: #e6e8ea;
   --gold-foreground: #07080a;
 }
