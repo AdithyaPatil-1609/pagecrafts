@@ -17,172 +17,172 @@
   color-scheme: dark;
   --radius: 0.75rem;
 
-  --background: #05070a;
-  --foreground: #f4f7fb;
+  --background: #07080a;
+  --foreground: #f2f3f5;
 
-  --card: #0b121e;
-  --card-foreground: #f4f7fb;
+  --card: #0e1013;
+  --card-foreground: #f2f3f5;
 
-  --popover: #0b121e;
-  --popover-foreground: #f4f7fb;
+  --popover: #0e1013;
+  --popover-foreground: #f2f3f5;
 
-  --primary: #dc2626; /* red-600 — PageCraft brand fills */
-  --primary-foreground: #ffffff;
+  --primary: #f2f3f5; /* red-600 — PageCraft brand fills */
+  --primary-foreground: #07080a;
 
   /* Small red text on this navy needs a lighter red than the fill. */
-  --brand-ink: #f87171;
+  --brand-ink: #c9ccd1;
 
-  --secondary: #121a28;
-  --secondary-foreground: #f4f7fb;
+  --secondary: #14171b;
+  --secondary-foreground: #f2f3f5;
 
-  --muted: #121a28;
-  --muted-foreground: #a8b4c4;
+  --muted: #14171b;
+  --muted-foreground: #8b9099;
 
-  --accent: #152033;
-  --accent-foreground: #e8eef8;
+  --accent: #191d22;
+  --accent-foreground: #e8eaed;
 
-  --destructive: #dc2626;
+  --destructive: #e5484d;
   --destructive-foreground: #ffffff;
 
-  --border: #243044;
-  --input: #243044;
-  --ring: #dc2626;
+  --border: #1f2329;
+  --input: #1f2329;
+  --ring: #8fa8c8;
 
-  --field: #151c2a;
+  --field: #111418;
 
-  --brand-from: #f43f2f;
-  --brand-to: #c81018;
-  --brand-glow: rgba(220, 38, 38, 0.28);
+  --brand-from: #9fb3c8;
+  --brand-to: #6f8095;
+  --brand-glow: rgba(143, 168, 200, 0.16);
 
-  --signal: #ff8a1a;
-  --signal-foreground: #05070a;
+  --signal: #c3cad3;
+  --signal-foreground: #07080a;
 
   /* Atmosphere — blooms and the hero mix, never small body text. */
-  --bloom-blue: #00a3ff;
-  --bloom-amber: #f0a04a;
-  --bloom-sky: #5ec8ff;
+  --bloom-blue: #52657d;
+  --bloom-amber: #7d7466;
+  --bloom-sky: #9fb3c8;
 
-  --mix-from: #f4f7fb;
-  --mix-sky: #5ec8ff;
-  --mix-sage: #c5d5c0;
-  --mix-tan: #e0c9a0;
-  --mix-gold: #f0a04a;
+  --mix-from: #f2f3f5;
+  --mix-sky: #9fb3c8;
+  --mix-sage: #b9bfc6;
+  --mix-tan: #cfd2d6;
+  --mix-gold: #dfe1e4;
 
   /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
-  --gold: #c4a86a;
-  --gold-foreground: #05070a;
+  --gold: #e6e8ea;
+  --gold-foreground: #07080a;
 }
 
 .light {
   color-scheme: dark;
-  --background: #05070a;
-  --foreground: #f4f7fb;
+  --background: #07080a;
+  --foreground: #f2f3f5;
 
-  --card: #0b121e;
-  --card-foreground: #f4f7fb;
+  --card: #0e1013;
+  --card-foreground: #f2f3f5;
 
-  --popover: #0b121e;
-  --popover-foreground: #f4f7fb;
+  --popover: #0e1013;
+  --popover-foreground: #f2f3f5;
 
-  --primary: #dc2626;
-  --primary-foreground: #ffffff;
+  --primary: #f2f3f5;
+  --primary-foreground: #07080a;
 
-  --brand-ink: #f87171;
+  --brand-ink: #c9ccd1;
 
-  --secondary: #121a28;
-  --secondary-foreground: #f4f7fb;
+  --secondary: #14171b;
+  --secondary-foreground: #f2f3f5;
 
-  --muted: #121a28;
-  --muted-foreground: #a8b4c4;
+  --muted: #14171b;
+  --muted-foreground: #8b9099;
 
-  --accent: #152033;
-  --accent-foreground: #e8eef8;
+  --accent: #191d22;
+  --accent-foreground: #e8eaed;
 
-  --destructive: #dc2626;
+  --destructive: #e5484d;
   --destructive-foreground: #ffffff;
 
-  --border: #243044;
-  --input: #243044;
-  --ring: #dc2626;
+  --border: #1f2329;
+  --input: #1f2329;
+  --ring: #8fa8c8;
 
-  --field: #151c2a;
+  --field: #111418;
 
-  --brand-from: #f43f2f;
-  --brand-to: #c81018;
-  --brand-glow: rgba(220, 38, 38, 0.28);
+  --brand-from: #9fb3c8;
+  --brand-to: #6f8095;
+  --brand-glow: rgba(143, 168, 200, 0.16);
 
-  --signal: #ff8a1a;
-  --signal-foreground: #05070a;
+  --signal: #c3cad3;
+  --signal-foreground: #07080a;
 
-  --bloom-blue: #00a3ff;
-  --bloom-amber: #f0a04a;
-  --bloom-sky: #5ec8ff;
+  --bloom-blue: #52657d;
+  --bloom-amber: #7d7466;
+  --bloom-sky: #9fb3c8;
 
-  --mix-from: #f4f7fb;
-  --mix-sky: #5ec8ff;
-  --mix-sage: #c5d5c0;
-  --mix-tan: #e0c9a0;
-  --mix-gold: #f0a04a;
+  --mix-from: #f2f3f5;
+  --mix-sky: #9fb3c8;
+  --mix-sage: #b9bfc6;
+  --mix-tan: #cfd2d6;
+  --mix-gold: #dfe1e4;
 
   /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
-  --gold: #c4a86a;
-  --gold-foreground: #05070a;
+  --gold: #e6e8ea;
+  --gold-foreground: #07080a;
 }
 
 .dark {
   color-scheme: dark;
-  --background: #05070a;
-  --foreground: #f4f7fb;
+  --background: #07080a;
+  --foreground: #f2f3f5;
 
-  --card: #0b121e;
-  --card-foreground: #f4f7fb;
+  --card: #0e1013;
+  --card-foreground: #f2f3f5;
 
-  --popover: #0b121e;
-  --popover-foreground: #f4f7fb;
+  --popover: #0e1013;
+  --popover-foreground: #f2f3f5;
 
-  --primary: #dc2626;
-  --primary-foreground: #ffffff;
+  --primary: #f2f3f5;
+  --primary-foreground: #07080a;
 
-  --brand-ink: #f87171;
+  --brand-ink: #c9ccd1;
 
-  --secondary: #121a28;
-  --secondary-foreground: #f4f7fb;
+  --secondary: #14171b;
+  --secondary-foreground: #f2f3f5;
 
-  --muted: #121a28;
-  --muted-foreground: #a8b4c4;
+  --muted: #14171b;
+  --muted-foreground: #8b9099;
 
-  --accent: #152033;
-  --accent-foreground: #e8eef8;
+  --accent: #191d22;
+  --accent-foreground: #e8eaed;
 
-  --destructive: #f87171;
+  --destructive: #e5484d;
   --destructive-foreground: #05070a;
 
-  --border: #243044;
-  --input: #243044;
-  --ring: #f87171;
+  --border: #1f2329;
+  --input: #1f2329;
+  --ring: #8fa8c8;
 
-  --field: #151c2a;
+  --field: #111418;
 
-  --brand-from: #ff5a4a;
-  --brand-to: #c81018;
-  --brand-glow: rgba(248, 113, 113, 0.32);
+  --brand-from: #9fb3c8;
+  --brand-to: #6f8095;
+  --brand-glow: rgba(143, 168, 200, 0.16);
 
-  --signal: #ff8a1a;
-  --signal-foreground: #05070a;
+  --signal: #c3cad3;
+  --signal-foreground: #07080a;
 
-  --bloom-blue: #00a3ff;
-  --bloom-amber: #f0a04a;
-  --bloom-sky: #5ec8ff;
+  --bloom-blue: #52657d;
+  --bloom-amber: #7d7466;
+  --bloom-sky: #9fb3c8;
 
-  --mix-from: #f4f7fb;
-  --mix-sky: #5ec8ff;
-  --mix-sage: #c5d5c0;
-  --mix-tan: #e0c9a0;
-  --mix-gold: #f0a04a;
+  --mix-from: #f2f3f5;
+  --mix-sky: #9fb3c8;
+  --mix-sage: #b9bfc6;
+  --mix-tan: #cfd2d6;
+  --mix-gold: #dfe1e4;
 
   /* Quiet gold — header Sign in / Sign up / Buy. Soft mustard, not neon. */
-  --gold: #c4a86a;
-  --gold-foreground: #05070a;
+  --gold: #e6e8ea;
+  --gold-foreground: #07080a;
 }
 
 @theme inline {
@@ -645,9 +645,13 @@ html.deck-snap .page-glide-out {
   position: relative;
   isolation: isolate;
   display: flex;
-  /* svh first so phone URL chrome does not clip centred landing slides */
-  min-height: 100svh;
-  min-height: 100dvh;
+  /* svh first so phone URL chrome does not clip centred landing slides.
+     Capped, because a bare 100dvh forced roughly a screen and a half of empty
+     space between short blocks — which read as unfinished rather than spacious.
+     A slide now fills the viewport only when its content is tall enough to, and
+     snap still works: it snaps to real content instead of to padding. */
+  min-height: min(100svh, 46rem);
+  min-height: min(100dvh, 46rem);
   flex-direction: column;
   justify-content: center;
   justify-content: safe center;
@@ -1121,3 +1125,133 @@ body.pagecrafts-rzp-open::before {
     linear-gradient(180deg, color-mix(in srgb, var(--card) 92%, transparent) 0%, var(--background) 55%, var(--background) 100%);
 }
 
+
+/* ==========================================================================
+   R4 — cinematic surfaces
+   Near-monochrome, one dominant object, thin serif display, tiny letterspaced
+   labels. The colour on any screen comes from the site being previewed, not
+   from the chrome.
+   ========================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-hover: 180ms;
+  --dur-modal: 320ms;
+  --dur-scene: 700ms;
+}
+
+/* The hero word. Light weight, wide tracking, tight leading — sized fluidly
+   so it scales continuously rather than stepping at breakpoints. */
+.cine-display {
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(3.25rem, 1.5rem + 7vw, 8rem);
+  line-height: 0.94;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+
+.cine-display-sm {
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(2.25rem, 1.2rem + 3.6vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+/* Every non-display string in this idiom: tiny, uppercase, widely tracked. */
+.cine-label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.cine-lede {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  max-width: 34rem;
+}
+
+/* The pale pill CTA — the one filled control on a cinematic screen. */
+.cine-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0.85rem 2rem;
+  border-radius: 999px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    transform var(--dur-hover) var(--ease-out),
+    opacity var(--dur-hover) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cine-cta:hover { opacity: 0.88; }
+}
+
+.cine-cta:active { transform: scale(0.98); }
+
+.cine-cta:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+/* The hero object's stage. The preview is the only lit thing on the page, so
+   it gets a soft floor shadow and a faint rim rather than a coloured glow. */
+.cine-object {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--card);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--foreground) 9%, transparent),
+    0 40px 120px color-mix(in srgb, #000 75%, transparent),
+    0 8px 30px color-mix(in srgb, #000 55%, transparent);
+}
+
+/* Vignette that seats the object in the dark instead of floating it on a plate. */
+.cine-vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 45%,
+    transparent 40%,
+    color-mix(in srgb, var(--background) 70%, transparent) 100%
+  );
+}
+
+/* Edge labels — the MERCURY / EARTH prev-next pattern. */
+.cine-edge {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foreground) 45%, transparent);
+  transition: color var(--dur-hover) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cine-edge:hover { color: var(--foreground); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cine-cta:active { transform: none; }
+}

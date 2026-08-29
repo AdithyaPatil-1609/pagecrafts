@@ -111,7 +111,11 @@ describe("the prompt bar is shared", () => {
         const artwork = read("src", "components", "landing", "HeroArtwork.tsx");
         const deck = read("src", "components", "landing", "LandingDeck.tsx");
         expect(artwork).toContain("thumbnailUrl");
-        expect(artwork).toContain("object-cover object-[center_12%]");
+        // The crop, whatever it is, has to hold the top of the page: a site thumbnail
+        // centred on its own middle shows a band of body copy and reads as a screenshot
+        // of nothing. The cinematic hero pins it to the top; the mosaic it replaced used
+        // object-[center_12%] for the same reason.
+        expect(artwork).toContain("object-cover object-top");
         expect(artwork).not.toContain("/landing/");
         expect(deck).toContain("pickLandingHeroTemplates");
         expect(deck).toContain("pickLandingShowcaseTemplates");
