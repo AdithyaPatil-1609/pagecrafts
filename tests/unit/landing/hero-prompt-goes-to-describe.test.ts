@@ -30,10 +30,11 @@ describe('Build it goes to the describe screen', () => {
         expect(hero).not.toContain('/templates');
     });
 
-    // The typewriter makes the field read as a caption, so Enter alone is not discoverable.
-    it('offers a button, not only the Enter key', () => {
-        expect(hero).toMatch(/<button[^>]*type="submit"/);
-        expect(hero).toContain('Build it');
+    // Deliberately no button: the field is submitted with Enter, and the arrow at its left
+    // edge is the only affordance. Asked for on the landing page.
+    it('carries no Build it button', () => {
+        expect(hero).not.toContain('Build it');
+        expect(hero).not.toMatch(/<button/);
     });
 });
 
