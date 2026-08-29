@@ -25,6 +25,8 @@ export interface GeneratedImage {
 export interface GenerateImageOptions {
     /** "16:9" for heroes, "4:3" for cards. Anything the model rejects falls back. */
     aspectRatio?: string;
+    /** The section the photograph is for, so the composition can suit the slot. */
+    sectionType?: string;
     signal?: AbortSignal;
 }
 
@@ -77,6 +79,32 @@ function isDailyQuota(err: unknown): boolean {
 }
 
 /**
+ * How the photograph is framed, which depends on what it has to sit under.
+ *
+ * "Room for a headline" was asked for on every image, including the ones that never carry
+ * one. A gallery tile or a team portrait given a third of its frame as empty wall reads as
+ * a photograph of nothing in particular, and the subject arrives too small to see at card
+ * size. The section already decides the aspect ratio; it decides the framing too.
+ */
+function framingFor(sectionType?: string): string {
+    if (!sectionType) return "clean uncluttered composition with room for a headline.";
+
+    if (/hero|banner|cta|cover/i.test(sectionType)) {
+        return [
+            "wide establishing shot, the subject set to one side,",
+            "calm even areas where a headline will sit on top of it.",
+        ].join(" ");
+    }
+
+    if (/team|person|staff|about/i.test(sectionType)) {
+        return "a person at ease in their own workplace, framed head and shoulders, looking at the camera.";
+    }
+
+    // Galleries, menus, services: seen small, in a grid, with words already beside them.
+    return "the subject fills the frame and is the only thing in it, no empty space held back for text.";
+}
+
+/**
  * The instruction sent to the model.
  *
  * The negatives earn their place. Image models put invented shop names and slogans into
@@ -84,13 +112,13 @@ function isDailyQuota(err: unknown): boolean {
  * photograph at all — the words are baked into the pixels and nobody can edit them out in
  * our editor. Same for logos and watermarks.
  */
-export function imagePromptFor(query: string): string {
+export function imagePromptFor(query: string, sectionType?: string): string {
     const subject = query.trim().replace(/\s+/g, " ").slice(0, 300);
 
     return [
         `A professional photograph for a small business website: ${subject}.`,
-        "Real photography, natural daylight, shallow depth of field, warm and inviting,",
-        "clean uncluttered composition with room for a headline.",
+        "Real photography, natural daylight, shallow depth of field, warm and inviting.",
+        framingFor(sectionType),
         "No text, no words, no letters, no signage, no logos, no watermarks, no borders,",
         "no collage, no user interface, no illustration.",
     ].join(" ");
@@ -123,7 +151,7 @@ export async function generateImage(
     const keys = imageKeys();
     if (keys.length === 0) return null;
 
-    const prompt = imagePromptFor(query);
+    const prompt = imagePromptFor(query, options.sectionType);
     const model = imageModel();
     const start = cursor.value % keys.length;
     cursor.value = start + 1;

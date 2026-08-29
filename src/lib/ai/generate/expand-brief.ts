@@ -1,5 +1,6 @@
 import { Type, type Schema } from '@google/genai';
 
+import { aiConfig } from '../config';
 import { model } from '../gateway';
 import { loadTemplate, render } from '../harness/templates';
 import { stripFences } from '../sanitise';
@@ -43,7 +44,7 @@ export async function expandBrief(
     }
 
     try {
-        const tpl = loadTemplate('expand-brief.v1');
+        const tpl = loadTemplate(aiConfig().prompts.expand);
         const contained = contain(render(tpl.system), { text: input });
         const reply = await model.strong.complete({
             job: 'generate',

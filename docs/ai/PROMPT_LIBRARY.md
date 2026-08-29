@@ -33,6 +33,7 @@ AI_PROMPT_PLAN=plan.v2 AI_PROMPT_FILL=fill-section.v2 npm run grade -- --label=v
 | `compose-site.v1.md` | compose-site | v1 | strong | `fdae85f2e854` | — |
 | `edit.v1.md` ← | edit | v1 | strong | `20f46ad7214a` | one section + instruction → changed fields |
 | `expand-brief.v1.md` | expand-brief | v1 | strong | `d5816d9f0a08` | — |
+| `expand-brief.v2.md` | expand-brief | v2 | strong | `deb1c9a5b309` | — |
 | `fill-section.v1.md` | fill-section | v1 | strong | `5418e9b0cf10` | one section → typed content fields |
 | `fill-section.v2.md` | fill-section | v2 | strong | `890073b7b30a` | one section → typed content fields |
 | `fill-section.v3.md` ← | fill-section | v3 | strong | `e409bb5aa1b6` | one section → typed content fields |
@@ -55,6 +56,7 @@ prompt. A placeholder that is neither is a typo, and a test fails on it.
 | `compose-site.v1.md` | — | `prompt`, `tone`, `vertical` |
 | `edit.v1.md` | — | `content`, `instruction`, `sectionKey`, `variant` |
 | `expand-brief.v1.md` | — | `text` |
+| `expand-brief.v2.md` | — | `text` |
 | `fill-section.v1.md` | — | `brief`, `customerWord`, `fields`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
 | `fill-section.v2.md` | — | `brief`, `customerWord`, `fields`, `guidance`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
 | `fill-section.v3.md` | — | `brief`, `customerWord`, `fields`, `guidance`, `prompt`, `sectionKey`, `tone`, `variant`, `vertical` |
@@ -121,15 +123,15 @@ be empty — dummy placeholders are scrubbed, not published.
 
 | Section | Variants | Fields |
 |---|---|---|
-| hero | centred, split-image, image-bg, minimal | `eyebrow` (text), `heading` (text), `sub` (richtext), `ctaLabel` (text), `image` (image) |
-| about | text, media-split | `heading` (text), `body` (richtext), `image` (image) |
+| hero | centred, split-image, image-bg, minimal | `eyebrow` (text), `heading` (text), `sub` (richtext), `ctaLabel` (text), `image` (image), `background` (backgroundImage) |
+| about | text, media-split | `heading` (text), `body` (richtext), `image` (image), `background` (backgroundImage) |
 | services | cards, grid, timeline, tabs | `heading` (text), `items` (list) |
 | menu | grouped, simple | `heading` (text), `items` (list) |
 | gallery | masonry, grid, carousel | `heading` (text), `images` (list) |
 | team | cards, grid | `heading` (text), `members` (list) |
-| testimonials | quotes, cards | `heading` (text), `items` (list) |
+| testimonials | quotes, cards | `heading` (text), `items` (list), `background` (backgroundImage) |
 | faq | accordion, two-column | `heading` (text), `items` (list) |
-| contact | split-map, simple, form | `heading` (text), `blurb` (richtext), `address?` (text), `phone?` (text), `email?` (text), `hours?` (text) |
+| contact | split-map, simple, form | `heading` (text), `blurb` (richtext), `address?` (text), `phone?` (text), `email?` (text), `hours?` (text), `background` (backgroundImage) |
 | footer | simple, columns | `tagline` (text) |
 
 ## Art-direction dial vocabulary

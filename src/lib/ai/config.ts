@@ -43,6 +43,10 @@ const envSchema = z.object({
     AI_PROMPT_FILL: z.string().default('fill-section.v3'),
     AI_PROMPT_EDIT: z.string().default('edit.v1'),
     AI_PROMPT_COMPOSE: z.string().default('compose-site.v1'),
+    // Brief expansion runs on Gemini and feeds classify/plan/fill. v2 pushes the
+    // no-invention and native-script rules upstream of the stages that were breaking
+    // on them; pin v1 to reproduce a pre-v2 figure.
+    AI_PROMPT_EXPAND: z.string().default('expand-brief.v2'),
 
     // Per-operation timeouts. Shared across providers.
     GEMINI_TIMEOUT_CLASSIFY_MS: z.coerce.number().int().positive().default(5_000),
@@ -177,6 +181,7 @@ export interface PromptVersions {
     fill: string;
     edit: string;
     compose: string;
+    expand: string;
 }
 
 export interface AiConfig {
@@ -378,6 +383,7 @@ export function loadAiConfig(env: Record<string, string | undefined> = process.e
             fill: v.AI_PROMPT_FILL,
             edit: v.AI_PROMPT_EDIT,
             compose: v.AI_PROMPT_COMPOSE,
+            expand: v.AI_PROMPT_EXPAND,
         },
     };
 }

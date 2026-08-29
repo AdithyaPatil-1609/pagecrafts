@@ -1,4 +1,14 @@
-export type FieldType = "text" | "richtext" | "image" | "color" | "select" | "list";
+// "backgroundImage" is a photograph the section is painted with rather than one it
+// contains. It is never model-filled: a generated site picks its own art direction, and
+// this is the slot an owner reaches for afterwards when they want a different backdrop.
+export type FieldType =
+  | "text"
+  | "richtext"
+  | "image"
+  | "backgroundImage"
+  | "color"
+  | "select"
+  | "list";
 
 export interface Field {
   key: string;

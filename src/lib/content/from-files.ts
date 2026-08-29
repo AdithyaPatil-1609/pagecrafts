@@ -75,7 +75,7 @@ export function keepImages(
         if (!before) continue;
 
         for (const field of section.fields) {
-            if (field.type === "image") {
+            if (field.type === "image" || field.type === "backgroundImage") {
                 if (before[field.key] === undefined) continue;
                 merged[section.key] = { ...(merged[section.key] as Record<string, unknown>) };
                 (merged[section.key] as Record<string, unknown>)[field.key] = before[field.key];
@@ -136,7 +136,12 @@ export function contentFromFiles(files: FileMap, schema: ContentSchema): Record<
         if (segments.length === 2) {
             const [sectionKey, fieldKey] = segments;
             const field = fieldOf(schema, sectionKey, fieldKey);
-            if (!field || field.type === "image" || field.type === "list") continue;
+            if (
+                !field
+                || field.type === "image"
+                || field.type === "backgroundImage"
+                || field.type === "list"
+            ) continue;
 
             const section = (content[sectionKey] as Record<string, unknown>) ?? {};
             section[fieldKey] = text;

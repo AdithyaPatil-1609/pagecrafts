@@ -153,3 +153,33 @@ describe('what the model is asked for', () => {
         expect(prompt.length).toBeLessThan(800);
     });
 });
+
+describe('framing follows the slot the photograph lands in', () => {
+    // "Room for a headline" used to be asked for on every image. A gallery tile given a
+    // third of its frame as empty wall arrives with its subject too small to see at card
+    // size, which is the one thing a gallery tile must not do.
+    it('holds space for a headline on a hero', () => {
+        expect(imagePromptFor('bakery counter', 'hero')).toMatch(/headline/i);
+    });
+
+    it('does not hold that space on a gallery tile', () => {
+        const prompt = imagePromptFor('almond croissant', 'gallery');
+
+        expect(prompt).not.toMatch(/headline/i);
+        expect(prompt).toMatch(/fills the frame/i);
+    });
+
+    it('asks for a portrait on a team section', () => {
+        expect(imagePromptFor('head baker', 'team')).toMatch(/head and shoulders/i);
+    });
+
+    it('keeps the negatives whatever the section', () => {
+        for (const section of [undefined, 'hero', 'gallery', 'team', 'menu']) {
+            const prompt = imagePromptFor('bakery counter', section);
+
+            expect(prompt).toMatch(/no text/i);
+            expect(prompt).toMatch(/no logos/i);
+            expect(prompt).toMatch(/no watermarks/i);
+        }
+    });
+});

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, RefreshCw } from "lucide-react";
+import { Eye, Lock, RefreshCw } from "lucide-react";
 
 import { apiGet, apiPost } from "@/lib/api/client";
 import type { JobStatus } from "@/lib/ai/jobs/types";
@@ -20,6 +20,7 @@ import { explainCreationIssue } from "@/lib/editor/ai-fix";
 import { styleBadge, styleTileLabel } from "@/lib/payments/pricing";
 import type { AccountPlan, BillingSummary } from "@/lib/contracts";
 import { isOutOfAiCredits } from "@/lib/ai/jobs/credits";
+import { LookPreviewDialog } from "@/components/discovery/LookPreviewDialog";
 
 interface VariantCard {
     id: StyleId;
@@ -98,6 +99,13 @@ export function StyleChooser({
     const [quota, setQuota] = useState<Quota | null>(null);
     const [prompt, setPrompt] = useState("");
     const [picking, setPicking] = useState<{ jobId: string; variantId: StyleId } | null>(null);
+    // The look being read at full size. Opening one is not choosing one — the decision
+    // stays an explicit button, inside the dialog or on the card.
+    const [previewing, setPreviewing] = useState<{
+        jobId: string;
+        look: VariantCard;
+        unlocked: boolean;
+    } | null>(null);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [outOfCredits, setOutOfCredits] = useState(false);
@@ -346,11 +354,16 @@ export function StyleChooser({
                     Pick a <span className="hero-mix">look</span>
                 </h1>
                 <p className="max-w-xl text-sm text-muted-foreground">
+                    Same business, three different sites. Click any look to open it full
+                    size and scroll the real page — then use the one you want. Nothing is
+                    saved until you do, and you can still edit everything afterwards.
+                </p>
+                <p className="max-w-xl text-sm text-muted-foreground">
                     {accountPlan === "premium"
-                        ? "Same business, three different sites. Premium is active — every look is unlocked."
+                        ? "Premium is active — every look is unlocked."
                         : accountPlan === "pro"
-                          ? "Same business, three different sites. Pro is active — Casual is Free, Photo-rich is Pro unlocked. Animated needs Premium."
-                          : "Same business, three different sites. Casual is Free. Photo-rich is Pro (Rs 499). Animated is Premium (Rs 999) — upgrade on User Plans to unlock paid looks."}
+                          ? "Pro is active — Casual is Free and Photo-rich is unlocked. Animated needs Premium."
+                          : "Casual is Free. Photo-rich is Pro (Rs 499). Animated is Premium (Rs 999) — upgrade on User Plans to unlock the paid looks."}
                 </p>
             </header>
 
@@ -432,6 +445,25 @@ export function StyleChooser({
                                                 locked && "opacity-55",
                                             )}
                                         />
+                                        <button
+                                            type="button"
+                                            aria-label={`View ${option.label} at full size`}
+                                            onClick={() =>
+                                                setPreviewing({
+                                                    jobId: attempt.job_id,
+                                                    look: option,
+                                                    unlocked,
+                                                })
+                                            }
+                                            className="group absolute inset-0 z-[1] flex cursor-pointer items-end justify-center bg-transparent p-3 transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                                        >
+                                            {/* Always visible, never hover-only — on a phone there is no hover to
+                                                reveal it, and a dead-looking thumbnail reads as a broken image. */}
+                                            <span className="glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-transform group-hover:scale-105">
+                                                <Eye className="size-3.5" strokeWidth={2} aria-hidden />
+                                                Click to view
+                                            </span>
+                                        </button>
                                         <span
                                             className={cn(
                                                 "absolute right-2 top-2 z-[2] inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold shadow-sm",
@@ -527,6 +559,21 @@ export function StyleChooser({
                     }}
                 />
             ) : null}
+
+            <LookPreviewDialog
+                look={previewing?.look ?? null}
+                unlocked={previewing?.unlocked ?? false}
+                choosing={
+                    previewing !== null &&
+                    picking?.jobId === previewing.jobId &&
+                    picking?.variantId === previewing.look.id
+                }
+                onClose={() => setPreviewing(null)}
+                onChoose={() => {
+                    if (!previewing) return;
+                    void choose(previewing.jobId, previewing.look.id, previewing.look.tier);
+                }}
+            />
 
             <NeedUpiDialog
                 open={upi.open}

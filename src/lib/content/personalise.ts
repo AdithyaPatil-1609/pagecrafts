@@ -38,7 +38,8 @@ function footer(facts: TemplateFacts, max?: number): string {
 
 function fieldRole(sectionKey: string, field: Field): "name" | "subhead" | "place" | "phone" | "hours" | "footer" | "skip" {
   const key = `${sectionKey}.${field.key}`.toLowerCase();
-  if (field.type === "image" || field.type === "color" || field.type === "select") return "skip";
+  if (field.type === "image" || field.type === "backgroundImage") return "skip";
+  if (field.type === "color" || field.type === "select") return "skip";
   if (field.type === "list") return "skip";
   if (/(phone|tel|mobile|whatsapp)/.test(key)) return "phone";
   if (/(hour|open|timing)/.test(key)) return "hours";

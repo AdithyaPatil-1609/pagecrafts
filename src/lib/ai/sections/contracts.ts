@@ -35,6 +35,8 @@ function zodForField(f: Field): z.ZodTypeAny {
         case 'list': return z.array(zodForFields(f.itemSchema ?? []))
             .min(1).max(f.maxLength ?? 8);
         case 'color': throw new Error(`Field "${f.key}": colour is never model-filled.`);
+        case 'backgroundImage':
+            throw new Error(`Field "${f.key}": a background photo is never model-filled.`);
         default: {
             const exhaustive: never = f.type;
             return exhaustive;
@@ -61,6 +63,8 @@ function jsonForField(f: Field): Schema {
         case 'select': return { type: Type.STRING, enum: f.options ?? [] };
         case 'list': return { type: Type.ARRAY, items: jsonForFields(f.itemSchema ?? []) };
         case 'color': throw new Error(`Field "${f.key}": colour is never model-filled.`);
+        case 'backgroundImage':
+            throw new Error(`Field "${f.key}": a background photo is never model-filled.`);
         default: {
             const exhaustive: never = f.type;
             return exhaustive;
@@ -99,6 +103,9 @@ const rt = (key: string, label: string, maxLength?: number, optional = false): F
 const img = (key: string, label: string): Field => ({ key, label, type: 'image' });
 const list = (key: string, label: string, itemSchema: Field[], maxLength: number): Field =>
     ({ key, label, type: 'list', itemSchema, maxLength });
+// Owner-set, never model-filled — see FieldType in lib/contracts/content-schema.ts. It is
+// offered on the bands a design might reasonably paint: the ones that span the page.
+const bg = (): Field => ({ key: 'background', label: 'Background photo', type: 'backgroundImage' });
 
 export const SECTION_CONTRACTS: Record<SectionKey, SectionContract> = {
     hero: define('hero', 'Hero', ['centred', 'split-image', 'image-bg', 'minimal'], [
@@ -107,9 +114,10 @@ export const SECTION_CONTRACTS: Record<SectionKey, SectionContract> = {
         rt('sub', 'Subheading', 200),
         t('ctaLabel', 'Button label', 40),
         img('image', 'Image'),
+        bg(),
     ]),
     about: define('about', 'About', ['text', 'media-split'], [
-        t('heading', 'Heading'), rt('body', 'Body', 900), img('image', 'Image'),
+        t('heading', 'Heading'), rt('body', 'Body', 900), img('image', 'Image'), bg(),
     ]),
     services: define('services', 'Services', ['cards', 'grid', 'timeline', 'tabs'], [
         t('heading', 'Heading'),
@@ -134,6 +142,7 @@ export const SECTION_CONTRACTS: Record<SectionKey, SectionContract> = {
     testimonials: define('testimonials', 'Testimonials', ['quotes', 'cards'], [
         t('heading', 'Heading'),
         list('items', 'Quotes', [rt('quote', 'Quote', 300), t('author', 'Name', 60)], 6),
+        bg(),
     ]),
     faq: define('faq', 'FAQ', ['accordion', 'two-column'], [
         t('heading', 'Heading'),
@@ -145,6 +154,7 @@ export const SECTION_CONTRACTS: Record<SectionKey, SectionContract> = {
         t('heading', 'Heading'), rt('blurb', 'Intro', 240),
         t('address', 'Address', 200, true), t('phone', 'Phone', 40, true),
         t('email', 'Email', 80, true), t('hours', 'Opening hours', 200, true),
+        bg(),
     ]),
     footer: define('footer', 'Footer', ['simple', 'columns'], [
         t('tagline', 'Tagline', 120),

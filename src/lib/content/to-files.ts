@@ -42,7 +42,12 @@ function valueForSlot(
         const field = fieldOf(schema, sectionKey, fieldKey);
         // Images are addressed by asset id and resolved at publish, not here; a text
         // substitution would put a uuid where a photograph goes.
-        if (!field || field.type === "image" || field.type === "list") return undefined;
+        if (
+            !field
+            || field.type === "image"
+            || field.type === "backgroundImage"
+            || field.type === "list"
+        ) return undefined;
 
         const value = (content[sectionKey] as Record<string, unknown> | undefined)?.[fieldKey];
         return typeof value === "string" ? value : undefined;

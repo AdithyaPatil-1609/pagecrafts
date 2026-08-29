@@ -146,6 +146,7 @@ export function createSitePhotoLookup(options: SitePhotoOptions): PhotoLookup {
 
         const generated = await generate(query, {
             aspectRatio: aspectFor(sectionType),
+            sectionType,
             signal: AbortSignal.timeout(remaining),
         });
         if (!generated) return null;

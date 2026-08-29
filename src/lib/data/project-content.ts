@@ -25,7 +25,7 @@ function assetRefs(ops: ContentOp[], schema: ContentSchema): { path: string; id:
     const field = fieldOf(schema, op.path);
     if (!field) continue;
 
-    if (field.type === "image") {
+    if (field.type === "image" || field.type === "backgroundImage") {
       if (typeof op.value === "string") refs.push({ path: op.path, id: op.value });
       continue;
     }

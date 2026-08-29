@@ -124,7 +124,9 @@ export function blankFieldsIn(composition: Composition): string[] {
         const props = section.props as Record<string, unknown>;
 
         for (const field of contract.fields) {
-            if (field.type === 'color') continue;
+            // Neither is model-filled, so neither can be blank in the sense this counts:
+            // an unset backdrop is the design as generated, not a hole in the page.
+            if (field.type === 'color' || field.type === 'backgroundImage') continue;
             const value = props[field.key];
 
             if (field.optional) continue;
