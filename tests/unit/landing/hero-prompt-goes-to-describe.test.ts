@@ -30,11 +30,19 @@ describe('Build it goes to the describe screen', () => {
         expect(hero).not.toContain('/templates');
     });
 
-    // Deliberately no button: the field is submitted with Enter, and the arrow at its left
-    // edge is the only affordance. Asked for on the landing page.
-    it('carries no Build it button', () => {
-        expect(hero).not.toContain('Build it');
-        expect(hero).not.toMatch(/<button/);
+    // The landing page keeps its button; the signed-in welcome slide does not. A first-time
+    // visitor reading the headline needs something to press, and the typewriter makes the
+    // field read as a caption rather than an input.
+    it('offers a button, not only the Enter key', () => {
+        expect(hero).toMatch(/<button[^>]*type="submit"/);
+        expect(hero).toContain('Build it');
+    });
+
+    // The one that was asked to go — the signed-in home, not this page.
+    it('leaves the signed-in welcome slide without one', () => {
+        const welcome = readFileSync('src/components/deck/WelcomePrompt.tsx', 'utf8');
+        expect(welcome).not.toMatch(/>\s*Build it/);
+        expect(welcome).not.toContain('#build');
     });
 });
 

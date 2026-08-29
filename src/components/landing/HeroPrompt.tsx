@@ -56,6 +56,18 @@ export function HeroPrompt() {
                     </span>
                 ) : null}
             </div>
+            {/*
+             * The landing page keeps its button. The signed-in welcome slide does not — that
+             * one was asked to go, and this is the one that has to stay: a first-time visitor
+             * reading the headline needs something to press, and the typewriter makes the
+             * field read as a caption rather than an input.
+             *
+             * Submits the same form: describe first at /new, sign in only when there is a
+             * site to save.
+             */}
+            <button type="submit" className="hero-prompt-cta">
+                Build it →
+            </button>
         </form>
     );
 }

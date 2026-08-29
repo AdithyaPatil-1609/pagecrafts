@@ -343,6 +343,44 @@
   }
 }
 
+.hero-prompt-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 0.7rem 1.35rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--gold-foreground);
+  background: var(--gold);
+  border: 1px solid var(--gold);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--gold) 18%, transparent);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.hero-prompt-cta:hover {
+  transform: scale(1.045);
+  background: color-mix(in srgb, var(--gold) 88%, #fff);
+  border-color: color-mix(in srgb, var(--gold) 88%, #fff);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+
+.hero-prompt-cta:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--gold);
+}
+
 .hero-prompt {
   display: flex;
   align-items: center;
@@ -1043,6 +1081,11 @@ html.deck-snap .page-glide-out {
 
   .sign-in-cta:hover,
   .sign-in-quiet:hover,
+  .hero-prompt-cta:hover,
+  .hero-prompt-cta:focus-visible {
+    transform: none;
+  }
+
   [data-reveal] {
     opacity: 1;
     transform: none;
